@@ -14,7 +14,7 @@ hero:
       link: /guide/getting-started
     - theme: alt
       text: AI Integration
-      link: /guide/ai
+      link: /guide/ai-coding
 
 features:
   - icon: 🤖

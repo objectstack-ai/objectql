@@ -47,6 +47,7 @@ export default defineConfig({
             { text: 'Custom Actions', link: '/guide/logic-actions' },
             { text: 'Plugin System', link: '/guide/plugins' },
             { text: 'Building AI Apps', link: '/guide/ai' },
+            { text: 'AI Coding Assistant', link: '/guide/ai-coding' },
             { text: 'CLI Tools', link: '/guide/cli' }
           ]
         }
