@@ -122,8 +122,11 @@ export async function startStudio(options: { port: number; dir: string, open?: b
             try {
                 // Find all object.yml files relative to rootDir
                 // Note: User might have configured objectql with specific source paths. 
-                // Ideally we should ask app where it loaded files from, but scanning rootDir is a good fallback for simple projects.
-                const files = await glob('**/*.object.yml', { cwd: rootDir, ignore: ['node_modules/**'] });
+                // We ignore common build folders to avoid duplicates/editing compiled files.
+                const files = await glob('**/*.object.yml', { 
+                    cwd: rootDir, 
+                    ignore: ['node_modules/**', 'dist/**', 'build/**', 'out/**', '.git/**', '.next/**'] 
+                });
                 res.setHeader('Content-Type', 'application/json');
                 res.end(JSON.stringify({ files }));
             } catch (e: any) {
@@ -192,7 +195,10 @@ export async function startStudio(options: { port: number; dir: string, open?: b
 
             try {
                 // Find all object.yml files
-                const files = await glob('**/*.object.yml', { cwd: rootDir, ignore: ['node_modules/**'] });
+                const files = await glob('**/*.object.yml', { 
+                    cwd: rootDir, 
+                    ignore: ['node_modules/**', 'dist/**', 'build/**', 'out/**', '.git/**', '.next/**'] 
+                });
                 let foundFile = null;
 
                 // Naive parsing to find the object definition
