@@ -1,5 +1,15 @@
 # @objectql/cli
 
+## 1.3.1
+
+### Patch Changes
+
+- Updated dependencies
+  - @objectql/core@1.3.1
+  - @objectql/server@1.3.1
+  - @objectql/driver-knex@1.3.1
+  - @objectql/types@1.3.1
+
 ## 0.2.1
 
 ### Patch Changes

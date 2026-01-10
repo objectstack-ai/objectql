@@ -1,5 +1,11 @@
 # @objectql/driver-knex
 
+## 1.3.1
+
+### Patch Changes
+
+- @objectql/types@1.3.1
+
 ## 1.2.1
 
 ### Patch Changes

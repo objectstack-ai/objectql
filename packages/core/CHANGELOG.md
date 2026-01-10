@@ -1,5 +1,13 @@
 # @objectql/core
 
+## 1.3.1
+
+### Patch Changes
+
+- Align versions for monorepo packages.
+  - @objectql/driver-remote@1.3.1
+  - @objectql/types@1.3.1
+
 ## 1.3.0
 
 ### Minor Changes

@@ -1,5 +1,14 @@
 # @example/project-management
 
+## 4.0.1
+
+### Patch Changes
+
+- Updated dependencies
+  - @objectql/core@1.3.1
+  - @objectql/driver-knex@1.3.1
+  - @objectql/types@1.3.1
+
 ## 4.0.0
 
 ### Patch Changes

@@ -2,7 +2,18 @@
   "$schema": "https://unpkg.com/@changesets/config@3.1.2/schema.json",
   "changelog": "@changesets/cli/changelog",
   "commit": false,
-  "fixed": [],
+  "fixed": [
+    [
+      "@objectql/cli",
+      "@objectql/console",
+      "@objectql/core",
+      "@objectql/driver-knex",
+      "@objectql/driver-mongo",
+      "@objectql/driver-remote",
+      "@objectql/server",
+      "@objectql/types"
+    ]
+  ],
   "linked": [],
   "access": "public",
   "baseBranch": "main",
