@@ -6,8 +6,6 @@ This section contains the technical specifications for the ObjectQL platform. It
 *   [**Objects & Fields**](./object.md) - Defining data models, field types, and validation rules.
 *   [**Actions (RPC)**](./action.md) - Defining custom server-side functions and APIs.
 *   [**Hooks (Triggers)**](./hook.md) - Attaching logic to database events.
-*   [**App Definition**](./app.md) - Configuring menus and UI layout.
 
 ## Data & Transport
 *   [**Query Language (JSON)**](./query-language.md) - Specification of the Unified Query JSON format used by drivers and APIs.
-*   [**HTTP Protocol**](./http-protocol.md) - Standard REST API endpoints and payload formats.
