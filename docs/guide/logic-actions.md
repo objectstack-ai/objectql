@@ -1,163 +1,85 @@
-# ObjectQL Custom Actions (RPC)
+# Logic: Actions (RPC)
 
-**Version:** 1.0.0
+Actions (Remote Procedure Calls) allow you to define custom backend functions that go beyond simple CRUD. They are integrated into the metadata, meaning the Frontend knows exactly how to render them (buttons, confirmation dialogs, forms).
 
-## 1. Overview
+## 1. Defining Actions
 
-**Custom Actions** allow you to define server-side business logic that is exposed via the API but does not fit into standard CRUD operations. They follow the **Remote Procedure Call (RPC)** pattern.
+Actions require two parts:
+1.  **Declaration**: in `*.object.yml` (Defines the "What" and "UI").
+2.  **Implementation**: in `*.action.ts` (Defines the "How").
 
-Common use cases include:
-*   **Complex Transactions:** "Convert Lead to Opportunity" (involves creating/updating multiple records).
-*   **External Integrations:** "Send Invoice via Email" or "Sync to SAP".
-*   **State Transitions:** "Approve Contract" (specific validation logic + status update).
-*   **Calculations:** "Calculate Loan Amortization Schedule".
-
-## 2. Defining Actions
-
-Actions are defined as part of the Object Metadata.
-
-### 2.1 Metadata Structure (YAML)
-
-You can define the action signature, input parameters, and return type in the Object's YAML file.
+### Step 1: Declare in YAML
 
 ```yaml
-# objects/contracts.object.yml
-name: contracts
-label: Service Contract
-fields:
-  title: 
-    type: text
-  status:
-    type: select
-    options: [draft, active, terminated]
-
-# === Action Definitions ===
+# invoice.object.yml
 actions:
-  terminate:
-    label: Terminate Contract
-    description: Ends the contract and explicitly calculates penalties.
-    
-    # 2.1.1 Input Parameters (Argument Schema)
-    params:
-      reason:
-        type: text
-        required: true
-      penalty_amount:
-        type: currency
-        required: false
-      effective_date:
-        type: date
-
-    # 2.1.2 Return Type (Optional)
-    # If omitted, returns void or any.
-    result:
-      type: object 
+  mark_paid:
+    type: record           # Appears on a specific row
+    label: Mark as Paid
+    icon: standard:money
+    confirm_text: "Are you sure? This will trigger a receipt email."
+    params:                # Form Input Schema
+      note:
+        type: textarea
+        label: Payment Note
+      method:
+        type: select
+        options: [cash, card, transfer]
 ```
 
-### 2.2 Action Properties
+### Step 2: Implement in TypeScript
 
-| Property | Type | Description |
-| :--- | :--- | :--- |
-| `label` | string | Display name (for UI buttons). |
-| `description` | string | Help text. |
-| `params` | Record<string, FieldConfig> | Schema for input arguments. Supports validation. |
-| `result` | FieldType \| Object | Return type definition. |
-| `roles` | string[] | (Optional) Restrict execution to specific roles. |
-
-## 3. Implementing Action Logic
-
-Action handlers are TypeScript functions registered alongside the object.
-Similar to Triggers, expected convention is `*.actions.ts`.
-
-### 3.1 Handler Signature
+Use the `ActionDefinition` type for full type safety, including inputs.
 
 ```typescript
-// Registering action handler
-db.registerAction('contracts', 'terminate', async (ctx: ActionContext) => {
-    const { id, params } = ctx;
-    
-    // 1. Validate Business Logic
-    // Access repository via db or generic find
-    // ...
-    
-    return { success: true };
-});
-```
+// invoice.action.ts
+import { ActionDefinition } from '@objectql/types';
+import { Invoice } from './types';
 
-### 3.2 Invocation
+interface PayInput {
+    note?: string;
+    method: 'cash' | 'card' | 'transfer';
+}
 
-You can execute actions using the Repository instance:
+export const mark_paid: ActionDefinition<Invoice, PayInput> = {
+    handler: async ({ id, input, api, user }) => {
+        // 1. Validate
+        const invoice = await api.findOne('invoice', id);
+        if (invoice.status === 'Paid') throw new Error("Already paid");
 
-```typescript
-const result = await db.object('contracts').execute('terminate', 'contract_123', {
-    reason: 'Client request',
-    effective_date: '2023-12-31'
-});
-```
-        type: 'penalty'
-      });
+        // 2. Execute Logic
+        await api.update('invoice', id, {
+            status: 'Paid',
+            payment_method: input.method,
+            payment_note: input.note,
+            paid_by: user.id
+        });
+
+        // 3. Return a result (optional)
+        return { success: true };
     }
-
-    // 4. Return Result
-    return { success: true, terminated_at: new Date() };
-  }
-});
+};
 ```
 
-### 3.2 Context & Arguments
+## 2. Global vs Record Actions
 
-The handler receives a context object:
+*   **Record Actions (`type: record`)**:
+    *   **Context**: Receives a specific `id`.
+    *   **UI**: Rendered as buttons on a Detail Page or List Item.
+    *   **Example**: Approve, Convert, Print.
 
-| Property | Type | Description |
-| :--- | :--- | :--- |
-| `ctx` | `ObjectQLContext` | The current user session and transaction scope. |
-| `id` | `string \| undefined` | The record ID. **Undefined** if the action is static (Object-level). |
-| `params` | `any` | The validated input arguments matching the YAML `params` definition. |
+*   **Global Actions (`type: global`)**:
+    *   **Context**: No `id`. Operates on the collection or system.
+    *   **UI**: Rendered as buttons on the List View toolbar.
+    *   **Example**: Import CSV, Sync All, Generate Report.
 
-## 4. Invoking Actions
+## 3. Schema Reuse
 
-### 4.1 Server-Side (Node.js)
+The best part of ObjectQL Actions is that the `params` definition reuses the standard **Field Schema**.
 
-```typescript
-// Call an action on a specific record instance
-const result = await ctx.object('contracts').call('terminate', 'c-100', {
-  reason: "Breach of SLA",
-  penalty_amount: 500
-});
-```
+This means you can use:
+*   `type: lookup` to pick a related User.
+*   `type: file` to upload an attachment for the action.
+*   `required: true` to enforce inputs.
 
-### 4.2 API Request (REST)
-
-**Record Actions (Bound to Instance)**
-
-**POST** `/api/v1/object/:objectName/:recordId/:actionName`
-
-```json
-// POST /api/v1/object/contracts/c-100/terminate
-{
-  "reason": "Customer Request"
-}
-```
-
-**Object Actions (Static / Collection Level)**
-
-Use this for bulk operations, imports, or creating generalized records.
-
-**POST** `/api/v1/object/:objectName/:actionName`
-
-```json
-// POST /api/v1/object/contracts/calculate_forecast
-{
-  "year": 2024
-}
-```
-
-## 5. Security & Validation
-
-### 5.1 Parameter Validation
-The engine automatically validates `params` against the metadata definition (required fields, types) *before* executing the handler.
-
-### 5.2 Permissions
-*   **Object Level:** User must have `allowRead` access to the object.
-*   **Action Level:** If `roles` property is defined in YAML, only listed roles can execute.
-*   **Record Level:** If `id` is provided, standard Record Level Security (RLS) applies to fetching the record context.
+Frontend frameworks can render an "Action Form" automatically using the same component used for regular Record Create/Edit forms.

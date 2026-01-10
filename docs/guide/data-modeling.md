@@ -1,80 +1,99 @@
 # Data Modeling Guide
 
-Modeling your business data is the first step in building an ObjectQL application. This guide introduces the core concepts.
+Data modeling in ObjectQL is **Metadata-First**. You define your application's schema using `*.object.yml` files (or JSON), and ObjectQL handles validation, database mapping, and type generation.
 
-## 1. Objects
+## 1. The Object Definition
 
-An **Object** is like a database table. It represents a business entity, such as a Customer, Order, or Product.
+Each file represents one business entity. By convention, name the file `[object_name].object.yml`.
 
 ```yaml
-# customer.object.yml
-name: customer
-label: Customer
-icon: user
-description: Stores customer information.
+# objects/product.object.yml
+name: product
+label: Product
+description: "Catalog items for sale"
+icon: standard:product
+
 fields:
   name:
     type: text
-    label: Full Name
     required: true
+    label: Product Name
+  
+  price:
+    type: currency
+    scale: 2
+    label: Price
+    
+  category:
+    type: select
+    options:
+      - electronics
+      - furniture
+      - clothing
 ```
 
-## 2. Fields
+## 2. Fields & Relationships
 
-Fields store the data attributes for an object. ObjectQL provides a rich set of field types.
+ObjectQL supports rich field types that automate UI rendering and validation.
 
-### 2.1 Basic Types
-*   **Text & Area**: `text`, `textarea`, `markdown`, `html`
+### Core Types
+*   **Text**: `text`, `textarea`, `markdown`, `html`
 *   **Numbers**: `number`, `currency`, `percent`
-*   **Switch**: `boolean` (checkbox)
-*   **Date**: `date`, `datetime`, `time`
-*   **System**: `password`, `auto_number`
+*   **Flags**: `boolean`
+*   **Media**: `image`, `file`, `avatar`
 
-### 2.2 Format Types
-These types provide automatic validation and formatted display.
-*   **Email** (`email`): Validates email addresses.
-*   **Phone** (`phone`): Stores phone numbers.
-*   **URL** (`url`): Validates web links.
+### Relationships
+*   **Lookup**: A loose foreign key. Can be optional.
+    ```yaml
+    created_by: { type: lookup, reference_to: user }
+    ```
+*   **Master-Detail**: A strong parent-child bond. Deleting the parent cascades to the child.
+    ```yaml
+    order_id: { type: master_detail, reference_to: order }
+    ```
 
-### 2.3 Media & Files
-*   **File** (`file`): Upload generic documents.
-*   **Image** (`image`): Upload pictures with preview support.
-*   **Avatar** (`avatar`): User profile pictures.
+### Specialized Types
+*   **Vector**: Stores embeddings (arrays of floats) for AI search.
+    ```yaml
+    embedding: { type: vector, dimension: 1536, index: true }
+    ```
 
-*Note: You can allow multiple files/images by setting `multiple: true`.*
+## 3. Indexes & Constraints
 
-### 2.4 Location
-*   **Location** (`location`): Stores Latitude and Longitude. Useful for maps.
+Optimize query performance and ensure data integrity.
 
-### 2.5 Calculations
-*   **Formula**: Calculate values automatically based on other fields.
-    *   Example: `Total` = `Price` * `Quantity`
-*   **Summary**: Aggregate data from child records (e.g., Total Order Amount for a Customer).
-
-## 3. Relationships
-
-Linking objects together is powerful.
-
-*   **Lookup**: A simple link to another object. (e.g., An Order looks up a Customer).
-*   **Master-Detail**: A strong parent-child relationship. If the parent is deleted, children are deleted.
+### Field-Level Shortcuts
+Use these for simple, single-column definitions.
 
 ```yaml
-# order.object.yml
 fields:
-  customer:
-    type: lookup
-    reference_to: customer
-    label: Customer
+  sku:
+    type: text
+    unique: true  # Enforce uniqueness
+  
+  status:
+    type: select
+    index: true   # Speed up filters
 ```
 
-## 4. Attributes
+### Composite Indexes
+Define these at the root of your object file for multi-column optimizations (e.g., sorting by Date within a Category).
 
-You can enforce rules on your data using attributes:
+```yaml
+indexes:
+  category_date_idx:
+    fields: [category, created_at]
+  
+  unique_product_variant:
+    fields: [product_id, color, size]
+    unique: true
+```
 
-*   `required`: Cannot be empty.
-*   `unique`: Must be unique in the whole table.
-*   `min`, `max`: Range validation for numbers.
-*   `defaultValue`: Automatic initial value.
-*   `hidden`: Hide from standard UI.
-*   `readonly`: Prevent editing in UI.
+## 4. Internationalization (i18n)
+
+ObjectQL adopts a "clean schema, external translation" philosophy.
+
+*   **Schema**: Keep `*.object.yml` clean and technical (usually English keys/labels).
+*   **Metadata Translations**: Store UI labels in `i18n/[lang]/[object].json`.
+*   **Data Translations**: If you need to translate record content (like a Product Name), we recommend modeling it explicitly (e.g., a `ProductTranslation` table) rather than complicating the core column types.
 
