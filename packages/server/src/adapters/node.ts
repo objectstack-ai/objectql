@@ -2,6 +2,7 @@ import { IObjectQL } from '@objectql/types';
 import { ObjectQLServer } from '../server';
 import { ObjectQLRequest } from '../types';
 import { IncomingMessage, ServerResponse } from 'http';
+import { generateOpenAPI } from '../openapi';
 
 /**
  * Creates a standard Node.js HTTP request handler.
@@ -11,6 +12,15 @@ export function createNodeHandler(app: IObjectQL) {
 
 
     return async (req: IncomingMessage & { body?: any }, res: ServerResponse) => {
+        // Handle OpenAPI spec request
+        if (req.method === 'GET' && req.url?.endsWith('/openapi.json')) {
+            const spec = generateOpenAPI(app);
+            res.setHeader('Content-Type', 'application/json');
+            res.statusCode = 200;
+            res.end(JSON.stringify(spec));
+            return;
+        }
+
         if (req.method !== 'POST') {
             res.statusCode = 405;
             res.end('Method Not Allowed');
