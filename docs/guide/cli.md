@@ -67,7 +67,86 @@ objectql> await projects.create({ name: 'New API' })
 { id: 10, name: 'New API', ... }
 ```
 
-### 2.3 `migration` (Coming Soon)
+### 2.3 `console` (Visual Database Browser)
+
+Starts a terminal-based visual interface for browsing and managing your database tables. This provides an alternative to the REPL for users who prefer a graphical interface.
+
+**Prerequisites:**
+
+You must have an `objectql.config.ts` or `objectql.config.js` file in your project root that exports your configured `ObjectQL` instance (default export or named export `app`).
+
+**Usage:**
+
+```bash
+npx objectql console
+# or with alias
+npx objectql c
+
+# With custom config file
+npx objectql console --config path/to/objectql.config.ts
+```
+
+**Features:**
+*   **Split-pane Interface:** Object list on the left, data table on the right
+*   **Pagination:** Navigate through large datasets (20 records per page)
+*   **Record Detail View:** View full record details in an overlay
+*   **Keyboard Navigation:** Intuitive keyboard shortcuts
+*   **Help System:** Built-in help screen (press `?`)
+
+**Keyboard Shortcuts:**
+
+| Key | Action |
+| :--- | :--- |
+| `↑` / `↓`, `j` / `k` | Navigate up/down |
+| `Tab` | Switch between panels |
+| `Enter` | View record detail |
+| `Escape` | Close detail view |
+| `n` | Next page |
+| `p` | Previous page |
+| `r` | Refresh data |
+| `?`, `h` | Show help |
+| `q`, `Ctrl+C` | Quit |
+
+**Example Usage:**
+
+```bash
+# Start the console
+npm run console
+
+# Use arrow keys to select an object (e.g., "projects")
+# Use arrow keys to browse records
+# Press Enter to view a record in detail
+# Press Escape to return to the list
+# Press 'n' to go to the next page
+# Press 'q' to quit
+```
+
+For more details, see the [Visual Console Guide](../console.md).
+
+### 2.4 `serve` (Development Server)
+
+Starts a development HTTP server with your ObjectQL instance, allowing you to test API calls.
+
+**Usage:**
+
+```bash
+npx objectql serve [options]
+```
+
+**Options:**
+
+| Option | Alias | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `--port` | `-p` | `3000` | Port to listen on |
+| `--dir` | `-d` | `.` | Directory containing schema files |
+
+**Example:**
+
+```bash
+npx objectql serve --port 4000 --dir ./src
+```
+
+### 2.5 `migration` (Coming Soon)
 
 Future versions will include migration commands to sync your YAML schema with the database.
 

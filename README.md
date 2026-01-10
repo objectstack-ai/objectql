@@ -169,10 +169,11 @@ See [Visual Reporting Guide](./docs/guide/visual-reporting.md) for complete docu
 
 ## 🛣 Roadmap
 
-* [ ] **Phase 1: Core Protocol:** Define stable `UnifiedQuery` types and AST parser.
-* [ ] **Phase 2: Mongo Driver:** Implement full CRUD and Aggregation support.
-* [ ] **Phase 3: SQL Driver:** Implement the "Hybrid Storage" strategy (Relational Columns + JSONB).
-* [ ] **Phase 4: CLI Tools:** Schema synchronization and TypeScript type generation (`objectql generate`).
+* [x] **Phase 1: Core Protocol:** Define stable `UnifiedQuery` types and AST parser.
+* [x] **Phase 2: Mongo Driver:** Implement full CRUD and Aggregation support.
+* [x] **Phase 3: SQL Driver:** Implement the "Hybrid Storage" strategy (Relational Columns + JSONB).
+* [x] **Phase 4: CLI Tools:** Schema synchronization and TypeScript type generation (`objectql generate`).
+* [x] **Phase 4.5: Visual Console:** Terminal-based visual interface for database operations (`objectql console`).
 * [ ] **Phase 5: AI Integration:** Natural language queries, schema generation, and AI-powered analytics.
 
 ## 🤖 AI Capabilities

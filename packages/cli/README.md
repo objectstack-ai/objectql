@@ -43,3 +43,30 @@ Start an interactive shell to query your data.
 ```bash
 objectql repl
 ```
+
+### `console` (alias: `c`)
+
+Start a visual terminal-based UI to browse and manage database tables. Provides an intuitive alternative to the REPL.
+
+```bash
+objectql console
+
+# With custom config
+objectql console --config ./my-config.ts
+```
+
+**Features:**
+- Split-pane interface (object list + data table)
+- Pagination support (20 records per page)
+- Record detail view
+- Keyboard navigation (↑↓, Tab, Enter, n/p for pagination)
+- Built-in help (press `?`)
+
+**Keyboard Shortcuts:**
+- `↑/↓` or `j/k` - Navigate
+- `Tab` - Switch panels
+- `Enter` - View detail
+- `n/p` - Next/Previous page
+- `r` - Refresh
+- `q` - Quit
+- `?` - Help
