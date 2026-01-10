@@ -14,6 +14,7 @@ ObjectQL connects to your database via drivers.
 *   [**MongoDB**](./drivers/mongo.md): MongoDB support.
 
 ## 3. Building Apps
+*   [**Server Integration**](./server-integration.md): Running ObjectQL on Node, Express, or Next.js.
 *   [**Hooks**](./logic-hooks.md): Writing triggers (before/after create, update, delete).
 *   [**Custom Actions**](./logic-actions.md): Defining custom RPC endpoints.
 *   [**AI Applications**](./ai.md): Building AI-powered apps.

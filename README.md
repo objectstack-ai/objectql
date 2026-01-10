@@ -44,7 +44,9 @@ It is **not** an ORM, but a high-level data protocol designed for AI agents, low
 * The core logic is completely decoupled from storage drivers.
 * Easily extensible to support other data sources (e.g., REST APIs, GraphQL, SQLite).
 
-
+* **🌐 Universal Server:**
+* Built-in HTTP adapter (`@objectql/server`) to run anywhere (Node, Express, Next.js).
+* Standardized JSON API for CRUD and Actions.
 
 ## 📦 Installation
 
