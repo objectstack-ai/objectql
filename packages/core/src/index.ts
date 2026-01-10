@@ -6,6 +6,7 @@ import {
     ObjectQLContextOptions, 
     IObjectQL, 
     ObjectQLConfig,
+    ObjectQLPlugin,
     HookName,
     HookHandler,
     HookContext,
@@ -22,6 +23,7 @@ export class ObjectQL implements IObjectQL {
     private datasources: Record<string, Driver> = {};
     private hooks: Record<string, Array<{ objectName: string, handler: HookHandler }>> = {};
     private actions: Record<string, ActionHandler> = {};
+    private pluginsList: ObjectQLPlugin[] = [];
 
     constructor(config: ObjectQLConfig) {
         this.metadata = config.registry || new MetadataRegistry();
@@ -32,24 +34,46 @@ export class ObjectQL implements IObjectQL {
             this.loadDriverFromConnection(config.connection);
         }
 
-        if (config.source) {
-            this.loader.load(config.source);
-        }
-
-        if (config.objects) {
-            for (const [key, obj] of Object.entries(config.objects)) {
-                this.registerObject(obj);
-            }
-        }
+        // 1. Load Presets/Packages first (Base Layer)
         if (config.packages) {
             for (const name of config.packages) {
                 this.addPackage(name);
+            }
+        }
+        if (config.presets) {
+            for (const name of config.presets) {
+                this.addPackage(name);
+            }
+        }
+        
+        if (config.plugins) {
+            for (const plugin of config.plugins) {
+                this.use(plugin);
+            }
+        }
+
+        // 2. Load Local Sources (Application Layer - can override presets)
+        if (config.source) {
+            const sources = Array.isArray(config.source) ? config.source : [config.source];
+            for (const src of sources) {
+                this.loader.load(src);
+            }
+        }
+
+        // 3. Load In-Memory Objects (Dynamic Layer - highest priority)
+        if (config.objects) {
+            for (const [key, obj] of Object.entries(config.objects)) {
+                this.registerObject(obj);
             }
         }
     }
 
     addPackage(name: string) {
         this.loader.loadPackage(name);
+    }
+
+    use(plugin: ObjectQLPlugin) {
+        this.pluginsList.push(plugin);
     }
 
     removePackage(name: string) {
@@ -172,6 +196,12 @@ export class ObjectQL implements IObjectQL {
     }
 
     async init() {
+        // 0. Init Plugins
+        for (const plugin of this.pluginsList) {
+            console.log(`Initializing plugin '${plugin.name}'...`);
+            await plugin.setup(this);
+        }
+
         const objects = this.metadata.list<ObjectConfig>('object');
         
         // 1. Init Drivers (e.g. Sync Schema)

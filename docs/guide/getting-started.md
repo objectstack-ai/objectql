@@ -39,38 +39,36 @@ fields:
     default: false
 ```
 
-### 2. Initialize the Engine
+### 2. Configure the Engine
+
+Updated in v0.2: You can now use a simple connection string.
 
 ```typescript
 import { ObjectQL } from '@objectql/core';
-import { KnexDriver } from '@objectql/driver-knex';
+import * as path from 'path';
 
 async function main() {
-    // 1. Configure the engine
-    const app = new ObjectQL({
-        datasources: {
-            default: new KnexDriver({
-                client: 'pg',
-                connection: 'postgres://user:pass@localhost:5432/mydb'
-            })
-        },
-        objects: {
-            // In a real app, you can load these from a directory using app.loadFromDirectory()
-            todo: {
-                name: 'todo',
-                fields: {
-                    title: { type: 'text' },
-                    completed: { type: 'boolean' }
-                }
-            }
-        }
+    const db = new ObjectQL({
+        // 1. Connection String (Protocol://Path)
+        // Detects 'sqlite', 'postgres', 'mongodb' automatically
+        connection: 'sqlite://data.db', 
+        
+        // 2. Schema Source
+        // Where your *.object.yml files are located
+        source: ['src/objects'],
+
+        // 3. Load Presets (Optional)
+        // Load standard objects from npm packages
+        presets: ['@objectql/preset-auth']
     });
 
-    await app.init();
-
-    // 2. Create Data (CRUD)
+    await db.init();
+    
+    // ...
+    
+    // 3. Create Data (CRUD)
     // Create a context (representing a user request)
-    const ctx = app.createContext({}); 
+    const ctx = db.createContext({}); 
     const todoRepo = ctx.object('todo');
 
     const newTask = await todoRepo.create({
@@ -79,7 +77,7 @@ async function main() {
     });
     console.log('Created:', newTask);
 
-    // 3. Query Data
+    // 4. Query Data
     const tasks = await todoRepo.find({
         filters: [['completed', '=', false]]
     });

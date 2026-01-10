@@ -26,6 +26,11 @@ export interface IObjectRepository {
     execute(actionName: string, id: string | number | undefined, params: any): Promise<any>;
 }
 
+export interface ObjectQLPlugin {
+    name: string;
+    setup(app: IObjectQL): void | Promise<void>;
+}
+
 export interface ObjectQLConfig {
     registry?: MetadataRegistry;
     datasources?: Record<string, Driver>;
@@ -35,11 +40,22 @@ export interface ObjectQLConfig {
      */
     connection?: string;
     /**
-     * Path to the directory containing schema files (*.object.yml).
+     * Path(s) to the directory containing schema files (*.object.yml).
      */
-    source?: string;
+    source?: string | string[];
     objects?: Record<string, ObjectConfig>;
+    /**
+     * @deprecated Use 'presets' instead.
+     */
     packages?: string[];
+    /**
+     * List of npm packages or presets to load.
+     */
+    presets?: string[];
+    /**
+     * List of plugins to load.
+     */
+    plugins?: ObjectQLPlugin[];
 }
 
 export interface IObjectQL {
