@@ -1,4 +1,4 @@
-# AI Integration
+# AI-Native Development
 
 ObjectQL resides at the intersection of Data and Artificial Intelligence. It is designed to be "AI-Native" in two distinct ways:
 

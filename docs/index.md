@@ -3,53 +3,59 @@ layout: home
 
 hero:
   name: ObjectQL
-  text: The Data Layer for the AI Era
-  tagline: A universal, protocol-first ORM. Write logic once in JSON, run anywhere. Designed for LLMs, Agents, and Low-Code.
+  text: The Backend for the AI Coding Era
+  tagline: Traditional ORMs were built for humans typing in IDEs. ObjectQL is a structured protocol designed for LLMs to generate perfect, hallucination-free backend logic.
   image:
     src: /logo.svg
     alt: ObjectQL Logo
   actions:
     - theme: brand
-      text: Quick Start
-      link: /guide/getting-started
+      text: 🤖 Setup AI Coding Assistant
+      link: /ai/coding-assistant
     - theme: alt
-      text: AI Integration
-      link: /ai/
+      text: 🚀 Quick Start
+      link: /guide/getting-started
 
 features:
-  - icon: 🤖
-    title: AI-Native Protocol
-    details: Queries are defined as strict JSON ASTs, not strings. This eliminates SQL injection and makes it trivial for LLMs to generate correct, hallucination-free queries.
-  - icon: 🚀
-    title: Write Once, Run Anywhere
-    details: Define your business objects in YAML/JSON. Run seamlessly on MongoDB for flexibility or PostgreSQL for strict consistency without changing a line of code.
-  - icon: 🧩
-    title: Logic as Data
-    details: Actions (RPC) and Hooks (Triggers) are first-class citizens of the protocol, allowing you to model not just data, but behavior and state transitions.
+  - icon: 🧠
+    title: LLM-Native Protocol
+    details: Stop asking AI to write SQL or complex Method Chains. ObjectQL uses strict JSON ASTs for logic, reducing hallucinations and injection risks to near zero.
+  - icon: 📄
+    title: Metadata-Driven
+    details: Define your Data Models, Hooks, and Actions in pure YAML/JSON. It's the perfect context format for RAG and Long-term Memory for Agents.
+  - icon: 🔌
+    title: Universal Runtime
+    details: One protocol running on PostgreSQL, MongoDB, or SQLite. Switch underlying engines without rewriting a single line of business logic.
   - icon: ⚡
-    title: Enterprise Ready
-    details: Built-in support for Multi-tenancy, Row Level Security (RLS), and RBAC. Strict TypeScript typings ensuring reliability from day one.
+    title: Federated & Distributed
+    details: Seamlessly aggregate data from local databases and remote microservices into a single unified graph. The "GraphQL Federation" for backend logic.
 ---
 
-## Why ObjectQL?
+## The Shift to AI Programming
 
-We are moving from an era of **Hand-written Code** to **AI-Generated Logic**. 
+We believe the future of software development isn't about humans writing better code—it's about **Humans architecting systems that AI can implement**.
 
-Traditional ORMs (Sequelize, TypeORM, Prisma) were designed for humans to write code in IDEs. They rely on complex class inheritance, string template interpolation, and language-specific DSLs.
+To achieve this, we need a backend technology that speaks the same language as the AI.
 
-**ObjectQL is designed for Agents.**
+### Why not just use TypeORM/Prisma?
 
-### The Difference
+Traditional ORMs are designed for *human ergonomics*. They use complex fluent APIs, generic types, and string templates. For an LLM, these are "fuzzy" targets that lead to:
+*   **Hallucinations**: Inventing methods that don't exist.
+*   **Context Window Bloat**: Needing huge type definition files to understand the schema.
+*   **Injection Risks**: Generating unsafe raw SQL strings.
 
-| | Traditional ORM | ObjectQL |
-| :--- | :--- | :--- |
-| **Schema Definition** | TypeScript/Python Classes | **JSON / YAML Metadata** |
-| **Query Format** | Method Chaining (`.where(...)`) | **JSON AST** (`{ filters: [...] }`) |
-| **AI Compatibility** | Hard (requires parsing code) | **Native** (LLMs speak JSON) |
-| **Portability** | Language Bound (Node/Python) | **Universal Protocol** |
+### The ObjectQL Advantage
 
-## Get Started
+ObjectQL abstracts the entire backend into a **Standardized Protocol**:
 
-*   **[Installation & Hello World](/guide/getting-started)**: Build your first API in 5 minutes.
-*   **[Building AI Apps](/ai/building-apps)**: Learn how to connect GPT-4 to your database safely.
-*   **[Core Concepts](/guide/data-modeling)**: Define Objects, Fields, and Relationships.
+1.  **Schema is Data**: `user.object.yml` is easier for AI to read/write than `class User extends Entity`.
+2.  **Logic is Data**: Queries are ASTs like `{ op: 'find', filters: [['age', '>', 18]] }`. 100% deterministic.
+3.  **Self-Describing**: The runtime can introspect any ObjectQL endpoint and explain it to an Agent instantly.
+
+Start building for the future today.
+
+## Next Steps
+
+*   **[🤖 Configure your AI Assistant](/ai/coding-assistant)**: Get the System Prompts to turn Cursor/Copilot into an ObjectQL expert.
+*   **[🔌 Building AI Agents](/ai/building-apps)**: Use ObjectQL as the tool interface and memory for your autonomous agents.
+*   **[📚 Developer Guide](/guide/getting-started)**: The classic manual for human developers.

@@ -15,7 +15,7 @@ export default defineConfig({
     // Top Navigation
     nav: [
       { text: 'Guide', link: '/guide/' },
-      { text: 'AI', link: '/ai/' },
+      { text: 'AI-Native', link: '/ai/' },
       { text: 'Protocol', link: '/spec/' },
     ],
 
@@ -24,7 +24,7 @@ export default defineConfig({
       // Sidebar for AI section
       '/ai/': [
          {
-           text: 'AI Integration',
+           text: 'AI-Native Ecosystem',
            items: [
              { text: 'Overview', link: '/ai/' },
              { text: 'Building AI Apps', link: '/ai/building-apps' },
@@ -36,30 +36,36 @@ export default defineConfig({
       // Sidebar for Guide section
       '/guide/': [
         {
-          text: 'Core Concepts',
+          text: 'Start Here',
           items: [
             { text: 'Introduction', link: '/guide/' },
-            { text: 'Architecture', link: '/guide/architecture' },
             { text: 'Quick Start', link: '/guide/getting-started' },
-            { text: 'Configuration', link: '/guide/configuration' },
+            { text: '🤖 AI Coding Setup', link: '/ai/coding-assistant' },
+          ]
+        },
+        {
+          text: 'Core Fundamentals',
+          items: [
             { text: 'Data Modeling', link: '/guide/data-modeling' },
+            { text: 'Querying Data', link: '/guide/querying' },
+            { text: 'Business Logic', link: '/guide/logic-hooks' },
           ]
         },
         {
-          text: 'Database Drivers',
+          text: 'Advanced Features',
           items: [
-            { text: 'Overview', link: '/guide/drivers/' },
-            { text: 'SQL (Knex)', link: '/guide/drivers/sql' },
-            { text: 'MongoDB', link: '/guide/drivers/mongo' },
-          ]
-        },
-        {
-          text: 'Building Apps',
-          items: [
-            { text: 'Writing Hooks', link: '/guide/logic-hooks' },
-            { text: 'Custom Actions', link: '/guide/logic-actions' },
+            { text: 'Microservices & Federation', link: '/guide/microservices' },
+            { text: 'Custom Actions (RPC)', link: '/guide/logic-actions' },
             { text: 'Plugin System', link: '/guide/plugins' },
-            { text: 'CLI Tools', link: '/guide/cli' }
+          ]
+        },
+        {
+          text: 'Integration & Deployment',
+          items: [
+            { text: 'Server Integration', link: '/guide/server-integration' },
+            { text: 'Database Drivers', link: '/guide/drivers/' },
+            { text: 'CLI Tools', link: '/guide/cli' },
+            { text: 'Configuration', link: '/guide/configuration' },
           ]
         }
       ],
