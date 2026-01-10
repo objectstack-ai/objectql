@@ -48,17 +48,55 @@ export interface UnifiedQuery {
   
   // === 3. Selection (WHERE) ===
   // Recursive AST array structure
-  filters?: Array<
-    [string, Operator, any] | // Leaf: Criterion
-    'and' | 'or' |            // Branch: Logic Operator
-    UnifiedQuery['filters']   // Branch: Nested Group (Recursive)
-  >;
+  filters?: Array<any>; // See Section 3 for detailed syntax
   
   // === 4. Ordering & Pagination ===
   // Format: [['created_at', 'desc'], ['name', 'asc']]
   sort?: Array<[string, 'asc' | 'desc']>;
   top?: number;  // LIMIT
   skip?: number; // OFFSET
+}
+```
+
+## 3. Filter Syntax (The AST)
+
+The `filters` property is a recursive array structure that eliminates the need for SQL strings.
+
+### 3.1 Single Criterion
+A criterion is a tuple of `[Field, Operator, Value]`.
+
+```json
+["status", "=", "open"]
+```
+
+### 3.2 Basic Logic (AND/OR)
+Combine criteria using boolean operators (`and`, `or`).
+
+```json
+[
+  ["status", "=", "open"],
+  "and",
+  ["priority", ">", 3]
+]
+```
+
+### 3.3 Nested Logic (Groups)
+Create complex logic by nesting arrays. This mimics parentheses `(...)` in SQL.
+
+**SQL:** `WHERE status = 'open' AND (owner = 'me' OR priority = 'critical')`
+
+**ObjectQL:**
+```json
+[
+  ["status", "=", "open"],
+  "and",
+  [
+    ["owner", "=", "me"],
+    "or",
+    ["priority", "=", "critical"]
+  ]
+]
+```
 
   // === 5. Graph Resolution (JOIN / $lookup) ===
   expand?: Record<string, {

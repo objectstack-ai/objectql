@@ -184,12 +184,51 @@ Delete multiple records by filter.
 
 ---
 
-### 9. Custom Actions
-Trigger a defined action on a record.
+### 9. Custom Actions (RPC)
+Execute a pre-defined business logic action.
 
-**request**
-`POST /:objectName/:id/:actionName`
+#### 9.1 Record Action
+Action performed on a specific record instance.
 
-**Body**
-Parameters for the action.
+**Request**
+`POST /:objectName/:id/actions/:actionName`
+
+**Body** (JSON)
+Input parameters defined in the action metadata (`params`).
+
+**Example**
+```bash
+# Submit contract 123 for approval
+curl -X POST http://localhost:3000/api/contracts/123/actions/submit_approval \
+  -H "Content-Type: application/json" \
+  -d '{"comment": "Looks good"}'
+```
+
+#### 9.2 Object Action
+Action performed on the object type (static method).
+
+**Request**
+`POST /:objectName/actions/:actionName`
+
+**Example**
+```bash
+# Import data from external source
+curl -X POST http://localhost:3000/api/products/actions/sync_from_erp
+```
+
+---
+
+## Error Handling
+
+The API returns standard HTTP status codes.
+
+| Code | Meaning | Description |
+| :--- | :--- | :--- |
+| `200` | OK | Success. |
+| `201` | Created | Record successfully created. |
+| `400` | Bad Request | Validation failed or invalid JSON. |
+| `401` | Unauthorized | Missing or invalid authentication token. |
+| `403` | Forbidden | Authenticated but insufficient permissions (RBAC). |
+| `404` | Not Found | Object or Record ID not found. |
+| `500` | Internal Server Error | Unhandled server exception. |
 
