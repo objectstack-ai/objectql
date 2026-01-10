@@ -81,15 +81,76 @@ await app.object('user').delete({
 });
 ```
 
-## Relationships (Joins)
+## Relationships (Joins & Expand)
 
-ObjectQL handles joins automatically via the `expand` option or dot-notation in `fields` (depending on the driver implementation).
+ObjectQL handles relationships distinctively. Instead of SQL `JOIN` keywords, we use the `expand` property to hydrate related records. This ensures compatibility across SQL and NoSQL drivers (where joins might be separate queries).
+
+### 1. The `expand` Syntax
+
+To get related data, define the relationship in `expand`.
 
 ```typescript
-// Fetch orders and expand the related 'user'
-const orders = await app.object('order').find({
-    fields: ['id', 'total', 'user.name', 'user.email']
+// Fetch tasks and include project details
+const tasks = await app.object('task').find({
+    fields: ['name', 'status', 'project'], // 'project' key returns the ID
+    expand: {
+        project: {
+            fields: ['name', 'start_date', 'owner']
+        }
+    }
 });
+/* Result:
+{
+    name: "Fix Bug",
+    project: {
+        name: "Q1 Web App",
+        owner: "Alice"
+    }
+}
+*/
+```
+
+### 2. Nested Expansion
+
+You can nest expansions arbitrarily deep.
+
+```typescript
+expand: {
+    project: {
+        fields: ['name'],
+        expand: {
+            // Expand the 'manager' field on the 'project' object
+            manager: {
+                fields: ['name', 'email']
+            }
+        }
+    }
+}
+```
+
+### 3. Filtering on Related Records
+
+There are two ways to filter based on relationships:
+
+**A. Filter the Root (Dot Notation)**
+Find tasks where the *project's status* is active.
+*(Note: Requires a driver that supports SQL Joins)*
+```typescript
+filters: [
+    ['project.status', '=', 'active']
+]
+```
+
+**B. Filter the Expanded List**
+Find projects, but only include *completed* tasks in the expansion.
+```typescript
+app.object('project').find({
+    expand: {
+        tasks: {
+            filters: [['status', '=', 'completed']]
+        }
+    }
+})
 ```
 
 ## Why JSON?
