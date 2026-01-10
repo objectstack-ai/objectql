@@ -1,5 +1,12 @@
 # @example/integrated-app
 
+## 1.1.1
+
+### Patch Changes
+
+- @example/audit-plugin@0.2.0
+- @example/basic-app@4.0.0
+
 ## 1.1.0
 
 ### Minor Changes

@@ -1,5 +1,14 @@
 # @objectql/core
 
+## 1.3.0
+
+### Minor Changes
+
+- Refactor core architecture: split logic into modules (driver, remote, action, hook, object, plugin).
+  Rename `ObjectRegistry` to `MetadataRegistry` to support generic metadata.
+  Add `addLoader` API to support custom metadata loaders in plugins.
+  Update initialization lifecycle to allow plugins to register loaders before source scanning.
+
 ## 1.2.0
 
 ### Minor Changes
