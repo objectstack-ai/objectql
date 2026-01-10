@@ -32,6 +32,10 @@ objectql serve
 objectql serve --dir ./src/schema --port 8080
 ```
 
+The server exposes:
+*   **JSON API Endpoint**: `http://localhost:<port>/` (POST)
+*   **OpenAPI Spec**: `http://localhost:<port>/openapi.json` (GET) - Import this into Postman or Swagger UI.
+
 ### `repl` (alias: `r`)
 
 Start an interactive shell to query your data.
