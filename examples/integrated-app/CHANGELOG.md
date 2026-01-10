@@ -1,0 +1,13 @@
+# @example/integrated-app
+
+## 1.1.0
+
+### Minor Changes
+
+- 7df2977: 拆分 objectos
+
+### Patch Changes
+
+- Updated dependencies [7df2977]
+  - @example/audit-plugin@0.2.0
+  - @example/basic-app@3.0.0
