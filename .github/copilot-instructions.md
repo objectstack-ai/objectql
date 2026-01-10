@@ -20,7 +20,7 @@ We use **Turborepo** + **PNPM Workspaces**.
 | `packages/driver-mongo` | `@objectql/driver-mongo` | **Node.js** | **The Adapter** | MongoDB implementation. |
 | `packages/server` | `@objectql/server` | **Node.js** | **The Adapter** | HTTP Server Adapter for ObjectQL API. |
 | `packages/cli` | `@objectql/cli` | **Node.js** | **The Tools** | CLI for validation and migration. |
-| `packages/console` | `@objectql/console` | **Browser** | **The UI** | Web-based admin console for data management. |
+| `packages/studio` | `@objectql/studio` | **Browser** | **The UI** | Web-based admin studio for data management. |
 
 ## 3. Dependency Graph & Constraints (CRITICAL)
 

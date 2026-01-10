@@ -1,7 +1,7 @@
 {
-  "name": "@objectql/console",
+  "name": "@objectql/studio",
   "version": "1.3.1",
-  "description": "Web-based admin console for ObjectQL database management",
+  "description": "Web-based admin studio for ObjectQL database management",
   "type": "module",
   "scripts": {
     "dev": "vite",

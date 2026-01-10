@@ -1,4 +1,4 @@
-# @objectql/console
+# @objectql/studio
 
 ## 1.3.1
 

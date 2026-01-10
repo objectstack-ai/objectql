@@ -3,14 +3,14 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 /**
- * Creates a handler to serve the console UI static files.
+ * Creates a handler to serve the Studio UI static files.
  */
-export function createConsoleHandler() {
-    // Try to find the built console files
+export function createStudioHandler() {
+    // Try to find the built studio files
     const possiblePaths = [
-        path.join(__dirname, '../../console/dist'),
-        path.join(process.cwd(), 'node_modules/@objectql/console/dist'),
-        path.join(process.cwd(), 'packages/console/dist'),
+        path.join(__dirname, '../../studio/dist'),
+        path.join(process.cwd(), 'node_modules/@objectql/studio/dist'),
+        path.join(process.cwd(), 'packages/studio/dist'),
     ];
     
     let distPath: string | null = null;
@@ -23,7 +23,7 @@ export function createConsoleHandler() {
     
     return async (req: IncomingMessage, res: ServerResponse) => {
         if (!distPath) {
-            // Return placeholder page if console is not built
+            // Return placeholder page if studio is not built
             const html = getPlaceholderPage();
             res.setHeader('Content-Type', 'text/html');
             res.statusCode = 200;
@@ -31,8 +31,8 @@ export function createConsoleHandler() {
             return;
         }
         
-        // Parse the URL and remove /console prefix
-        let urlPath = (req.url || '').replace(/^\/console/, '') || '/';
+        // Parse the URL and remove /studio prefix
+        let urlPath = (req.url || '').replace(/^\/studio/, '') || '/';
         
         // Default to index.html for SPA routing
         if (urlPath === '/' || !urlPath.includes('.')) {
@@ -97,7 +97,7 @@ function getPlaceholderPage(): string {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ObjectQL Console</title>
+    <title>ObjectQL Studio</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -133,15 +133,15 @@ function getPlaceholderPage(): string {
 </head>
 <body>
     <div class="container">
-        <h1>ObjectQL Console</h1>
-        <p>Web-based admin console for database management</p>
+        <h1>ObjectQL Studio</h1>
+        <p>Web-based admin studio for database management</p>
         <div class="info">
             <p style="margin-bottom: 1rem;">
-                The console is available but needs to be built separately.
+                The studio is available but needs to be built separately.
             </p>
             <p style="font-size: 1rem;">
-                To use the full console UI, run:<br>
-                <code>cd packages/console && pnpm run build</code>
+                To use the full studio UI, run:<br>
+                <code>cd packages/studio && pnpm run build</code>
             </p>
         </div>
     </div>

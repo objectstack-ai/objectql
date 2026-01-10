@@ -5,7 +5,7 @@
   "fixed": [
     [
       "@objectql/cli",
-      "@objectql/console",
+      "@objectql/studio",
       "@objectql/core",
       "@objectql/driver-knex",
       "@objectql/driver-mongo",

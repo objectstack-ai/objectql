@@ -1,6 +1,6 @@
-# @objectql/console
+# @objectql/studio
 
-Web-based admin console for ObjectQL database management.
+Web-based admin studio for ObjectQL database management.
 
 ## Features
 
@@ -17,11 +17,16 @@ The console is typically served alongside your ObjectQL server:
 ```typescript
 import express from 'express';
 import { ObjectQL } from '@objectql/core';
-import { createNodeHandler } from '@objectql/server';
-import { serveConsole } from '@objectql/console/server';
+import { createNodeHandler, createStudioHandler } from '@objectql/server';
 
 const app = new ObjectQL({ /* ... */ });
 const server = express();
+
+// ... setup objectql ...
+
+// Serve the Studio
+server.get('/studio*', createStudioHandler());
+```
 
 // API endpoints
 server.all('/api/objectql', createNodeHandler(app));

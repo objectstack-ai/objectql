@@ -1,7 +1,7 @@
 import express from 'express';
 import { ObjectQL } from '@objectql/core';
 import { KnexDriver } from '@objectql/driver-knex';
-import { createNodeHandler, createMetadataHandler, createConsoleHandler } from '@objectql/server';
+import { createNodeHandler, createMetadataHandler, createStudioHandler } from '@objectql/server';
 import * as path from 'path';
 
 async function main() {
@@ -25,7 +25,7 @@ async function main() {
     // 3. Create Handlers
     const objectQLHandler = createNodeHandler(app);
     const metadataHandler = createMetadataHandler(app);
-    const consoleHandler = createConsoleHandler();
+    const studioHandler = createStudioHandler();
 
     // 4. Setup Express
     const server = express();
@@ -46,7 +46,7 @@ async function main() {
     // Mount handlers
     server.all('/api/objectql', objectQLHandler);
     server.all('/api/metadata*', metadataHandler);
-    server.get('/console*', consoleHandler);
+    server.get('/studio*', studioHandler);
 
     // Create some sample data
     const ctx = app.createContext({ isSystem: true });
