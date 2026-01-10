@@ -18,3 +18,4 @@ ObjectQL connects to your database via drivers.
 *   [**Custom Actions**](./logic-actions.md): Defining custom RPC endpoints.
 *   [**AI Applications**](./ai.md): Building AI-powered apps.
 
+*   [**CLI Tool**](./cli.md): Using the command line interface for codegen.

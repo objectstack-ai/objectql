@@ -245,3 +245,27 @@ Recommended strategies for content translation:
 
 
 
+
+## 6. Type Generation (CLI)
+
+To achieve strict type safety in your Hooks and Actions, you should use the Code Generation tool.
+
+### 6.1 Usage
+
+```bash
+# Generate types from *.object.yml to src/generated/
+npx objectql generate --source ./src --output ./src/generated
+```
+
+### 6.2 Using Generated Types
+
+Once generated, you can import the Interfaces directly. This ensures that your code is always in sync with your metadata.
+
+```typescript
+import { Todo } from './generated';
+
+const myTask: Todo = {
+    title: "Finish documentation", // Type-checked!
+    completed: false
+};
+```
