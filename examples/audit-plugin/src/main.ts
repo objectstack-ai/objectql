@@ -1,9 +1,9 @@
-import db from '../objectql.config';
+import app from '../objectql.config';
 
 async function main() {
-    await db.init();
+    await app.init();
     
-    const noteRepo = db.createContext({ userId: 'u001' }).object('note');
+    const noteRepo = app.createContext({ userId: 'u001' }).object('note');
 
     console.log('--- Creating Note ---');
     // Should trigger [Audit] log

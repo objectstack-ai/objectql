@@ -1,14 +1,14 @@
-import db from '../objectql.config';
+import app from '../objectql.config';
 
 async function main() {
-    await db.init();
+    await app.init();
     
     console.log('--- Objects loaded from Preset ---');
-    const objects = db.metadata.list('object');
+    const objects = app.metadata.list('object');
     console.log(objects.map(o => o.name));
     
     // We can access 'project' because it was loaded from the preset
-    const projectRepo = db.createContext({}).object('project');
+    const projectRepo = app.createContext({}).object('project');
     
     // Create a project using the preset's definition
     const project = await projectRepo.create({
