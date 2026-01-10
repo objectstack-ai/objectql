@@ -1,43 +1,27 @@
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
-import './App.css';
-import ObjectList from './components/ObjectList';
-import DataGrid from './components/DataGrid';
-import RecordDetail from './components/RecordDetail';
-import SchemaInspector from './components/SchemaInspector';
+import { BrowserRouter, Routes, Route, useParams } from 'react-router-dom';
+import { Sidebar } from '@/components/Sidebar';
+import { Dashboard } from '@/pages/Dashboard';
+import { ObjectView } from '@/pages/ObjectView';
+import './index.css';
+
+// Wrapper to extract params
+function ObjectViewWrapper() {
+  const { name } = useParams();
+  if (!name) return null;
+  return <ObjectView objectName={name} />;
+}
 
 function App() {
   return (
-    <BrowserRouter basename="/console">
-      <div className="app">
-        <header className="app-header">
-          <div className="container">
-            <h1 className="logo">
-              <Link to="/">ObjectQL Console</Link>
-            </h1>
-            <nav className="nav">
-              <Link to="/" className="nav-link">Objects</Link>
-              <Link to="/schema" className="nav-link">Schema</Link>
-            </nav>
-          </div>
-        </header>
-        
-        <main className="app-main">
-          <div className="container">
-            <Routes>
-              <Route path="/" element={<ObjectList />} />
-              <Route path="/object/:objectName" element={<DataGrid />} />
-              <Route path="/object/:objectName/:recordId" element={<RecordDetail />} />
-              <Route path="/schema" element={<SchemaInspector />} />
-              <Route path="/schema/:objectName" element={<SchemaInspector />} />
-            </Routes>
-          </div>
+    <BrowserRouter basename="/studio">
+      <div className="flex h-screen bg-background text-foreground overflow-hidden font-sans antialiased">
+        <Sidebar />
+        <main className="flex-1 overflow-auto bg-muted/20">
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/object/:name" element={<ObjectViewWrapper />} />
+          </Routes>
         </main>
-        
-        <footer className="app-footer">
-          <div className="container">
-            <p>ObjectQL Console v0.1.0 - Universal Database Management</p>
-          </div>
-        </footer>
       </div>
     </BrowserRouter>
   );
