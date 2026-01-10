@@ -10,11 +10,14 @@
   "scripts": {
     "codegen": "objectql generate -s src -o src",
     "build": "npm run codegen && tsc && cp src/*.yml dist/",
+    "repl": "objectql repl",
     "test": "echo \"No tests specified\" && exit 0"
   },
   "peerDependencies": {
     "@objectql/core": "workspace:*",
-    "@objectql/types": "workspace:*"
+    "@objectql/types": "workspace:*",
+    "@objectql/driver-knex": "workspace:*",
+    "sqlite3": "^5.1.7"
   },
   "devDependencies": {
     "@objectql/core": "workspace:*",

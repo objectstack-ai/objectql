@@ -38,7 +38,36 @@ npx objectql generate [options]
 npx objectql generate --source ./src/objects --output ./src/types
 ```
 
-### 2.2 `migration` (Coming Soon)
+### 2.2 `repl` (Interactive Shell)
+
+Starts an interactive terminal similar to the MongoDB shell, allowing you to directly query your database using the ObjectQL API.
+
+**Prerequisites:**
+
+You must have an `objectql.config.ts` or `objectql.config.js` file in your project root that exports your configured `ObjectQL` instance (default export or named export `app`).
+
+**Usage:**
+
+```bash
+npx objectql repl
+```
+
+**Features:**
+*   **Auto-injected Objects:** All your registered objects are available as global variables (e.g., `await tasks.find()`).
+*   **Context:** The `app` instance is available as `app`.
+*   **Sudo Access:** Commands run with system privileges by default in the REPL.
+
+**Example Session:**
+
+```javascript
+objectql> await tasks.find({ status: 'todo' })
+[ { id: 1, title: 'Fix bug', status: 'todo' } ]
+
+objectql> await projects.create({ name: 'New API' })
+{ id: 10, name: 'New API', ... }
+```
+
+### 2.3 `migration` (Coming Soon)
 
 Future versions will include migration commands to sync your YAML schema with the database.
 

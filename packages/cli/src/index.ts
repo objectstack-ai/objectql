@@ -1,5 +1,6 @@
 import { Command } from 'commander';
 import { generateTypes } from './commands/generate';
+import { startRepl } from './commands/repl';
 
 const program = new Command();
 
@@ -21,6 +22,15 @@ program
             console.error(error);
             process.exit(1);
         }
+    });
+
+program
+    .command('repl')
+    .alias('r')
+    .description('Start an interactive shell (REPL) to query the database')
+    .option('-c, --config <path>', 'Path to objectql.config.ts/js')
+    .action(async (options) => {
+        await startRepl(options.config);
     });
 
 program.parse();
