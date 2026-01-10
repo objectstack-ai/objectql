@@ -127,9 +127,39 @@ export class ObjectLoader {
     }
 
     private runPlugin(plugin: LoaderPlugin, dir: string, packageName?: string) {
+        // Enforce path conventions: 
+        // 1. Never scan node_modules (unless explicitly loaded via loadPackage which sets cwd inside it)
+        // 2. Ignore build artifacts (dist, build, out) to avoid double-loading metadata if both src and dist exist.
+        //    Note: If you want to load from 'dist', you must explicitly point the loader to it (e.g. loader.load('./dist')).
+        //    In that case, the patterns won't match relative to the CWD.
+        // Path conventions:
+        // 1. Always ignore node_modules and .git
+        const ignore = [
+            '**/node_modules/**', 
+            '**/.git/**'
+        ];
+
+        // 2. Intelligent handling of build artifacts (dist/build)
+        // If 'src' exists in the scan directory, we assume it's a Development Environment.
+        // In Dev, we ignore 'dist' to avoid duplicate loading (ts in src vs js in dist).
+        // In Production (no src), we must NOT ignore 'dist', otherwise we can't load compiled hooks/actions.
+        const srcPath = path.join(dir, 'src');
+        const hasSrc = fs.existsSync(srcPath) && fs.statSync(srcPath).isDirectory();
+
+        if (hasSrc) {
+            ignore.push('**/dist/**', '**/build/**', '**/out/**');
+        }
+
+        // 3. User instruction: "src 不行的" (src is not viable for metadata in production)
+        // Metadata (.yml) should ideally be placed in 'objects/' or root, not 'src/', 
+        // to simplify packaging (so you don't need to copy assets from src to dist).
+        // However, we do not strictly block 'src' scanning here to avoid breaking dev workflow.
+        // The exclusion of 'dist' in dev mode (above) handles the code duality.
+
         const files = glob.sync(plugin.glob, {
             cwd: dir,
-            absolute: true
+            absolute: true,
+            ignore
         });
 
         for (const file of files) {

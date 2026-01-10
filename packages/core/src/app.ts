@@ -120,6 +120,11 @@ export class ObjectQL implements IObjectQL {
             throw new Error('Cannot update: Metadata source file not found (in-memory only?)');
         }
 
+        // Safety Check: Prevent writing to node_modules
+        if (entry.path.includes('node_modules')) {
+            throw new Error(`Cannot update metadata ${type}:${id}: File is inside node_modules (read-only package).`);
+        }
+
         // Check file extension
         const ext = path.extname(entry.path).toLowerCase();
         let newContent = '';
