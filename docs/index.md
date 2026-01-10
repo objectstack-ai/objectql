@@ -3,67 +3,53 @@ layout: home
 
 hero:
   name: ObjectQL
-  text: One Protocol, Any Database, AI-Ready
-  tagline: A universal data query engine for the modern stack. Write your logic once in JSON-DSL, run it seamlessly on MongoDB or PostgreSQL.
+  text: The Data Layer for the AI Era
+  tagline: A universal, protocol-first ORM. Write logic once in JSON, run anywhere. Designed for LLMs, Agents, and Low-Code.
   image:
     src: /logo.svg
     alt: ObjectQL Logo
   actions:
     - theme: brand
-      text: Get Started
-      link: /guide/
+      text: Quick Start
+      link: /guide/getting-started
     - theme: alt
-      text: View on GitHub
-      link: https://github.com/objectql/objectql
+      text: AI Integration
+      link: /guide/ai
 
 features:
-  - icon: 🚀
-    title: Dual-Stack Engine
-    details: Native performance for schema-less MongoDB and first-class support for PostgreSQL, MySQL, and SQLite with a unique "Core Columns + JSONB" strategy.
   - icon: 🤖
     title: AI-Native Protocol
-    details: Queries defined as standardized JSON ASTs, optimized for LLMs to understand schema and generate accurate, safe business logic without hallucinating SQL syntax.
+    details: Queries are defined as strict JSON ASTs, not strings. This eliminates SQL injection and makes it trivial for LLMs to generate correct, hallucination-free queries.
+  - icon: 🚀
+    title: Write Once, Run Anywhere
+    details: Define your business objects in YAML/JSON. Run seamlessly on MongoDB for flexibility or PostgreSQL for strict consistency without changing a line of code.
+  - icon: 🧩
+    title: Logic as Data
+    details: Actions (RPC) and Hooks (Triggers) are first-class citizens of the protocol, allowing you to model not just data, but behavior and state transitions.
   - icon: ⚡
-    title: Modern & Lightweight
-    details: Written in 100% TypeScript with zero heavy legacy dependencies. Promise-based asynchronous API with no runtime requirements beyond Node.js.
-  - icon: 🔌
-    title: Pluggable Architecture
-    details: Core logic completely decoupled from storage drivers. Easily extensible to support other data sources like REST APIs, GraphQL, or additional SQL/NoSQL databases.
-  - icon: 📖
-    title: Comprehensive Documentation
-    details: Detailed guides for developers and comprehensive protocol specifications for system integrators and driver contributors.
-  - icon: 🛡️
-    title: Production Ready
-    details: Built-in security features, transaction support, and optimized queries for both development flexibility and production reliability.
+    title: Enterprise Ready
+    details: Built-in support for Multi-tenancy, Row Level Security (RLS), and RBAC. Strict TypeScript typings ensuring reliability from day one.
 ---
 
-## Documentation Overview
+## Why ObjectQL?
 
-We have organized the documentation into three main categories:
+We are moving from an era of **Hand-written Code** to **AI-Generated Logic**. 
 
-### [User & Developer Guide](/guide/)
-**Target Audience**: Application Developers, Customer Success, End Users.
+Traditional ORMs (Sequelize, TypeORM, Prisma) were designed for humans to write code in IDEs. They rely on complex class inheritance, string template interpolation, and language-specific DSLs.
 
-Learn how to build applications using ObjectQL:
-- Data modeling (Objects, Fields, Relationships)
-- Writing business logic (Hooks, Actions)
-- Using the Node.js SDK
-- Security configuration
+**ObjectQL is designed for Agents.**
 
-### [Protocol Specifications](/spec/)
-**Target Audience**: System Architects, Driver Contributors, Integrators.
+### The Difference
 
-Understand the low-level protocols:
-- Metadata File Format Specification (YAML/JSON schema)
-- Unified Query Language Protocol
-- HTTP API Reference
+| | Traditional ORM | ObjectQL |
+| :--- | :--- | :--- |
+| **Schema Definition** | TypeScript/Python Classes | **JSON / YAML Metadata** |
+| **Query Format** | Method Chaining (`.where(...)`) | **JSON AST** (`{ filters: [...] }`) |
+| **AI Compatibility** | Hard (requires parsing code) | **Native** (LLMs speak JSON) |
+| **Portability** | Language Bound (Node/Python) | **Universal Protocol** |
 
-### [Airtable Functionality Roadmap](/AIRTABLE_DOCS_INDEX) 🆕
-**Target Audience**: Project Managers, Product Managers, Development Teams.
+## Get Started
 
-Comprehensive resources for implementing Airtable-like functionality:
-- [Comprehensive evaluation](/AIRTABLE_EVALUATION) of gaps between ObjectQL and Airtable (Chinese)
-- [Detailed implementation roadmap](/AIRTABLE_IMPLEMENTATION_ROADMAP) with 6 development phases (English)
-- [GitHub Issues templates](/GITHUB_ISSUES_TEMPLATE) for task creation
-- Resource requirements, timeline estimates, and risk assessment
-- Technical design proposals for multi-view system, collaboration, and automation
+*   **[Installation & Hello World](/guide/getting-started)**: Build your first API in 5 minutes.
+*   **[Building AI Apps](/guide/ai)**: Learn how to connect GPT-4 to your database safely.
+*   **[Core Concepts](/guide/data-modeling)**: Define Objects, Fields, and Relationships.

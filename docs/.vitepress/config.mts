@@ -24,11 +24,13 @@ export default defineConfig({
       // Sidebar for Guide section
       '/guide/': [
         {
-          text: 'Getting Started',
+          text: 'Essentials',
           items: [
             { text: 'Introduction', link: '/guide/' },
+            { text: 'Quick Start', link: '/guide/getting-started' },
             { text: 'Data Modeling', link: '/guide/data-modeling' },
-            { text: 'Security Guide', link: '/guide/security-guide' }
+            { text: 'Security Guide', link: '/guide/security-guide' },
+            { text: 'Building AI Apps', link: '/guide/ai' }
           ]
         },
         {
