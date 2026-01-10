@@ -1,5 +1,5 @@
 {
-  "name": "@example/project-management",
+  "name": "@example/basic-app",
   "version": "2.0.0",
   "private": true,
   "main": "dist/index.js",

@@ -49,35 +49,7 @@ importers:
         specifier: ^1.6.4
         version: 1.6.4(@algolia/client-search@5.46.2)(@types/node@20.19.28)(postcss@8.5.6)(search-insights@2.17.3)(typescript@5.9.3)
 
-  examples/app-using-preset:
-    dependencies:
-      '@example/plugin-audit':
-        specifier: workspace:*
-        version: link:../plugin-audit
-      '@example/project-management':
-        specifier: workspace:*
-        version: link:../project-management
-    devDependencies:
-      '@objectql/cli':
-        specifier: workspace:*
-        version: link:../../packages/cli
-      '@objectql/core':
-        specifier: workspace:*
-        version: link:../../packages/core
-      '@objectql/driver-knex':
-        specifier: workspace:*
-        version: link:../../packages/driver-knex
-      '@objectql/types':
-        specifier: workspace:*
-        version: link:../../packages/types
-      sqlite3:
-        specifier: ^5.1.7
-        version: 5.1.7
-      typescript:
-        specifier: ^5.3.0
-        version: 5.9.3
-
-  examples/plugin-audit:
+  examples/audit-plugin:
     dependencies:
       sqlite3:
         specifier: ^5.1.7
@@ -99,7 +71,7 @@ importers:
         specifier: ^5.3.0
         version: 5.9.3
 
-  examples/project-management:
+  examples/basic-app:
     dependencies:
       '@objectql/driver-knex':
         specifier: workspace:*
@@ -117,6 +89,34 @@ importers:
       '@objectql/types':
         specifier: workspace:*
         version: link:../../packages/types
+      typescript:
+        specifier: ^5.3.0
+        version: 5.9.3
+
+  examples/integrated-app:
+    dependencies:
+      '@example/audit-plugin':
+        specifier: workspace:*
+        version: link:../audit-plugin
+      '@example/basic-app':
+        specifier: workspace:*
+        version: link:../basic-app
+    devDependencies:
+      '@objectql/cli':
+        specifier: workspace:*
+        version: link:../../packages/cli
+      '@objectql/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@objectql/driver-knex':
+        specifier: workspace:*
+        version: link:../../packages/driver-knex
+      '@objectql/types':
+        specifier: workspace:*
+        version: link:../../packages/types
+      sqlite3:
+        specifier: ^5.1.7
+        version: 5.1.7
       typescript:
         specifier: ^5.3.0
         version: 5.9.3

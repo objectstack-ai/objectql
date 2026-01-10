@@ -1,5 +1,5 @@
 {
-  "name": "@example/app-using-preset",
+  "name": "@example/integrated-app",
   "version": "1.0.0",
   "private": true,
   "main": "dist/index.js",
@@ -8,8 +8,8 @@
     "repl": "objectql repl"
   },
   "dependencies": {
-    "@example/project-management": "workspace:*",
-    "@example/plugin-audit": "workspace:*"
+    "@example/basic-app": "workspace:*",
+    "@example/audit-plugin": "workspace:*"
   },
   "devDependencies": {
     "@objectql/core": "workspace:*",

@@ -1,5 +1,5 @@
 {
-  "name": "@example/plugin-audit",
+  "name": "@example/audit-plugin",
   "version": "0.1.0",
   "private": true,
   "main": "dist/index.js",
