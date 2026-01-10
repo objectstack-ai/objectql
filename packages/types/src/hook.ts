@@ -57,7 +57,7 @@ export interface RetrievalHookContext<T = any> extends BaseHookContext<T> {
     operation: 'find' | 'count';
     
     /** The query criteria being executed. Modifiable in 'before' hooks. */
-    query: UnifiedQuery;
+    query: any;
     
     /** The result of the query. Only available in 'after' hooks. */
     result?: T[] | number;
@@ -114,6 +114,9 @@ export interface ObjectHookDefinition<T = any> {
     beforeFind?: (ctx: RetrievalHookContext<T>) => Promise<void> | void;
     afterFind?: (ctx: RetrievalHookContext<T>) => Promise<void> | void;
     
+    beforeCount?: (ctx: RetrievalHookContext<T>) => Promise<void> | void;
+    afterCount?: (ctx: RetrievalHookContext<T>) => Promise<void> | void;
+    
     beforeDelete?: (ctx: MutationHookContext<T>) => Promise<void> | void;
     afterDelete?: (ctx: MutationHookContext<T>) => Promise<void> | void;
     
@@ -123,3 +126,7 @@ export interface ObjectHookDefinition<T = any> {
     beforeUpdate?: (ctx: UpdateHookContext<T>) => Promise<void> | void;
     afterUpdate?: (ctx: UpdateHookContext<T>) => Promise<void> | void;
 }
+
+export type HookName = keyof ObjectHookDefinition;
+export type HookContext<T = any> = RetrievalHookContext<T> | MutationHookContext<T> | UpdateHookContext<T>;
+export type HookHandler<T = any> = (ctx: HookContext<T>) => Promise<void> | void;

@@ -5,7 +5,7 @@ const hooks: ObjectHookDefinition<Project> = {
     
     // Auto-assign owner on create
     beforeCreate: async ({ data, user }) => {
-        if (!data.owner && user?.id) {
+        if (data && !data.owner && user?.id) {
             console.log(`[Hook] Projects: Auto-assigning owner ${user.id}`);
             data.owner = String(user.id);
         }
@@ -25,7 +25,7 @@ const hooks: ObjectHookDefinition<Project> = {
     // Example: Check budget constraints on update
     beforeUpdate: async ({ data, previousData, isModified }) => {
         if (isModified('budget')) {
-            if (data.budget! < (previousData?.budget || 0)) {
+            if (data && data.budget != undefined && data.budget < (previousData?.budget || 0)) {
                 console.warn("Warning: Budget is being reduced!");
             }
         }

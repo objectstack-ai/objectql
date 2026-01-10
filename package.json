@@ -1,15 +1,12 @@
 {
   "name": "objectql-monorepo",
   "private": true,
-  "workspaces": [
-    "packages/*"
-  ],
   "scripts": {
-    "build": "tsc -b && npm run build --workspaces",
-    "test": "npm run test --workspaces",
+    "build": "tsc -b && pnpm -r run build",
+    "test": "pnpm -r run test",
     "changeset": "changeset",
     "version": "changeset version",
-    "release": "npm run build && changeset publish",
+    "release": "pnpm run build && changeset publish",
     "docs": "vitepress dev docs",
     "docs:build": "vitepress build docs",
     "docs:preview": "vitepress preview docs"

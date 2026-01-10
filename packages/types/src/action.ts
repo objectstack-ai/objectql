@@ -92,3 +92,5 @@ export interface ActionDefinition<BaseT = any, InputT = any, ReturnT = any> exte
      */
     handler: (ctx: ActionContext<BaseT, InputT>) => Promise<ReturnT>;
 }
+
+export type ActionHandler<BaseT = any, InputT = any, ReturnT = any> = (ctx: ActionContext<BaseT, InputT>) => Promise<ReturnT>;

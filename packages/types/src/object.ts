@@ -37,3 +37,13 @@ export interface ObjectConfig {
     ai?: ObjectAiConfig;
     actions?: Record<string, ActionConfig>;
 }
+
+/**
+ * Base interface for all ObjectQL documents.
+ */
+export interface ObjectDoc {
+    _id?: string | number;
+    created_at?: Date | string;
+    updated_at?: Date | string;
+    [key: string]: any;
+}

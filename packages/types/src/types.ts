@@ -7,13 +7,9 @@ import { ActionHandler, ActionContext } from "./action";
 
 export { ObjectConfig } from "./object";
 export { MetadataRegistry } from "./registry";
-export { HookName, HookHandler, HookContext } from "./hook";
-export { ActionConfig, ActionHandler, ActionContext } from "./action";
+export * from "./hook";
+export * from "./action";
 
-/**
- * Interface for object repository like operations.
- * Defined here for context typing, but implemented in client.
- */
 export interface IObjectRepository {
     find(query?: UnifiedQuery): Promise<any[]>;
     findOne(idOrQuery: string | number | UnifiedQuery): Promise<any>;

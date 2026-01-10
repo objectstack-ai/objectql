@@ -60,6 +60,9 @@ export interface FieldConfig {
     
     /** The human-readable label used in UIs. */
     label?: string;
+
+    /** Description of the field for documentation or tooltip. */
+    description?: string;
     
     /** The data type of the field. */
     type: FieldType;

@@ -188,6 +188,19 @@ See our [AI Integration Guide](./docs/guide/ai-integration.md) and [AI Capabilit
 
 We welcome contributions! This project is intended to be the foundation for the next generation of data-driven applications.
 
+**This repository relies on [pnpm](https://pnpm.io/) workspaces.**
+
+```bash
+# 1. Install pnpm
+npm install -g pnpm
+
+# 2. Install dependencies
+pnpm install
+
+# 3. Build all packages
+pnpm run build
+```
+
 ## 📄 License
 
 MIT © [ObjectQL Contributors](https://github.com/objectql)

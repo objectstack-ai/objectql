@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import * as glob from 'fast-glob';
+import glob from 'fast-glob';
 import * as yaml from 'js-yaml';
 import { ObjectConfig, FieldConfig } from '@objectql/types';
 
