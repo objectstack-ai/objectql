@@ -110,11 +110,4 @@ export interface FieldConfig {
     max_length?: number;
     /** Regular expression pattern for validation. */
     regex?: string;
-    
-    /**
-     * Whether this field can be modified or deleted.
-     * System fields (e.g., _id, createdAt, updatedAt) should be marked as non-customizable.
-     * Defaults to true for user-defined fields.
-     */
-    customizable?: boolean;
 }

@@ -10,11 +10,4 @@ export interface ObjectConfig {
     
     fields: Record<string, FieldConfig>;
     actions?: Record<string, ActionConfig>;
-    
-    /**
-     * Whether this object can be modified or deleted.
-     * System objects (e.g., user, session, account) should be marked as non-customizable.
-     * Defaults to true for user-defined objects.
-     */
-    customizable?: boolean;
 }

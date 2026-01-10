@@ -13,7 +13,6 @@ Files should use **Snake Case** filenames (e.g., `project_tasks.object.yml`).
 | `description` | `string` | Internal description of the object. |
 | `fields` | `Map` | Dictionary of field definitions. |
 | `actions` | `Map` | Dictionary of custom action definitions. |
-| `customizable` | `boolean` | Whether this object can be modified or deleted. System objects (e.g., `user`, `session`) should be set to `false`. **Default: `true`**. |
 
 ## 2. Field Definitions
 
@@ -38,7 +37,6 @@ fields:
 | `searchable` | `boolean` | Hint to include this field in global search. |
 | `sortable` | `boolean` | Hint that this field can be used for sorting in UI. |
 | `description` | `string` | Help text or documentation for the field. |
-| `customizable` | `boolean` | Whether this field can be modified or deleted. **Default: `true`**. |
 
 ### 2.2 Supported Field Types
 
@@ -103,33 +101,4 @@ status:
       value: planned
     - label: In Progress
       value: in_progress
-```
-
-## 3. Schema Protection
-
-ObjectQL supports protecting system schema from modification.
-
-### 3.1 Object-Level Protection
-
-Objects can be marked as `customizable: false` to prevent deletion or structural changes.
-
-```yaml
-name: user
-customizable: false
-fields:
-  email:
-    type: email
-    required: true
-```
-
-### 3.2 Field-Level Protection
-
-Fields can be marked as `customizable: false` to prevent modification.
-
-```yaml
-name: user
-fields:
-  email:
-    type: email
-    customizable: false
 ```

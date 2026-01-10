@@ -24,7 +24,6 @@ npm start
 A demonstration of ObjectQL's metadata protection feature, similar to Salesforce's approach to protecting system objects and fields.
 
 **Features demonstrated:**
-- Marking objects as non-customizable
 - Protecting system fields from modification
 - Validation of metadata changes
 - Better-auth integration protection
