@@ -97,3 +97,53 @@ ObjectQL adopts a "clean schema, external translation" philosophy.
 *   **Metadata Translations**: Store UI labels in `i18n/[lang]/[object].json`.
 *   **Data Translations**: If you need to translate record content (like a Product Name), we recommend modeling it explicitly (e.g., a `ProductTranslation` table) rather than complicating the core column types.
 
+## 5. Extending Objects
+
+ObjectQL supports a powerful **Schema Merging** capability. This allows you to extend or modify objects defined in external packages (like plugins or standard libraries) without touching their source code.
+
+This mechanism works by defining a new `.object.yml` file with the **same object name**.
+
+### How it works
+
+When ObjectQL loads schemas, if it encounters multiple definitions for the same object (e.g., `user`), it merges them together. The priority depends on the loading order (usually Application layer overrides Package/Plugin layer).
+
+### Example: Extending the User Object
+
+Suppose a plugin defines a basic `user` object. You want to add a `phone` field and enforce that `email` is required.
+
+**Original Definition (in Plugin):**
+```yaml
+# node_modules/@objectql/plugin-auth/user.object.yml
+name: user
+fields:
+  name: { type: text }
+  email: { type: text }
+```
+
+**Your Extension (in App):**
+```yaml
+# src/objects/user-extension.object.yml
+name: user                 # Must match exactly
+label: System User (Ext)   # Overrides the label
+
+fields:
+  # 1. Modify existing field
+  email:
+    required: true
+
+  # 2. Add new field
+  phone:
+    type: text
+    label: Mobile Phone
+    unique: true
+```
+
+### Merge Rules
+
+| Component | Behavior |
+| :--- | :--- |
+| **Top-level Props** | **Override**. (`label`, `icon`, `description` in your file replace the original). |
+| **Fields** | **Deep Merge**. Existing fields are updated (properties merged), new fields are added. |
+| **Actions** | **Merge**. You can add new actions or override existing ones. |
+| **Indexes** | **Merge**. New indexes are added. |
+

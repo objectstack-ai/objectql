@@ -166,6 +166,38 @@ function registerObject(registry: MetadataRegistry, obj: any, file: string, pack
             }
         }
     }
+
+    // Check for existing object to Merge
+    const existing = registry.getEntry('object', obj.name);
+    if (existing) {
+        const base = existing.content;
+        
+        // Merge Fields: New fields overwrite old ones
+        if (obj.fields) {
+            base.fields = { ...base.fields, ...obj.fields };
+        }
+        
+        // Merge Actions
+        if (obj.actions) {
+            base.actions = { ...base.actions, ...obj.actions };
+        }
+
+        // Merge Indexes
+        if (obj.indexes) {
+            base.indexes = { ...base.indexes, ...obj.indexes };
+        }
+        
+        // Override Top-level Properties if provided
+        if (obj.label) base.label = obj.label;
+        if (obj.icon) base.icon = obj.icon;
+        if (obj.description) base.description = obj.description;
+        if (obj.datasource) base.datasource = obj.datasource;
+        
+        // Update the content reference
+        existing.content = base;
+        return;
+    }
+
     registry.register('object', {
         type: 'object',
         id: obj.name,
