@@ -53,6 +53,73 @@ export class MetadataLoader {
                 }
             }
         });
+
+        // Hooks
+        this.use({
+            name: 'hook',
+            glob: ['**/*.hook.ts', '**/*.hook.js'],
+            handler: (ctx) => {
+                const basename = path.basename(ctx.file);
+                // Extract object name from filename: user.hook.ts -> user
+                const objectName = basename.replace(/\.hook\.(ts|js)$/, '');
+                
+                try {
+                    const mod = require(ctx.file);
+                    // Support default export or named exports
+                    const hooks = mod.default || mod;
+                    
+                    ctx.registry.register('hook', {
+                        type: 'hook',
+                        id: objectName, // Hook ID is the object name
+                        path: ctx.file,
+                        package: ctx.packageName,
+                        content: hooks
+                    });
+                } catch (e) {
+                    console.error(`Error loading hook from ${ctx.file}:`, e);
+                }
+            }
+        });
+        
+        // Actions
+        this.use({
+            name: 'action',
+            glob: ['**/*.action.ts', '**/*.action.js'],
+            handler: (ctx) => {
+                const basename = path.basename(ctx.file);
+                // Extract object name: invoice.action.ts -> invoice
+                const objectName = basename.replace(/\.action\.(ts|js)$/, '');
+                
+                try {
+                    const mod = require(ctx.file);
+                    // Action file exports multiple actions
+                    // export const approve = { ... };
+                    // export const reject = { ... };
+                    
+                    const actions: Record<string, any> = {};
+                    
+                    for (const [key, value] of Object.entries(mod)) {
+                        if (key === 'default') continue;
+                        if (typeof value === 'object' && (value as any).handler) {
+                            actions[key] = value;
+                        }
+                    }
+                    
+                    if (Object.keys(actions).length > 0) {
+                         ctx.registry.register('action', {
+                            type: 'action',
+                            id: objectName, // Action collection ID is the object name
+                            path: ctx.file,
+                            package: ctx.packageName,
+                            content: actions
+                        });
+                    }
+
+                } catch (e) {
+                    console.error(`Error loading action from ${ctx.file}:`, e);
+                }
+            }
+        });
     }
 
     use(plugin: LoaderPlugin) {

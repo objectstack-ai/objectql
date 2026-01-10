@@ -101,3 +101,21 @@ beforeFind: async ({ query, user }) => {
     query.filters.push(['organization_id', '=', user.org_id]);
 }
 ```
+
+## 5. Loading & Registration
+
+Hooks follow the same convention-based loading strategy as Actions.
+
+*   **File Name**: `[object_name].hook.ts` (e.g., `user.hook.ts`)
+*   **Exports**: Must export a default object complying with `ObjectHookDefinition`, or named exports matching hook methods.
+
+```typescript
+// src/objects/user.hook.ts
+import { ObjectHookDefinition } from '@objectql/types';
+
+const hooks: ObjectHookDefinition = {
+    beforeCreate: async (ctx) => { ... }
+};
+
+export default hooks;
+```
