@@ -73,6 +73,10 @@ export class SoftDeletePlugin implements ObjectQLPlugin {
 
 ## Usage
 
+Plugins can be loaded in two ways: by instance or by package name.
+
+### 1. By Instance (Local Development)
+
 ```typescript
 const db = new ObjectQL({
     connection: 'sqlite://data.db',
@@ -80,4 +84,45 @@ const db = new ObjectQL({
         new SoftDeletePlugin()
     ]
 });
+```
+
+### 2. By Package Name (Distribution)
+
+If you have installed a plugin via npm (e.g. `npm install @objectql/plugin-audit`), you can simply pass its name. ObjectQL will automatically resolve and instantiate it.
+
+```typescript
+const db = new ObjectQL({
+    connection: 'sqlite://data.db',
+    plugins: [
+        '@objectql/plugin-audit'
+    ]
+});
+```
+
+## Creating a Plugin Package
+
+To publish a plugin as an npm package:
+
+1.  Create a project exporting your plugin class/instance as the `default` export (or named export).
+2.  Ensure it implements `ObjectQLPlugin`.
+
+**index.ts**
+```typescript
+import { ObjectQLPlugin, IObjectQL } from '@objectql/types';
+
+export default class MyPlugin implements ObjectQLPlugin {
+    name = 'my-plugin';
+    setup(app: IObjectQL) {
+        // ...
+    }
+}
+```
+
+Then in another project:
+```bash
+npm install my-plugin-package
+```
+```typescript
+// objectql.config.ts
+plugins: ['my-plugin-package']
 ```

@@ -35,8 +35,8 @@ A list of NPM packages to load as presets.
 ObjectQL will try to resolve the package and load schema files from its directory.
 Useful for sharing common business objects (User, Role, File, etc.).
 
-### `plugins` (ObjectQLPlugin[])
-A list of plugin instances to extend the core functionality.
+### `plugins` ((ObjectQLPlugin | string)[])
+A list of plugin instances OR package names to extend the core functionality.
 See [Plugin System](./plugins.html) for details.
 
 ### `objects` (Record<string, ObjectConfig>)
