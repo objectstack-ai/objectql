@@ -26,7 +26,15 @@ export class ObjectQL implements IObjectQL {
     constructor(config: ObjectQLConfig) {
         this.metadata = config.registry || new MetadataRegistry();
         this.loader = new MetadataLoader(this.metadata);
-        this.datasources = config.datasources;
+        this.datasources = config.datasources || {};
+        
+        if (config.connection) {
+            this.loadDriverFromConnection(config.connection);
+        }
+
+        if (config.source) {
+            this.loader.load(config.source);
+        }
 
         if (config.objects) {
             for (const [key, obj] of Object.entries(config.objects)) {
@@ -173,6 +181,59 @@ export class ObjectQL implements IObjectQL {
                 console.log(`Initializing driver '${name}'...`);
                 await driver.init(objects);
             }
+        }
+    }
+
+    private loadDriverFromConnection(connection: string) {
+        let driverPackage = '';
+        let driverClass = '';
+        let driverConfig: any = {};
+        
+        if (connection.startsWith('mongodb://')) {
+            driverPackage = '@objectql/driver-mongo';
+            driverClass = 'MongoDriver';
+            driverConfig = { url: connection };
+        } 
+        else if (connection.startsWith('sqlite://')) {
+            driverPackage = '@objectql/driver-knex';
+            driverClass = 'KnexDriver';
+            const filename = connection.replace('sqlite://', '');
+            driverConfig = {
+                client: 'sqlite3',
+                connection: { filename },
+                useNullAsDefault: true
+            };
+        }
+        else if (connection.startsWith('postgres://') || connection.startsWith('postgresql://')) {
+            driverPackage = '@objectql/driver-knex';
+            driverClass = 'KnexDriver';
+            driverConfig = {
+                client: 'pg',
+                connection: connection
+            };
+        }
+        else if (connection.startsWith('mysql://')) {
+            driverPackage = '@objectql/driver-knex';
+            driverClass = 'KnexDriver';
+            driverConfig = {
+                client: 'mysql2',
+                connection: connection
+            };
+        }
+        else {
+            throw new Error(`Unsupported connection protocol: ${connection}`);
+        }
+
+        try {
+            // eslint-disable-next-line @typescript-eslint/no-var-requires
+            const pkg = require(driverPackage);
+            const DriverClass = pkg[driverClass];
+            if (!DriverClass) {
+                throw new Error(`${driverClass} not found in ${driverPackage}`);
+            }
+            this.datasources['default'] = new DriverClass(driverConfig);
+        } catch (e: any) {
+            throw new Error(`Failed to load driver ${driverPackage}. Please install it: npm install ${driverPackage}. Error: ${e.message}`);
         }
     }
 }

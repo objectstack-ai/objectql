@@ -37,11 +37,11 @@ export async function startRepl(configPath?: string) {
     
     try {
         const configModule = require(path.join(cwd, configFile));
-        // Support default export or named export 'app' or 'objectql'
-        const app = configModule.default || configModule.app || configModule.objectql;
+        // Support default export or named export 'app' or 'objectql' or 'db'
+        const app = configModule.default || configModule.app || configModule.objectql || configModule.db;
 
         if (!(app instanceof ObjectQL)) {
-            console.error("❌ The config file must export an instance of 'ObjectQL' as default or 'app'.");
+            console.error("❌ The config file must export an instance of 'ObjectQL' as default or 'app'/'db'.");
             process.exit(1);
         }
 
@@ -75,6 +75,7 @@ export async function startRepl(configPath?: string) {
 
         // 4. Inject Context
         r.context.app = app;
+        r.context.db = app; // Alias for db
         r.context.object = (name: string) => app.getObject(name);
         
         // Helper to get a repo quickly: tasks.find() instead of app.object('tasks').find()
@@ -108,6 +109,9 @@ export async function startRepl(configPath?: string) {
 
         console.log(`\nAvailable Objects: ${objects.map((o: any) => o.name).join(', ')}`);
         console.log(`Usage: tasks.find()  (Auto-await enabled)`);
+        
+        // Fix for REPL sometimes not showing prompt immediately
+        r.displayPrompt();
 
     } catch (error) {
         console.error("Failed to load or start:", error);

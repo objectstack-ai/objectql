@@ -27,9 +27,17 @@ export interface IObjectRepository {
 }
 
 export interface ObjectQLConfig {
-
     registry?: MetadataRegistry;
-    datasources: Record<string, Driver>;
+    datasources?: Record<string, Driver>;
+    /**
+     * Optional connection string for auto-configuration.
+     * e.g. "sqlite://dev.db", "postgres://localhost/db", "mongodb://localhost/db"
+     */
+    connection?: string;
+    /**
+     * Path to the directory containing schema files (*.object.yml).
+     */
+    source?: string;
     objects?: Record<string, ObjectConfig>;
     packages?: string[];
 }
