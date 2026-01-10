@@ -28,6 +28,7 @@ export default defineConfig({
             { text: 'Introduction', link: '/guide/' },
             { text: 'Architecture', link: '/guide/architecture' },
             { text: 'Quick Start', link: '/guide/getting-started' },
+            { text: 'Configuration', link: '/guide/configuration' },
             { text: 'Data Modeling', link: '/guide/data-modeling' },
           ]
         },
@@ -44,6 +45,7 @@ export default defineConfig({
           items: [
             { text: 'Writing Hooks', link: '/guide/logic-hooks' },
             { text: 'Custom Actions', link: '/guide/logic-actions' },
+            { text: 'Plugin System', link: '/guide/plugins' },
             { text: 'Building AI Apps', link: '/guide/ai' },
             { text: 'CLI Tools', link: '/guide/cli' }
           ]
