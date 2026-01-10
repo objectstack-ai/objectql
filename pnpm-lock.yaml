@@ -225,6 +225,9 @@ importers:
 
   packages/core:
     dependencies:
+      '@objectql/driver-remote':
+        specifier: workspace:*
+        version: link:../driver-remote
       '@objectql/types':
         specifier: workspace:*
         version: link:../types
@@ -260,6 +263,16 @@ importers:
       mongodb:
         specifier: ^5.9.2
         version: 5.9.2
+
+  packages/driver-remote:
+    dependencies:
+      '@objectql/types':
+        specifier: workspace:*
+        version: link:../types
+    devDependencies:
+      typescript:
+        specifier: ^5.3.0
+        version: 5.9.3
 
   packages/server:
     dependencies:

@@ -1,0 +1,16 @@
+{
+  "name": "@objectql/driver-remote",
+  "version": "0.1.0",
+  "description": "Remote/HTTP Driver for ObjectQL",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@objectql/types": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0"
+  }
+}

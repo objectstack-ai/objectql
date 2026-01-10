@@ -16,7 +16,7 @@ import {
 import { ObjectLoader } from './loader';
 export * from './loader';
 import { ObjectRepository } from './repository';
-import { RemoteDriver } from './drivers/remote';
+import { RemoteDriver } from '@objectql/driver-remote';
 
 export class ObjectQL implements IObjectQL {
     public metadata: ObjectRegistry;
