@@ -57,6 +57,11 @@ export interface ObjectQLConfig {
      * Can be an instance of ObjectQLPlugin or a package name string.
      */
     plugins?: (ObjectQLPlugin | string)[];
+    /**
+     * List of remote ObjectQL instances to connect to.
+     * e.g. ["http://user-service:3000", "http://order-service:3000"]
+     */
+    remotes?: string[];
 }
 
 export interface IObjectQL {

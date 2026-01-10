@@ -16,11 +16,13 @@ import {
 import { ObjectLoader } from './loader';
 export * from './loader';
 import { ObjectRepository } from './repository';
+import { RemoteDriver } from './drivers/remote';
 
 export class ObjectQL implements IObjectQL {
     public metadata: ObjectRegistry;
     private loader: ObjectLoader;
     private datasources: Record<string, Driver> = {};
+    private remotes: string[] = [];
     private hooks: Record<string, Array<{ objectName: string, handler: HookHandler, packageName?: string }>> = {};
     private actions: Record<string, { handler: ActionHandler, packageName?: string }> = {};
     private pluginsList: ObjectQLPlugin[] = [];
@@ -29,6 +31,7 @@ export class ObjectQL implements IObjectQL {
         this.metadata = config.registry || new ObjectRegistry();
         this.loader = new ObjectLoader(this.metadata);
         this.datasources = config.datasources || {};
+        this.remotes = config.remotes || [];
         
         if (config.connection) {
             this.loadDriverFromConnection(config.connection);
@@ -283,6 +286,12 @@ export class ObjectQL implements IObjectQL {
     }
 
     async init() {
+        // -1. Load Remotes
+        if (this.remotes.length > 0) {
+            console.log(`Loading ${this.remotes.length} remotes...`);
+            await Promise.all(this.remotes.map(url => this.loadRemote(url)));
+        }
+
         // 0. Init Plugins
         for (const plugin of this.pluginsList) {
             console.log(`Initializing plugin '${plugin.name}'...`);
@@ -372,6 +381,44 @@ export class ObjectQL implements IObjectQL {
             this.datasources['default'] = new DriverClass(driverConfig);
         } catch (e: any) {
             throw new Error(`Failed to load driver ${driverPackage}. Please install it: npm install ${driverPackage}. Error: ${e.message}`);
+        }
+    }
+
+    private async loadRemote(url: string) {
+        try {
+            const baseUrl = url.replace(/\/$/, '');
+            const metadataUrl = `${baseUrl}/api/metadata/objects`;
+            
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore - Fetch is available in Node 18+
+            const res = await fetch(metadataUrl);
+            if (!res.ok) {
+                console.warn(`[ObjectQL] Remote ${url} returned ${res.status}`);
+                return;
+            }
+
+            const data = await res.json() as any;
+            if (!data || !data.objects) return;
+
+            const driverName = `remote:${baseUrl}`;
+            this.datasources[driverName] = new RemoteDriver(baseUrl);
+
+            await Promise.all(data.objects.map(async (summary: any) => {
+                try {
+                    // @ts-ignore
+                    const detailRes = await fetch(`${metadataUrl}/${summary.name}`);
+                    if (detailRes.ok) {
+                        const config = await detailRes.json() as ObjectConfig;
+                        config.datasource = driverName;
+                        this.registerObject(config);
+                    }
+                } catch (e) {
+                    console.warn(`[ObjectQL] Failed to load object ${summary.name} from ${url}`);
+                }
+            }));
+
+        } catch (e: any) {
+             console.warn(`[ObjectQL] Remote connection error ${url}: ${e.message}`);
         }
     }
 }
