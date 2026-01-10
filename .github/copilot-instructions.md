@@ -77,3 +77,4 @@ You must strictly enforce the following dependency rules:
 2. **Error Handling:** Throw `ObjectQLError` (from `types`) instead of generic `Error`.
 3. **Config Format:** The primary input format is `.object.yml`.
 4. **NPM Scopes:** All internal imports must use the `@objectql/` scope (e.g., `import ... from '@objectql/types'`).
+5. **Language Requirement:** Always use English when generating code, comments, or documentation, even if the user prompts in another language.
