@@ -1,0 +1,41 @@
+name: project
+label: Project
+icon: standard:case
+enable_search: true
+fields:
+  name:
+    label: Project Name
+    type: text
+    required: true
+    searchable: true
+    index: true
+  
+  status:
+    label: Status
+    type: select
+    options:
+      - label: Planned
+        value: planned
+      - label: In Progress
+        value: in_progress
+      - label: Completed
+        value: completed
+    defaultValue: planned
+
+  start_date:
+    label: Start Date
+    type: date
+
+  owner:
+    label: Project Manager
+    type: lookup
+    reference_to: users
+
+  budget:
+    label: Total Budget
+    type: currency
+    scale: 2
+
+  description:
+    label: Description
+    type: textarea

@@ -8,7 +8,7 @@ ObjectQL is a **language-agnostic metadata protocol** and a set of **reference i
 
 ## 2. Architecture & Directory Structure
 
-We use **Turborepo** + **PNPM Workspaces**.
+We use **Turborepo** + **NPM Workspaces**.
 
 | Path | Package Name | Environment | Description |
 | --- | --- | --- | --- |
