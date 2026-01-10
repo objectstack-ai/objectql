@@ -23,7 +23,24 @@ export interface ObjectQLPlugin {
 }
 ```
 
-## 2. Creating Plugins
+## 2. Execution Lifecycle
+
+Understanding valid execution timing is critical.
+
+1.  **Phase 1: Construction (`new ObjectQL`)**
+    *   Load Metadata from `packages`.
+    *   Load Metadata from `source` directories (`*.object.yml`).
+    *   Load Metadata from `config.objects`.
+    *   **Result:** `app.metadata` holds all static definitions.
+
+2.  **Phase 2: Initialization (`await app.init()`)**
+    *   **Step A: Remotes:** Fetch metadata from remote services.
+    *   **Step B: Plugins (`plugin.setup`)**:  <-- **YOU ARE HERE**
+        *   This is the last chance to modify metadata before it touches the DB.
+        *   You can access all objects loaded in Phase 1 & Step A.
+    *   **Step C: Drivers:** Drivers connect and synchronize schema (create tables, etc.).
+
+## 3. Creating Plugins
 
 You can define plugins in two styles: **Object** or **Class**.
 
@@ -148,7 +165,7 @@ setup(app) {
 ```
 
 **Example 3: Scanning a Directory**
-Plugins can also scan a directory to load `*.object.yml` files, just like the main application. This is useful for bundling a set of objects.
+Plugins can also scan a directory to load metadata files, just like the main application. This is useful for bundling a set of objects.
 
 ```typescript
 import * as path from 'path';
@@ -208,6 +225,19 @@ setup(app) {
             });
         }
     });
+}
+```
+
+### E. Manage Packages (Presets)
+Plugins can dynamically load or unload other packages. This is useful for plugins that act as "features" which bring in a set of dependencies.
+
+```typescript
+setup(app) {
+    // Dynamically load another package
+    app.addPackage('@objectos/standard-objects');
+
+    // Or remove a package if it conflicts with this plugin
+    app.removePackage('@objectos/legacy-objects');
 }
 ```
 

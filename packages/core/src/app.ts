@@ -31,8 +31,12 @@ export class ObjectQL implements IObjectQL {
     private hooks: Record<string, HookEntry[]> = {};
     private actions: Record<string, ActionEntry> = {};
     private pluginsList: ObjectQLPlugin[] = [];
+    
+    // Store config for lazy loading in init()
+    private config: ObjectQLConfig;
 
     constructor(config: ObjectQLConfig) {
+        this.config = config;
         this.metadata = config.registry || new MetadataRegistry();
         this.loader = new ObjectLoader(this.metadata);
         this.datasources = config.datasources || {};
@@ -42,18 +46,7 @@ export class ObjectQL implements IObjectQL {
             this.datasources['default'] = createDriverFromConnection(config.connection);
         }
 
-        // 1. Load Presets/Packages first (Base Layer)
-        if (config.packages) {
-            for (const name of config.packages) {
-                this.addPackage(name);
-            }
-        }
-        if (config.presets) {
-            for (const name of config.presets) {
-                this.addPackage(name);
-            }
-        }
-        
+        // Initialize Plugin List (but don't setup yet)
         if (config.plugins) {
             for (const plugin of config.plugins) {
                 if (typeof plugin === 'string') {
@@ -61,21 +54,6 @@ export class ObjectQL implements IObjectQL {
                 } else {
                     this.use(plugin);
                 }
-            }
-        }
-
-        // 2. Load Local Sources (Application Layer - can override presets)
-        if (config.source) {
-            const sources = Array.isArray(config.source) ? config.source : [config.source];
-            for (const src of sources) {
-                this.loader.load(src);
-            }
-        }
-
-        // 3. Load In-Memory Objects (Dynamic Layer - highest priority)
-        if (config.objects) {
-            for (const [key, obj] of Object.entries(config.objects)) {
-                this.registerObject(obj);
             }
         }
     }
@@ -197,21 +175,7 @@ export class ObjectQL implements IObjectQL {
     }
 
     async init() {
-        // -1. Load Remotes
-        if (this.remotes.length > 0) {
-            console.log(`Loading ${this.remotes.length} remotes...`);
-            const results = await Promise.all(this.remotes.map(url => loadRemoteFromUrl(url)));
-            for (const res of results) {
-                if (res) {
-                    this.datasources[res.driverName] = res.driver;
-                    for (const obj of res.objects) {
-                        this.registerObject(obj);
-                    }
-                }
-            }
-        }
-
-        // 0. Init Plugins
+        // 0. Init Plugins (This allows plugins to register custom loaders)
         for (const plugin of this.pluginsList) {
             console.log(`Initializing plugin '${plugin.name}'...`);
             
@@ -238,9 +202,50 @@ export class ObjectQL implements IObjectQL {
             await plugin.setup(app);
         }
 
+        // 1. Load Presets/Packages (Base Layer) - AFTER plugins, so they can use new loaders
+        if (this.config.packages) {
+            for (const name of this.config.packages) {
+                this.addPackage(name);
+            }
+        }
+        if (this.config.presets) {
+            for (const name of this.config.presets) {
+                this.addPackage(name);
+            }
+        }
+
+        // 2. Load Local Sources (Application Layer)
+        if (this.config.source) {
+            const sources = Array.isArray(this.config.source) ? this.config.source : [this.config.source];
+            for (const src of sources) {
+                this.loader.load(src);
+            }
+        }
+
+        // 3. Load In-Memory Objects (Dynamic Layer)
+        if (this.config.objects) {
+            for (const [key, obj] of Object.entries(this.config.objects)) {
+                this.registerObject(obj);
+            }
+        }
+
+        // 4. Load Remotes
+        if (this.remotes.length > 0) {
+            console.log(`Loading ${this.remotes.length} remotes...`);
+            const results = await Promise.all(this.remotes.map(url => loadRemoteFromUrl(url)));
+            for (const res of results) {
+                if (res) {
+                    this.datasources[res.driverName] = res.driver;
+                    for (const obj of res.objects) {
+                        this.registerObject(obj);
+                    }
+                }
+            }
+        }
+
         const objects = this.metadata.list<ObjectConfig>('object');
         
-        // 1. Init Drivers (e.g. Sync Schema)
+        // 5. Init Drivers (e.g. Sync Schema)
         // Let's pass all objects to all configured drivers.
         for (const [name, driver] of Object.entries(this.datasources)) {
             if (driver.init) {
