@@ -1,6 +1,6 @@
 {
   "name": "@example/express-server",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "scripts": {
     "build": "tsc && cp src/*.yml dist/ || true",
@@ -15,7 +15,7 @@
     "sqlite3": "^5.1.7"
   },
   "devDependencies": {
-     "@types/express": "^4.17.21",
-     "typescript": "^5.0.0"
+    "@types/express": "^4.17.21",
+    "typescript": "^5.0.0"
   }
 }

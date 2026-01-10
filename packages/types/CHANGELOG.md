@@ -1,5 +1,11 @@
 # @objectql/core
 
+## 1.2.0
+
+### Minor Changes
+
+- 7df2977: 拆分 objectos
+
 ## 1.1.0
 
 ### Minor Changes
