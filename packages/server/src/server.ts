@@ -51,12 +51,11 @@ export class ObjectQLServer {
                     result = await repo.count(req.args);
                     break;
                 case 'action':
-                    // TODO: The repo interface might not expose 'executeAction' directly yet,
-                    // usually it's on the app level or via special method.
-                    // For now, let's assume app.executeAction
+                    // Map generic args to ActionContext
                     result = await app.executeAction(req.object, req.args.action, {
-                         ...ctx, // Pass context with user info
-                         params: req.args.params
+                         ...ctx, // Pass context (user, etc.)
+                         id: req.args.id,
+                         input: req.args.input || req.args.params // Support both for convenience
                     });
                     break;
                 default:
