@@ -2,9 +2,11 @@ import { ObjectConfig } from "./object";
 import { Driver } from "./driver";
 import { UnifiedQuery, FilterCriterion } from "./query";
 import { MetadataRegistry } from "./registry";
+import { HookName, HookHandler, HookContext } from "./hook";
 
 export { ObjectConfig } from "./object";
 export { MetadataRegistry } from "./registry";
+export { HookName, HookHandler, HookContext } from "./hook";
 
 /**
  * Interface for object repository like operations.
@@ -41,6 +43,9 @@ export interface IObjectQL {
     addPackage(name: string): void;
     removePackage(name: string): void;
     metadata: MetadataRegistry; 
+
+    on(event: HookName, objectName: string, handler: HookHandler): void;
+    triggerHook(event: HookName, objectName: string, ctx: HookContext): Promise<void>;
 }
 
 export interface ObjectQLContext {

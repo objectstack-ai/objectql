@@ -1,4 +1,4 @@
-import { ObjectQLContext, IObjectQL, ObjectConfig, Driver, UnifiedQuery } from '@objectql/types';
+import { ObjectQLContext, IObjectQL, ObjectConfig, Driver, UnifiedQuery, HookContext } from '@objectql/types';
 
 export class ObjectRepository {
     constructor(
@@ -29,14 +29,37 @@ export class ObjectRepository {
     }
 
     async find(query: UnifiedQuery = {}): Promise<any[]> {
+        const hookCtx: HookContext = {
+            ...this.context,
+            objectName: this.objectName,
+            query
+        };
+        await this.app.triggerHook('beforeFind', this.objectName, hookCtx);
+
         // TODO: Apply basic filters like spaceId
-        const results = await this.getDriver().find(this.objectName, query, this.getOptions());
-        return results;
+        const results = await this.getDriver().find(this.objectName, hookCtx.query || {}, this.getOptions());
+        
+        hookCtx.result = results;
+        await this.app.triggerHook('afterFind', this.objectName, hookCtx);
+
+        return hookCtx.result;
     }
 
     async findOne(idOrQuery: string | number | UnifiedQuery): Promise<any> {
         if (typeof idOrQuery === 'string' || typeof idOrQuery === 'number') {
-            return this.getDriver().findOne(this.objectName, idOrQuery, undefined, this.getOptions());
+            const hookCtx: HookContext = {
+                ...this.context,
+                objectName: this.objectName,
+                id: idOrQuery,
+                query: {}
+            };
+            await this.app.triggerHook('beforeFind', this.objectName, hookCtx);
+            
+            const result = await this.getDriver().findOne(this.objectName, idOrQuery, hookCtx.query, this.getOptions());
+
+            hookCtx.result = result;
+            await this.app.triggerHook('afterFind', this.objectName, hookCtx);
+            return hookCtx.result;
         } else {
             const results = await this.find(idOrQuery);
             return results[0] || null;
@@ -44,23 +67,69 @@ export class ObjectRepository {
     }
 
     async count(filters: any): Promise<number> {
-        return this.getDriver().count(this.objectName, filters, this.getOptions());
+        const hookCtx: HookContext = {
+            ...this.context,
+            objectName: this.objectName,
+            query: filters
+        };
+        await this.app.triggerHook('beforeCount', this.objectName, hookCtx);
+
+        const result = await this.getDriver().count(this.objectName, hookCtx.query, this.getOptions());
+
+        hookCtx.result = result;
+        await this.app.triggerHook('afterCount', this.objectName, hookCtx);
+        return hookCtx.result;
     }
 
     async create(doc: any): Promise<any> {
+        const hookCtx: HookContext = {
+            ...this.context,
+            objectName: this.objectName,
+            doc
+        };
+        await this.app.triggerHook('beforeCreate', this.objectName, hookCtx);
+        const finalDoc = hookCtx.doc;
+
         const obj = this.getSchema();
-        if (this.context.userId) doc.created_by = this.context.userId;
-        if (this.context.spaceId) doc.space_id = this.context.spaceId;
+        if (this.context.userId) finalDoc.created_by = this.context.userId;
+        if (this.context.spaceId) finalDoc.space_id = this.context.spaceId;
         
-        return await this.getDriver().create(this.objectName, doc, this.getOptions());
+        const result = await this.getDriver().create(this.objectName, finalDoc, this.getOptions());
+        
+        hookCtx.result = result;
+        await this.app.triggerHook('afterCreate', this.objectName, hookCtx);
+        return hookCtx.result;
     }
 
     async update(id: string | number, doc: any, options?: any): Promise<any> {
-        return await this.getDriver().update(this.objectName, id, doc, this.getOptions(options));
+        const hookCtx: HookContext = {
+            ...this.context,
+            objectName: this.objectName,
+            id,
+            doc
+        };
+        await this.app.triggerHook('beforeUpdate', this.objectName, hookCtx);
+
+        const result = await this.getDriver().update(this.objectName, id, hookCtx.doc, this.getOptions(options));
+
+        hookCtx.result = result;
+        await this.app.triggerHook('afterUpdate', this.objectName, hookCtx);
+        return hookCtx.result;
     }
 
     async delete(id: string | number): Promise<any> {
-        return await this.getDriver().delete(this.objectName, id, this.getOptions());
+        const hookCtx: HookContext = {
+            ...this.context,
+            objectName: this.objectName,
+            id
+        };
+        await this.app.triggerHook('beforeDelete', this.objectName, hookCtx);
+
+        const result = await this.getDriver().delete(this.objectName, id, this.getOptions());
+
+        hookCtx.result = result;
+        await this.app.triggerHook('afterDelete', this.objectName, hookCtx);
+        return hookCtx.result;
     }
 
     async aggregate(query: any): Promise<any> {

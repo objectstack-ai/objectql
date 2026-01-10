@@ -5,7 +5,10 @@ import {
     ObjectQLContext, 
     ObjectQLContextOptions, 
     IObjectQL, 
-    ObjectQLConfig 
+    ObjectQLConfig,
+    HookName,
+    HookHandler,
+    HookContext
 } from '@objectql/types';
 import { MetadataLoader } from './loader';
 export * from './loader';
@@ -15,6 +18,7 @@ export class ObjectQL implements IObjectQL {
     public metadata: MetadataRegistry;
     private loader: MetadataLoader;
     private datasources: Record<string, Driver> = {};
+    private hooks: Record<string, Array<{ objectName: string, handler: HookHandler }>> = {};
 
     constructor(config: ObjectQLConfig) {
         this.metadata = config.registry || new MetadataRegistry();
@@ -39,6 +43,22 @@ export class ObjectQL implements IObjectQL {
 
     removePackage(name: string) {
         this.metadata.unregisterPackage(name);
+    }
+
+    on(event: HookName, objectName: string, handler: HookHandler) {
+        if (!this.hooks[event]) {
+            this.hooks[event] = [];
+        }
+        this.hooks[event].push({ objectName, handler });
+    }
+
+    async triggerHook(event: HookName, objectName: string, ctx: HookContext) {
+        const hooks = this.hooks[event] || [];
+        for (const hook of hooks) {
+            if (hook.objectName === '*' || hook.objectName === objectName) {
+                await hook.handler(ctx);
+            }
+        }
     }
 
     loadFromDirectory(dir: string, packageName?: string) {
