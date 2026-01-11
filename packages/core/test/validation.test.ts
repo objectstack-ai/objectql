@@ -1,7 +1,6 @@
 import { Validator } from '../src/validator';
 import {
     ValidationContext,
-    ValidationTrigger,
     AnyValidationRule,
     CrossFieldValidationRule,
     StateMachineValidationRule,
@@ -158,6 +157,27 @@ describe('Validation System', () => {
             expect(results).toHaveLength(1);
             expect(results[0].valid).toBe(false);
             expect(results[0].message).toBe('Username must be alphanumeric');
+        });
+
+        it('should handle invalid regex pattern gracefully', async () => {
+            const fieldConfig: FieldConfig = {
+                type: 'text',
+                validation: {
+                    pattern: '[invalid(regex',  // Invalid regex
+                    message: 'Should not see this',
+                },
+            };
+
+            const context: ValidationContext = {
+                record: { username: 'test' },
+                operation: 'create',
+            };
+
+            const results = await validator.validateField('username', fieldConfig, 'test', context);
+            
+            expect(results).toHaveLength(1);
+            expect(results[0].valid).toBe(false);
+            expect(results[0].message).toContain('Invalid regex pattern');
         });
     });
 
