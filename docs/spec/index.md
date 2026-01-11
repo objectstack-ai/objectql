@@ -2,6 +2,8 @@
 
 This section contains the complete metadata specifications for the ObjectQL platform. ObjectQL is a metadata-driven standard for enterprise applications - every aspect of your application is defined through structured metadata.
 
+📖 **[Read the Complete Metadata Standard Guide](./metadata-standard.md)** - A comprehensive overview of the entire metadata system and how all pieces fit together.
+
 ## Core Data Layer
 
 *   [**Objects & Fields**](./object.md) - Data model definitions, field types, relationships, and validation rules

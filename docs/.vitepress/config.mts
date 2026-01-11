@@ -76,6 +76,7 @@ export default defineConfig({
           text: 'Metadata Specifications',
           items: [
             { text: 'Overview', link: '/spec/' },
+            { text: 'Complete Standard Guide', link: '/spec/metadata-standard' },
           ]
         },
         {
