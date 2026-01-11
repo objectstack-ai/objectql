@@ -20,8 +20,12 @@ class MockDriver implements Driver {
         return this.data[objectName] || [];
     }
     
-    async findOne(objectName: string, query: any) {
+    async findOne(objectName: string, id: string | number, query?: any, options?: any) {
         const items = this.data[objectName] || [];
+        if (id !== undefined && id !== null) {
+            const found = items.find(item => item._id === String(id));
+            return found || null;
+        }
         return items[0] || null;
     }
     
