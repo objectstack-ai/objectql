@@ -13,54 +13,130 @@ interface ObjectViewProps {
 }
 
 export function ObjectView({ objectName }: ObjectViewProps) {
-    const [rowData, setRowData] = useState<any[]>([]);
+    // const [rowData, setRowData] = useState<any[]>([]); // Using Server Side
     const [columnDefs, setColumnDefs] = useState<ColDef[]>([]);
     const [loading, setLoading] = useState(false);
     const [activeTab, setActiveTab] = useState<'data' | 'schema'>('data');
     const [schemaFile, setSchemaFile] = useState<string | null>(null);
 
-    const fetchData = async () => {
+    const [gridApi, setGridApi] = useState<any>(null);
+
+    // Initial load for columns
+    useEffect(() => {
+        const loadColumns = async () => {
+             const metaRes = await fetch('/api/metadata');
+             const meta = await metaRes.json();
+             const objects = Array.isArray(meta) ? meta : meta.objects;
+             const currentObj = objects.find((o: any) => o.name === objectName);
+
+             if (currentObj) {
+                 const cols: ColDef[] = [
+                     { field: 'id', headerName: 'ID', width: 100, pinned: 'left', filter: 'agTextColumnFilter' }
+                 ];
+                 
+                 Object.entries(currentObj.fields).forEach(([key, field]: [string, any]) => {
+                     cols.push({
+                         field: key,
+                         headerName: field.label || key,
+                         flex: 1,
+                         filter: 'agTextColumnFilter', // Enforce text filter for simplicity in Infinite Model
+                         filterParams: {
+                            filterOptions: ['contains', 'equals'],
+                            suppressAndOrCondition: true
+                         }
+                     });
+                 });
+                 
+                 setColumnDefs(cols);
+             }
+        };
+        loadColumns();
+    }, [objectName]);
+
+    const onGridReady = (params: any) => {
+        setGridApi(params.api);
         setLoading(true);
-        try {
-            // 1. Fetch Schema to build columns
-            // Ideally we should cache metadata, but fetching it here is safer for now
-            const metaRes = await fetch('/api/metadata');
-            const meta = await metaRes.json();
-            const objects = Array.isArray(meta) ? meta : meta.objects;
-            const currentObj = objects.find((o: any) => o.name === objectName);
-
-            if (currentObj) {
-                const cols: ColDef[] = [
-                    { field: 'id', headerName: 'ID', width: 100, pinned: 'left' }
-                ];
+        
+        const datasource = {
+            getRows: async (params: any) => {
+                const { startRow, endRow, filterModel, sortModel } = params;
+                setLoading(true);
                 
-                Object.entries(currentObj.fields).forEach(([key, field]: [string, any]) => {
-                    cols.push({
-                        field: key,
-                        headerName: field.label || key,
-                        flex: 1,
-                        filter: true
+                try {
+                    // 1. Convert Filters
+                    const filters: any[] = [];
+                    if (filterModel) {
+                        for (const key of Object.keys(filterModel)) {
+                            const model = filterModel[key];
+                            // agTextColumnFilter model: { filterType: 'text', type: 'contains', filter: 'value' }
+                            if (model.filterType === 'text') {
+                                if (model.type === 'contains') {
+                                    filters.push([key, 'contains', model.filter]);
+                                } else if (model.type === 'equals') {
+                                    filters.push([key, '=', model.filter]);
+                                }
+                            }
+                        }
+                    }
+
+                    // 2. Convert Sort
+                    const sort = sortModel.map((s: any) => [s.colId, s.sort]);
+
+                    // 3. Fetch Data
+                    const response = await fetch('/api/objectql', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            op: 'find',
+                            object: objectName,
+                            args: {
+                                skip: startRow,
+                                limit: endRow - startRow,
+                                filters: filters.length > 0 ? filters : undefined,
+                                sort: sort.length > 0 ? sort : undefined
+                            }
+                        })
                     });
-                });
-                
-                // Add system fields if not present
-                if (!cols.find(c => c.field === 'createdAt')) cols.push({ field: 'createdAt', hide: true });
-                if (!cols.find(c => c.field === 'updatedAt')) cols.push({ field: 'updatedAt', hide: true });
+                    const resJson = await response.json();
+                    const rows = resJson.data || resJson; // normalize
 
-                setColumnDefs(cols);
+                    // 4. Fetch Count (for total pagination)
+                    // Optimization: Only fetch count if we don't know it or filter changed? 
+                    // For Infinite Scroll simplicity, we fetch it.
+                    let lastRow = -1;
+                    if (rows.length < (endRow - startRow)) {
+                        lastRow = startRow + rows.length;
+                    } else {
+                         const countRes = await fetch('/api/objectql', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                op: 'count',
+                                object: objectName,
+                                args: filters.length > 0 ? filters : {}
+                            })
+                        });
+                        const countJson = await countRes.json();
+                        lastRow = typeof countJson === 'number' ? countJson : countJson.data;
+                    }
+
+                   params.successCallback(rows, lastRow);
+
+                } catch (e) {
+                    console.error('Datasource getRows error:', e);
+                    params.failCallback();
+                } finally {
+                    setLoading(false);
+                }
             }
+        };
 
-            // 2. Fetch Data
-            const res = await fetch(`/api/data/${objectName}`);
-            const result = await res.json();
-            // Handle both array and { data: [] } formats
-            const rows = Array.isArray(result) ? result : (result.data || []);
-            setRowData(rows);
+        params.api.setDatasource(datasource);
+    };
 
-        } catch (e) {
-            console.error(e);
-        } finally {
-            setLoading(false);
+    const refreshData = () => {
+        if (gridApi) {
+            gridApi.refreshInfiniteCache();
         }
     };
 
@@ -86,12 +162,11 @@ export function ObjectView({ objectName }: ObjectViewProps) {
     }, [objectName]);
 
     useEffect(() => {
-        if (activeTab === 'data') {
-            fetchData();
-        } else {
+        if (activeTab === 'schema') {
             fetchSchemaFile();
         }
     }, [objectName, activeTab]);
+
 
     const defaultColDef = useMemo(() => {
         return {
@@ -138,7 +213,7 @@ export function ObjectView({ objectName }: ObjectViewProps) {
                 
                 {activeTab === 'data' && (
                     <div className="flex items-center space-x-2">
-                        <Button variant="outline" size="sm" onClick={fetchData} disabled={loading}>
+                        <Button variant="outline" size="sm" onClick={refreshData} disabled={loading}>
                             <RefreshCw className={cn("mr-2 h-4 w-4", loading && "animate-spin")} />
                             Refresh
                         </Button>
@@ -156,12 +231,15 @@ export function ObjectView({ objectName }: ObjectViewProps) {
                      <div className="rounded-md overflow-hidden bg-card h-full" style={{opacity: loading ? 0.6 : 1}}>
                         <div className="ag-theme-quartz h-full w-full">
                             <AgGridReact
-                                rowData={rowData}
+                                rowModelType="infinite"
+                                onGridReady={onGridReady}
                                 columnDefs={columnDefs}
                                 defaultColDef={defaultColDef}
                                 pagination={true}
                                 paginationPageSize={20}
+                                cacheBlockSize={20}
                                 rowSelection="multiple"
+                                maxBlocksInCache={10}
                             />
                         </div>
                     </div>
