@@ -8,7 +8,6 @@ import {
     ValidationContext,
     ValidationResult,
     ValidationRuleResult,
-    ValidationTrigger,
     CrossFieldValidationRule,
     StateMachineValidationRule,
     UniquenessValidationRule,
