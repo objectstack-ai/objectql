@@ -73,18 +73,41 @@ export default defineConfig({
       // Sidebar for Spec section
       '/spec/': [
         {
-          text: 'Core Schema',
+          text: 'Metadata Specifications',
           items: [
             { text: 'Overview', link: '/spec/' },
-            { text: 'Objects & Fields', link: '/spec/object' },
-            { text: 'Actions (RPC)', link: '/spec/action' },
-            { text: 'Hooks', link: '/spec/hook' },
+            { text: 'Complete Standard Guide', link: '/spec/metadata-standard' },
           ]
         },
         {
-          text: 'Data & Transport',
+          text: 'Core Data Layer',
           items: [
+            { text: 'Objects & Fields', link: '/spec/object' },
             { text: 'Query Language', link: '/spec/query-language' },
+            { text: 'Validation Rules', link: '/spec/validation' },
+          ]
+        },
+        {
+          text: 'Business Logic Layer',
+          items: [
+            { text: 'Hooks (Triggers)', link: '/spec/hook' },
+            { text: 'Actions (RPC)', link: '/spec/action' },
+            { text: 'Workflows & Processes', link: '/spec/workflow' },
+          ]
+        },
+        {
+          text: 'Presentation Layer',
+          items: [
+            { text: 'Views & Layouts', link: '/spec/view' },
+            { text: 'Forms', link: '/spec/form' },
+            { text: 'Reports & Dashboards', link: '/spec/report' },
+            { text: 'Menus & Navigation', link: '/spec/menu' },
+          ]
+        },
+        {
+          text: 'Security & Access Control',
+          items: [
+            { text: 'Permissions', link: '/spec/permission' },
           ]
         }
       ]

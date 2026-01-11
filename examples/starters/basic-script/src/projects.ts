@@ -18,7 +18,7 @@ export interface Projects extends ObjectDoc {
      */
     budget?: number;
     /**
-     * Start Date
+     * Start2 Date
      */
     start_date?: Date | string;
     /**
