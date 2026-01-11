@@ -57,7 +57,7 @@ export interface ErrorDetails {
     required_permission?: string;
     user_roles?: string[];
     retry_after?: number;
-    [key: string]: any;
+    [key: string]: unknown;
 }
 
 /**
