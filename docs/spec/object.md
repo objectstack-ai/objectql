@@ -118,7 +118,9 @@ fields:
       # Validation hints
       avoid_patterns:
         - "Untitled"
-        - "Project 1, Project 2"  # Too generic
+        - "Project 1"
+        - "Project 2"
+        - "New Project"  # Too generic
   
   status:
     type: select

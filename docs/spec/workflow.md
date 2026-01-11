@@ -27,7 +27,7 @@ version: 1.0
 # AI-friendly context
 ai_context:
   intent: "Ensure large orders are approved before processing"
-  business_process: "Orders over $1K require manager approval. Orders over $10K require director approval."
+  business_process: "Orders over $1,000 require manager approval. Orders over $10,000 require director approval."
   typical_duration: "2-5 business days"
   sla: "Must complete within 7 days"
   

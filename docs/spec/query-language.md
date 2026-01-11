@@ -213,7 +213,11 @@ Fetching orders with complex filtering and related customer data:
     "intent": "Find recent high-value orders from active customers",
     "natural_language": "Show me paid or pending orders over $100 from the last 3 months, include customer details",
     "use_case": "Sales dashboard - active opportunities",
-    "expected_result_size": "50-100 records"
+    "expected_result_size": {
+      "estimate": "50-100 records",
+      "min": 50,
+      "max": 100
+    }
   },
   
   "object": "orders",

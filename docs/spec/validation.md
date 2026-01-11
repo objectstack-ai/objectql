@@ -298,7 +298,7 @@ rules:
           via: department_id
           fields: [budget_limit]
     
-    message: "Budget exceeds department limit. Executive approval required."
+    message: "Budget exceeds department limit (${{department.budget_limit}}). Executive approval required - please add executive_approval_id field and route to executive for review."
     error_code: "BUDGET_LIMIT_EXCEEDED"
     
     trigger: [create, update]

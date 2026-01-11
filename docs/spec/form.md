@@ -170,15 +170,15 @@ field_config:
         medium_project: 100000
         large_project: 500000
       
-      # Warning thresholds
+      # Warning thresholds (severity: info, warning, error)
       warning_thresholds:
         - amount: 50000
           message: "Projects over $50K require manager approval"
-          severity: info
+          severity: warning
         
         - amount: 200000
           message: "Projects over $200K require director approval"
-          severity: warning
+          severity: error
   
   start_date:
     default: "$today"
