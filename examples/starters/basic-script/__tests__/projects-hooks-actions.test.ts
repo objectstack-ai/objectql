@@ -386,9 +386,7 @@ describe('Project Actions - Comprehensive Examples', () => {
             });
             
             expect(result.success).toBe(true);
-            if ('success_count' in result) {
-                expect(result.success_count).toBe(2);
-            }
+            expect(result.successCount).toBe(2);
             expect(mockApi.create).toHaveBeenCalledTimes(2);
         });
 

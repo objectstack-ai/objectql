@@ -267,7 +267,7 @@ export const import_projects: ActionDefinition<Project, ImportProjectsInput> = {
         
         // 3. Validate and import each project
         const results = {
-            success: 0,
+            successCount: 0,
             failed: 0,
             errors: [] as any[]
         };
@@ -294,7 +294,7 @@ export const import_projects: ActionDefinition<Project, ImportProjectsInput> = {
                 
                 // Create project
                 await api.create('projects', importData);
-                results.success++;
+                results.successCount++;
                 
             } catch (error: any) {
                 results.failed++;
@@ -306,11 +306,11 @@ export const import_projects: ActionDefinition<Project, ImportProjectsInput> = {
             }
         }
         
-        console.log(`[Action] Import completed: ${results.success} succeeded, ${results.failed} failed`);
+        console.log(`[Action] Import completed: ${results.successCount} succeeded, ${results.failed} failed`);
         
         return {
             success: results.failed === 0,
-            message: `Imported ${results.success} projects, ${results.failed} failed`,
+            message: `Imported ${results.successCount} projects, ${results.failed} failed`,
             ...results
         };
     }
@@ -346,6 +346,11 @@ export const bulk_update_status: ActionDefinition<Project, BulkUpdateStatusInput
         }
         
         // 2. Update each project
+        // Note: This uses an N+1 query pattern (fetching each project individually)
+        // For production with large batches, consider fetching all projects at once:
+        // const projects = await api.find('projects', { filters: [['_id', 'in', project_ids]] });
+        // However, for this example with a 100-project limit, the current approach
+        // provides clearer per-record validation and error handling.
         const results = {
             updated: 0,
             skipped: 0,
