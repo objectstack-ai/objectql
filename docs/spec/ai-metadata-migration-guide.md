@@ -268,17 +268,26 @@ enrichObjectsWithAI();
 
 Run it:
 ```bash
-# ⚠️ Security Warning: Never commit API keys to version control
-# Use a .env file (add to .gitignore) or secure secret management system
-# For production, use environment-specific secret stores (AWS Secrets Manager, Azure Key Vault, etc.)
+# ⚠️ SECURITY WARNING: API Key Management
+# 
+# NEVER commit API keys to version control or expose them in logs
+# The examples below show the key in plain text for demonstration only
+# 
+# Production best practices:
+# 1. Use .env file (add to .gitignore)
+# 2. Use secret management systems (AWS Secrets Manager, Azure Key Vault, HashiCorp Vault)
+# 3. Rotate keys regularly
+# 4. Use environment-specific keys (dev/staging/prod)
+# 5. Enable audit logging for key usage
+# 6. Never log the key value in CI/CD pipelines
 
 # Option 1: Using .env file (recommended for development)
 # Create .env file with: ANTHROPIC_API_KEY=your_key_here
 # Then run:
 npx tsx scripts/add-ai-context.ts
 
-# Option 2: Direct environment variable (one-time use)
-export ANTHROPIC_API_KEY=your_key
+# Option 2: Direct environment variable (one-time use, secure terminal only)
+export ANTHROPIC_API_KEY=your_key  # ⚠️ Will be visible in shell history
 npx tsx scripts/add-ai-context.ts
 ```
 
@@ -535,27 +544,43 @@ import { resolve } from 'path';
 
 const ajv = new Ajv();
 
-// Load JSON schemas (with error handling for v2 schemas that may not exist yet)
+// Load JSON schemas with error handling
+// Note: Using dynamic imports for better type safety in modern TypeScript
 let objectSchema, validationSchema, workflowSchema;
 
-try {
-  const schemaPath = resolve(__dirname, '../schemas/v2');
-  
-  if (!existsSync(schemaPath)) {
-    console.warn('⚠️  v2 JSON schemas not found. Skipping schema validation.');
-    console.warn('    These will be available in the v2.0 release.');
-  } else {
-    objectSchema = require('../schemas/v2/object.json');
-    validationSchema = require('../schemas/v2/validation.json');
-    workflowSchema = require('../schemas/v2/workflow.json');
+async function loadSchemas() {
+  try {
+    const schemaPath = resolve(__dirname, '../schemas/v2');
+    
+    if (!existsSync(schemaPath)) {
+      console.warn('⚠️  v2 JSON schemas not found. Skipping schema validation.');
+      console.warn('    These will be available in the v2.0 release.');
+      return false;
+    }
+    
+    // Modern ES module imports for better type safety
+    objectSchema = await import('../schemas/v2/object.json');
+    validationSchema = await import('../schemas/v2/validation.json');
+    workflowSchema = await import('../schemas/v2/workflow.json');
+    
+    return true;
+  } catch (error) {
+    console.warn('⚠️  Could not load v2 schemas:', error.message);
+    console.warn('    Schema validation will be skipped.');
+    return false;
   }
-} catch (error) {
-  console.warn('⚠️  Could not load v2 schemas:', error.message);
-  console.warn('    Schema validation will be skipped.');
 }
 
 async function validateMetadata() {
   const files = await glob('src/**/*.{object,validation,workflow}.yml');
+  
+  // Load schemas asynchronously with proper error handling
+  const schemasLoaded = await loadSchemas();
+  
+  if (!schemasLoaded) {
+    console.warn('\n⚠️  Skipping validation - schemas not available\n');
+    return;
+  }
   
   const errors: string[] = [];
   

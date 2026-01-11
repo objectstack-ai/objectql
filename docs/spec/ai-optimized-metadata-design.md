@@ -164,13 +164,6 @@ $schema: "https://objectql.org/schema/v2/object.json"
 metadata_version: "2.0.0"  # Using semantic versioning for future compatibility
 metadata_type: object  # object, validation, workflow, form, etc.
 
-```yaml
-# Standard header for ALL metadata files
-# Note: Schema URLs are placeholders - actual schemas will be published with v2.0 release
-$schema: "https://objectql.org/schema/v2/object.json"
-metadata_version: "2.0.0"  # Using semantic versioning for future compatibility
-metadata_type: object  # object, validation, workflow, form, etc.
-
 # Metadata provenance
 created_by: system | human | ai
 created_at: "2026-01-11T00:00:00Z"
