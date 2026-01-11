@@ -124,7 +124,7 @@ async function launchVisualConsole(app: ObjectQL) {
     });
 
     // Header
-    const header = blessed.box({
+    blessed.box({
         parent: container,
         top: 0,
         left: 0,
