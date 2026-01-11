@@ -112,7 +112,7 @@ async function launchVisualConsole(app: ObjectQL) {
     let totalRecords = 0;
     let selectedRowIndex = 0;
     let viewMode: 'list' | 'detail' = 'list';
-    let selectedRecord: any = null;
+    let selectedRecord: any;
 
     // Create a box container for layout
     const container = blessed.box({
