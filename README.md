@@ -34,6 +34,13 @@ It is **not** an ORM, but a high-level data protocol designed for AI agents, low
 * This structure is optimized for LLMs (like ChatGPT/Claude) to understand schema and generate accurate, safe business logic without hallucinating SQL syntax.
 
 
+* **✅ Metadata-Driven Validation:**
+* Define validation rules declaratively in YAML/JSON metadata.
+* Support for field-level, cross-field, and state machine validation.
+* Configurable severity levels (error, warning, info) and triggers (create, update, delete).
+* Template messages with internationalization support.
+
+
 * **⚡ Modern & Lightweight:**
 * Written in 100% **TypeScript**.
 * **Zero heavy legacy dependencies.** No runtime environment requirements beyond Node.js.
@@ -118,6 +125,100 @@ const resultsMongo = await app.datasource('design').find(query);
 const resultsSql = await app.datasource('runtime').find(query);
 
 ```
+
+Both queries return the same results, but the underlying native query is optimized for MongoDB or PostgreSQL.
+
+### 3. Validation
+
+Define validation rules declaratively in your object metadata:
+
+```typescript
+import { ObjectConfig, Validator } from '@objectql/core';
+import { ValidationContext } from '@objectql/types';
+
+// Define object with validation rules
+const projectObject: ObjectConfig = {
+    name: 'project',
+    fields: {
+        name: { 
+            type: 'text', 
+            required: true,
+            validation: {
+                min_length: 3,
+                max_length: 100,
+                pattern: '^[a-zA-Z0-9\\s]+$'
+            }
+        },
+        email: {
+            type: 'email',
+            validation: {
+                format: 'email',
+                message: 'Please enter a valid email address'
+            }
+        },
+        start_date: { type: 'date' },
+        end_date: { type: 'date' },
+        status: { 
+            type: 'select', 
+            options: [
+                { label: 'Planning', value: 'planning' },
+                { label: 'Active', value: 'active' },
+                { label: 'Completed', value: 'completed' }
+            ]
+        }
+    },
+    validation: {
+        rules: [
+            // Cross-field validation
+            {
+                name: 'valid_date_range',
+                type: 'cross_field',
+                rule: {
+                    field: 'end_date',
+                    operator: '>=',
+                    compare_to: 'start_date'
+                },
+                message: 'End date must be on or after start date',
+                error_code: 'INVALID_DATE_RANGE'
+            },
+            // State machine validation
+            {
+                name: 'status_transition',
+                type: 'state_machine',
+                field: 'status',
+                transitions: {
+                    planning: { allowed_next: ['active', 'cancelled'] },
+                    active: { allowed_next: ['completed', 'cancelled'] },
+                    completed: { allowed_next: [], is_terminal: true }
+                },
+                message: 'Invalid status transition'
+            }
+        ]
+    }
+};
+
+// Execute validation programmatically
+const validator = new Validator({ language: 'en' });
+
+const result = await validator.validate(
+    projectObject.validation.rules,
+    {
+        record: { start_date: '2024-01-01', end_date: '2023-12-31' },
+        operation: 'create'
+    }
+);
+
+if (!result.valid) {
+    console.log('Validation errors:', result.errors);
+}
+```
+
+**Supported validation types:**
+- **Field-level**: required, email, URL, min/max, length, pattern
+- **Cross-field**: compare fields with operators (=, !=, >, >=, <, <=, in, contains, etc.)
+- **State machine**: enforce valid state transitions
+- **Severity levels**: error, warning, info
+- **I18n**: multi-language error messages with fallback
 
 ## 🎨 Web Console
 
@@ -210,6 +311,33 @@ aggregations:
 ```
 
 See [Visual Reporting Guide](./docs/guide/visual-reporting.md) for complete documentation.
+
+## 📡 API Reference
+
+ObjectQL provides **multiple API styles** to suit different use cases:
+
+* **[Complete API Reference](./docs/api/README.md)** - Comprehensive guide to all API endpoints
+* **[JSON-RPC API](./docs/api/README.md#json-rpc-style-api)** - Universal protocol for all operations
+* **[REST API](./docs/api/README.md#rest-style-api)** - Traditional REST endpoints
+* **[Metadata API](./docs/api/README.md#metadata-api)** - Runtime schema discovery and introspection
+* **[Authentication Guide](./docs/api/authentication.md)** - Securing your APIs with JWT, API keys, and more
+
+**Quick Example:**
+```bash
+# Create a record via JSON-RPC
+curl -X POST http://localhost:3000/api/objectql \
+  -H "Content-Type: application/json" \
+  -d '{
+    "op": "create",
+    "object": "tasks",
+    "args": {
+      "name": "Complete API documentation",
+      "priority": "high"
+    }
+  }'
+```
+
+See the [API Reference](./docs/api/README.md) for complete documentation with examples.
 
 ## 🛣 Roadmap
 

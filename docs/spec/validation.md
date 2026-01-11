@@ -826,34 +826,152 @@ rules:
 
 ## 12. Implementation Example
 
-```typescript
-// src/objects/order.validation.yml
-import { ValidationRuleDefinition } from '@objectql/types';
+Using the Validator class from `@objectql/core`:
 
-export const order_validation: ValidationRuleDefinition = {
-  name: 'order_validation',
-  object: 'orders',
-  rules: [
-    {
-      name: 'valid_total',
-      type: 'cross_field',
-      message: 'Total must equal subtotal + tax',
-      condition: {
-        expression: 'total === subtotal + tax'
-      }
+```typescript
+import { Validator } from '@objectql/core';
+import { 
+    ValidationContext, 
+    CrossFieldValidationRule,
+    StateMachineValidationRule,
+    ObjectConfig 
+} from '@objectql/types';
+
+// Create validator instance
+const validator = new Validator({
+    language: 'en',
+    languageFallback: ['en', 'zh-CN']
+});
+
+// Define object with validation rules
+const orderObject: ObjectConfig = {
+    name: 'order',
+    fields: {
+        subtotal: { type: 'currency' },
+        tax: { type: 'currency' },
+        total: { type: 'currency' },
+        customer_id: { type: 'lookup', reference_to: 'customers' }
     },
-    {
-      name: 'customer_credit_check',
-      type: 'custom',
-      async: true,
-      validator: async (record, context) => {
-        const customer = await context.api.findOne('customers', record.customer_id);
-        return record.amount <= customer.available_credit;
-      }
+    validation: {
+        rules: [
+            {
+                name: 'valid_total',
+                type: 'cross_field',
+                rule: {
+                    expression: 'total === subtotal + tax'
+                },
+                message: 'Total must equal subtotal + tax',
+                error_code: 'INVALID_TOTAL'
+            }
+        ]
     }
-  ]
 };
+
+// Programmatic validation example
+const rules: CrossFieldValidationRule[] = [
+    {
+        name: 'valid_total',
+        type: 'cross_field',
+        rule: {
+            field: 'total',
+            operator: '=',
+            value: 150  // Or use compare_to for cross-field
+        },
+        message: 'Total must equal subtotal + tax'
+    }
+];
+
+const context: ValidationContext = {
+    record: {
+        subtotal: 100,
+        tax: 50,
+        total: 150,
+        customer_id: 'cust-123'
+    },
+    operation: 'create'
+};
+
+const result = await validator.validate(rules, context);
+
+if (!result.valid) {
+    console.log('Validation failed:', result.errors);
+    // Output: Array of ValidationRuleResult objects with:
+    // - rule: string (rule name)
+    // - valid: boolean
+    // - message: string
+    // - error_code: string
+    // - severity: 'error' | 'warning' | 'info'
+    // - fields: string[]
+}
+
+// Field-level validation example
+import { FieldConfig } from '@objectql/types';
+
+const emailField: FieldConfig = {
+    type: 'email',
+    required: true,
+    validation: {
+        format: 'email',
+        message: 'Please enter a valid email address'
+    }
+};
+
+const fieldResults = await validator.validateField(
+    'email',
+    emailField,
+    'invalid-email',
+    context
+);
+
+// State machine validation example
+const statusRule: StateMachineValidationRule = {
+    name: 'order_status_flow',
+    type: 'state_machine',
+    field: 'status',
+    transitions: {
+        draft: {
+            allowed_next: ['submitted', 'cancelled']
+        },
+        submitted: {
+            allowed_next: ['approved', 'rejected']
+        },
+        approved: {
+            allowed_next: ['processing']
+        },
+        processing: {
+            allowed_next: ['shipped', 'cancelled']
+        },
+        shipped: {
+            allowed_next: ['delivered'],
+            is_terminal: false
+        },
+        delivered: {
+            allowed_next: [],
+            is_terminal: true
+        }
+    },
+    message: 'Invalid status transition from {{old_status}} to {{new_status}}'
+};
+
+const updateContext: ValidationContext = {
+    record: { status: 'approved' },
+    previousRecord: { status: 'submitted' },
+    operation: 'update'
+};
+
+const statusResult = await validator.validate([statusRule], updateContext);
 ```
+
+**Note on Stub Implementations:**
+
+The following validation types have stub implementations that pass silently (return `valid: true` without messages):
+- `unique` - Uniqueness validation (requires database access)
+- `business_rule` - Complex business rules (requires expression evaluation)
+- `custom` - Custom validation functions (requires safe function execution)
+- `dependency` - Related record validation (requires database queries)
+
+These will be implemented in future updates when database and expression evaluation capabilities are integrated.
+
 
 ## 13. Best Practices
 

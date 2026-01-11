@@ -1,5 +1,6 @@
 import { FieldConfig } from './field';
 import { ActionConfig } from './action';
+import { AnyValidationRule } from './validation';
 
 export interface IndexConfig {
     /** List of fields involved in the index */
@@ -36,6 +37,16 @@ export interface ObjectConfig {
     /** AI capabilities configuration */
     ai?: ObjectAiConfig;
     actions?: Record<string, ActionConfig>;
+    /** Validation rules for this object */
+    validation?: {
+        /** Validation rules */
+        rules?: AnyValidationRule[];
+        /** AI context for validation strategy */
+        ai_context?: {
+            intent?: string;
+            validation_strategy?: string;
+        };
+    };
 }
 
 /**

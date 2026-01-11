@@ -1,0 +1,9 @@
+name: test-view
+label: Test View
+description: A sample view for testing metadata loading
+query: select * from users
+fields:
+  - name: id
+    label: ID
+  - name: name
+    label: Name

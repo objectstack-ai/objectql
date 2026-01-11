@@ -20,7 +20,41 @@ export function generateOpenAPI(app: IObjectQL): OpenAPISchema {
     const schemas: Record<string, any> = {};
 
     
-    // 1. Generate Schemas
+    // 1. JSON-RPC Endpoint
+    paths['/api/objectql'] = {
+        post: {
+            summary: 'JSON-RPC Entry Point',
+            description: 'Execute any ObjectQL operation via a JSON body.',
+            tags: ['System'],
+            requestBody: {
+                content: {
+                    'application/json': {
+                        schema: {
+                            type: 'object',
+                            properties: {
+                                op: { type: 'string', enum: ['find', 'findOne', 'create', 'update', 'delete', 'count', 'action'] },
+                                object: { type: 'string' },
+                                args: { type: 'object' }
+                            },
+                            required: ['op', 'object']
+                        }
+                    }
+                }
+            },
+            responses: {
+                200: {
+                    description: 'Operation Result',
+                    content: {
+                        'application/json': {
+                            schema: { type: 'object' } // Dynamic result
+                        }
+                    }
+                }
+            }
+        }
+    };
+
+    // 2. Generate Schemas
     for (const obj of objects) {
         const schemaName = obj.name;
         const properties: Record<string, any> = {};
@@ -33,33 +67,23 @@ export function generateOpenAPI(app: IObjectQL): OpenAPISchema {
             type: 'object',
             properties
         };
-
-        // 2. Generate Paths (RPC Style representation for documentation purposes)
-        // Since we only have one endpoint, we might document operations as descriptions
-        // Or if we support REST style in the future, we would add /object paths here.
-        // For now, let's document the "Virtual" REST API that could exist via a gateway
-        // OR just document the schema.
-        // Let's assume the user might want to see standard CRUD paths even if implementation is RPC,
-        // so they can pass it to frontend generators?
-        // No, that would be misleading if the server doesn't support it.
-        
-        // Let's DOCUMENT the RPC operations as if they were paths, 
-        // OR clearer: One path /api/objectql with polymorphic body?
-        // Swagger UI handles oneOf poorly for top level operations sometimes.
     }
     
-    // Let's do a "Virtual" REST path generation for better visualization
-    // Assuming we WILL support REST mapping in this update.
+    // 3. REST API Paths
     for (const obj of objects) {
         const name = obj.name;
+        const basePath = `/api/data/${name}`; // Standard REST Path
         
-        // GET /name (List)
-        paths[`/${name}`] = {
+        // GET /api/data/:name (List)
+        paths[basePath] = {
             get: {
-                summary: `List ${name}s`,
+                summary: `List ${name}`,
                 tags: [name],
                 parameters: [
-                    { name: 'filter', in: 'query', schema: { type: 'string' }, description: 'JSON filter args' }
+                    { name: 'filter', in: 'query', schema: { type: 'string' }, description: 'JSON filter args' },
+                    { name: 'fields', in: 'query', schema: { type: 'string' }, description: 'Comma-separated fields to return' },
+                    { name: 'top', in: 'query', schema: { type: 'integer' }, description: 'Limit' },
+                    { name: 'skip', in: 'query', schema: { type: 'integer' }, description: 'Offset' }
                 ],
                 responses: {
                     200: {
@@ -98,26 +122,50 @@ export function generateOpenAPI(app: IObjectQL): OpenAPISchema {
             }
         };
 
-        // GET /name/{id}
-        paths[`/${name}/{id}`] = {
+        // /api/data/:name/:id
+        paths[`${basePath}/{id}`] = {
             get: {
                 summary: `Get ${name}`,
                 tags: [name],
                 parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
-                responses: { 200: { description: 'Item' } }
+                responses: {
+                    200: {
+                        description: 'Item',
+                        content: {
+                            'application/json': {
+                                schema: { $ref: `#/components/schemas/${name}` }
+                            }
+                        }
+                    }
+                }
             },
             patch: {
-                 summary: `Update ${name}`,
-                 tags: [name],
-                 parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
-                 requestBody: { content: { 'application/json': { schema: { type: 'object', properties: { data: { type: 'object' }} } } } },
-                 responses: { 200: { description: 'Updated' } }
+                summary: `Update ${name}`,
+                tags: [name],
+                parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+                requestBody: {
+                    content: {
+                        'application/json': {
+                            schema: {
+                                type: 'object',
+                                properties: {
+                                    data: { type: 'object' }
+                                }
+                            }
+                        }
+                    }
+                },
+                responses: {
+                    200: { description: 'Updated' }
+                }
             },
             delete: {
-                 summary: `Delete ${name}`,
-                 tags: [name],
-                 parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
-                 responses: { 200: { description: 'Deleted' } }
+                summary: `Delete ${name}`,
+                tags: [name],
+                parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+                responses: {
+                    200: { description: 'Deleted' }
+                }
             }
         };
     }

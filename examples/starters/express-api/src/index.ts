@@ -1,7 +1,7 @@
 import express from 'express';
 import { ObjectQL } from '@objectql/core';
 import { KnexDriver } from '@objectql/driver-knex';
-import { createNodeHandler, createMetadataHandler, createStudioHandler } from '@objectql/server';
+import { createNodeHandler, createMetadataHandler, createStudioHandler, createRESTHandler } from '@objectql/server';
 import * as path from 'path';
 
 async function main() {
@@ -24,6 +24,7 @@ async function main() {
 
     // 3. Create Handlers
     const objectQLHandler = createNodeHandler(app);
+    const restHandler = createRESTHandler(app);
     const metadataHandler = createMetadataHandler(app);
     const studioHandler = createStudioHandler();
 
@@ -34,7 +35,7 @@ async function main() {
     // Enable CORS for development
     server.use((req, res, next) => {
         res.header('Access-Control-Allow-Origin', '*');
-        res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+        res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
         res.header('Access-Control-Allow-Headers', 'Content-Type');
         if (req.method === 'OPTIONS') {
             res.sendStatus(200);
@@ -44,7 +45,8 @@ async function main() {
     });
 
     // Mount handlers
-    server.all('/api/objectql', objectQLHandler);
+    server.all('/api/objectql*', objectQLHandler);
+    server.all('/api/data/*', restHandler);
     server.all('/api/metadata*', metadataHandler);
     server.get('/studio*', studioHandler);
 
@@ -62,9 +64,16 @@ async function main() {
     server.listen(port, () => {
         console.log(`\n🚀 ObjectQL Server running on http://localhost:${port}`);
         console.log(`\n📊 Console UI: http://localhost:${port}/console`);
-        console.log(`\n🔌 API Endpoint: http://localhost:${port}/api/objectql`);
-        console.log(`\nTest CURL:`);
+        console.log(`\n🔌 APIs:`);
+        console.log(`  - JSON-RPC:  http://localhost:${port}/api/objectql`);
+        console.log(`  - REST:      http://localhost:${port}/api/data`);
+        console.log(`  - Metadata:  http://localhost:${port}/api/metadata`);
+        console.log(`\nTest JSON-RPC:`);
         console.log(`curl -X POST http://localhost:${port}/api/objectql -H "Content-Type: application/json" -d '{"op": "find", "object": "User", "args": {}}'`);
+        console.log(`\nTest REST API:`);
+        console.log(`curl http://localhost:${port}/api/data/User`);
+        console.log(`\nTest Metadata API:`);
+        console.log(`curl http://localhost:${port}/api/metadata/objects`);
     });
 }
 

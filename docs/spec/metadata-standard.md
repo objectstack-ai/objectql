@@ -98,6 +98,26 @@ rules:
       compare_to: start_date
 ```
 
+#### Initial Data
+**Purpose**: Define seed data or default records to be loaded on startup.
+
+**What you define**:
+- Target object
+- List of records to insert (auto-created if validation passes)
+
+**Example**:
+```yaml
+# initial.data.yml
+object: User
+records:
+  - name: Administrator
+    email: admin@company.com
+    role: admin
+  - name: Guest
+    email: guest@company.com
+    role: read_only
+```
+
 ### 2. Business Logic Layer
 
 #### [Hooks (Triggers)](./hook.md)
@@ -424,6 +444,35 @@ src/
 1. Commit metadata to Git
 2. Deploy to ObjectOS runtime
 3. Monitor and iterate
+
+## Metadata API & File Structure
+
+ObjectQL provides a universal loader and generic API for all metadata types.
+
+### File Naming Convention
+Metadata files are automatically loaded based on their extension. The `name` property in the file is used as the ID, or it is inferred from the filename (e.g. `my-list.view.yml` -> `my-list`).
+
+| Type | Extension |
+|---|---|
+| Object | `*.object.yml` |
+| View | `*.view.yml` |
+| Form | `*.form.yml` |
+| Menu | `*.menu.yml` |
+| Report | `*.report.yml` |
+| Workflow | `*.workflow.yml` |
+| Permission | `*.permission.yml` |
+| Validation | `*.validation.yml` |
+| Initial Data | `*.data.yml` |
+
+### Generic Metadata API
+All metadata types can be queried via the REST API:
+
+- `GET /api/metadata/:type`
+  - List all entries for a specific type (e.g. `/api/metadata/view`)
+- `GET /api/metadata/:type/:id`
+  - Get the JSON content of a specific entry (e.g. `/api/metadata/view/task_list`)
+- `POST /api/metadata/:type/:id`
+  - Update metadata content (if supported by storage)
 
 ## Why Metadata-Driven?
 

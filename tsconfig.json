@@ -5,6 +5,8 @@
     { "path": "./packages/core" },
     { "path": "./packages/driver-mongo" },
     { "path": "./packages/driver-knex" },
-    { "path": "./packages/driver-remote" }
+    { "path": "./packages/driver-remote" },
+    { "path": "./packages/server" },
+    { "path": "./packages/cli" }
   ]
 }

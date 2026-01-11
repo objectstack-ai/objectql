@@ -1,3 +1,5 @@
+import { FieldValidation, ValidationAiContext } from './validation';
+
 /**
  * Represents the supported field data types in the ObjectQL schema.
  * These types determine how data is stored, validated, and rendered.
@@ -117,6 +119,18 @@ export interface FieldConfig {
     max_length?: number;
     /** Regular expression pattern for validation. */
     regex?: string;
+    
+    /** 
+     * Field validation configuration.
+     * Defines validation rules applied at the field level.
+     */
+    validation?: FieldValidation;
+    
+    /**
+     * AI context for the field.
+     * Provides semantic information for AI tools.
+     */
+    ai_context?: ValidationAiContext;
 
     // Vector properties
     /** Dimension of the vector for 'vector' type fields. */

@@ -150,7 +150,7 @@ export function ObjectView({ objectName }: ObjectViewProps) {
             {/* Content */}
             <div className="flex-1 overflow-hidden p-6 bg-muted/20">
                 {activeTab === 'data' ? (
-                     <div className="border rounded-md overflow-hidden bg-card h-full" style={{opacity: loading ? 0.6 : 1}}>
+                     <div className="rounded-md overflow-hidden bg-card h-full" style={{opacity: loading ? 0.6 : 1}}>
                         <div className="ag-theme-quartz h-full w-full">
                             <AgGridReact
                                 rowData={rowData}

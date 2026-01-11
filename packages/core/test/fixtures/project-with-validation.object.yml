@@ -1,0 +1,124 @@
+name: project
+label: Project
+description: Project object with validation rules
+
+fields:
+  name:
+    type: text
+    label: Project Name
+    required: true
+    validation:
+      min_length: 3
+      max_length: 100
+      message: Project name must be between 3 and 100 characters
+    ai_context:
+      intent: Unique identifier for the project
+      
+  description:
+    type: textarea
+    label: Description
+    
+  status:
+    type: select
+    label: Status
+    required: true
+    defaultValue: planning
+    options:
+      - label: Planning
+        value: planning
+      - label: Active
+        value: active
+      - label: On Hold
+        value: on_hold
+      - label: Completed
+        value: completed
+      - label: Cancelled
+        value: cancelled
+    ai_context:
+      intent: Track project through its lifecycle
+      is_state_machine: true
+      
+  budget:
+    type: currency
+    label: Budget
+    validation:
+      min: 0
+      max: 10000000
+      message: Budget must be between 0 and 10,000,000
+      
+  start_date:
+    type: date
+    label: Start Date
+    required: true
+    
+  end_date:
+    type: date
+    label: End Date
+    
+  email:
+    type: email
+    label: Contact Email
+    validation:
+      format: email
+      message: Please enter a valid email address
+      
+  website:
+    type: url
+    label: Website
+    validation:
+      format: url
+      protocols: [http, https]
+      message: Please enter a valid URL
+
+validation:
+  ai_context:
+    intent: Ensure project data integrity and enforce business rules
+    validation_strategy: Fail fast with clear error messages
+    
+  rules:
+    # Cross-field validation: End date must be after start date
+    - name: valid_date_range
+      type: cross_field
+      ai_context:
+        intent: Ensure timeline makes logical sense
+        business_rule: Projects cannot end before they start
+        error_impact: high
+      rule:
+        field: end_date
+        operator: ">="
+        compare_to: start_date
+      message: End date must be on or after start date
+      error_code: INVALID_DATE_RANGE
+      
+    # State machine validation
+    - name: status_transition
+      type: state_machine
+      field: status
+      ai_context:
+        intent: Control valid status transitions throughout project lifecycle
+        business_rule: Projects follow a controlled workflow
+      transitions:
+        planning:
+          allowed_next: [active, cancelled]
+          ai_context:
+            rationale: Can start work or cancel before beginning
+        active:
+          allowed_next: [on_hold, completed, cancelled]
+          ai_context:
+            rationale: Can pause, finish, or cancel ongoing work
+        on_hold:
+          allowed_next: [active, cancelled]
+          ai_context:
+            rationale: Can resume or cancel paused projects
+        completed:
+          allowed_next: []
+          is_terminal: true
+          ai_context:
+            rationale: Finished projects cannot change state
+        cancelled:
+          allowed_next: []
+          is_terminal: true
+          ai_context:
+            rationale: Cancelled projects are final
+      message: "Invalid status transition from {{old_status}} to {{new_status}}"
+      error_code: INVALID_STATE_TRANSITION

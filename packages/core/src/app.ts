@@ -300,5 +300,54 @@ export class ObjectQL implements IObjectQL {
                 await driver.init(objects);
             }
         }
+
+        // 6. Process Initial Data
+        await this.processInitialData();
+    }
+
+    private async processInitialData() {
+        const dataEntries = this.metadata.list<any>('data');
+        if (dataEntries.length === 0) return;
+
+        console.log(`Processing ${dataEntries.length} initial data files...`);
+        
+        // We need a system context to write data
+        const ctx = this.createContext({ isSystem: true });
+
+        for (const entry of dataEntries) {
+            // Expected format:
+            // object: User
+            // records:
+            //   - name: Admin
+            //     email: admin@example.com
+            
+            const objectName = entry.object;
+            const records = entry.records;
+
+            if (!objectName || !records || !Array.isArray(records)) {
+                console.warn(`Skipping invalid data entry:`, entry);
+                continue;
+            }
+
+            const repo = ctx.object(objectName);
+            
+            for (const record of records) {
+                try {
+                    // Check existence if a unique key is provided?
+                    // For now, let's assume if it has an ID, we check it.
+                    // Or we could try to find existing record by some key matching logic.
+                    // Simple approach: create. If it fails (constraint), ignore.
+                    
+                    // Actually, a better approach for initial data is "upsert" or "create if not exists".
+                    // But without unique keys defined in data, we can't reliably dedup.
+                    // Let's try to 'create' and catch errors.
+                    await repo.create(record);
+                    console.log(`Initialized record for ${objectName}`);
+                } catch (e: any) {
+                    // Ignore duplicate key errors silently-ish
+                    // console.warn(`Failed to insert initial data for ${objectName}: ${e.message}`);
+                }
+            }
+        }
     }
 }

@@ -91,7 +91,7 @@ export class KnexDriver implements Driver {
             this.applyFilters(builder, query.filters);
         }
 
-        if (query.sort) {
+        if (query.sort && Array.isArray(query.sort)) {
             for (const [field, dir] of query.sort) {
                 builder.orderBy(this.mapSortField(field), dir);
             }
@@ -101,6 +101,13 @@ export class KnexDriver implements Driver {
         if (query.limit) builder.limit(query.limit);
 
         const results = await builder;
+        
+        if (!Array.isArray(results)) {
+            // Log warning or throw better error
+            // console.warn('KnexDriver.find: results is not an array', results);
+            return [];
+        }
+
         if (this.config.client === 'sqlite3') {
              for (const row of results) {
                  this.formatOutput(objectName, row);

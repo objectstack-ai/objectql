@@ -18,11 +18,23 @@ export interface Projects extends ObjectDoc {
      */
     budget?: number;
     /**
-     * Start2 Date
+     * Start Date
      */
     start_date?: Date | string;
     /**
      * End Date
      */
     end_date?: Date | string;
+    /**
+     * Approved By
+     */
+    approved_by?: string;
+    /**
+     * Approved At
+     */
+    approved_at?: Date | string;
+    /**
+     * Approval Comment
+     */
+    approval_comment?: string;
 }

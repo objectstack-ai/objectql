@@ -7,3 +7,4 @@ export * from './remote';
 export * from './action';
 export * from './hook';
 export * from './object';
+export * from './validator';

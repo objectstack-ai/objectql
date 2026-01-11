@@ -5,5 +5,9 @@
     "rootDir": "src",
     "composite": true
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*"],
+  "references": [
+    { "path": "../types" },
+    { "path": "../core" }
+  ]
 }
