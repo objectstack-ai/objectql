@@ -211,6 +211,33 @@ aggregations:
 
 See [Visual Reporting Guide](./docs/guide/visual-reporting.md) for complete documentation.
 
+## 📡 API Reference
+
+ObjectQL provides **multiple API styles** to suit different use cases:
+
+* **[Complete API Reference](./docs/api/README.md)** - Comprehensive guide to all API endpoints
+* **[JSON-RPC API](./docs/api/README.md#json-rpc-style-api)** - Universal protocol for all operations
+* **[REST API](./docs/api/README.md#rest-style-api)** - Traditional REST endpoints
+* **[Metadata API](./docs/api/README.md#metadata-api)** - Runtime schema discovery and introspection
+* **[Authentication Guide](./docs/api/authentication.md)** - Securing your APIs with JWT, API keys, and more
+
+**Quick Example:**
+```bash
+# Create a record via JSON-RPC
+curl -X POST http://localhost:3000/api/objectql \
+  -H "Content-Type: application/json" \
+  -d '{
+    "op": "create",
+    "object": "tasks",
+    "args": {
+      "name": "Complete API documentation",
+      "priority": "high"
+    }
+  }'
+```
+
+See the [API Reference](./docs/api/README.md) for complete documentation with examples.
+
 ## 🛣 Roadmap
 
 * [ ] **Phase 1: Core Protocol:** Define stable `UnifiedQuery` types and AST parser.
