@@ -12,6 +12,38 @@ It is designed to be:
 1. **JSON-Serializable:** Can be easily sent over HTTP or stored in logs.
 2. **Database Agnostic:** The same query works on MongoDB, PostgreSQL, and SQLite.
 3. **AI-Friendly:** The rigid structure prevents hallucination when generating queries via LLMs.
+4. **Intent-Driven:** Queries can include natural language intent for explainability.
+
+### 1.1 AI-Enhanced Queries (Optional)
+
+Queries can include an `ai_context` block to make them more understandable and maintainable:
+
+```json
+{
+  "object": "orders",
+  
+  "ai_context": {
+    "intent": "Find high-value paid orders from this quarter",
+    "natural_language": "Show me paid orders over $1000 from Q1 2024",
+    "use_case": "Monthly sales reporting dashboard"
+  },
+  
+  "fields": ["order_no", "amount", "customer.name"],
+  "filters": [
+    ["status", "=", "paid"],
+    "and",
+    ["amount", ">", 1000],
+    "and",
+    ["created_at", ">=", "2024-01-01"]
+  ]
+}
+```
+
+Benefits:
+- **Explainability**: AI can explain query back to users
+- **Documentation**: Queries self-document their purpose
+- **Optimization**: AI can suggest better query structures
+- **Testing**: Generate realistic test queries from intent
 
 ## 2. Type Definitions (TypeScript)
 
@@ -170,69 +202,266 @@ Conditions are combined using `'and'` or `'or'` strings within an array.
 
 ## 4. Full Examples
 
-### 4.1 Standard Relational Query
+### 4.1 Standard Relational Query with AI Context
 
-Fetching orders with complex filtering and related customer data.
+Fetching orders with complex filtering and related customer data:
 
 ```javascript
 {
-  "entity": "orders",
-  "fields": ["name", "amount", "created_at"],
+  // AI context for explainability
+  "ai_context": {
+    "intent": "Find recent high-value orders from active customers",
+    "natural_language": "Show me paid or pending orders over $100 from the last 3 months, include customer details",
+    "use_case": "Sales dashboard - active opportunities",
+    "expected_result_size": "50-100 records"
+  },
   
-  // Logic: (Paid OR Pending) AND Amount > 100
+  "object": "orders",
+  "fields": ["order_no", "amount", "status", "created_at"],
+  
+  // Logic: (Paid OR Pending) AND Amount > 100 AND Recent
   "filters": [
-    [["status", "=", "paid"], "or", ["status", "=", "pending"]],
+    [
+      ["status", "=", "paid"], 
+      "or", 
+      ["status", "=", "pending"]
+    ],
     "and",
-    ["amount", ">", 100]
+    ["amount", ">", 100],
+    "and",
+    ["created_at", ">", "2024-01-01"]
   ],
   
   "sort": [["created_at", "desc"]],
   "top": 20,
   "skip": 0,
 
-  // JOIN customers ON orders.customer = customers.id
+  // JOIN customers ON orders.customer_id = customers.id
   "expand": {
     "customer": { 
       "fields": ["name", "email", "vip_level"],
       // Nested filter on the related table
-      "filters": [["is_active", "=", true]] 
+      "filters": [["is_active", "=", true]],
+      
+      "ai_context": {
+        "intent": "Include customer details for contact and VIP status"
+      }
     },
     "order_items": {
       "fields": ["product_name", "qty", "price"],
-      "sort": [["price", "desc"]]
+      "sort": [["price", "desc"]],
+      
+      "ai_context": {
+        "intent": "Show line items sorted by value"
+      }
     }
   }
 }
-
 ```
 
-### 4.2 Aggregation Query (AST)
+### 4.2 Aggregation Query with Business Context
 
-To perform data analysis, use `groupBy` combined with `aggregate`.
-
-**JS Object Representation:**
+Data analysis query with clear business intent:
 
 ```javascript
 {
+  "object": "orders",
+  
+  "ai_context": {
+    "intent": "Calculate total sales and order count by product category",
+    "natural_language": "Sum up sales by category for paid orders this year",
+    "use_case": "Quarterly business review - product performance",
+    "output_purpose": "Executive dashboard"
+  },
+  
   "groupBy": ["category"],
+  
   "aggregate": [
-    { "func": "sum", "field": "amount", "alias": "total_sales" },
-    { "func": "count", "field": "id", "alias": "order_count" }
+    { 
+      "func": "sum", 
+      "field": "amount", 
+      "alias": "total_sales",
+      "ai_context": {
+        "intent": "Total revenue per category",
+        "format": "currency_usd"
+      }
+    },
+    { 
+      "func": "count", 
+      "field": "id", 
+      "alias": "order_count",
+      "ai_context": {
+        "intent": "Number of orders per category"
+      }
+    },
+    {
+      "func": "avg",
+      "field": "amount",
+      "alias": "avg_order_value",
+      "ai_context": {
+        "intent": "Average order size per category",
+        "format": "currency_usd"
+      }
+    }
   ],
+  
   // Filter is applied BEFORE aggregation
   "filters": [
     ["status", "=", "paid"],
     "and",
-    ["date", ">", "2024-01-01"]
-  ]
+    ["created_at", ">=", "2024-01-01"]
+  ],
+  
+  // Sort results by total sales (descending)
+  "sort": [["total_sales", "desc"]]
 }
 ```
 
 **SQL Equivalent:**
 ```sql
-SELECT category, SUM(amount) as total_sales, COUNT(id) as order_count 
-FROM table 
-WHERE status = 'paid' AND date > '2024-01-01' 
+SELECT 
+  category, 
+  SUM(amount) as total_sales, 
+  COUNT(id) as order_count,
+  AVG(amount) as avg_order_value
+FROM orders
+WHERE status = 'paid' AND created_at >= '2024-01-01' 
 GROUP BY category
+ORDER BY total_sales DESC
+```
+
+### 4.3 Complex Multi-Criteria Query
+
+Advanced filtering with AI-understandable intent:
+
+```javascript
+{
+  "object": "projects",
+  
+  "ai_context": {
+    "intent": "Find at-risk projects requiring immediate attention",
+    "natural_language": "Show active projects that are either: overdue, over budget, or flagged as high-risk",
+    "use_case": "Project manager daily standup dashboard",
+    "urgency": "high"
+  },
+  
+  "fields": [
+    "name",
+    "status",
+    "end_date",
+    "budget",
+    "actual_cost",
+    "risk_level",
+    "owner.name"
+  ],
+  
+  // Complex logic: Active AND (Overdue OR Over Budget OR High Risk)
+  "filters": [
+    ["status", "=", "active"],
+    "and",
+    [
+      // Overdue
+      ["end_date", "<", "$today"],
+      "or",
+      // Over budget
+      ["actual_cost", ">", "budget"],
+      "or",
+      // High risk flag
+      ["risk_level", "=", "high"]
+    ]
+  ],
+  
+  "expand": {
+    "owner": {
+      "fields": ["name", "email"],
+      "ai_context": {
+        "intent": "Need owner contact for escalation"
+      }
+    }
+  },
+  
+  // Prioritize by how overdue
+  "sort": [["end_date", "asc"]]
+}
+```
+
+### 4.4 Search Query with Semantic Context
+
+Combining traditional filters with search:
+
+```javascript
+{
+  "object": "customers",
+  
+  "ai_context": {
+    "intent": "Find customers matching search term with high lifetime value",
+    "natural_language": "Search for 'Acme' among VIP customers",
+    "search_type": "keyword_and_filter"
+  },
+  
+  // Traditional filters
+  "filters": [
+    ["vip_level", ">=", "gold"],
+    "and",
+    ["is_active", "=", true]
+  ],
+  
+  // Text search across multiple fields
+  "search": "Acme",
+  
+  "fields": ["name", "email", "vip_level", "lifetime_value"],
+  
+  "sort": [["lifetime_value", "desc"]],
+  "top": 50
+}
+```
+
+## 5. AI-Powered Query Features
+
+### 5.1 Natural Language to Query
+
+With AI context, systems can:
+
+```javascript
+// User says: "Show me my overdue tasks"
+// AI generates:
+{
+  "object": "tasks",
+  "ai_context": {
+    "natural_language": "Show me my overdue tasks",
+    "generated_by": "ai_assistant",
+    "confidence": 0.95
+  },
+  "filters": [
+    ["assignee_id", "=", "$current_user"],
+    "and",
+    ["due_date", "<", "$today"],
+    "and",
+    ["status", "!=", "completed"]
+  ],
+  "sort": [["due_date", "asc"]]
+}
+```
+
+### 5.2 Query Optimization Hints
+
+AI context can suggest optimizations:
+
+```javascript
+{
+  "object": "large_table",
+  
+  "ai_context": {
+    "expected_result_size": "small",  // < 100 records
+    "suggest_index": ["status", "created_at"],  // AI recommends this index
+    "performance_note": "Frequently accessed query - consider caching"
+  },
+  
+  "filters": [
+    ["status", "=", "active"],
+    "and",
+    ["created_at", ">", "2024-01-01"]
+  ]
+}
 ```
 
