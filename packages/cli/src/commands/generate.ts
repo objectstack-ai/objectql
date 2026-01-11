@@ -1,19 +1,21 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import glob from 'fast-glob';
-import * as yaml from 'js-yaml';
+import { loadObjectConfigs } from '@objectql/core';
 import { ObjectConfig, FieldConfig } from '@objectql/types';
 
 export async function generateTypes(sourceDir: string, outputDir: string) {
     console.log(`Searching for objects in ${sourceDir}...`);
     
-    const files = await glob(['**/*.object.yml', '**/*.object.yaml'], { 
-        cwd: sourceDir,
-        absolute: true,
-        ignore: ['**/node_modules/**'] 
-    });
+    // Use Loader to get Merged Objects (Flat list)
+    let schemas: Record<string, ObjectConfig>;
+    try {
+        schemas = loadObjectConfigs(sourceDir);
+    } catch (e) {
+        console.error('Failed to load object configs:', e);
+        return;
+    }
 
-    if (files.length === 0) {
+    if (Object.keys(schemas).length === 0) {
         console.log('No object files found.');
         return;
     }
@@ -25,38 +27,24 @@ export async function generateTypes(sourceDir: string, outputDir: string) {
 
     const indexContent: string[] = [];
 
-    for (const file of files) {
-        const content = fs.readFileSync(file, 'utf8');
+    for (const [name, schema] of Object.entries(schemas)) {
         try {
-            const schema = yaml.load(content) as ObjectConfig;
-            if (!schema || !schema.name) continue;
-
-            const typeName = toPascalCase(schema.name);
+            const typeName = toPascalCase(name);
             const typeDefinition = generateInterface(typeName, schema);
             
-            // Calculate relative directory structure
-            // Ensure we handle absolute/relative path mismatch safely
-            const absSourceDir = path.resolve(sourceDir);
-            const relativePath = path.relative(absSourceDir, file);
-            const relativeDir = path.dirname(relativePath);
+            // Generate flat files based on Object Name
+            // e.g. User.ts, CrmContact.ts
+            // We lose original directory structure but gain correct merged types.
+            // This is arguably better for "Generated Types" which are usually a flat library.
             
-            // Construct target directory
-            const targetDir = path.join(outputDir, relativeDir);
-            if (!fs.existsSync(targetDir)) {
-                fs.mkdirSync(targetDir, { recursive: true });
-            }
-
-            const outPath = path.join(targetDir, `${schema.name}.ts`);
+            const fileName = `${name}.ts`;
+            const outPath = path.join(outputDir, fileName);
             fs.writeFileSync(outPath, typeDefinition);
-            console.log(`Generated ${path.join(relativeDir, schema.name)}.ts`);
+            console.log(`Generated ${fileName}`);
 
-            // Add to index (normalize path separators for imports)
-            const importPath = path.join(relativeDir, schema.name).split(path.sep).join('/');
-            // Use ./ prefix if distinct from dot
-            const formatImport = importPath.startsWith('.') ? importPath : `./${importPath}`;
-            indexContent.push(`export * from '${formatImport}';`);
+            indexContent.push(`export * from './${name}';`);
         } catch (e) {
-            console.error(`Failed to parse ${file}:`, e);
+            console.error(`Failed to generate type for ${name}:`, e);
         }
     }
 
