@@ -17,9 +17,9 @@ export class MockDriver implements Driver {
         const items = this.getData(objectName);
         // Very basic filter implementation for testing
         if (query.filters) {
-            const filter = query.filters[0];
             const filtered = items.filter(item => {
                 // Assuming simple filter: [['field', '=', 'value']]
+                const filter = query.filters[0]; 
                 if (filter && Array.isArray(filter) && filter[1] === '=') {
                     return item[filter[0]] === filter[2];
                 }

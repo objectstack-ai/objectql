@@ -43,9 +43,12 @@ export class ObjectRepository {
         if (!this.context.userId) {
             return undefined;
         }
+        // Construct user object from context, including relevant properties
         return {
             id: this.context.userId,
-            ...(this.context as any) // Include any additional context properties
+            spaceId: this.context.spaceId,
+            roles: this.context.roles,
+            isSystem: this.context.isSystem
         };
     }
 
