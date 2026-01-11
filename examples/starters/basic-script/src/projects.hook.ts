@@ -128,7 +128,7 @@ const hooks: ObjectHookDefinition<Project> = {
     afterFind: async ({ result, user }) => {
         // Example: Add computed progress field based on status
         if (Array.isArray(result)) {
-            result.forEach(project => {
+            result.forEach((project: any) => {
                 switch (project.status) {
                     case 'planned':
                         project.progress = 0;
