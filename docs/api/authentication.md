@@ -622,7 +622,7 @@ server.post('/api/auth/login', async (req, res) => {
 async function verifyCredentials(email: string, password: string) {
   const bcrypt = require('bcryptjs');
   
-  // Find user by email
+  // Find user by email (using the app instance from outer scope)
   const ctx = app.createContext({});
   const user = await ctx.object('users').findOne({ filters: [['email', '=', email]] });
   
@@ -633,6 +633,8 @@ async function verifyCredentials(email: string, password: string) {
   
   return match ? user : null;
 }
+
+server.listen(3000);
 
 server.listen(3000);
 ```
