@@ -491,7 +491,8 @@ export class Validator {
         // Handle i18n messages
         if (typeof message === 'object') {
             // Try preferred language first
-            let messageText = message[this.options.language!];
+            const preferredLanguage = this.options.language ?? 'en';
+            let messageText = message[preferredLanguage];
             
             // Try fallback languages if preferred not available
             if (!messageText && this.options.languageFallback) {
