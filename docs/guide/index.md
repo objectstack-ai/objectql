@@ -52,5 +52,18 @@ Your application logic isn't hidden inside controller functions. It's attached t
 *   **For Low-Code**: The rigorous structure makes it easy to build UI visual editors on top of it.
 *   **For Microservices**: The federation protocol allows you to stitch multiple services into one graph instantly.
 
+## 📡 API Access
 
-*   [**CLI Tool**](./cli.md): Using the command line interface for codegen.
+ObjectQL exposes your data through multiple API styles:
+
+*   **[Complete API Reference](../api/README.md)** - Comprehensive guide to all endpoints
+*   **[JSON-RPC API](../api/README.md#json-rpc-style-api)** - Universal protocol for all operations
+*   **[REST API](../api/README.md#rest-style-api)** - Traditional REST endpoints
+*   **[Metadata API](../api/README.md#metadata-api)** - Runtime schema discovery
+*   **[Authentication Guide](../api/authentication.md)** - Securing your APIs
+
+## Next Steps
+
+*   [**Getting Started**](./getting-started.md): Build your first ObjectQL app
+*   [**CLI Tool**](./cli.md): Using the command line interface for codegen
+*   [**API Reference**](../api/README.md): Complete API documentation
