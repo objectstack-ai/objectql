@@ -178,10 +178,24 @@ Insert a new record.
   "op": "create",
   "object": "tasks",
   "args": {
+    "data": {
+      "name": "Review PR",
+      "priority": "high",
+      "assignee_id": "user_123",
+      "due_date": "2024-01-20"
+    }
+  }
+}
+```
+
+**Note**: Alternatively, you can pass the document directly as `args` without the `data` wrapper:
+```json
+{
+  "op": "create",
+  "object": "tasks",
+  "args": {
     "name": "Review PR",
-    "priority": "high",
-    "assignee_id": "user_123",
-    "due_date": "2024-01-20"
+    "priority": "high"
   }
 }
 ```
