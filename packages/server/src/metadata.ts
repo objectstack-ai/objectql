@@ -166,13 +166,23 @@ export function createMetadataHandler(app: IObjectQL) {
                 }
 
                 const actions = metadata.actions || {};
-                const formattedActions = Object.entries(actions).map(([key, action]) => ({
-                    name: key,
-                    type: action.type || 'record',
-                    label: action.label || key,
-                    params: action.params || {},
-                    description: action.description
-                }));
+                const formattedActions = Object.entries(actions).map(([key, action]) => {
+                    const actionConfig = action as {
+                        type?: string;
+                        label?: string;
+                        params?: Record<string, unknown>;
+                        description?: string;
+                        fields?: Record<string, unknown>;
+                    };
+                    const hasFields = !!actionConfig.fields && Object.keys(actionConfig.fields).length > 0;
+                    return {
+                        name: key,
+                        type: actionConfig.type || (hasFields ? 'record' : 'global'),
+                        label: actionConfig.label || key,
+                        params: actionConfig.params || {},
+                        description: actionConfig.description
+                    };
+                });
 
                 res.setHeader('Content-Type', 'application/json');
                 res.statusCode = 200;
