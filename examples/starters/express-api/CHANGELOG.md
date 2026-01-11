@@ -1,5 +1,15 @@
 # @example/express-server
 
+## 1.1.4
+
+### Patch Changes
+
+- Updated dependencies
+  - @objectql/core@1.5.0
+  - @objectql/driver-knex@1.5.0
+  - @objectql/server@1.5.0
+  - @objectql/types@1.5.0
+
 ## 1.1.3
 
 ### Patch Changes

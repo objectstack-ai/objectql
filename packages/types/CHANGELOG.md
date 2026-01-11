@@ -1,5 +1,11 @@
 # @objectql/core
 
+## 1.5.0
+
+### Minor Changes
+
+- Minor version release - 1.5.0
+
 ## 1.4.0
 
 ### Minor Changes

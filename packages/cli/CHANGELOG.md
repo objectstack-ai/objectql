@@ -1,5 +1,19 @@
 # @objectql/cli
 
+## 1.5.0
+
+### Minor Changes
+
+- Minor version release - 1.5.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @objectql/core@1.5.0
+  - @objectql/driver-knex@1.5.0
+  - @objectql/server@1.5.0
+  - @objectql/types@1.5.0
+
 ## 1.4.0
 
 ### Minor Changes
