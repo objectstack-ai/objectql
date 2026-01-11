@@ -1,5 +1,6 @@
 import { IObjectQL } from '@objectql/types';
 import { IncomingMessage, ServerResponse } from 'http';
+import { ErrorCode } from './types';
 
 function readBody(req: IncomingMessage): Promise<any> {
     return new Promise((resolve, reject) => {
@@ -57,13 +58,18 @@ export function createMetadataHandler(app: IObjectQL) {
             }
 
             // GET /api/metadata/objects/:name - Get object details
-            const match = url.match(/^\/api\/metadata\/objects\/([^\/]+)$/);
-            if (method === 'GET' && match) {
-                const objectName = match[1];
+            const objectMatch = url.match(/^\/api\/metadata\/objects\/([^\/\?]+)$/);
+            if (method === 'GET' && objectMatch) {
+                const objectName = objectMatch[1];
                 const metadata = app.getObject(objectName);
                 if (!metadata) {
                     res.statusCode = 404;
-                    res.end(JSON.stringify({ error: 'Object not found' }));
+                    res.end(JSON.stringify({ 
+                        error: {
+                            code: ErrorCode.NOT_FOUND,
+                            message: `Object '${objectName}' not found`
+                        }
+                    }));
                     return;
                 }
                 
@@ -74,7 +80,10 @@ export function createMetadataHandler(app: IObjectQL) {
                         type: field.type,
                         label: field.label,
                         required: field.required,
-                        defaultValue: field.defaultValue
+                        defaultValue: field.defaultValue,
+                        unique: field.unique,
+                        options: field.options,
+                        validations: field.validations
                     }))
                     : [];
                 
@@ -84,6 +93,84 @@ export function createMetadataHandler(app: IObjectQL) {
                     ...metadata,
                     fields
                 }));
+                return;
+            }
+
+            // GET /api/metadata/objects/:name/fields/:field - Get field metadata
+            const fieldMatch = url.match(/^\/api\/metadata\/objects\/([^\/]+)\/fields\/([^\/\?]+)$/);
+            if (method === 'GET' && fieldMatch) {
+                const [, objectName, fieldName] = fieldMatch;
+                const metadata = app.getObject(objectName);
+                
+                if (!metadata) {
+                    res.statusCode = 404;
+                    res.end(JSON.stringify({ 
+                        error: {
+                            code: ErrorCode.NOT_FOUND,
+                            message: `Object '${objectName}' not found`
+                        }
+                    }));
+                    return;
+                }
+
+                const field = metadata.fields?.[fieldName];
+                if (!field) {
+                    res.statusCode = 404;
+                    res.end(JSON.stringify({ 
+                        error: {
+                            code: ErrorCode.NOT_FOUND,
+                            message: `Field '${fieldName}' not found in object '${objectName}'`
+                        }
+                    }));
+                    return;
+                }
+
+                res.setHeader('Content-Type', 'application/json');
+                res.statusCode = 200;
+                res.end(JSON.stringify({
+                    name: field.name || fieldName,
+                    type: field.type,
+                    label: field.label,
+                    required: field.required,
+                    unique: field.unique,
+                    defaultValue: field.defaultValue,
+                    options: field.options,
+                    validations: field.validations
+                }));
+                return;
+            }
+
+            // GET /api/metadata/objects/:name/actions - List actions
+            const actionsMatch = url.match(/^\/api\/metadata\/objects\/([^\/]+)\/actions$/);
+            if (method === 'GET' && actionsMatch) {
+                const [, objectName] = actionsMatch;
+                const metadata = app.getObject(objectName);
+                
+                if (!metadata) {
+                    res.statusCode = 404;
+                    res.end(JSON.stringify({ 
+                        error: {
+                            code: ErrorCode.NOT_FOUND,
+                            message: `Object '${objectName}' not found`
+                        }
+                    }));
+                    return;
+                }
+
+                const actions = metadata.actions || [];
+                const formattedActions = Array.isArray(actions) 
+                    ? actions.map(action => ({
+                        name: action.name,
+                        type: action.type || 'record',
+                        label: action.label || action.name,
+                        params: action.params || {},
+                        description: action.description
+                    }))
+                    : [];
+
+                res.setHeader('Content-Type', 'application/json');
+                res.statusCode = 200;
+                res.end(JSON.stringify({ actions: formattedActions }));
                 return;
             }
 
@@ -101,18 +188,33 @@ export function createMetadataHandler(app: IObjectQL) {
                 } catch (e: any) {
                     const isUserError = e.message.startsWith('Cannot update') || e.message.includes('not found');
                     res.statusCode = isUserError ? 400 : 500;
-                    res.end(JSON.stringify({ error: e.message }));
+                    res.end(JSON.stringify({ 
+                        error: {
+                            code: isUserError ? ErrorCode.INVALID_REQUEST : ErrorCode.INTERNAL_ERROR,
+                            message: e.message
+                        }
+                    }));
                 }
                 return;
             }
 
             // Not found
             res.statusCode = 404;
-            res.end('Not Found');
+            res.end(JSON.stringify({
+                error: {
+                    code: ErrorCode.NOT_FOUND,
+                    message: 'Not Found'
+                }
+            }));
         } catch (e: any) {
             console.error('[Metadata Handler] Error:', e);
             res.statusCode = 500;
-            res.end(JSON.stringify({ error: 'Internal Server Error' }));
+            res.end(JSON.stringify({ 
+                error: {
+                    code: ErrorCode.INTERNAL_ERROR,
+                    message: 'Internal Server Error'
+                }
+            }));
         }
     };
 }

@@ -1,5 +1,5 @@
 import { IObjectQL, ObjectQLContext } from '@objectql/types';
-import { ObjectQLRequest, ObjectQLResponse } from './types';
+import { ObjectQLRequest, ObjectQLResponse, ErrorCode } from './types';
 
 export class ObjectQLServer {
     constructor(private app: IObjectQL) {}
@@ -10,6 +10,17 @@ export class ObjectQLServer {
      */
     async handle(req: ObjectQLRequest): Promise<ObjectQLResponse> {
         try {
+            // Log AI context if provided
+            if (req.ai_context) {
+                console.log('[ObjectQL AI Context]', {
+                    object: req.object,
+                    op: req.op,
+                    intent: req.ai_context.intent,
+                    natural_language: req.ai_context.natural_language,
+                    use_case: req.ai_context.use_case
+                });
+            }
+
             // 1. Build Context
             // TODO: integrate with real session/auth
             const contextOptions = {
@@ -23,10 +34,23 @@ export class ObjectQLServer {
             // We need to cast or fix the interface. Assuming 'app' behaves like ObjectQL class.
             const app = this.app as any; 
             if (typeof app.createContext !== 'function') {
-                throw new Error("The provided ObjectQL instance does not support createContext.");
+                return this.errorResponse(
+                    ErrorCode.INTERNAL_ERROR,
+                    "The provided ObjectQL instance does not support createContext."
+                );
             }
             
             const ctx: ObjectQLContext = app.createContext(contextOptions);
+            
+            // Validate object exists
+            const objectConfig = app.getObject(req.object);
+            if (!objectConfig) {
+                return this.errorResponse(
+                    ErrorCode.NOT_FOUND,
+                    `Object '${req.object}' not found`
+                );
+            }
+            
             const repo = ctx.object(req.object);
 
             let result: any;
@@ -36,7 +60,12 @@ export class ObjectQLServer {
                     result = await repo.find(req.args);
                     break;
                 case 'findOne':
-                    result = await repo.findOne(req.args);
+                    // Support both string ID and query object
+                    if (typeof req.args === 'string') {
+                        result = await repo.findOne({ filters: [['_id', '=', req.args]] });
+                    } else {
+                        result = await repo.findOne(req.args);
+                    }
                     break;
                 case 'create':
                     result = await repo.create(req.args);
@@ -46,6 +75,10 @@ export class ObjectQLServer {
                     break;
                 case 'delete':
                     result = await repo.delete(req.args.id);
+                    if (result) {
+                        // Return standardized delete response
+                        result = { id: req.args.id, deleted: true };
+                    }
                     break;
                 case 'count':
                     result = await repo.count(req.args);
@@ -59,19 +92,86 @@ export class ObjectQLServer {
                     });
                     break;
                 default:
-                    throw new Error(`Unknown operation: ${req.op}`);
+                    return this.errorResponse(
+                        ErrorCode.INVALID_REQUEST,
+                        `Unknown operation: ${req.op}`
+                    );
             }
 
             return { data: result };
 
         } catch (e: any) {
-            console.error('[ObjectQL Server] Error:', e);
-            return {
-                error: {
-                    code: 'INTERNAL_ERROR',
-                    message: e.message || 'An error occurred'
-                }
-            };
+            return this.handleError(e);
         }
+    }
+
+    /**
+     * Handle errors and convert them to appropriate error responses
+     */
+    private handleError(error: any): ObjectQLResponse {
+        console.error('[ObjectQL Server] Error:', error);
+
+        // Handle validation errors
+        if (error.name === 'ValidationError' || error.code === 'VALIDATION_ERROR') {
+            return this.errorResponse(
+                ErrorCode.VALIDATION_ERROR,
+                'Validation failed',
+                { fields: error.fields || error.details }
+            );
+        }
+
+        // Handle permission errors
+        if (error.name === 'PermissionError' || error.code === 'FORBIDDEN') {
+            return this.errorResponse(
+                ErrorCode.FORBIDDEN,
+                error.message || 'You do not have permission to access this resource',
+                error.details
+            );
+        }
+
+        // Handle not found errors
+        if (error.name === 'NotFoundError' || error.code === 'NOT_FOUND') {
+            return this.errorResponse(
+                ErrorCode.NOT_FOUND,
+                error.message || 'Resource not found'
+            );
+        }
+
+        // Handle conflict errors (e.g., unique constraint violations)
+        if (error.name === 'ConflictError' || error.code === 'CONFLICT') {
+            return this.errorResponse(
+                ErrorCode.CONFLICT,
+                error.message || 'Resource conflict',
+                error.details
+            );
+        }
+
+        // Handle database errors
+        if (error.name === 'DatabaseError' || error.code?.startsWith('DB_')) {
+            return this.errorResponse(
+                ErrorCode.DATABASE_ERROR,
+                'Database operation failed',
+                { originalError: error.message }
+            );
+        }
+
+        // Default to internal error
+        return this.errorResponse(
+            ErrorCode.INTERNAL_ERROR,
+            error.message || 'An error occurred'
+        );
+    }
+
+    /**
+     * Create a standardized error response
+     */
+    private errorResponse(code: ErrorCode, message: string, details?: any): ObjectQLResponse {
+        return {
+            error: {
+                code,
+                message,
+                details
+            }
+        };
     }
 }

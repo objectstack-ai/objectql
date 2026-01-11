@@ -1,6 +1,6 @@
 import { IObjectQL } from '@objectql/types';
 import { ObjectQLServer } from '../server';
-import { ObjectQLRequest } from '../types';
+import { ObjectQLRequest, ErrorCode } from '../types';
 import { IncomingMessage, ServerResponse } from 'http';
 import { generateOpenAPI } from '../openapi';
 
@@ -28,17 +28,51 @@ export function createNodeHandler(app: IObjectQL) {
                     op: json.op,
                     object: json.object,
                     args: json.args,
-                    user: json.user // For dev/testing, allowing user injection
+                    user: json.user, // For dev/testing, allowing user injection
+                    ai_context: json.ai_context // Support AI context
                 };
 
                 const result = await server.handle(qlReq);
                 
+                // Determine HTTP status code based on error
+                let statusCode = 200;
+                if (result.error) {
+                    switch (result.error.code) {
+                        case ErrorCode.INVALID_REQUEST:
+                        case ErrorCode.VALIDATION_ERROR:
+                            statusCode = 400;
+                            break;
+                        case ErrorCode.UNAUTHORIZED:
+                            statusCode = 401;
+                            break;
+                        case ErrorCode.FORBIDDEN:
+                            statusCode = 403;
+                            break;
+                        case ErrorCode.NOT_FOUND:
+                            statusCode = 404;
+                            break;
+                        case ErrorCode.CONFLICT:
+                            statusCode = 409;
+                            break;
+                        case ErrorCode.RATE_LIMIT_EXCEEDED:
+                            statusCode = 429;
+                            break;
+                        default:
+                            statusCode = 500;
+                    }
+                }
+
                 res.setHeader('Content-Type', 'application/json');
-                res.statusCode = result.error ? 500 : 200;
+                res.statusCode = statusCode;
                 res.end(JSON.stringify(result));
             } catch (e) {
                 res.statusCode = 500;
-                res.end(JSON.stringify({ error: { code: 'INTERNAL_ERROR', message: 'Internal Server Error' }}));
+                res.end(JSON.stringify({ 
+                    error: { 
+                        code: ErrorCode.INTERNAL_ERROR, 
+                        message: 'Internal Server Error' 
+                    }
+                }));
             }
         };
 
@@ -61,7 +95,12 @@ export function createNodeHandler(app: IObjectQL) {
             }
 
             res.statusCode = 405;
-            res.end('Method Not Allowed');
+            res.end(JSON.stringify({
+                error: {
+                    code: ErrorCode.INVALID_REQUEST,
+                    message: 'Method Not Allowed'
+                }
+            }));
             return;
         }
 
@@ -80,7 +119,12 @@ export function createNodeHandler(app: IObjectQL) {
                 await handleRequest(json);
             } catch (e) {
                 res.statusCode = 400;
-                res.end('Invalid JSON');
+                res.end(JSON.stringify({
+                    error: {
+                        code: ErrorCode.INVALID_REQUEST,
+                        message: 'Invalid JSON'
+                    }
+                }));
             }
         });
     };
