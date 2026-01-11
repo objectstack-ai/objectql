@@ -162,14 +162,14 @@ describe('Validation System', () => {
     });
 
     describe('Cross-field validation', () => {
-        it('should validate date range', async () => {
+        it('should validate date range with compare_to', async () => {
             const rule: CrossFieldValidationRule = {
                 name: 'valid_date_range',
                 type: 'cross_field',
                 rule: {
                     field: 'end_date',
                     operator: '>=',
-                    value: '2024-01-15',
+                    compare_to: 'start_date',
                 },
                 message: 'End date must be on or after start date',
                 error_code: 'INVALID_DATE_RANGE',
@@ -190,14 +190,14 @@ describe('Validation System', () => {
             expect(result.errors[0].error_code).toBe('INVALID_DATE_RANGE');
         });
 
-        it('should pass valid date range', async () => {
+        it('should pass valid date range with compare_to', async () => {
             const rule: CrossFieldValidationRule = {
                 name: 'valid_date_range',
                 type: 'cross_field',
                 rule: {
                     field: 'end_date',
                     operator: '>=',
-                    value: '2024-01-15',
+                    compare_to: 'start_date',
                 },
                 message: 'End date must be on or after start date',
             };
@@ -214,6 +214,31 @@ describe('Validation System', () => {
             
             expect(result.valid).toBe(true);
             expect(result.errors).toHaveLength(0);
+        });
+        
+        it('should validate with fixed value comparison', async () => {
+            const rule: CrossFieldValidationRule = {
+                name: 'min_value_check',
+                type: 'cross_field',
+                rule: {
+                    field: 'budget',
+                    operator: '>=',
+                    value: 1000,
+                },
+                message: 'Budget must be at least 1000',
+            };
+
+            const context: ValidationContext = {
+                record: {
+                    budget: 500,
+                },
+                operation: 'create',
+            };
+
+            const result = await validator.validate([rule], context);
+            
+            expect(result.valid).toBe(false);
+            expect(result.errors).toHaveLength(1);
         });
     });
 

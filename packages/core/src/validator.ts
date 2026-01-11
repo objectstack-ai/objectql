@@ -417,7 +417,11 @@ export class Validator {
         // Handle field comparison
         if (condition.field && condition.operator !== undefined) {
             const fieldValue = record[condition.field];
-            return this.compareValues(fieldValue, condition.operator, condition.value);
+            // Use compare_to if specified (cross-field comparison), otherwise use value
+            const compareValue = condition.compare_to !== undefined 
+                ? record[condition.compare_to] 
+                : condition.value;
+            return this.compareValues(fieldValue, condition.operator, compareValue);
         }
 
         return true;

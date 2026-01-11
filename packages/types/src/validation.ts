@@ -79,6 +79,8 @@ export interface ValidationCondition {
     operator?: ValidationOperator;
     /** Value to compare against */
     value?: any;
+    /** Field name to compare against (for cross-field validation) */
+    compare_to?: string;
     /** Expression to evaluate */
     expression?: string;
     /** Logical AND conditions */
