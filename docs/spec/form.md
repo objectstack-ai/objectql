@@ -1,21 +1,22 @@
 # Form Metadata
 
-Form metadata defines the structure, layout, and behavior of data entry forms. Forms are the primary interface for creating and editing records.
+Form metadata defines the structure, layout, and behavior of data entry forms. Forms are the primary interface for creating and editing records. They are designed to be both functional and AI-understandable for automated form generation.
 
 ## 1. Overview
 
 Form metadata provides:
 
-- **Layout definition**: Multi-column layouts, sections, tabs
+- **Layout definition**: Multi-column layouts, sections, tabs, wizards
 - **Field configuration**: Labels, help text, default values, placeholders
 - **Conditional logic**: Show/hide fields based on conditions
-- **Validation**: Real-time field validation
+- **Validation**: Real-time field validation with clear messages
 - **Workflow integration**: Multi-step forms, wizards
 - **Responsive design**: Mobile-optimized layouts
+- **AI assistance**: Smart defaults, auto-complete, validation helpers
 
 **File Naming Convention:** `[object_name].form.yml` or `[form_name].form.yml`
 
-## 2. Root Structure
+## 2. Root Structure with AI Context
 
 ```yaml
 name: project_form
@@ -24,6 +25,31 @@ type: edit  # create, edit, view
 object: projects
 description: Form for creating and editing projects
 
+# AI-friendly context
+ai_context:
+  intent: "Capture essential project information for planning and tracking"
+  user_persona: "Project manager or team lead"
+  typical_completion_time: "3-5 minutes"
+  
+  # Help AI understand form flow
+  user_journey: |
+    1. Enter basic project details (name, description)
+    2. Set timeline and budget
+    3. Assign team members
+    4. Review and submit
+  
+  # Common issues to prevent
+  common_errors:
+    - "Forgetting to set realistic deadlines"
+    - "Not assigning budget upfront"
+    - "Missing team member assignments"
+  
+  # Quality checks
+  quality_guidance: |
+    - Name should be descriptive and unique
+    - Description should explain problem being solved
+    - Budget should align with project scope
+
 # Layout Configuration
 layout:
   columns: 2
@@ -31,6 +57,12 @@ layout:
     - name: basic_info
       label: Basic Information
       columns: 2
+      
+      ai_context:
+        intent: "Capture core identifying information"
+        user_guidance: "Start with a clear, descriptive project name"
+        completion_order: 1
+      
       fields:
         - name
         - status
@@ -40,6 +72,12 @@ layout:
     - name: details
       label: Project Details
       columns: 1
+      
+      ai_context:
+        intent: "Document project purpose and scope"
+        user_guidance: "Be specific about what problems this project solves"
+        completion_order: 2
+      
       fields:
         - description
         - objectives
@@ -48,6 +86,12 @@ layout:
     - name: timeline
       label: Timeline & Budget
       columns: 2
+      
+      ai_context:
+        intent: "Set realistic expectations for duration and cost"
+        validation_focus: "Ensure dates are logical and budget is within limits"
+        completion_order: 3
+      
       fields:
         - start_date
         - end_date
@@ -57,44 +101,205 @@ layout:
     - name: assignment
       label: Team Assignment
       columns: 2
+      
+      ai_context:
+        intent: "Assign ownership and build project team"
+        user_guidance: "Owner is accountable for project success"
+        completion_order: 4
+      
       fields:
         - owner
         - team
         - department
 
-# Field Overrides
+# Field Overrides with AI Enhancement
 field_config:
+  name:
+    placeholder: "e.g., 'Q2 Website Redesign'"
+    help_text: "Choose a name that clearly identifies the project"
+    
+    ai_context:
+      intent: "Unique project identifier for tracking and reporting"
+      
+      # Smart suggestions
+      suggestions_based_on:
+        - "Department name"
+        - "Current quarter"
+        - "Primary deliverable"
+      
+      quality_check: "Should be descriptive, not generic like 'Project 1'"
+      
+      examples:
+        good: ["Website Redesign 2026", "Q1 Marketing Campaign"]
+        bad: ["Project", "Untitled", "New Project"]
+  
   description:
     rows: 5
-    placeholder: Enter detailed project description
-    help_text: Provide comprehensive project overview
+    placeholder: "What is this project about? What problem does it solve?"
+    help_text: "Provide comprehensive project overview"
+    
+    ai_context:
+      intent: "Clear problem statement and expected outcomes"
+      quality_check: "Should answer: What, Why, and Expected Outcome"
+      min_quality_length: 50  # Characters for meaningful description
+      
+      ai_assist:
+        enabled: true
+        feature: "auto_expand"
+        prompt: "Expand this brief description into a full project overview"
   
   status:
-    default_value: draft
-    help_text: Current project status
+    default_value: planning
+    help_text: "Current project stage"
+    
+    ai_context:
+      intent: "Track project through lifecycle"
+      default_rationale: "New projects start in planning phase"
   
   budget:
     prefix: $
     format: currency
-    help_text: Total project budget
+    help_text: "Total approved project budget"
+    
+    ai_context:
+      intent: "Financial planning and tracking"
+      
+      # Smart defaults based on project type
+      smart_defaults:
+        small_project: 25000
+        medium_project: 100000
+        large_project: 500000
+      
+      # Warning thresholds
+      warning_thresholds:
+        - amount: 50000
+          message: "Projects over $50K require manager approval"
+          severity: info
+        
+        - amount: 200000
+          message: "Projects over $200K require director approval"
+          severity: warning
+  
+  start_date:
+    default: "$today"
+    
+    ai_context:
+      intent: "When project work begins"
+      smart_default_rationale: "Most projects start immediately or within days"
+  
+  end_date:
+    ai_context:
+      intent: "Target completion date"
+      
+      # AI can suggest realistic timelines
+      suggestions:
+        - value: "start_date + 30 days"
+          label: "1 month project"
+        - value: "start_date + 90 days"
+          label: "1 quarter project"
+        - value: "start_date + 180 days"
+          label: "6 month project"
+  
+  owner:
+    default: "$current_user"
+    
+    ai_context:
+      intent: "Person responsible for project success"
+      default_rationale: "Usually the person creating the project"
+      
+      # Smart suggestions
+      suggestions_based_on:
+        - "Current user's manager"
+        - "Department head"
+        - "Previous project owners in same category"
 
-# Conditional Display
+# Conditional Display with Business Logic
 conditional_logic:
-  - condition:
+  - name: show_completion_fields
+    
+    ai_context:
+      intent: "Show completion tracking when project is done"
+      business_rule: "Completed projects need actual dates and costs"
+    
+    condition:
       field: status
       operator: "="
       value: completed
+    
     actions:
-      - show_fields: [completion_date, final_cost]
+      - show_fields: [completion_date, actual_cost, completion_notes]
+      - mark_required: [completion_date, completion_notes]
       - hide_fields: [estimated_hours]
   
-  - condition:
+  - name: require_approval_info
+    
+    ai_context:
+      intent: "High-value projects need approval tracking"
+      business_rule: "Company policy requires approval for projects > $50K"
+    
+    condition:
       field: budget
       operator: ">"
-      value: 100000
+      value: 50000
+    
     actions:
-      - show_fields: [approval_required, approver]
-      - mark_required: [approver]
+      - show_fields: [approval_required, approver, approval_justification]
+      - mark_required: [approver, approval_justification]
+      - show_message:
+          type: info
+          text: "This project requires management approval due to budget amount"
+  
+  - name: suggest_risk_assessment
+    
+    ai_context:
+      intent: "Large or complex projects should assess risks"
+      business_rule: "Projects over 6 months or $200K should document risks"
+    
+    condition:
+      any_of:
+        - field: budget
+          operator: ">"
+          value: 200000
+        - field: estimated_hours
+          operator: ">"
+          value: 1000
+    
+    actions:
+      - show_section: risk_assessment
+      - show_message:
+          type: warning
+          text: "Consider documenting project risks and mitigation strategies"
+
+# AI-Powered Form Features
+ai_features:
+  # Auto-complete from context
+  auto_complete:
+    enabled: true
+    fields: [description, objectives]
+    
+    ai_context:
+      intent: "Help users write better project descriptions"
+      feature: "Expand brief notes into full descriptions"
+  
+  # Smart validation
+  validation_assistant:
+    enabled: true
+    
+    ai_context:
+      intent: "Real-time suggestions for improving data quality"
+      checks:
+        - "Description is too vague"
+        - "Budget seems unrealistic for project scope"
+        - "Timeline conflicts with resource availability"
+  
+  # Similar projects
+  similar_projects:
+    enabled: true
+    match_on: [category, department, budget_range]
+    
+    ai_context:
+      intent: "Show similar past projects to help with estimation"
+      use: "User can copy timeline and budget estimates from successful projects"
 
 # Actions
 actions:
