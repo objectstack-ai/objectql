@@ -278,9 +278,7 @@ const hooks: ObjectHookDefinition<Project> = {
 
         // 2. Check for dependent tasks
         /*
-        const taskCount = await api.count('tasks', {
-            filters: [['project_id', '=', id]]
-        });
+        const taskCount = await api.count('tasks', [['project_id', '=', id]]);
         
         if (taskCount > 0) {
             throw new Error(
