@@ -1,5 +1,12 @@
 # @example/integrated-app
 
+## 1.1.3
+
+### Patch Changes
+
+- @example/audit-log@0.2.0
+- @example/basic-script@5.0.0
+
 ## 1.1.2
 
 ### Patch Changes
