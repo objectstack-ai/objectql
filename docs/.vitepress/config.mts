@@ -17,10 +17,24 @@ export default defineConfig({
       { text: 'Guide', link: '/guide/' },
       { text: 'AI-Native', link: '/ai/' },
       { text: 'Protocol', link: '/spec/' },
+      { text: 'API Reference', link: '/api/' },
     ],
 
     // Sidebar Configuration
     sidebar: {
+      // Sidebar for API section
+      '/api/': [
+        {
+          text: 'API Reference',
+          items: [
+            { text: 'Overview', link: '/api/' },
+            { text: 'Quick Reference', link: '/api/quick-reference' },
+            { text: 'Authentication', link: '/api/authentication' },
+            { text: 'Full Specification', link: '/api/README' },
+          ]
+        }
+      ],
+
       // Sidebar for AI section
       '/ai/': [
          {

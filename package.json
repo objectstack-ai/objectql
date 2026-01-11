@@ -8,7 +8,7 @@
     "changeset": "changeset",
     "version": "changeset version",
     "release": "pnpm run build && changeset publish",
-    "docs": "vitepress dev docs",
+    "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
     "docs:preview": "vitepress preview docs"
   },
