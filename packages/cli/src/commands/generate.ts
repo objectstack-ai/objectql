@@ -34,11 +34,27 @@ export async function generateTypes(sourceDir: string, outputDir: string) {
             const typeName = toPascalCase(schema.name);
             const typeDefinition = generateInterface(typeName, schema);
             
-            const outPath = path.join(outputDir, `${schema.name}.ts`);
-            fs.writeFileSync(outPath, typeDefinition);
-            console.log(`Generated ${schema.name}.ts`);
+            // Calculate relative directory structure
+            // Ensure we handle absolute/relative path mismatch safely
+            const absSourceDir = path.resolve(sourceDir);
+            const relativePath = path.relative(absSourceDir, file);
+            const relativeDir = path.dirname(relativePath);
+            
+            // Construct target directory
+            const targetDir = path.join(outputDir, relativeDir);
+            if (!fs.existsSync(targetDir)) {
+                fs.mkdirSync(targetDir, { recursive: true });
+            }
 
-            indexContent.push(`export * from './${schema.name}';`);
+            const outPath = path.join(targetDir, `${schema.name}.ts`);
+            fs.writeFileSync(outPath, typeDefinition);
+            console.log(`Generated ${path.join(relativeDir, schema.name)}.ts`);
+
+            // Add to index (normalize path separators for imports)
+            const importPath = path.join(relativeDir, schema.name).split(path.sep).join('/');
+            // Use ./ prefix if distinct from dot
+            const formatImport = importPath.startsWith('.') ? importPath : `./${importPath}`;
+            indexContent.push(`export * from '${formatImport}';`);
         } catch (e) {
             console.error(`Failed to parse ${file}:`, e);
         }

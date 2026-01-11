@@ -172,6 +172,14 @@ export function createNodeHandler(app: IObjectQL) {
              return;
         }
 
+        // Special case for root: since we accept POST / (RPC), correct response for GET / is 405
+        if (pathName === '/') {
+            res.setHeader('Allow', 'POST');
+            res.statusCode = 405;
+            res.end(JSON.stringify({ error: { code: ErrorCode.INVALID_REQUEST, message: 'Method Not Allowed. Use POST for JSON-RPC.' } }));
+            return;
+        }
+
         res.statusCode = 404;
         res.end(JSON.stringify({ error: { code: ErrorCode.NOT_FOUND, message: 'Not Found' } }));
     };
