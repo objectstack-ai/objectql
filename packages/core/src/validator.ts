@@ -471,14 +471,38 @@ export class Validator {
                 return Array.isArray(b) && b.includes(a);
             case 'not_in':
                 return Array.isArray(b) && !b.includes(a);
-            case 'contains':
-                return String(a).includes(String(b));
-            case 'not_contains':
-                return !String(a).includes(String(b));
-            case 'starts_with':
-                return String(a).startsWith(String(b));
-            case 'ends_with':
-                return String(a).endsWith(String(b));
+            case 'contains': {
+                if (a == null || b == null) {
+                    return false;
+                }
+                const strA = String(a);
+                const strB = String(b);
+                return strA.includes(strB);
+            }
+            case 'not_contains': {
+                if (a == null || b == null) {
+                    return false;
+                }
+                const strA = String(a);
+                const strB = String(b);
+                return !strA.includes(strB);
+            }
+            case 'starts_with': {
+                if (a == null || b == null) {
+                    return false;
+                }
+                const strA = String(a);
+                const strB = String(b);
+                return strA.startsWith(strB);
+            }
+            case 'ends_with': {
+                if (a == null || b == null) {
+                    return false;
+                }
+                const strA = String(a);
+                const strB = String(b);
+                return strA.endsWith(strB);
+            }
             default:
                 return false;
         }
