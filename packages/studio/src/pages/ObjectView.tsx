@@ -98,6 +98,7 @@ export function ObjectView({ objectName }: ObjectViewProps) {
             sortable: true,
             filter: true,
             resizable: true,
+            floatingFilter: true, // Enable Floating Filter
         };
     }, []);
 
