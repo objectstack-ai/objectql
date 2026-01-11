@@ -6,9 +6,15 @@ Welcome to the complete ObjectQL metadata specification documentation. This dire
 
 **Looking to optimize for AI programming?** Start with our enhanced v2.0 specifications:
 
-1. **[AI-Optimized Metadata Design](./ai-optimized-metadata-design.md)** - Next-generation metadata design optimized for LLM consumption and generation
-2. **[Before & After Comparison](./ai-metadata-comparison.md)** - Side-by-side examples showing improvements
-3. **[Migration Guide](./ai-metadata-migration-guide.md)** - Step-by-step migration from v1 to v2
+**Quick Start:**
+1. **[Executive Summary](./ai-metadata-design-summary.md)** - High-level overview and key benefits (10 min read)
+
+**Deep Dive:**
+2. **[AI-Optimized Metadata Design](./ai-optimized-metadata-design.md)** - Complete v2.0 specification (30 min read)
+3. **[Before & After Comparison](./ai-metadata-comparison.md)** - Side-by-side examples (20 min read)
+4. **[Migration Guide](./ai-metadata-migration-guide.md)** - Practical implementation steps (25 min read)
+
+**Total:** ~4 documents, ~78KB, ~12,800 words of AI-optimized design documentation
 
 ## 📚 Start Here (Current v1.0)
 
