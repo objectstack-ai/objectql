@@ -3,7 +3,6 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { ObjectQL } from '@objectql/core';
 import { register } from 'ts-node';
-import chalk from 'chalk';
 
 export async function startConsole(configPath?: string) {
     const cwd = process.cwd();
