@@ -17,14 +17,15 @@ export class MockDriver implements Driver {
         const items = this.getData(objectName);
         // Very basic filter implementation for testing
         if (query.filters) {
-            return items.filter(item => {
+            const filter = query.filters[0];
+            const filtered = items.filter(item => {
                 // Assuming simple filter: [['field', '=', 'value']]
-                const filter = query.filters[0]; 
                 if (filter && Array.isArray(filter) && filter[1] === '=') {
                     return item[filter[0]] === filter[2];
                 }
                 return true;
             });
+            return filtered;
         }
         return items;
     }
@@ -64,8 +65,10 @@ export class MockDriver implements Driver {
         return false;
     }
 
-    async count(objectName: string, filters: any, options?: any): Promise<number> {
-        return (await this.find(objectName, { filters }, options)).length;
+    async count(objectName: string, query: any, options?: any): Promise<number> {
+        // query can be a full query object { filters: [...] } or just filters for compatibility
+        const queryObj = Array.isArray(query) ? { filters: query } : (query || {});
+        return (await this.find(objectName, queryObj, options)).length;
     }
 
     async beginTransaction(): Promise<any> {

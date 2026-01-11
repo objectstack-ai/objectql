@@ -39,12 +39,23 @@ export class ObjectRepository {
         };
     }
 
+    private getUserFromContext() {
+        if (!this.context.userId) {
+            return undefined;
+        }
+        return {
+            id: this.context.userId,
+            ...(this.context as any) // Include any additional context properties
+        };
+    }
+
     async find(query: UnifiedQuery = {}): Promise<any[]> {
         const hookCtx: RetrievalHookContext = {
             ...this.context,
             objectName: this.objectName,
             operation: 'find',
             api: this.getHookAPI(),
+            user: this.getUserFromContext(),
             state: {},
             query
         };
@@ -65,7 +76,10 @@ export class ObjectRepository {
                 ...this.context,
                 objectName: this.objectName,
                 operation: 'find',
-                api: this.getHookAPI(),                state: {},                query: { _id: idOrQuery }
+                api: this.getHookAPI(),
+                user: this.getUserFromContext(),
+                state: {},
+                query: { _id: idOrQuery }
             };
             await this.app.triggerHook('beforeFind', this.objectName, hookCtx);
             
@@ -86,6 +100,7 @@ export class ObjectRepository {
             objectName: this.objectName,
             operation: 'count',
             api: this.getHookAPI(),
+            user: this.getUserFromContext(),
             state: {},
             query: filters
         };
@@ -105,6 +120,7 @@ export class ObjectRepository {
             operation: 'create',
             state: {},
             api: this.getHookAPI(),
+            user: this.getUserFromContext(),
             data: doc
         };
         await this.app.triggerHook('beforeCreate', this.objectName, hookCtx);
@@ -129,6 +145,7 @@ export class ObjectRepository {
             operation: 'update',
             state: {},
             api: this.getHookAPI(),
+            user: this.getUserFromContext(),
             id,
             data: doc,
             previousData,
@@ -151,6 +168,7 @@ export class ObjectRepository {
             operation: 'delete',
             state: {},
             api: this.getHookAPI(),
+            user: this.getUserFromContext(),
             id,
             previousData
         };
@@ -225,7 +243,8 @@ export class ObjectRepository {
             actionName,
             id,
             input: params,
-            api
+            api,
+            user: this.getUserFromContext()
         };
         return await this.app.executeAction(this.objectName, actionName, ctx);
     }
