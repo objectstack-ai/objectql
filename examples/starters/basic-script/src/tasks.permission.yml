@@ -1,0 +1,167 @@
+name: tasks_permission
+object: tasks
+description: "Advanced permission rules for Task object demonstrating complex scenarios"
+
+# Roles (defined in demo.app.yml, referenced here)
+# This list documents which system roles have permissions on this object
+roles:
+  - admin
+  - project_manager
+  - team_lead
+  - developer
+  - viewer
+
+# Object-level permissions (CRUD)
+object_permissions:
+  create: [admin, project_manager, team_lead, developer]
+  read: [admin, project_manager, team_lead, developer, viewer]
+  update: [admin, project_manager, team_lead, developer]
+  delete: [admin, project_manager, team_lead]
+  view_all: [admin, project_manager]
+  modify_all: [admin]
+
+# Field-level security
+field_permissions:
+  estimated_hours:
+    read: [admin, project_manager, team_lead]
+    update: [admin, project_manager, team_lead]
+  
+  priority:
+    read: [admin, project_manager, team_lead, developer, viewer]
+    update: [admin, project_manager, team_lead]
+  
+  assigned_to:
+    read: [admin, project_manager, team_lead, developer, viewer]
+    update: [admin, project_manager, team_lead]
+
+# Record-level rules with complex conditions
+record_rules:
+  - name: assignee_full_access
+    priority: 100
+    description: Assignee has full access to assigned tasks
+    condition:
+      type: simple
+      field: assigned_to
+      operator: "="
+      value: $current_user.id
+    permissions:
+      read: true
+      update: true
+      delete: false
+  
+  - name: team_lead_access
+    priority: 90
+    description: Team leads can access all tasks in their team's projects
+    condition:
+      type: lookup
+      object: projects
+      via: project
+      condition:
+        type: simple
+        field: owner
+        operator: "="
+        value: $current_user.id
+    permissions:
+      read: true
+      update: true
+      delete: true
+  
+  - name: completed_tasks_readonly
+    priority: 50
+    description: Completed tasks are read-only for non-admins
+    condition:
+      type: simple
+      field: completed
+      operator: "="
+      value: true
+    permissions:
+      read: true
+      update: false
+      delete: false
+  
+  - name: high_priority_manager_only
+    priority: 80
+    description: Only managers can edit high priority tasks
+    condition:
+      type: simple
+      field: priority
+      operator: "="
+      value: high
+    permissions:
+      read: true
+      update: false
+      delete: false
+
+# Sharing rules
+sharing_rules:
+  - name: manual_collaboration
+    type: manual
+    description: Users can share tasks with collaborators
+    enabled: true
+    permissions:
+      read: true
+      update: true
+      delete: false
+  
+  - name: project_team_sharing
+    type: criteria
+    description: All project team members can see related tasks
+    condition:
+      type: simple
+      field: project
+      operator: "!="
+      value: null
+    shared_with:
+      type: role
+      roles: [developer, team_lead]
+    permissions:
+      read: true
+      update: false
+
+# Row-level security
+row_level_security:
+  enabled: true
+  default_rule:
+    field: assigned_to
+    operator: "="
+    value: $current_user.id
+  exceptions:
+    - role: admin
+      bypass: true
+    - role: project_manager
+      bypass: true
+    - role: team_lead
+      condition:
+        type: lookup
+        object: projects
+        via: project
+        condition:
+          type: simple
+          field: owner
+          operator: "="
+          value: $current_user.id
+
+# Field masking for sensitive data
+field_masking:
+  estimated_hours:
+    mask_format: "XX.X hours"  # Mask numeric values appropriately
+    visible_to: [admin, project_manager, team_lead]
+
+# Audit configuration
+audit:
+  enabled: true
+  events:
+    - permission_grant
+    - permission_revoke
+    - access_denied
+    - sensitive_field_access
+  retention_days: 180
+  alerts:
+    - event: access_denied
+      threshold: 10
+      window_minutes: 15
+      notify: [admin, project_manager]
+    - event: sensitive_field_access
+      threshold: 50
+      window_minutes: 60
+      notify: [admin]
