@@ -1,0 +1,39 @@
+# Test Responsive Page
+name: test_responsive
+label: Test Responsive
+description: Page with responsive configuration
+icon: mobile
+layout: single_column
+
+# Responsive breakpoints
+responsive:
+  mobile:
+    columns: 1
+    visible: true
+  tablet:
+    columns: 2
+    visible: true
+  desktop:
+    columns: 3
+    visible: true
+
+components:
+  - id: responsive_grid
+    type: data_grid
+    label: Responsive Grid
+    data_source:
+      object: projects
+      fields: ['name']
+    responsive:
+      mobile:
+        visible: true
+        columns: 1
+      tablet:
+        visible: true
+        columns: 2
+      desktop:
+        visible: true
+        columns: 3
+
+permissions:
+  view: ['*']

@@ -104,7 +104,7 @@ export class ObjectLoader {
         });
 
         // Generic YAML Metadata Loaders
-        const metaTypes = ['view', 'form', 'permission', 'report', 'workflow', 'validation', 'data', 'app'];
+        const metaTypes = ['view', 'form', 'permission', 'report', 'workflow', 'validation', 'data', 'app', 'page'];
         
         for (const type of metaTypes) {
             this.use({
