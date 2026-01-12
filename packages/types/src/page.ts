@@ -302,6 +302,23 @@ export interface PageConfig {
 
 /**
  * Lightweight page reference (for menus, navigation, etc.)
+ * 
+ * Used in application navigation menus and links to reference pages
+ * without loading the full page configuration. This is useful for:
+ * - Building navigation menus
+ * - Creating page links
+ * - Page selection dropdowns
+ * 
+ * @example
+ * ```typescript
+ * // In navigation menu
+ * const menuItem: PageReference = {
+ *   name: 'dashboard',
+ *   label: 'Dashboard',
+ *   icon: 'dashboard',
+ *   path: '/dashboard'
+ * };
+ * ```
  */
 export interface PageReference {
     /** Page name/identifier */
