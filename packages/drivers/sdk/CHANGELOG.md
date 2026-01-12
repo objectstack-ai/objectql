@@ -1,5 +1,16 @@
 # @objectql/driver-remote
 
+## 1.7.0
+
+### Minor Changes
+
+- Release version 1.7.0 with improvements and bug fixes:
+  - Updated default port for ObjectQL Studio to 5555
+  - Improved port listening logic in Studio
+  - Enhanced stability and performance
+
+
+
 ## 1.6.1
 
 ### Patch Changes

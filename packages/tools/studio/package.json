@@ -1,6 +1,6 @@
 {
   "name": "@objectql/studio",
-  "version": "1.6.1",
+  "version": "1.7.0",
   "description": "Web-based admin studio for ObjectQL database management",
   "type": "module",
   "scripts": {
