@@ -1,0 +1,11 @@
+name: account
+label: Account
+fields:
+  name:
+    type: text
+    required: true
+  industry:
+    type: select
+    options:
+      - technology
+      - finance

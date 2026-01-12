@@ -6,6 +6,7 @@ packages:
   - packages/starters/*
   - examples/scenarios/*
   - examples/plugins/*
+  - examples/tutorials/*
 
 onlyBuiltDependencies:
   - esbuild

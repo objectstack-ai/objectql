@@ -1,0 +1,16 @@
+name: task
+label: Task
+fields:
+  title:
+    type: text
+    required: true
+  completed:
+    type: boolean
+    defaultValue: false
+  priority:
+    type: select
+    options:
+      - label: Low
+        value: low
+      - label: High
+        value: high
