@@ -1,6 +1,6 @@
 {
   "name": "@objectql/starter-basic",
-  "version": "6.0.0",
+  "version": "1.6.1",
   "license": "MIT",
   "author": "ObjectQL Contributors",
   "repository": {
@@ -30,6 +30,8 @@
   "devDependencies": {
     "@objectql/cli": "workspace:*",
     "@objectql/core": "workspace:*",
+    "@objectql/driver-sql": "workspace:*",
+    "@objectql/platform-node": "workspace:*",
     "@objectql/types": "workspace:*",
     "typescript": "^5.3.0"
   }

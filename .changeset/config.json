@@ -7,11 +7,15 @@
       "@objectql/cli",
       "@objectql/studio",
       "@objectql/core",
-      "@objectql/driver-knex",
+      "@objectql/driver-sql",
       "@objectql/driver-mongo",
-      "@objectql/driver-remote",
+      "@objectql/sdk",
       "@objectql/server",
-      "@objectql/types"
+      "@objectql/types",
+      "@objectql/platform-node",
+      "@objectql/starter-basic",
+      "@objectql/starter-express-api",
+      "@objectql/starter-enterprise"
     ]
   ],
   "linked": [],

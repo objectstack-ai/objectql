@@ -1,5 +1,25 @@
 # @example/project-management
 
+## 1.6.1
+
+### Patch Changes
+
+- Updated dependencies
+  - @objectql/core@1.6.1
+  - @objectql/platform-node@1.6.1
+  - @objectql/driver-sql@1.6.1
+  - @objectql/types@1.6.1
+
+## 7.0.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @objectql/core@1.6.0
+  - @objectql/driver-sql@1.6.0
+  - @objectql/types@1.6.0
+  - @objectql/platform-node@1.6.0
+
 ## 6.0.0
 
 ### Patch Changes
