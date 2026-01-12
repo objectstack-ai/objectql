@@ -85,6 +85,8 @@ export class ObjectRepository {
 
         // 2. Validate object-level validation rules
         if (schema.validation?.rules && schema.validation.rules.length > 0) {
+            // Track which fields changed (using shallow comparison for performance)
+            // Note: This may not detect changes in nested objects/arrays
             const changedFields = previousRecord 
                 ? Object.keys(record).filter(key => record[key] !== previousRecord[key])
                 : undefined;
@@ -191,7 +193,6 @@ export class ObjectRepository {
         await this.app.triggerHook('beforeCreate', this.objectName, hookCtx);
         const finalDoc = hookCtx.data || doc;
 
-        const obj = this.getSchema();
         if (this.context.userId) finalDoc.created_by = this.context.userId;
         if (this.context.spaceId) finalDoc.space_id = this.context.spaceId;
         
