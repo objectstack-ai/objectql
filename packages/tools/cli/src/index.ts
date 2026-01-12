@@ -178,7 +178,7 @@ program
     .command('studio')
     .alias('ui')
     .description('Start the ObjectQL Studio')
-    .option('-p, --port <number>', 'Port to listen on', '3000')
+    .option('-p, --port <number>', 'Port to listen on', '5555')
     .option('-d, --dir <path>', 'Directory containing schema', '.')
     .option('--no-open', 'Do not open browser automatically')
     .action(async (options) => {

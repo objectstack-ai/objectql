@@ -42,7 +42,7 @@ function openBrowser(url: string) {
 }
 
 export async function startStudio(options: { port: number; dir: string, open?: boolean }) {
-    const port = options.port || 3000;
+    const startPort = options.port || 5555;
     const rootDir = path.resolve(process.cwd(), options.dir || '.');
     
     console.log(chalk.blue('Starting ObjectQL Studio...'));
@@ -297,13 +297,35 @@ export async function startStudio(options: { port: number; dir: string, open?: b
         res.end('Not Found');
     });
 
-    server.listen(port, () => {
-        const url = `http://localhost:${port}/studio`;
-        console.log(chalk.green(`\n🚀 Studio running at: ${chalk.bold(url)}`));
-        console.log(chalk.gray(`   API endpoint: http://localhost:${port}/api`));
-        
-        if (options.open) {
-            openBrowser(url);
-        }
-    });
+    const tryListen = (port: number) => {
+        server.removeAllListeners('error');
+        server.removeAllListeners('listening'); // Prevent stacking callbacks
+
+        server.on('error', (e: any) => {
+            if (e.code === 'EADDRINUSE') {
+                if (port - startPort < 10) {
+                    console.log(chalk.yellow(`Port ${port} is in use, trying ${port + 1}...`));
+                    server.close();
+                    tryListen(port + 1);
+                } else {
+                    console.error(chalk.red(`❌ Unable to find a free port.`));
+                    process.exit(1);
+                }
+            } else {
+                console.error(chalk.red('❌ Server error:'), e);
+            }
+        });
+
+        server.listen(port, () => {
+            const url = `http://localhost:${port}/studio`;
+            console.log(chalk.green(`\n🚀 Studio running at: ${chalk.bold(url)}`));
+            console.log(chalk.gray(`   API endpoint: http://localhost:${port}/api`));
+            
+            if (options.open) {
+                openBrowser(url);
+            }
+        });
+    };
+
+    tryListen(startPort);
 }
