@@ -47,7 +47,7 @@
 
 - Updated dependencies
   - @objectql/core@1.5.0
-  - @objectql/driver-knex@1.5.0
+  - @objectql/driver-sql@1.5.0
   - @objectql/server@1.5.0
   - @objectql/types@1.5.0
 
@@ -68,7 +68,7 @@
 
 - Updated dependencies
   - @objectql/core@1.4.0
-  - @objectql/driver-knex@1.4.0
+  - @objectql/driver-sql@1.4.0
   - @objectql/server@1.4.0
   - @objectql/types@1.4.0
 
@@ -79,7 +79,7 @@
 - Updated dependencies
   - @objectql/core@1.3.1
   - @objectql/server@1.3.1
-  - @objectql/driver-knex@1.3.1
+  - @objectql/driver-sql@1.3.1
   - @objectql/types@1.3.1
 
 ## 0.2.1
@@ -90,7 +90,7 @@
   - @objectql/core@1.3.0
   - @objectql/types@1.3.0
   - @objectql/server@0.2.1
-  - @objectql/driver-knex@1.2.1
+  - @objectql/driver-sql@1.2.1
 
 ## 0.2.0
 
@@ -102,6 +102,6 @@
 
 - Updated dependencies [7df2977]
   - @objectql/core@1.2.0
-  - @objectql/driver-knex@1.2.0
+  - @objectql/driver-sql@1.2.0
   - @objectql/server@0.2.0
   - @objectql/types@1.2.0

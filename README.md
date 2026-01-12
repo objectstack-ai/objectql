@@ -76,7 +76,7 @@ npm install @objectql/core
 
 # Install drivers as needed
 npm install @objectql/driver-mongo
-npm install @objectql/driver-knex
+npm install @objectql/driver-sql
 
 ```
 
@@ -87,7 +87,7 @@ npm install @objectql/driver-knex
 ```typescript
 import { ObjectQL } from '@objectql/core';
 import { MongoDriver } from '@objectql/driver-mongo';
-import { KnexDriver } from '@objectql/driver-knex';
+import { KnexDriver } from '@objectql/driver-sql';
 
 const app = new ObjectQL({
   datasources: {

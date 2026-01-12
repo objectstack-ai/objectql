@@ -16,7 +16,7 @@ We use **Turborepo** + **PNPM Workspaces**.
 | --- | --- | --- | --- | --- |
 | `packages/types` | `@objectql/types` | **Universal** | **The Contract** | Pure TS Interfaces, Enums, and Error Classes. **No deps.** |
 | `packages/core` | `@objectql/core` | **Universal** | **The Engine** | Main entry point (`ObjectQL` class). Connects Drivers & Registry. |
-| `packages/driver-knex` | `@objectql/driver-knex` | **Node.js** | **The Adapter** | SQL implementation (SQLite/Postgres/MySQL) via Knex. |
+| `packages/driver-sql` | `@objectql/driver-sql` | **Node.js** | **The Adapter** | SQL implementation (SQLite/Postgres/MySQL) via Knex. |
 | `packages/driver-mongo` | `@objectql/driver-mongo` | **Node.js** | **The Adapter** | MongoDB implementation. |
 | `packages/server` | `@objectql/server` | **Node.js** | **The Adapter** | HTTP Server Adapter for ObjectQL API. |
 | `packages/cli` | `@objectql/cli` | **Node.js** | **The Tools** | CLI for validation and migration. |

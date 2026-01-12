@@ -1,17 +1,17 @@
-# @objectql/driver-knex
+# @objectql/driver-sql
 
 Knex.js based SQL driver for ObjectQL. Supports PostgreSQL, MySQL, SQLite, and simpler databases.
 
 ## Installation
 
 ```bash
-npm install @objectql/driver-knex
+npm install @objectql/driver-sql
 ```
 
 ## Usage
 
 ```typescript
-import { KnexDriver } from '@objectql/driver-knex';
+import { KnexDriver } from '@objectql/driver-sql';
 
 const driver = new KnexDriver({
     client: 'sqlite3',

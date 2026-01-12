@@ -23,7 +23,7 @@ npm install @objectql/core @objectql/types
 
 ```typescript
 import { ObjectQL } from '@objectql/core';
-// Import a driver, e.g., @objectql/driver-knex
+// Import a driver, e.g., @objectql/driver-sql
 
 const objectql = new ObjectQL({
     datasources: {

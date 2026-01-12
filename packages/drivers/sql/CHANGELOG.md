@@ -1,4 +1,4 @@
-# @objectql/driver-knex
+# @objectql/driver-sql
 
 ## 1.7.0
 
