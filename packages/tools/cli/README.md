@@ -12,6 +12,102 @@ pnpm add -D @objectql/cli
 
 ## Commands
 
+### AI-Powered Features
+
+#### `ai generate`
+
+Generate ObjectQL metadata from natural language descriptions using AI.
+
+```bash
+# Generate a basic application
+objectql ai generate -d "A task management system with projects and tasks"
+
+# Generate a complete enterprise application
+objectql ai generate -d "A CRM system with customers, contacts, and opportunities" -t complete
+
+# Specify output directory
+objectql ai generate -d "An inventory management system" -o ./src/modules/inventory
+```
+
+**Options:**
+- `-d, --description <text>` - Description of the application to generate (required)
+- `-o, --output <path>` - Output directory for generated files [default: "./src"]
+- `-t, --type <type>` - Generation type: basic, complete, or custom [default: "custom"]
+
+**Prerequisites:**
+- Set `OPENAI_API_KEY` environment variable with your OpenAI API key
+- Example: `export OPENAI_API_KEY=sk-...`
+
+**Example:**
+```bash
+# Set your API key
+export OPENAI_API_KEY=sk-your-api-key-here
+
+# Generate a project management application
+objectql ai generate \
+  -d "A project management system with projects, tasks, milestones, and team members. Include time tracking and reporting features." \
+  -t complete \
+  -o ./src
+
+# Review generated files
+ls -la ./src/*.yml
+```
+
+---
+
+#### `ai validate`
+
+Validate metadata files using AI to check compliance, business logic, and best practices.
+
+```bash
+# Validate all metadata files in src directory
+objectql ai validate ./src
+
+# Validate with verbose output
+objectql ai validate ./src --verbose
+```
+
+**Options:**
+- `<path>` - Path to metadata files directory (required)
+- `--fix` - Automatically fix issues where possible
+- `-v, --verbose` - Show detailed validation output
+
+**Features:**
+- YAML syntax validation
+- ObjectQL metadata specification compliance
+- Business logic consistency checks
+- Data model best practices
+- Security and performance analysis
+- Falls back to basic validation if no API key is set
+
+**Example:**
+```bash
+# Set API key for AI-powered validation
+export OPENAI_API_KEY=sk-your-api-key-here
+
+# Validate all metadata
+objectql ai validate ./src
+```
+
+---
+
+#### `ai chat`
+
+Interactive AI assistant for ObjectQL metadata, data modeling, and best practices.
+
+```bash
+# Start interactive chat
+objectql ai chat
+
+# Start with an initial question
+objectql ai chat -p "How do I create a lookup relationship?"
+```
+
+**Options:**
+- `-p, --prompt <text>` - Initial prompt for the AI
+
+---
+
 ### Project Initialization
 
 #### `init`
