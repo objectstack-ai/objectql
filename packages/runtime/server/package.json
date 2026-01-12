@@ -1,6 +1,6 @@
 {
   "name": "@objectql/server",
-  "version": "1.7.0",
+  "version": "1.7.1",
   "description": "HTTP Server Adapter for ObjectQL",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
