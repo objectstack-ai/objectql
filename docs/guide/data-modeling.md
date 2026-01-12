@@ -4,11 +4,14 @@ Data modeling in ObjectQL is **Metadata-First**. You define your application's s
 
 ## 1. The Object Definition
 
-Each file represents one business entity. By convention, name the file `[object_name].object.yml`.
+**ObjectQL uses filename-based identification.** The object name is automatically inferred from the filename (without the `.object.yml` extension), eliminating redundancy.
+
+**File naming:** `<object_name>.object.yml`
 
 ```yaml
-# objects/product.object.yml
-name: product
+# File: product.object.yml
+# Object name "product" is automatically inferred from filename!
+
 label: Product
 description: "Catalog items for sale"
 icon: standard:product
@@ -31,6 +34,8 @@ fields:
       - furniture
       - clothing
 ```
+
+**Note:** The redundant `name: product` property is no longer needed - it's automatically inferred from the filename!
 
 ## 2. Fields & Relationships
 
