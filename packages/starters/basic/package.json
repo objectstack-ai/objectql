@@ -18,7 +18,7 @@
     "codegen": "objectql generate -s src -o src/types",
     "build": "npm run codegen && tsc && rsync -a --include '*/' --include '*.yml' --exclude '*' src/ dist/",
     "repl": "objectql repl",
-    "test": "echo \"No tests specified\" && exit 0"
+    "test": "echo \"No tests specified\""
   },
   "peerDependencies": {
     "@objectql/core": "workspace:*",

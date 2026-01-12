@@ -1,6 +1,6 @@
 import { ObjectQL } from '@objectql/core';
 import { ObjectQLServer } from '@objectql/server';
-import { KnexDriver } from '@objectql/driver-sql';
+import { SqlDriver } from '@objectql/driver-sql';
 import { MongoDriver } from '@objectql/driver-mongo';
 
 async function bootstrap() {
@@ -10,7 +10,7 @@ async function bootstrap() {
     const app = new ObjectQL({
         datasources: {
             // 'default' is used for objects without explicit 'datasource' property
-            default: new KnexDriver({
+            default: new SqlDriver({
                 client: 'sqlite3',
                 connection: { filename: './federation.db' },
                 useNullAsDefault: true

@@ -214,6 +214,7 @@ export class MongoDriver implements Driver {
     
     // Bulk Operations
     async createMany(objectName: string, data: any[], options?: any): Promise<any> {
+        if (!data || data.length === 0) return [];
         const collection = await this.getCollection(objectName);
         // Map all API documents to MongoDB format
         const mongoDocs = data.map(doc => {
@@ -254,6 +255,12 @@ export class MongoDriver implements Driver {
         const results = await collection.aggregate(pipeline).toArray();
         // Map MongoDB documents to API format (convert _id to id)
         return this.mapFromMongoArray(results);
+    }
+
+    async disconnect() {
+        if (this.client) {
+            await this.client.close();
+        }
     }
 }
 

@@ -89,8 +89,8 @@ export async function startStudio(options: { port: number; dir: string, open?: b
             const dbConfig = config.datasource.default;
             if (dbConfig.type === 'sqlite') {
                 try {
-                    const { KnexDriver } = require('@objectql/driver-sql');
-                    datasources.default = new KnexDriver({
+                    const { SqlDriver } = require('@objectql/driver-sql');
+                    datasources.default = new SqlDriver({
                         client: 'sqlite3',
                         connection: {
                             filename: dbConfig.filename ? path.resolve(rootDir, dbConfig.filename) : ':memory:'
@@ -106,8 +106,8 @@ export async function startStudio(options: { port: number; dir: string, open?: b
         // Fallback to memory if no datasource
         if (!datasources.default) {
             console.warn(chalk.yellow('No valid datasource found. Using in-memory SQLite.'));
-            const { KnexDriver } = require('@objectql/driver-sql');
-            datasources.default = new KnexDriver({
+            const { SqlDriver } = require('@objectql/driver-sql');
+            datasources.default = new SqlDriver({
                 client: 'sqlite3',
                 connection: { filename: ':memory:' },
                 useNullAsDefault: true

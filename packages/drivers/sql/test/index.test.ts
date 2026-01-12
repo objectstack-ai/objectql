@@ -1,12 +1,12 @@
-import { KnexDriver } from '../src';
+import { SqlDriver } from '../src';
 import { UnifiedQuery } from '@objectql/types';
 
-describe('KnexDriver (SQLite Integration)', () => {
-    let driver: KnexDriver;
+describe('SqlDriver (SQLite Integration)', () => {
+    let driver: SqlDriver;
 
     beforeEach(async () => {
         // Init ephemeral in-memory database
-        driver = new KnexDriver({
+        driver = new SqlDriver({
             client: 'sqlite3',
             connection: {
                 filename: ':memory:'
@@ -37,7 +37,7 @@ describe('KnexDriver (SQLite Integration)', () => {
 
     it('should be instantiable', () => {
         expect(driver).toBeDefined();
-        expect(driver).toBeInstanceOf(KnexDriver);
+        expect(driver).toBeInstanceOf(SqlDriver);
     });
 
     it('should find objects with filters', async () => {

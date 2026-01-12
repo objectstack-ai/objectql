@@ -47,11 +47,11 @@ Create `index.ts`:
 ```typescript
 import { ObjectQL } from '@objectql/core';
 import { ObjectQLServer } from '@objectql/server';
-import { KnexDriver } from '@objectql/driver-sql';
+import { SqlDriver } from '@objectql/driver-sql';
 
 async function bootstrap() {
     const app = new ObjectQL({
-        driver: new KnexDriver({
+        driver: new SqlDriver({
             client: 'sqlite3',
             connection: {
                 filename: './tasks.db'

@@ -6,7 +6,7 @@
  */
 
 import { ObjectQL } from '@objectql/core';
-import { KnexDriver } from '@objectql/driver-sql';
+import { SqlDriver } from '@objectql/driver-sql';
 import { ObjectLoader } from '@objectql/platform-node';
 import path from 'path';
 
@@ -16,7 +16,7 @@ import path from 'path';
 export async function initializeApp() {
   const app = new ObjectQL({
     datasources: {
-      default: new KnexDriver({
+      default: new SqlDriver({
         client: 'sqlite3',
         connection: {
           filename: ':memory:'

@@ -87,7 +87,7 @@ npm install @objectql/driver-sql
 ```typescript
 import { ObjectQL } from '@objectql/core';
 import { MongoDriver } from '@objectql/driver-mongo';
-import { KnexDriver } from '@objectql/driver-sql';
+import { SqlDriver } from '@objectql/driver-sql';
 
 const app = new ObjectQL({
   datasources: {
@@ -95,7 +95,7 @@ const app = new ObjectQL({
     design: new MongoDriver({ url: process.env.MONGO_URL }),
     
     // Environment B: On-Premise / Production (PostgreSQL)
-    runtime: new KnexDriver({ client: 'pg', connection: process.env.PG_URL })
+    runtime: new SqlDriver({ client: 'pg', connection: process.env.PG_URL })
   }
 });
 

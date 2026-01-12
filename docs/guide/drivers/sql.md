@@ -11,12 +11,12 @@ npm install @objectql/driver-sql knex pg
 
 ## Configuration
 
-The `KnexDriver` constructor accepts the standard [Knex configuration object](https://knexjs.org/guide/#configuration-options).
+The `SqlDriver` constructor accepts the standard [Knex configuration object](https://knexjs.org/guide/#configuration-options).
 
 ```typescript
-import { KnexDriver } from '@objectql/driver-sql';
+import { SqlDriver } from '@objectql/driver-sql';
 
-const driver = new KnexDriver({
+const driver = new SqlDriver({
   client: 'pg', // 'mysql', 'sqlite3', etc.
   connection: {
     host: '127.0.0.1',
@@ -35,7 +35,7 @@ const driver = new KnexDriver({
 For local development or testing with SQLite:
 
 ```typescript
-const driver = new KnexDriver({
+const driver = new SqlDriver({
   client: 'sqlite3',
   connection: {
     filename: './local.db'

@@ -1,6 +1,6 @@
 import OpenAI from "openai";
 import { ObjectQL } from '@objectql/core';
-import { KnexDriver } from '@objectql/driver-sql';
+import { SqlDriver } from '@objectql/driver-sql';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -47,7 +47,7 @@ const productTools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
 async function runAgent() {
     // 1. Setup ObjectQL
     const app = new ObjectQL({
-        driver: new KnexDriver({
+        driver: new SqlDriver({
             client: 'sqlite3',
             connection: { filename: './inventory.db' },
             useNullAsDefault: true

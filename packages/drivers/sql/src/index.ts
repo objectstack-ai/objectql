@@ -1,7 +1,7 @@
 import { Driver } from '@objectql/types';
 import knex, { Knex } from 'knex';
 
-export class KnexDriver implements Driver {
+export class SqlDriver implements Driver {
     private knex: Knex;
     private config: any;
     private jsonFields: Record<string, string[]> = {};
@@ -117,7 +117,7 @@ export class KnexDriver implements Driver {
         
         if (!Array.isArray(results)) {
             // Log warning or throw better error
-            // console.warn('KnexDriver.find: results is not an array', results);
+            // console.warn('SqlDriver.find: results is not an array', results);
             return [];
         }
 
@@ -291,7 +291,7 @@ export class KnexDriver implements Driver {
                  
                  // Check for _id vs id conflict (Legacy _id from mongo-style init)
                  if (existingColumns.includes('_id') && !existingColumns.includes('id')) {
-                     console.log(`[KnexDriver] Detected legacy '_id' in '${tableName}'. Recreating table for 'id' compatibility...`);
+                     console.log(`[SqlDriver] Detected legacy '_id' in '${tableName}'. Recreating table for 'id' compatibility...`);
                      await this.knex.schema.dropTable(tableName);
                      exists = false;
                  }
@@ -309,7 +309,7 @@ export class KnexDriver implements Driver {
                         }
                     }
                 });
-                console.log(`[KnexDriver] Created table '${tableName}'`);
+                console.log(`[SqlDriver] Created table '${tableName}'`);
             } else {
                  const columnInfo = await this.knex(tableName).columnInfo();
                  const existingColumns = Object.keys(columnInfo);
@@ -319,7 +319,7 @@ export class KnexDriver implements Driver {
                          for (const [name, field] of Object.entries(obj.fields)) {
                              if (!existingColumns.includes(name)) {
                                  this.createColumn(table, name, field);
-                                 console.log(`[KnexDriver] Added column '${name}' to '${tableName}'`);
+                                 console.log(`[SqlDriver] Added column '${name}' to '${tableName}'`);
                              }
                          }
                      }
@@ -409,17 +409,17 @@ export class KnexDriver implements Driver {
             adminConfig.connection = { ...connection, database: 'postgres' };
         }
 
-        console.log(`[KnexDriver] Database '${dbName}' does not exist. Creating...`);
+        console.log(`[SqlDriver] Database '${dbName}' does not exist. Creating...`);
 
         const adminKnex = knex(adminConfig);
         try {
             await adminKnex.raw(`CREATE DATABASE "${dbName}"`);
-            console.log(`[KnexDriver] Database '${dbName}' created successfully.`);
+            console.log(`[SqlDriver] Database '${dbName}' created successfully.`);
         } catch (e: any) {
-             console.error(`[KnexDriver] Failed to create database '${dbName}':`, e.message);
+             console.error(`[SqlDriver] Failed to create database '${dbName}':`, e.message);
              if (e.code === '42501') {
-                 console.error(`[KnexDriver] Hint: The user '${adminConfig.connection.user || 'current user'}' does not have CREATEDB privileges.`);
-                 console.error(`[KnexDriver] Please run: createdb ${dbName}`);
+                 console.error(`[SqlDriver] Hint: The user '${adminConfig.connection.user || 'current user'}' does not have CREATEDB privileges.`);
+                 console.error(`[SqlDriver] Please run: createdb ${dbName}`);
              }
              throw e;
         } finally {
@@ -467,5 +467,14 @@ export class KnexDriver implements Driver {
         }
         return data;
     }
+
+    async disconnect() {
+        await this.knex.destroy();
+    }
 }
 
+
+/**
+ * @deprecated Use SqlDriver instead.
+ */
+export { SqlDriver as KnexDriver };

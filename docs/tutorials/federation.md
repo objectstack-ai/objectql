@@ -22,7 +22,7 @@ Update your `index.ts` to initialize both drivers.
 ```typescript
 import { ObjectQL } from '@objectql/core';
 import { ObjectQLServer } from '@objectql/server';
-import { KnexDriver } from '@objectql/driver-sql';
+import { SqlDriver } from '@objectql/driver-sql';
 import { MongoDriver } from '@objectql/driver-mongo'; // Import Mongo
 
 async function bootstrap() {
@@ -30,7 +30,7 @@ async function bootstrap() {
     const app = new ObjectQL({
         datasources: {
             // 'default' is used when no datasource is specified in the object
-            default: new KnexDriver({
+            default: new SqlDriver({
                 client: 'sqlite3',
                 connection: { filename: './tasks.db' },
                 useNullAsDefault: true

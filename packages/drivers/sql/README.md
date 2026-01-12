@@ -11,9 +11,9 @@ npm install @objectql/driver-sql
 ## Usage
 
 ```typescript
-import { KnexDriver } from '@objectql/driver-sql';
+import { SqlDriver } from '@objectql/driver-sql';
 
-const driver = new KnexDriver({
+const driver = new SqlDriver({
     client: 'sqlite3',
     connection: {
         filename: './data.db'

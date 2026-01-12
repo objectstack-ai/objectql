@@ -1,5 +1,5 @@
 import { ObjectQL } from '@objectql/core';
-import { KnexDriver } from '@objectql/driver-sql';
+import { SqlDriver } from '@objectql/driver-sql';
 import { ObjectLoader } from '@objectql/platform-node';
 import { createNodeHandler } from '@objectql/server';
 import { createServer } from 'http';
@@ -42,7 +42,7 @@ export async function serve(options: { port: number; dir: string }) {
     // 1. Init ObjectQL with in-memory SQLite for Dev
     const app = new ObjectQL({
         datasources: {
-            default: new KnexDriver({
+            default: new SqlDriver({
                 client: 'sqlite3',
                 connection: {
                     filename: ':memory:' // Or local file './dev.db'

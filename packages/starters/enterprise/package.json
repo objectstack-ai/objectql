@@ -18,7 +18,7 @@
   "scripts": {
     "codegen": "objectql generate -s src -o src/types",
     "build": "npm run codegen && tsc",
-    "test": "echo \"No tests specified\" && exit 0"
+    "test": "echo \"No tests specified\""
   },
   "peerDependencies": {
     "@objectql/core": "workspace:*",

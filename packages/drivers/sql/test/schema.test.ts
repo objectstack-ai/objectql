@@ -1,12 +1,12 @@
-import { KnexDriver } from '../src';
+import { SqlDriver } from '../src';
 
-describe('KnexDriver Schema Sync (SQLite)', () => {
-    let driver: KnexDriver;
+describe('SqlDriver Schema Sync (SQLite)', () => {
+    let driver: SqlDriver;
     let knexInstance: any;
 
     beforeEach(async () => {
         // Init ephemeral in-memory database
-        driver = new KnexDriver({
+        driver = new SqlDriver({
             client: 'sqlite3',
             connection: {
                 filename: ':memory:'
@@ -230,7 +230,7 @@ describe('KnexDriver Schema Sync (SQLite)', () => {
         const cols = await knexInstance('new_types_test').columnInfo();
         
         expect(cols).toHaveProperty('email');
-        // File/Image/Location/Avatar are stored as JSON in KnexDriver mapping
+        // File/Image/Location/Avatar are stored as JSON in SqlDriver mapping
         // But columnInfo might report 'text' for sqlite or 'json' for postgres.
         // We just ensure they were created.
         expect(cols).toHaveProperty('profile_pic');

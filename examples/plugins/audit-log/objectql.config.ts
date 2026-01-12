@@ -1,5 +1,5 @@
 import { ObjectQL } from '@objectql/core';
-import { KnexDriver } from '@objectql/driver-sql';
+import { SqlDriver } from '@objectql/driver-sql';
 import { ObjectLoader, createDriverFromConnection } from '@objectql/platform-node';
 import { AuditLogPlugin } from './src';
 import * as path from 'path';

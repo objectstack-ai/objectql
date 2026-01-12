@@ -23,5 +23,8 @@ export interface Driver {
     beginTransaction?(): Promise<any>;
     commitTransaction?(trx: any): Promise<void>;
     rollbackTransaction?(trx: any): Promise<void>;
+
+    // Connection
+    disconnect?(): Promise<void>;
 }
 
