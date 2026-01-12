@@ -376,34 +376,216 @@ export class Validator {
     }
 
     /**
-     * Validate uniqueness (stub - requires database access).
+     * Validate uniqueness by checking database for existing values.
      */
     private async validateUniqueness(
         rule: UniquenessValidationRule,
         context: ValidationContext
     ): Promise<ValidationRuleResult> {
-        // TODO: Implement database query for uniqueness check
-        // This requires access to the data layer (driver/repository)
-        // Stub: Pass silently until implementation is complete
-        return {
-            rule: rule.name,
-            valid: true,
-        };
+        // Check if API is available for database access
+        if (!context.api) {
+            // If no API provided, we can't validate - pass by default
+            return {
+                rule: rule.name,
+                valid: true,
+            };
+        }
+
+        // Get object name from context metadata
+        if (!context.metadata?.objectName) {
+            return {
+                rule: rule.name,
+                valid: false,
+                message: 'Object name not provided in validation context',
+                severity: rule.severity || 'error',
+            };
+        }
+
+        const objectName = context.metadata.objectName;
+
+        // Determine fields to check for uniqueness
+        const fieldsToCheck: string[] = rule.fields || (rule.field ? [rule.field] : []);
+        
+        if (fieldsToCheck.length === 0) {
+            return {
+                rule: rule.name,
+                valid: false,
+                message: 'No fields specified for uniqueness validation',
+                severity: rule.severity || 'error',
+            };
+        }
+
+        // Build query filter
+        const filters: any = {};
+
+        // Add field conditions
+        for (const field of fieldsToCheck) {
+            const fieldValue = context.record[field];
+            
+            // Skip validation if field value is null/undefined (no value to check uniqueness for)
+            if (fieldValue === null || fieldValue === undefined) {
+                return {
+                    rule: rule.name,
+                    valid: true,
+                };
+            }
+
+            // Handle case sensitivity for string values
+            if (typeof fieldValue === 'string' && rule.case_sensitive === false) {
+                // For case-insensitive, we would need regex or toLowerCase comparison
+                // This is a simplified implementation - driver-specific logic may be needed
+                filters[field] = fieldValue;
+            } else {
+                filters[field] = fieldValue;
+            }
+        }
+
+        // Apply scope conditions if specified
+        if (rule.scope) {
+            // Evaluate scope condition and add to filters
+            const scopeFields = this.extractFieldsFromCondition(rule.scope);
+            for (const field of scopeFields) {
+                if (context.record[field] !== undefined) {
+                    filters[field] = context.record[field];
+                }
+            }
+        }
+
+        // Exclude current record for update operations
+        if (context.operation === 'update' && context.previousRecord?._id) {
+            filters._id = { $ne: context.previousRecord._id };
+        }
+
+        try {
+            // Query database to count existing records with same field values
+            const count = await context.api.count(objectName, filters);
+
+            const valid = count === 0;
+
+            return {
+                rule: rule.name,
+                valid,
+                message: valid ? undefined : this.formatMessage(rule.message, context.record),
+                error_code: rule.error_code,
+                severity: rule.severity || 'error',
+                fields: fieldsToCheck,
+            };
+        } catch (error) {
+            // If query fails, treat as validation error
+            return {
+                rule: rule.name,
+                valid: false,
+                message: `Uniqueness check failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+                severity: rule.severity || 'error',
+                fields: fieldsToCheck,
+            };
+        }
     }
 
     /**
-     * Validate business rule (stub - requires complex logic).
+     * Extract field names from a validation condition.
+     */
+    private extractFieldsFromCondition(condition: ValidationCondition): string[] {
+        const fields: string[] = [];
+        
+        if (condition.field) {
+            fields.push(condition.field);
+        }
+        
+        if (condition.all_of) {
+            for (const subcondition of condition.all_of) {
+                fields.push(...this.extractFieldsFromCondition(subcondition));
+            }
+        }
+        
+        if (condition.any_of) {
+            for (const subcondition of condition.any_of) {
+                fields.push(...this.extractFieldsFromCondition(subcondition));
+            }
+        }
+        
+        return fields;
+    }
+
+    /**
+     * Validate business rule by evaluating constraint conditions.
      */
     private async validateBusinessRule(
         rule: BusinessRuleValidationRule,
         context: ValidationContext
     ): Promise<ValidationRuleResult> {
-        // TODO: Implement business rule evaluation
-        // This requires expression parsing and relationship resolution
-        // Stub: Pass silently until implementation is complete
+        if (!rule.constraint) {
+            // No constraint specified, validation passes
+            return {
+                rule: rule.name,
+                valid: true,
+            };
+        }
+
+        const constraint = rule.constraint;
+        let valid = true;
+
+        // Evaluate all_of conditions (all must be true)
+        if (constraint.all_of && constraint.all_of.length > 0) {
+            valid = constraint.all_of.every(condition => this.evaluateCondition(condition, context.record));
+            
+            if (!valid) {
+                return {
+                    rule: rule.name,
+                    valid: false,
+                    message: this.formatMessage(rule.message, context.record),
+                    error_code: rule.error_code,
+                    severity: rule.severity || 'error',
+                };
+            }
+        }
+
+        // Evaluate any_of conditions (at least one must be true)
+        if (constraint.any_of && constraint.any_of.length > 0) {
+            valid = constraint.any_of.some(condition => this.evaluateCondition(condition, context.record));
+            
+            if (!valid) {
+                return {
+                    rule: rule.name,
+                    valid: false,
+                    message: this.formatMessage(rule.message, context.record),
+                    error_code: rule.error_code,
+                    severity: rule.severity || 'error',
+                };
+            }
+        }
+
+        // Evaluate expression if provided (basic implementation)
+        if (constraint.expression) {
+            // For now, we'll treat expression validation as a stub
+            // Full implementation would require safe expression evaluation
+            // This could be extended to use a safe expression evaluator in the future
+            valid = true;
+        }
+
+        // Evaluate then_require conditions (conditional required fields)
+        if (constraint.then_require && constraint.then_require.length > 0) {
+            for (const condition of constraint.then_require) {
+                const conditionMet = this.evaluateCondition(condition, context.record);
+                
+                if (!conditionMet) {
+                    return {
+                        rule: rule.name,
+                        valid: false,
+                        message: this.formatMessage(rule.message, context.record),
+                        error_code: rule.error_code,
+                        severity: rule.severity || 'error',
+                    };
+                }
+            }
+        }
+
         return {
             rule: rule.name,
-            valid: true,
+            valid,
+            message: valid ? undefined : this.formatMessage(rule.message, context.record),
+            error_code: rule.error_code,
+            severity: rule.severity || 'error',
         };
     }
 

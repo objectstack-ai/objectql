@@ -483,4 +483,295 @@ describe('Validation System', () => {
             expect(result.valid).toBe(false); // Errors make it invalid
         });
     });
+
+    describe('Uniqueness validation', () => {
+        it('should validate uniqueness with API access', async () => {
+            const rule: AnyValidationRule = {
+                name: 'unique_email',
+                type: 'unique',
+                field: 'email',
+                message: 'Email address already exists',
+                error_code: 'DUPLICATE_EMAIL',
+            };
+
+            // Mock API that returns count
+            const mockApi = {
+                count: jest.fn().mockResolvedValue(1), // Duplicate found
+            };
+
+            const context: ValidationContext = {
+                record: { email: 'test@example.com' },
+                operation: 'create',
+                api: mockApi,
+                metadata: {
+                    objectName: 'user',
+                    ruleName: 'unique_email',
+                },
+            };
+
+            const result = await validator.validate([rule], context);
+
+            expect(result.valid).toBe(false);
+            expect(result.errors).toHaveLength(1);
+            expect(result.errors[0].error_code).toBe('DUPLICATE_EMAIL');
+            expect(mockApi.count).toHaveBeenCalledWith('user', { email: 'test@example.com' });
+        });
+
+        it('should pass uniqueness when no duplicates found', async () => {
+            const rule: AnyValidationRule = {
+                name: 'unique_email',
+                type: 'unique',
+                field: 'email',
+                message: 'Email address already exists',
+            };
+
+            const mockApi = {
+                count: jest.fn().mockResolvedValue(0), // No duplicates
+            };
+
+            const context: ValidationContext = {
+                record: { email: 'unique@example.com' },
+                operation: 'create',
+                api: mockApi,
+                metadata: {
+                    objectName: 'user',
+                    ruleName: 'unique_email',
+                },
+            };
+
+            const result = await validator.validate([rule], context);
+
+            expect(result.valid).toBe(true);
+            expect(result.errors).toHaveLength(0);
+        });
+
+        it('should validate composite uniqueness', async () => {
+            const rule: AnyValidationRule = {
+                name: 'unique_user_space',
+                type: 'unique',
+                fields: ['username', 'space_id'],
+                message: 'Username already exists in this space',
+            };
+
+            const mockApi = {
+                count: jest.fn().mockResolvedValue(0),
+            };
+
+            const context: ValidationContext = {
+                record: { username: 'john', space_id: '123' },
+                operation: 'create',
+                api: mockApi,
+                metadata: {
+                    objectName: 'user',
+                    ruleName: 'unique_user_space',
+                },
+            };
+
+            const result = await validator.validate([rule], context);
+
+            expect(result.valid).toBe(true);
+            expect(mockApi.count).toHaveBeenCalledWith('user', {
+                username: 'john',
+                space_id: '123',
+            });
+        });
+
+        it('should exclude current record in update operations', async () => {
+            const rule: AnyValidationRule = {
+                name: 'unique_email',
+                type: 'unique',
+                field: 'email',
+                message: 'Email already exists',
+            };
+
+            const mockApi = {
+                count: jest.fn().mockResolvedValue(0),
+            };
+
+            const context: ValidationContext = {
+                record: { email: 'test@example.com' },
+                previousRecord: { _id: 'user123', email: 'old@example.com' },
+                operation: 'update',
+                api: mockApi,
+                metadata: {
+                    objectName: 'user',
+                    ruleName: 'unique_email',
+                },
+            };
+
+            const result = await validator.validate([rule], context);
+
+            expect(result.valid).toBe(true);
+            expect(mockApi.count).toHaveBeenCalledWith('user', {
+                email: 'test@example.com',
+                _id: { $ne: 'user123' },
+            });
+        });
+
+        it('should skip uniqueness check when field value is null', async () => {
+            const rule: AnyValidationRule = {
+                name: 'unique_email',
+                type: 'unique',
+                field: 'email',
+                message: 'Email already exists',
+            };
+
+            const mockApi = {
+                count: jest.fn(),
+            };
+
+            const context: ValidationContext = {
+                record: { email: null },
+                operation: 'create',
+                api: mockApi,
+                metadata: {
+                    objectName: 'user',
+                    ruleName: 'unique_email',
+                },
+            };
+
+            const result = await validator.validate([rule], context);
+
+            expect(result.valid).toBe(true);
+            expect(mockApi.count).not.toHaveBeenCalled();
+        });
+
+        it('should pass validation when no API provided', async () => {
+            const rule: AnyValidationRule = {
+                name: 'unique_email',
+                type: 'unique',
+                field: 'email',
+                message: 'Email already exists',
+            };
+
+            const context: ValidationContext = {
+                record: { email: 'test@example.com' },
+                operation: 'create',
+                metadata: {
+                    objectName: 'user',
+                    ruleName: 'unique_email',
+                },
+            };
+
+            const result = await validator.validate([rule], context);
+
+            // Without API, validation passes by default
+            expect(result.valid).toBe(true);
+        });
+    });
+
+    describe('Business rule validation', () => {
+        it('should validate all_of conditions', async () => {
+            const rule: AnyValidationRule = {
+                name: 'budget_with_approval',
+                type: 'business_rule',
+                constraint: {
+                    all_of: [
+                        { field: 'budget', operator: '>', value: 10000 },
+                        { field: 'approved', operator: '=', value: true },
+                    ],
+                },
+                message: 'Budget over 10,000 requires approval',
+                error_code: 'BUDGET_APPROVAL_REQUIRED',
+            };
+
+            // Should fail when one condition is false
+            const context1: ValidationContext = {
+                record: { budget: 15000, approved: false },
+                operation: 'create',
+            };
+
+            const result1 = await validator.validate([rule], context1);
+            expect(result1.valid).toBe(false);
+            expect(result1.errors[0].error_code).toBe('BUDGET_APPROVAL_REQUIRED');
+
+            // Should pass when all conditions are true
+            const context2: ValidationContext = {
+                record: { budget: 15000, approved: true },
+                operation: 'create',
+            };
+
+            const result2 = await validator.validate([rule], context2);
+            expect(result2.valid).toBe(true);
+        });
+
+        it('should validate any_of conditions', async () => {
+            const rule: AnyValidationRule = {
+                name: 'contact_method',
+                type: 'business_rule',
+                constraint: {
+                    any_of: [
+                        { field: 'email', operator: '!=', value: null },
+                        { field: 'phone', operator: '!=', value: null },
+                    ],
+                },
+                message: 'At least one contact method is required',
+            };
+
+            // Should fail when all conditions are false
+            const context1: ValidationContext = {
+                record: { email: null, phone: null },
+                operation: 'create',
+            };
+
+            const result1 = await validator.validate([rule], context1);
+            expect(result1.valid).toBe(false);
+
+            // Should pass when at least one condition is true
+            const context2: ValidationContext = {
+                record: { email: 'test@example.com', phone: null },
+                operation: 'create',
+            };
+
+            const result2 = await validator.validate([rule], context2);
+            expect(result2.valid).toBe(true);
+        });
+
+        it('should validate then_require conditions', async () => {
+            const rule: AnyValidationRule = {
+                name: 'discount_requires_reason',
+                type: 'business_rule',
+                constraint: {
+                    then_require: [
+                        { field: 'discount_reason', operator: '!=', value: null },
+                    ],
+                },
+                message: 'Discount reason is required',
+            };
+
+            // Should fail when condition is not met
+            const context1: ValidationContext = {
+                record: { discount: 20, discount_reason: null },
+                operation: 'create',
+            };
+
+            const result1 = await validator.validate([rule], context1);
+            expect(result1.valid).toBe(false);
+
+            // Should pass when condition is met
+            const context2: ValidationContext = {
+                record: { discount: 20, discount_reason: 'Holiday promotion' },
+                operation: 'create',
+            };
+
+            const result2 = await validator.validate([rule], context2);
+            expect(result2.valid).toBe(true);
+        });
+
+        it('should pass when no constraint is specified', async () => {
+            const rule: AnyValidationRule = {
+                name: 'empty_rule',
+                type: 'business_rule',
+                message: 'Should not fail',
+            };
+
+            const context: ValidationContext = {
+                record: { field: 'value' },
+                operation: 'create',
+            };
+
+            const result = await validator.validate([rule], context);
+            expect(result.valid).toBe(true);
+        });
+    });
 });
