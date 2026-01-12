@@ -30,10 +30,10 @@ src/
 ├── modules/                   # Business Domain Modules
 │   ├── crm/                  # Customer Relationship Module
 │   │   ├── objects/
-│   │   │   ├── account.object.yml
-│   │   │   ├── contact.object.yml
-│   │   │   ├── opportunity.object.yml
-│   │   │   └── lead.object.yml
+│   │   │   ├── crm_account.object.yml
+│   │   │   ├── crm_contact.object.yml
+│   │   │   ├── crm_opportunity.object.yml
+│   │   │   └── crm_lead.object.yml
 │   │   ├── actions/
 │   │   │   └── convert-lead.action.ts
 │   │   ├── hooks/
@@ -46,10 +46,10 @@ src/
 │   │
 │   ├── hr/                   # Human Resources Module
 │   │   ├── objects/
-│   │   │   ├── employee.object.yml
-│   │   │   ├── department.object.yml
-│   │   │   ├── position.object.yml
-│   │   │   └── timesheet.object.yml
+│   │   │   ├── hr_employee.object.yml
+│   │   │   ├── hr_department.object.yml
+│   │   │   ├── hr_position.object.yml
+│   │   │   └── hr_timesheet.object.yml
 │   │   ├── actions/
 │   │   ├── hooks/
 │   │   ├── i18n/
@@ -58,10 +58,10 @@ src/
 │   │
 │   ├── finance/              # Finance & Accounting Module
 │   │   ├── objects/
-│   │   │   ├── invoice.object.yml
-│   │   │   ├── payment.object.yml
-│   │   │   ├── expense.object.yml
-│   │   │   └── budget.object.yml
+│   │   │   ├── finance_invoice.object.yml
+│   │   │   ├── finance_payment.object.yml
+│   │   │   ├── finance_expense.object.yml
+│   │   │   └── finance_budget.object.yml
 │   │   ├── actions/
 │   │   ├── hooks/
 │   │   ├── i18n/
@@ -70,10 +70,10 @@ src/
 │   │
 │   └── project/              # Project Management Module
 │       ├── objects/
-│       │   ├── project.object.yml
-│       │   ├── task.object.yml
-│       │   ├── milestone.object.yml
-│       │   └── timesheet-entry.object.yml
+│       │   ├── project_project.object.yml
+│       │   ├── project_task.object.yml
+│       │   ├── project_milestone.object.yml
+│       │   └── project_timesheet_entry.object.yml
 │       ├── actions/
 │       ├── hooks/
 │       ├── i18n/

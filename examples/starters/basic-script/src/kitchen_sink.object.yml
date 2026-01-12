@@ -1,4 +1,3 @@
-name: kitchen_sink
 label: "Kitchen Sink (All Fields)"
 description: "A demonstration of every supported field type in ObjectQL"
 icon: "layout-grid-line"
