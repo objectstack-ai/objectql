@@ -192,7 +192,7 @@ export async function i18nInit(options: I18nInitOptions) {
         console.log(chalk.green(`✅ Initialized i18n for ${lang}`));
         console.log(chalk.gray(`Directory: ${langDir}`));
         console.log(chalk.gray(`\nNext steps:`));
-        console.log(chalk.gray(`  1. Run: objectql i18n:extract --lang ${lang}`));
+        console.log(chalk.gray(`  1. Run: objectql i18n extract --lang ${lang}`));
         console.log(chalk.gray(`  2. Translate the JSON files in ${langDir}`));
 
     } catch (error: any) {

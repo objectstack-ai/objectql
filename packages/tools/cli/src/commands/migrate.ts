@@ -141,7 +141,7 @@ export async function migrate(options: MigrateOptions) {
 }
 
 /**
- * Create a new migration file
+ * Create a new migration file with boilerplate code
  */
 export async function migrateCreate(options: MigrateCreateOptions) {
     const { name } = options;
@@ -179,7 +179,8 @@ export async function migrateCreate(options: MigrateCreateOptions) {
 }
 
 /**
- * Show migration status
+ * Show migration status - displays pending and completed migrations
+ * @param options - Configuration options including config path and migrations directory
  */
 export async function migrateStatus(options: MigrateStatusOptions) {
     const migrationsDir = path.resolve(process.cwd(), options.dir || './migrations');
@@ -269,7 +270,7 @@ async function loadObjectQLInstance(configPath?: string): Promise<any> {
         require('ts-node').register({
             transpileOnly: true,
             compilerOptions: {
-                module: "commonjs"
+                module: 'commonjs'
             }
         });
     } catch (err) {
