@@ -326,33 +326,36 @@ chart:
   type: bar
 ```
 
-#### [Applications & Navigation](./application.md)
-**Purpose**: Define application structure, navigation, and identity.
+#### [Menus & Navigation](./menu.md)
+**Purpose**: Define application structure and navigation.
 
 **What you define**:
-- Application identity (name, icon, theme)
 - Menu hierarchies
 - Navigation items
 - Quick actions
+- Breadcrumbs
+- Favorites
 - Search integration
-- Role-based visibility
-- AI Context (Agent guidance)
+- Role-based menu visibility
 
 **Example**:
 ```yaml
-name: sales_crm
-label: Sales Command Center
-icon: briefcase
-navigation:
-  type: sidebar
-  items:
-    - type: section
-      label: Sales
-      items:
-        - type: object
-          name: leads
-          label: Leads
-          object: leads
+name: main_navigation
+type: sidebar
+items:
+  - name: sales
+    label: Sales
+    icon: currency
+    type: section
+    items:
+      - name: leads
+        label: Leads
+        path: /sales/leads
+        object: leads
+      - name: opportunities
+        label: Opportunities
+        path: /sales/opportunities
+        object: opportunities
 ```
 
 ### 4. Security & Access Control
@@ -445,7 +448,7 @@ src/
     sales_dashboard.dashboard.yml
   
   navigation/                # App structure
-    main.app.yml             # Application definition
+    main_menu.menu.yml
 ```
 
 ## Development Workflow
@@ -465,7 +468,7 @@ src/
 1. Design views for different contexts
 2. Create forms for data entry
 3. Build reports and dashboards
-4. Configure application navigation
+4. Configure navigation menus
 
 ### 4. Testing Phase
 1. Test with different user roles
@@ -490,7 +493,7 @@ Metadata files are automatically loaded based on their extension. The `name` pro
 | Object | `*.object.yml` |
 | View | `*.view.yml` |
 | Form | `*.form.yml` |
-| Application | `*.app.yml` |
+| Menu | `*.menu.yml` |
 | Report | `*.report.yml` |
 | Workflow | `*.workflow.yml` |
 | Permission | `*.permission.yml` |
@@ -581,5 +584,5 @@ columns:
 - [Views](./view.md) - Data presentation
 - [Forms](./form.md) - Data entry
 - [Reports](./report.md) - Analytics
-- [Applications](./application.md) - Navigation
+- [Menus](./menu.md) - Navigation
 - [Permissions](./permission.md) - Security

@@ -4,11 +4,9 @@ import { MetadataRegistry } from "./registry";
 import { HookName, HookHandler, HookContext } from "./hook";
 import { ActionHandler, ActionContext } from "./action";
 import { LoaderPlugin } from "./loader";
-import { ApplicationConfig } from "./application";
 
 export interface IObjectQL {
     getObject(name: string): ObjectConfig | undefined;
-    getApp(name: string): ApplicationConfig | undefined;
     getConfigs(): Record<string, ObjectConfig>;
     datasource(name: string): Driver;
     init(): Promise<void>;

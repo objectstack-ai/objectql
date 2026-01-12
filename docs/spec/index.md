@@ -51,7 +51,7 @@ fields:
 *   [**Views & Layouts**](./view.md) - Data presentation configurations
 *   [**Forms**](./form.md) - Data entry and editing interfaces
 *   [**Reports & Dashboards**](./report.md) - Analytics and BI
-*   [**Applications & Navigation**](./application.md) - App identity, navigation structure, and context
+*   [**Menus & Navigation**](./menu.md) - Application structure and navigation hierarchy
 
 ### Security & Access Control
 *   [**Permissions**](./permission.md) - Role-based access control and security rules
@@ -95,7 +95,7 @@ src/
     *.data.yml         # Seed data
   
   navigation/         # App structure
-    *.app.yml         # Application definitions
+    *.menu.yml         # Menu definitions
 ```
 
 ## Getting Started

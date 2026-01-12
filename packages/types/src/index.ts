@@ -14,4 +14,3 @@ export * from './validation';
 export * from './permission';
 export * from './page';
 export * from './loader';
-export * from './application';
