@@ -12,13 +12,20 @@ ObjectQL's permission system provides:
 - **Action permissions**: Control who can execute specific actions
 - **View permissions**: Restrict access to specific UI views
 
-**File Naming Convention:** `[object_name].permission.yml`
+**File Naming Convention:** `<object_name>.permission.yml`
+
+The filename (without the `.permission.yml` extension) automatically identifies which object these permission rules apply to.
+
+**Examples:**
+- `project.permission.yml` → Applies to object: `project`
+- `customer_order.permission.yml` → Applies to object: `customer_order`
 
 ## 2. Root Structure
 
 ```yaml
-name: project_permissions
-object: projects
+# File: project.permission.yml
+# Object is inferred from filename!
+
 description: Permission rules for project object
 
 # Role Definitions

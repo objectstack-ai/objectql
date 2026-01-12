@@ -4,13 +4,21 @@ The Application metadata (`.app.yml`) is the **primary entry point** for user in
 
 It supersedes separate menu definitions by combining **Identity**, **Navigation**, and **Workspace Context** into a single, unified definition.
 
-**File Naming Convention:** `[app_name].app.yml`
+**File Naming Convention:** `<app_name>.app.yml`
+
+The filename (without the `.app.yml` extension) automatically becomes the application's API identifier.
+
+**Examples:**
+- `sales_crm.app.yml` → App name: `sales_crm`
+- `hr_portal.app.yml` → App name: `hr_portal`
 
 ## 1. Root Structure (Schema)
 
 ```yaml
+# File: sales_crm.app.yml
+# App name is inferred from filename!
+
 # Identity
-name: sales_crm             # Unique API identifier (formerly 'code')
 label: Sales Command Center # Display name
 description: Manage leads, pipeline, and forecasts.
 icon: briefcase             # Icon (e.g., Lucide, Material)
@@ -50,8 +58,7 @@ features:
       shortcut: "cmd+shift+l"
 
 # Navigation Structure (The Menu Tree)
-navigaai_context: "Overview of daily tasks and KPIs. Primary landing page."
-      tion:
+navigation:
   type: sidebar             # sidebar, topnav, mobile_bottom
   collapsible: true
   
@@ -63,6 +70,7 @@ navigaai_context: "Overview of daily tasks and KPIs. Primary landing page."
       icon: layout-dashboard
       path: /
       component: sales-dashboard-v1
+      ai_context: "Overview of daily tasks and KPIs. Primary landing page."
 
     # 2. Section (Collapsible Group)
     - type: section

@@ -6,7 +6,14 @@ Views define how data is presented to users in different contexts (list, detail,
 
 View metadata separates the presentation logic from the data model, allowing the same object to be displayed differently based on context, user role, or device type.
 
-**File Naming Convention:** `[object_name].view.yml` or `[view_name].view.yml`
+**File Naming Convention:** `<view_name>.view.yml`
+
+The filename (without the `.view.yml` extension) automatically becomes the view's identifier. This eliminates the need for a redundant `name` property.
+
+**Examples:**
+- `task_list.view.yml` → View name: `task_list`
+- `customer_kanban.view.yml` → View name: `customer_kanban`
+- `project_calendar.view.yml` → View name: `project_calendar`
 
 ## 2. View Types
 
@@ -26,10 +33,12 @@ ObjectQL supports multiple view types for different use cases:
 ## 3. Root Properties
 
 ```yaml
-name: task_list_view
+# File: task_list.view.yml
+# View name is inferred from filename!
+
 label: Task List
 type: list
-object: tasks
+object: tasks  # Must specify which object to display
 description: Default task listing view
 
 # View Configuration
@@ -42,7 +51,6 @@ config:
 
 | Property | Type | Required | Description |
 |:---|:---|:---|:---|
-| `name` | `string` | ✓ | Unique identifier for the view |
 | `label` | `string` | ✓ | Display name for the view |
 | `type` | `ViewType` | ✓ | Type of view (list, grid, kanban, etc.) |
 | `object` | `string` | ✓ | Target object name |
@@ -51,12 +59,15 @@ config:
 | `default` | `boolean` | | Whether this is the default view for the object |
 | `config` | `object` | ✓ | View-specific configuration |
 
+**Note:** The `name` property is **no longer needed** - it's automatically inferred from the filename.
+
 ## 4. List View Configuration
 
 The most common view type for browsing records.
 
 ```yaml
-name: task_list
+# File: task_list.view.yml
+
 type: list
 object: tasks
 config:
