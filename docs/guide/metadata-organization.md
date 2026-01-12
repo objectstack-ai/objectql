@@ -243,10 +243,6 @@ fields:
 ```
 
 **Result:** ObjectQL merges both definitions, adding `employee_id` and making `email` required.
-  email: { required: true, unique: true }
-```
-
-**Result:** ObjectQL merges both definitions, adding `employee_id` and making `email` required.
 
 ## Internationalization at Scale
 

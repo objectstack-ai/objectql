@@ -13,12 +13,22 @@ Navigation features include:
 - **Breadcrumbs**: Automatic navigation trails
 - **Search Integration**: Global search within navigation
 
-**File Naming Convention:** `[menu_name].menu.yml`
+**File Naming Convention:** `<menu_name>.menu.yml`
+
+The filename (without the `.menu.yml` extension) automatically becomes the menu's identifier.
+
+**Examples:**
+- `main_navigation.menu.yml` → Menu name: `main_navigation`
+- `admin_menu.menu.yml` → Menu name: `admin_menu`
+
+**Note:** Menu metadata is often embedded within Application metadata (`.app.yml` files) as the `navigation` property. See [Application Metadata](./application.md) for the recommended approach.
 
 ## 2. Root Structure
 
 ```yaml
-name: main_navigation
+# File: main_navigation.menu.yml
+# Menu name is inferred from filename!
+
 label: Main Menu
 type: sidebar  # sidebar, topnav, context, mobile
 app: sales     # Optional: Link to a specific application
@@ -519,7 +529,9 @@ responsive:
 Right-click and action menus:
 
 ```yaml
-name: record_context_menu
+# File: record_context_menu.menu.yml
+# Menu name is inferred from filename!
+
 type: context
 object: tasks
 
@@ -669,12 +681,44 @@ analytics:
 
 ## 18. Implementation Example
 
+Complete menu definition:
+
+```yaml
+# File: main_navigation.menu.yml
+# Menu name is inferred from filename!
+
+label: Main Navigation
+type: sidebar
+
+items:
+  - name: home
+    label: Home
+    icon: home
+    path: /
+  
+  - name: sales
+    label: Sales
+    icon: currency
+    type: section
+    items:
+      - name: leads
+        label: Leads
+        path: /leads
+        object: leads
+      
+      - name: accounts
+        label: Accounts
+        path: /accounts
+        object: accounts
+```
+
+**TypeScript Implementation:**
+
 ```typescript
-// src/navigation/main_menu.menu.yml
+// File: main_navigation.menu.ts
 import { MenuDefinition } from '@objectql/types';
 
 export const main_menu: MenuDefinition = {
-  name: 'main_navigation',
   type: 'sidebar',
   items: [
     {

@@ -112,7 +112,7 @@ rules:
 - Target object
 - List of records to insert (auto-created if validation passes)
 
-**Example** (`initial.data.yml`):
+**Example** (`users.data.yml`):
 ```yaml
 # File: users.data.yml
 # Object is inferred from filename!

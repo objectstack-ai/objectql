@@ -12,6 +12,8 @@ The filename (without the `.app.yml` extension) automatically becomes the applic
 - `sales_crm.app.yml` → App name: `sales_crm`
 - `hr_portal.app.yml` → App name: `hr_portal`
 
+**Note on Legacy Format:** Some existing app files may use an explicit `kind: app` and `name:` property. While this is supported for backward compatibility, the filename-based approach is recommended for new applications.
+
 ## 1. Root Structure (Schema)
 
 ```yaml
