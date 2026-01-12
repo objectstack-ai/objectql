@@ -77,51 +77,51 @@ export class MongoDriver implements Driver {
         let nextJoin = '$and'; // Default logic operator for next condition
 
         for (const item of filters) {
-             if (typeof item === 'string') {
-                 // Update the logic operator for the next condition
-                 if (item.toLowerCase() === 'or') {
-                     nextJoin = '$or';
-                 } else if (item.toLowerCase() === 'and') {
-                     nextJoin = '$and';
-                 }
-                 continue;
-             }
+            if (typeof item === 'string') {
+                // Update the logic operator for the next condition
+                if (item.toLowerCase() === 'or') {
+                    nextJoin = '$or';
+                } else if (item.toLowerCase() === 'and') {
+                    nextJoin = '$and';
+                }
+                continue;
+            }
 
-             if (Array.isArray(item)) {
-                 // Heuristic to detect if it is a criterion [field, op, value] or a nested group
-                 const [fieldRaw, op, value] = item;
-                 const isCriterion = typeof fieldRaw === 'string' && typeof op === 'string';
+            if (Array.isArray(item)) {
+                // Heuristic to detect if it is a criterion [field, op, value] or a nested group
+                const [fieldRaw, op, value] = item;
+                const isCriterion = typeof fieldRaw === 'string' && typeof op === 'string';
 
-                 let condition: any;
-                 
-                 if (isCriterion) {
-                     // This is a single criterion [field, op, value]
-                     condition = this.buildSingleCondition(fieldRaw, op, value);
-                 } else {
-                     // This is a nested group - recursively process it
-                     condition = this.buildFilterConditions(item);
-                 }
-                 
-                 // Apply the join logic
-                 if (conditions.length > 0 && nextJoin === '$or') {
-                     // Collect all OR conditions together
-                     const lastItem = conditions[conditions.length - 1];
-                     if (lastItem && lastItem.$or) {
-                         // Extend existing $or array
-                         lastItem.$or.push(condition);
-                     } else {
-                         // Create new $or with previous and current condition
-                         const previous = conditions.pop();
-                         conditions.push({ $or: [previous, condition] });
-                     }
-                 } else {
-                     // Default AND - just add to conditions array
-                     conditions.push(condition);
-                 }
-                 
-                 // Reset to default AND logic after processing each item
-                 nextJoin = '$and';
-             }
+                let condition: any;
+                
+                if (isCriterion) {
+                    // This is a single criterion [field, op, value]
+                    condition = this.buildSingleCondition(fieldRaw, op, value);
+                } else {
+                    // This is a nested group - recursively process it
+                    condition = this.buildFilterConditions(item);
+                }
+                
+                // Apply the join logic
+                if (conditions.length > 0 && nextJoin === '$or') {
+                    // Collect all OR conditions together
+                    const lastItem = conditions[conditions.length - 1];
+                    if (lastItem && lastItem.$or) {
+                        // Extend existing $or array
+                        lastItem.$or.push(condition);
+                    } else {
+                        // Create new $or with previous and current condition
+                        const previous = conditions.pop();
+                        conditions.push({ $or: [previous, condition] });
+                    }
+                } else {
+                    // Default AND - just add to conditions array
+                    conditions.push(condition);
+                }
+                
+                // Reset to default AND logic after processing each item
+                nextJoin = '$and';
+            }
         }
 
         if (conditions.length === 0) return {};
