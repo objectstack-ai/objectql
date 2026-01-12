@@ -35,8 +35,11 @@ describe('Enterprise Metadata API', () => {
     });
 
     afterAll(async () => {
-        if (app) {
-            await app.close();
+        if (app && (app as any).datasources?.default) {
+            const driver = (app as any).datasources.default;
+            if (driver.knex) {
+                await driver.knex.destroy();
+            }
         }
     });
 
@@ -49,42 +52,42 @@ describe('Enterprise Metadata API', () => {
         });
 
         it('should get specific core object metadata', () => {
-            const userConfig = app.getObject('User');
+            const userConfig = app.getObject('user');
             
             expect(userConfig).toBeDefined();
-            expect(userConfig.name).toBe('User');
+            expect(userConfig.name).toBe('user');
             expect(userConfig.fields).toBeDefined();
         });
 
         it('should get specific CRM object metadata', () => {
-            const accountConfig = app.getObject('CRM_Account');
+            const accountConfig = app.getObject('crm_account');
             
             expect(accountConfig).toBeDefined();
-            expect(accountConfig.name).toBe('CRM_Account');
+            expect(accountConfig.name).toBe('crm_account');
             expect(accountConfig.fields).toBeDefined();
         });
 
         it('should get specific HR object metadata', () => {
-            const employeeConfig = app.getObject('HR_Employee');
+            const employeeConfig = app.getObject('hr_employee');
             
             expect(employeeConfig).toBeDefined();
-            expect(employeeConfig.name).toBe('HR_Employee');
+            expect(employeeConfig.name).toBe('hr_employee');
             expect(employeeConfig.fields).toBeDefined();
         });
 
         it('should get specific Project object metadata', () => {
-            const projectConfig = app.getObject('Project_Project');
+            const projectConfig = app.getObject('project_project');
             
             expect(projectConfig).toBeDefined();
-            expect(projectConfig.name).toBe('Project_Project');
+            expect(projectConfig.name).toBe('project_project');
             expect(projectConfig.fields).toBeDefined();
         });
 
         it('should get specific Finance object metadata', () => {
-            const invoiceConfig = app.getObject('Finance_Invoice');
+            const invoiceConfig = app.getObject('finance_invoice');
             
             expect(invoiceConfig).toBeDefined();
-            expect(invoiceConfig.name).toBe('Finance_Invoice');
+            expect(invoiceConfig.name).toBe('finance_invoice');
             expect(invoiceConfig.fields).toBeDefined();
         });
     });
@@ -99,17 +102,17 @@ describe('Enterprise Metadata API', () => {
         });
 
         it('should get object via metadata.get', () => {
-            const userMeta = app.metadata.get('object', 'User');
+            const userMeta = app.metadata.get('object', 'user');
             
             expect(userMeta).toBeDefined();
-            expect(userMeta.name).toBe('User');
+            expect(userMeta.name).toBe('user');
         });
 
         it('should get CRM object via metadata.get', () => {
-            const accountMeta = app.metadata.get('object', 'CRM_Account');
+            const accountMeta = app.metadata.get('object', 'crm_account');
             
             expect(accountMeta).toBeDefined();
-            expect(accountMeta.name).toBe('CRM_Account');
+            expect(accountMeta.name).toBe('crm_account');
         });
 
         it('should list extensions if present', () => {
@@ -136,7 +139,7 @@ describe('Enterprise Metadata API', () => {
 
     describe('Field Metadata', () => {
         it('should retrieve User field metadata', () => {
-            const userConfig = app.getObject('User');
+            const userConfig = app.getObject('user');
             
             expect(userConfig.fields).toBeDefined();
             expect(userConfig.fields.name).toBeDefined();
@@ -144,14 +147,14 @@ describe('Enterprise Metadata API', () => {
         });
 
         it('should retrieve CRM Account field metadata', () => {
-            const accountConfig = app.getObject('CRM_Account');
+            const accountConfig = app.getObject('crm_account');
             
             expect(accountConfig.fields).toBeDefined();
             expect(accountConfig.fields.name).toBeDefined();
         });
 
         it('should retrieve HR Employee field metadata', () => {
-            const employeeConfig = app.getObject('HR_Employee');
+            const employeeConfig = app.getObject('hr_employee');
             
             expect(employeeConfig.fields).toBeDefined();
             expect(employeeConfig.fields.first_name).toBeDefined();
@@ -159,14 +162,14 @@ describe('Enterprise Metadata API', () => {
         });
 
         it('should retrieve Project field metadata', () => {
-            const projectConfig = app.getObject('Project_Project');
+            const projectConfig = app.getObject('project_project');
             
             expect(projectConfig.fields).toBeDefined();
             expect(projectConfig.fields.name).toBeDefined();
         });
 
         it('should retrieve Finance Invoice field metadata', () => {
-            const invoiceConfig = app.getObject('Finance_Invoice');
+            const invoiceConfig = app.getObject('finance_invoice');
             
             expect(invoiceConfig.fields).toBeDefined();
             expect(invoiceConfig.fields.invoice_number).toBeDefined();
@@ -242,8 +245,8 @@ describe('Enterprise Metadata API', () => {
 
     describe('Metadata Consistency', () => {
         it('should return same metadata via different access methods', () => {
-            const viaGetObject = app.getObject('User');
-            const viaMetadataGet = app.metadata.get('object', 'User');
+            const viaGetObject = app.getObject('user');
+            const viaMetadataGet = app.metadata.get('object', 'user');
             
             expect(viaGetObject.name).toBe(viaMetadataGet.name);
             expect(viaGetObject.label).toBe(viaMetadataGet.label);

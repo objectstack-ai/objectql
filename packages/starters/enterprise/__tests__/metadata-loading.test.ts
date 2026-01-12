@@ -35,144 +35,147 @@ describe('Enterprise Metadata Loading', () => {
     });
 
     afterAll(async () => {
-        if (app) {
-            await app.close();
+        if (app && (app as any).datasources?.default) {
+            const driver = (app as any).datasources.default;
+            if (driver.knex) {
+                await driver.knex.destroy();
+            }
         }
     });
 
     describe('Core Objects', () => {
         it('should load User core object', () => {
-            const userConfig = app.getObject('User');
+            const userConfig = app.getObject('user');
             
             expect(userConfig).toBeDefined();
-            expect(userConfig.name).toBe('User');
+            expect(userConfig.name).toBe('user');
         });
 
         it('should load Organization core object', () => {
-            const orgConfig = app.getObject('Organization');
+            const orgConfig = app.getObject('organization');
             
             expect(orgConfig).toBeDefined();
-            expect(orgConfig.name).toBe('Organization');
+            expect(orgConfig.name).toBe('organization');
         });
 
         it('should load Attachment core object', () => {
-            const attachmentConfig = app.getObject('Attachment');
+            const attachmentConfig = app.getObject('attachment');
             
             expect(attachmentConfig).toBeDefined();
-            expect(attachmentConfig.name).toBe('Attachment');
+            expect(attachmentConfig.name).toBe('attachment');
         });
     });
 
     describe('CRM Module Objects', () => {
         it('should load CRM Account object', () => {
-            const accountConfig = app.getObject('CRM_Account');
+            const accountConfig = app.getObject('crm_account');
             
             expect(accountConfig).toBeDefined();
-            expect(accountConfig.name).toBe('CRM_Account');
+            expect(accountConfig.name).toBe('crm_account');
         });
 
         it('should load CRM Contact object', () => {
-            const contactConfig = app.getObject('CRM_Contact');
+            const contactConfig = app.getObject('crm_contact');
             
             expect(contactConfig).toBeDefined();
-            expect(contactConfig.name).toBe('CRM_Contact');
+            expect(contactConfig.name).toBe('crm_contact');
         });
 
         it('should load CRM Lead object', () => {
-            const leadConfig = app.getObject('CRM_Lead');
+            const leadConfig = app.getObject('crm_lead');
             
             expect(leadConfig).toBeDefined();
-            expect(leadConfig.name).toBe('CRM_Lead');
+            expect(leadConfig.name).toBe('crm_lead');
         });
 
         it('should load CRM Opportunity object', () => {
-            const opportunityConfig = app.getObject('CRM_Opportunity');
+            const opportunityConfig = app.getObject('crm_opportunity');
             
             expect(opportunityConfig).toBeDefined();
-            expect(opportunityConfig.name).toBe('CRM_Opportunity');
+            expect(opportunityConfig.name).toBe('crm_opportunity');
         });
     });
 
     describe('HR Module Objects', () => {
         it('should load HR Employee object', () => {
-            const employeeConfig = app.getObject('HR_Employee');
+            const employeeConfig = app.getObject('hr_employee');
             
             expect(employeeConfig).toBeDefined();
-            expect(employeeConfig.name).toBe('HR_Employee');
+            expect(employeeConfig.name).toBe('hr_employee');
         });
 
         it('should load HR Department object', () => {
-            const deptConfig = app.getObject('HR_Department');
+            const deptConfig = app.getObject('hr_department');
             
             expect(deptConfig).toBeDefined();
-            expect(deptConfig.name).toBe('HR_Department');
+            expect(deptConfig.name).toBe('hr_department');
         });
 
         it('should load HR Position object', () => {
-            const posConfig = app.getObject('HR_Position');
+            const posConfig = app.getObject('hr_position');
             
             expect(posConfig).toBeDefined();
-            expect(posConfig.name).toBe('HR_Position');
+            expect(posConfig.name).toBe('hr_position');
         });
 
         it('should load HR Timesheet object', () => {
-            const timesheetConfig = app.getObject('HR_Timesheet');
+            const timesheetConfig = app.getObject('hr_timesheet');
             
             expect(timesheetConfig).toBeDefined();
-            expect(timesheetConfig.name).toBe('HR_Timesheet');
+            expect(timesheetConfig.name).toBe('hr_timesheet');
         });
     });
 
     describe('Project Module Objects', () => {
         it('should load Project Project object', () => {
-            const projectConfig = app.getObject('Project_Project');
+            const projectConfig = app.getObject('project_project');
             
             expect(projectConfig).toBeDefined();
-            expect(projectConfig.name).toBe('Project_Project');
+            expect(projectConfig.name).toBe('project_project');
         });
 
         it('should load Project Task object', () => {
-            const taskConfig = app.getObject('Project_Task');
+            const taskConfig = app.getObject('project_task');
             
             expect(taskConfig).toBeDefined();
-            expect(taskConfig.name).toBe('Project_Task');
+            expect(taskConfig.name).toBe('project_task');
         });
 
         it('should load Project Milestone object', () => {
-            const milestoneConfig = app.getObject('Project_Milestone');
+            const milestoneConfig = app.getObject('project_milestone');
             
             expect(milestoneConfig).toBeDefined();
-            expect(milestoneConfig.name).toBe('Project_Milestone');
+            expect(milestoneConfig.name).toBe('project_milestone');
         });
 
         it('should load Project Timesheet Entry object', () => {
-            const entryConfig = app.getObject('Project_Timesheet_Entry');
+            const entryConfig = app.getObject('project_timesheet_entry');
             
             expect(entryConfig).toBeDefined();
-            expect(entryConfig.name).toBe('Project_Timesheet_Entry');
+            expect(entryConfig.name).toBe('project_timesheet_entry');
         });
     });
 
     describe('Finance Module Objects', () => {
         it('should load Finance Invoice object', () => {
-            const invoiceConfig = app.getObject('Finance_Invoice');
+            const invoiceConfig = app.getObject('finance_invoice');
             
             expect(invoiceConfig).toBeDefined();
-            expect(invoiceConfig.name).toBe('Finance_Invoice');
+            expect(invoiceConfig.name).toBe('finance_invoice');
         });
 
         it('should load Finance Payment object', () => {
-            const paymentConfig = app.getObject('Finance_Payment');
+            const paymentConfig = app.getObject('finance_payment');
             
             expect(paymentConfig).toBeDefined();
-            expect(paymentConfig.name).toBe('Finance_Payment');
+            expect(paymentConfig.name).toBe('finance_payment');
         });
 
         it('should load Finance Expense object', () => {
-            const expenseConfig = app.getObject('Finance_Expense');
+            const expenseConfig = app.getObject('finance_expense');
             
             expect(expenseConfig).toBeDefined();
-            expect(expenseConfig.name).toBe('Finance_Expense');
+            expect(expenseConfig.name).toBe('finance_expense');
         });
     });
 
@@ -237,8 +240,8 @@ describe('Enterprise Metadata Loading', () => {
         });
 
         it('should support getting specific objects', () => {
-            const userMeta = app.metadata.get('object', 'User');
-            const accountMeta = app.metadata.get('object', 'CRM_Account');
+            const userMeta = app.metadata.get('object', 'user');
+            const accountMeta = app.metadata.get('object', 'crm_account');
             
             expect(userMeta).toBeDefined();
             expect(accountMeta).toBeDefined();

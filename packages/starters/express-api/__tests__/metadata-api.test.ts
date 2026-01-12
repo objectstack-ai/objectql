@@ -49,7 +49,12 @@ describe('Metadata API', () => {
     });
 
     afterAll(async () => {
-        // ObjectQL doesn't have close() method yet
+        if (app && (app as any).datasources?.default) {
+            const driver = (app as any).datasources.default;
+            if (driver.knex) {
+                await driver.knex.destroy();
+            }
+        }
     });
 
     describe('List Objects', () => {
@@ -90,9 +95,9 @@ describe('Metadata API', () => {
     });
 
     describe('Get Object Details', () => {
-        it('should get User object metadata via GET /api/metadata/object/User', async () => {
+        it('should get User object metadata via GET /api/metadata/object/user', async () => {
             const response = await request(server)
-                .get('/api/metadata/object/User')
+                .get('/api/metadata/object/user')
                 .set('Accept', 'application/json');
 
             expect(response.status).toBe(200);
@@ -101,9 +106,9 @@ describe('Metadata API', () => {
             expect(response.body.fields).toBeDefined();
         });
 
-        it('should get Task object metadata via GET /api/metadata/object/Task', async () => {
+        it('should get Task object metadata via GET /api/metadata/object/task', async () => {
             const response = await request(server)
-                .get('/api/metadata/object/Task')
+                .get('/api/metadata/object/task')
                 .set('Accept', 'application/json');
 
             expect(response.status).toBe(200);
@@ -125,7 +130,7 @@ describe('Metadata API', () => {
     describe('Object Fields', () => {
         it('should include all User fields in object metadata', async () => {
             const response = await request(server)
-                .get('/api/metadata/object/User')
+                .get('/api/metadata/object/user')
                 .set('Accept', 'application/json');
 
             expect(response.status).toBe(200);
@@ -151,7 +156,7 @@ describe('Metadata API', () => {
 
         it('should include all Task fields in object metadata', async () => {
             const response = await request(server)
-                .get('/api/metadata/object/Task')
+                .get('/api/metadata/object/task')
                 .set('Accept', 'application/json');
 
             expect(response.status).toBe(200);
@@ -175,9 +180,9 @@ describe('Metadata API', () => {
             expect(fields.completed.defaultValue).toBe(false);
         });
 
-        it('should get specific field metadata via GET /api/metadata/object/User/fields/name', async () => {
+        it('should get specific field metadata via GET /api/metadata/object/user/fields/name', async () => {
             const response = await request(server)
-                .get('/api/metadata/object/User/fields/name')
+                .get('/api/metadata/object/user/fields/name')
                 .set('Accept', 'application/json');
 
             expect(response.status).toBe(200);
@@ -189,7 +194,7 @@ describe('Metadata API', () => {
 
         it('should return 404 for non-existent field', async () => {
             const response = await request(server)
-                .get('/api/metadata/object/User/fields/nonexistent')
+                .get('/api/metadata/object/user/fields/nonexistent')
                 .set('Accept', 'application/json');
 
             expect(response.status).toBe(404);
@@ -198,9 +203,9 @@ describe('Metadata API', () => {
     });
 
     describe('Object Actions', () => {
-        it('should list object actions via GET /api/metadata/object/User/actions', async () => {
+        it('should list object actions via GET /api/metadata/object/user/actions', async () => {
             const response = await request(server)
-                .get('/api/metadata/object/User/actions')
+                .get('/api/metadata/object/user/actions')
                 .set('Accept', 'application/json');
 
             expect(response.status).toBe(200);
@@ -208,9 +213,9 @@ describe('Metadata API', () => {
             expect(Array.isArray(response.body.actions)).toBe(true);
         });
 
-        it('should list object actions via GET /api/metadata/objects/User/actions (legacy path)', async () => {
+        it('should list object actions via GET /api/metadata/objects/user/actions (legacy path)', async () => {
             const response = await request(server)
-                .get('/api/metadata/objects/User/actions')
+                .get('/api/metadata/objects/user/actions')
                 .set('Accept', 'application/json');
 
             expect(response.status).toBe(200);
@@ -238,7 +243,7 @@ describe('Metadata API', () => {
 
         it('should handle OPTIONS request for CORS', async () => {
             const response = await request(server)
-                .options('/api/metadata/object/User')
+                .options('/api/metadata/object/user')
                 .set('Origin', 'http://localhost:3000');
 
             expect(response.status).toBe(200);
@@ -261,7 +266,7 @@ describe('Metadata API', () => {
 
         it('should return same object metadata from different endpoints', async () => {
             const response1 = await request(server)
-                .get('/api/metadata/object/User')
+                .get('/api/metadata/object/user')
                 .set('Accept', 'application/json');
 
             const userMeta = app.getObject('user');

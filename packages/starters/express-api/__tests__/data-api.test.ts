@@ -51,7 +51,12 @@ describe('Data API', () => {
     });
 
     afterAll(async () => {
-        // ObjectQL doesn't have close() method yet
+        if (app && (app as any).datasources?.default) {
+            const driver = (app as any).datasources.default;
+            if (driver.knex) {
+                await driver.knex.destroy();
+            }
+        }
     });
 
     describe('JSON-RPC API (/api/objectql)', () => {
@@ -259,9 +264,9 @@ describe('Data API', () => {
         describe('User Operations', () => {
             let userId: string;
 
-            it('should create user via POST /api/data/User', async () => {
+            it('should create user via POST /api/data/user', async () => {
                 const response = await request(server)
-                    .post('/api/data/User')
+                    .post('/api/data/user')
                     .send({
                         name: 'Jane Smith',
                         email: 'jane@example.com',
@@ -277,9 +282,9 @@ describe('Data API', () => {
                 userId = response.body._id;
             });
 
-            it('should list users via GET /api/data/User', async () => {
+            it('should list users via GET /api/data/user', async () => {
                 const response = await request(server)
-                    .get('/api/data/User')
+                    .get('/api/data/user')
                     .set('Accept', 'application/json');
 
                 expect(response.status).toBe(200);
@@ -287,9 +292,9 @@ describe('Data API', () => {
                 expect(response.body.length).toBeGreaterThanOrEqual(1);
             });
 
-            it('should get user by id via GET /api/data/User/:id', async () => {
+            it('should get user by id via GET /api/data/user/:id', async () => {
                 const response = await request(server)
-                    .get(`/api/data/User/${userId}`)
+                    .get(`/api/data/user/${userId}`)
                     .set('Accept', 'application/json');
 
                 expect(response.status).toBe(200);
@@ -297,9 +302,9 @@ describe('Data API', () => {
                 expect(response.body.name).toBe('Jane Smith');
             });
 
-            it('should update user via PUT /api/data/User/:id', async () => {
+            it('should update user via PUT /api/data/user/:id', async () => {
                 const response = await request(server)
-                    .put(`/api/data/User/${userId}`)
+                    .put(`/api/data/user/${userId}`)
                     .send({
                         age: 29
                     })
@@ -308,9 +313,9 @@ describe('Data API', () => {
                 expect(response.status).toBe(200);
             });
 
-            it('should delete user via DELETE /api/data/User/:id', async () => {
+            it('should delete user via DELETE /api/data/user/:id', async () => {
                 const response = await request(server)
-                    .delete(`/api/data/User/${userId}`)
+                    .delete(`/api/data/user/${userId}`)
                     .set('Accept', 'application/json');
 
                 expect(response.status).toBe(204);
@@ -320,9 +325,9 @@ describe('Data API', () => {
         describe('Task Operations', () => {
             let taskId: string;
 
-            it('should create task via POST /api/data/Task', async () => {
+            it('should create task via POST /api/data/task', async () => {
                 const response = await request(server)
-                    .post('/api/data/Task')
+                    .post('/api/data/task')
                     .send({
                         title: 'REST API Task',
                         description: 'Created via REST',
@@ -337,18 +342,18 @@ describe('Data API', () => {
                 taskId = response.body._id;
             });
 
-            it('should list tasks via GET /api/data/Task', async () => {
+            it('should list tasks via GET /api/data/task', async () => {
                 const response = await request(server)
-                    .get('/api/data/Task')
+                    .get('/api/data/task')
                     .set('Accept', 'application/json');
 
                 expect(response.status).toBe(200);
                 expect(Array.isArray(response.body)).toBe(true);
             });
 
-            it('should update task via PUT /api/data/Task/:id', async () => {
+            it('should update task via PUT /api/data/task/:id', async () => {
                 const response = await request(server)
-                    .put(`/api/data/Task/${taskId}`)
+                    .put(`/api/data/task/${taskId}`)
                     .send({
                         status: 'in-progress'
                     })
@@ -357,9 +362,9 @@ describe('Data API', () => {
                 expect(response.status).toBe(200);
             });
 
-            it('should delete task via DELETE /api/data/Task/:id', async () => {
+            it('should delete task via DELETE /api/data/task/:id', async () => {
                 const response = await request(server)
-                    .delete(`/api/data/Task/${taskId}`)
+                    .delete(`/api/data/task/${taskId}`)
                     .set('Accept', 'application/json');
 
                 expect(response.status).toBe(204);

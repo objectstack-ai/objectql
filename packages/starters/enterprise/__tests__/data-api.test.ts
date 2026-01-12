@@ -35,8 +35,11 @@ describe('Enterprise Data API', () => {
     });
 
     afterAll(async () => {
-        if (app) {
-            await app.close();
+        if (app && (app as any).datasources?.default) {
+            const driver = (app as any).datasources.default;
+            if (driver.knex) {
+                await driver.knex.destroy();
+            }
         }
     });
 
@@ -46,7 +49,7 @@ describe('Enterprise Data API', () => {
 
             it('should create a user', async () => {
                 const ctx = app.createContext({ isSystem: true });
-                const result = await ctx.object('User').create({
+                const result = await ctx.object('user').create({
                     name: 'John Doe',
                     email: 'john@example.com',
                     username: 'johndoe'
@@ -61,7 +64,7 @@ describe('Enterprise Data API', () => {
 
             it('should find users', async () => {
                 const ctx = app.createContext({ isSystem: true });
-                const results = await ctx.object('User').find({});
+                const results = await ctx.object('user').find({});
 
                 expect(results).toBeDefined();
                 expect(Array.isArray(results)).toBe(true);
@@ -70,7 +73,7 @@ describe('Enterprise Data API', () => {
 
             it('should find user by id', async () => {
                 const ctx = app.createContext({ isSystem: true });
-                const result = await ctx.object('User').findOne(userId);
+                const result = await ctx.object('user').findOne(userId);
 
                 expect(result).toBeDefined();
                 expect(result._id).toBe(userId);
@@ -79,19 +82,19 @@ describe('Enterprise Data API', () => {
 
             it('should update user', async () => {
                 const ctx = app.createContext({ isSystem: true });
-                await ctx.object('User').update(userId, {
+                await ctx.object('user').update(userId, {
                     email: 'john.doe@example.com'
                 });
 
-                const updated = await ctx.object('User').findOne(userId);
+                const updated = await ctx.object('user').findOne(userId);
                 expect(updated.email).toBe('john.doe@example.com');
             });
 
             it('should delete user', async () => {
                 const ctx = app.createContext({ isSystem: true });
-                await ctx.object('User').delete(userId);
+                await ctx.object('user').delete(userId);
 
-                const deleted = await ctx.object('User').findOne(userId);
+                const deleted = await ctx.object('user').findOne(userId);
                 expect(deleted).toBeNull();
             });
         });
@@ -101,7 +104,7 @@ describe('Enterprise Data API', () => {
 
             it('should create an organization', async () => {
                 const ctx = app.createContext({ isSystem: true });
-                const result = await ctx.object('Organization').create({
+                const result = await ctx.object('organization').create({
                     name: 'Acme Corp',
                     code: 'ACME'
                 });
@@ -115,7 +118,7 @@ describe('Enterprise Data API', () => {
 
             it('should find organizations', async () => {
                 const ctx = app.createContext({ isSystem: true });
-                const results = await ctx.object('Organization').find({});
+                const results = await ctx.object('organization').find({});
 
                 expect(results).toBeDefined();
                 expect(results.length).toBeGreaterThanOrEqual(1);
@@ -123,7 +126,7 @@ describe('Enterprise Data API', () => {
 
             it('should delete organization', async () => {
                 const ctx = app.createContext({ isSystem: true });
-                await ctx.object('Organization').delete(orgId);
+                await ctx.object('organization').delete(orgId);
             });
         });
     });
@@ -134,7 +137,7 @@ describe('Enterprise Data API', () => {
 
             it('should create a CRM account', async () => {
                 const ctx = app.createContext({ isSystem: true });
-                const result = await ctx.object('CRM_Account').create({
+                const result = await ctx.object('crm_account').create({
                     name: 'Global Solutions Inc',
                     industry: 'Technology'
                 });
@@ -148,7 +151,7 @@ describe('Enterprise Data API', () => {
 
             it('should find CRM accounts', async () => {
                 const ctx = app.createContext({ isSystem: true });
-                const results = await ctx.object('CRM_Account').find({});
+                const results = await ctx.object('crm_account').find({});
 
                 expect(results).toBeDefined();
                 expect(results.length).toBeGreaterThanOrEqual(1);
@@ -156,24 +159,24 @@ describe('Enterprise Data API', () => {
 
             it('should update CRM account', async () => {
                 const ctx = app.createContext({ isSystem: true });
-                await ctx.object('CRM_Account').update(accountId, {
+                await ctx.object('crm_account').update(accountId, {
                     industry: 'IT Services'
                 });
 
-                const updated = await ctx.object('CRM_Account').findOne(accountId);
+                const updated = await ctx.object('crm_account').findOne(accountId);
                 expect(updated.industry).toBe('IT Services');
             });
 
             it('should delete CRM account', async () => {
                 const ctx = app.createContext({ isSystem: true });
-                await ctx.object('CRM_Account').delete(accountId);
+                await ctx.object('crm_account').delete(accountId);
             });
         });
 
         describe('Contact and Lead CRUD', () => {
             it('should create a CRM contact', async () => {
                 const ctx = app.createContext({ isSystem: true });
-                const result = await ctx.object('CRM_Contact').create({
+                const result = await ctx.object('crm_contact').create({
                     first_name: 'Jane',
                     last_name: 'Smith',
                     email: 'jane.smith@example.com'
@@ -186,7 +189,7 @@ describe('Enterprise Data API', () => {
 
             it('should create a CRM lead', async () => {
                 const ctx = app.createContext({ isSystem: true });
-                const result = await ctx.object('CRM_Lead').create({
+                const result = await ctx.object('crm_lead').create({
                     first_name: 'Bob',
                     last_name: 'Johnson',
                     company: 'Tech Startup'
@@ -205,7 +208,7 @@ describe('Enterprise Data API', () => {
 
             it('should create an HR employee', async () => {
                 const ctx = app.createContext({ isSystem: true });
-                const result = await ctx.object('HR_Employee').create({
+                const result = await ctx.object('hr_employee').create({
                     first_name: 'Alice',
                     last_name: 'Brown',
                     employee_number: 'EMP001'
@@ -220,7 +223,7 @@ describe('Enterprise Data API', () => {
 
             it('should find HR employees', async () => {
                 const ctx = app.createContext({ isSystem: true });
-                const results = await ctx.object('HR_Employee').find({});
+                const results = await ctx.object('hr_employee').find({});
 
                 expect(results).toBeDefined();
                 expect(results.length).toBeGreaterThanOrEqual(1);
@@ -228,14 +231,14 @@ describe('Enterprise Data API', () => {
 
             it('should delete HR employee', async () => {
                 const ctx = app.createContext({ isSystem: true });
-                await ctx.object('HR_Employee').delete(employeeId);
+                await ctx.object('hr_employee').delete(employeeId);
             });
         });
 
         describe('Department CRUD', () => {
             it('should create an HR department', async () => {
                 const ctx = app.createContext({ isSystem: true });
-                const result = await ctx.object('HR_Department').create({
+                const result = await ctx.object('hr_department').create({
                     name: 'Engineering',
                     code: 'ENG'
                 });
@@ -253,7 +256,7 @@ describe('Enterprise Data API', () => {
 
             it('should create a project', async () => {
                 const ctx = app.createContext({ isSystem: true });
-                const result = await ctx.object('Project_Project').create({
+                const result = await ctx.object('project_project').create({
                     name: 'Website Redesign',
                     code: 'WEB-001'
                 });
@@ -267,7 +270,7 @@ describe('Enterprise Data API', () => {
 
             it('should find projects', async () => {
                 const ctx = app.createContext({ isSystem: true });
-                const results = await ctx.object('Project_Project').find({});
+                const results = await ctx.object('project_project').find({});
 
                 expect(results).toBeDefined();
                 expect(results.length).toBeGreaterThanOrEqual(1);
@@ -275,14 +278,14 @@ describe('Enterprise Data API', () => {
 
             it('should delete project', async () => {
                 const ctx = app.createContext({ isSystem: true });
-                await ctx.object('Project_Project').delete(projectId);
+                await ctx.object('project_project').delete(projectId);
             });
         });
 
         describe('Task CRUD', () => {
             it('should create a project task', async () => {
                 const ctx = app.createContext({ isSystem: true });
-                const result = await ctx.object('Project_Task').create({
+                const result = await ctx.object('project_task').create({
                     name: 'Design mockups',
                     description: 'Create initial design mockups'
                 });
@@ -298,7 +301,7 @@ describe('Enterprise Data API', () => {
         describe('Invoice CRUD', () => {
             it('should create a finance invoice', async () => {
                 const ctx = app.createContext({ isSystem: true });
-                const result = await ctx.object('Finance_Invoice').create({
+                const result = await ctx.object('finance_invoice').create({
                     invoice_number: 'INV-001',
                     total_amount: 1000
                 });
@@ -312,7 +315,7 @@ describe('Enterprise Data API', () => {
         describe('Payment CRUD', () => {
             it('should create a finance payment', async () => {
                 const ctx = app.createContext({ isSystem: true });
-                const result = await ctx.object('Finance_Payment').create({
+                const result = await ctx.object('finance_payment').create({
                     amount: 500,
                     payment_method: 'Bank Transfer'
                 });
@@ -329,17 +332,17 @@ describe('Enterprise Data API', () => {
             const ctx = app.createContext({ isSystem: true });
 
             // Create records in different modules
-            const account = await ctx.object('CRM_Account').create({
+            const account = await ctx.object('crm_account').create({
                 name: 'Multi-Module Test'
             });
 
-            const employee = await ctx.object('HR_Employee').create({
+            const employee = await ctx.object('hr_employee').create({
                 first_name: 'Test',
                 last_name: 'Employee',
                 employee_number: 'TEST001'
             });
 
-            const project = await ctx.object('Project_Project').create({
+            const project = await ctx.object('project_project').create({
                 name: 'Cross-Module Project',
                 code: 'CROSS-001'
             });
@@ -349,17 +352,17 @@ describe('Enterprise Data API', () => {
             expect(project._id).toBeDefined();
 
             // Cleanup
-            await ctx.object('CRM_Account').delete(account._id);
-            await ctx.object('HR_Employee').delete(employee._id);
-            await ctx.object('Project_Project').delete(project._id);
+            await ctx.object('crm_account').delete(account._id);
+            await ctx.object('hr_employee').delete(employee._id);
+            await ctx.object('project_project').delete(project._id);
         });
 
         it('should count records across modules', async () => {
             const ctx = app.createContext({ isSystem: true });
 
-            const accountCount = await ctx.object('CRM_Account').count({});
-            const employeeCount = await ctx.object('HR_Employee').count({});
-            const projectCount = await ctx.object('Project_Project').count({});
+            const accountCount = await ctx.object('crm_account').count({});
+            const employeeCount = await ctx.object('hr_employee').count({});
+            const projectCount = await ctx.object('project_project').count({});
 
             expect(typeof accountCount).toBe('number');
             expect(typeof employeeCount).toBe('number');

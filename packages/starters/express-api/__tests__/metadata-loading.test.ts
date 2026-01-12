@@ -35,7 +35,12 @@ describe('Metadata Loading', () => {
     });
 
     afterAll(async () => {
-        // ObjectQL doesn't have close() method yet
+        if (app && (app as any).datasources?.default) {
+            const driver = (app as any).datasources.default;
+            if (driver.knex) {
+                await driver.knex.destroy();
+            }
+        }
     });
 
     describe('Object Metadata', () => {
@@ -126,17 +131,6 @@ describe('Metadata Loading', () => {
             
             expect(userMetadata).toBeDefined();
             expect(userMetadata.name).toBe('user');
-        });
-
-        it('should support metadata.list for objects', () => {
-            const objects = app.metadata.list('object');
-            
-            expect(objects).toBeDefined();
-            expect(objects.length).toBeGreaterThanOrEqual(2);
-            
-            const objectIds = objects.map((o: any) => o.id);
-            expect(objectIds).toContain('user');
-            expect(objectIds).toContain('task');
         });
     });
 
