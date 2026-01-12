@@ -1,5 +1,16 @@
 # @example/project-management
 
+## 1.7.2
+
+### Patch Changes
+
+- Release patch version 1.7.2
+- Updated dependencies
+  - @objectql/driver-sql@1.7.2
+  - @objectql/core@1.7.2
+  - @objectql/platform-node@1.7.2
+  - @objectql/types@1.7.2
+
 ## 1.7.1
 
 ### Patch Changes
