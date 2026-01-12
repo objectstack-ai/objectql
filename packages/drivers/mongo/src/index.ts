@@ -189,7 +189,7 @@ export class MongoDriver implements Driver {
         
         // Map API document (id) to MongoDB document (_id) for update data
         // But we should not allow updating the _id field itself
-        const { id: _, ...updateData } = data;
+        const { id: _ignoredId, ...updateData } = data; // intentionally ignore id to prevent updating primary key
         
         // Handle atomic operators if present
         const isAtomic = Object.keys(updateData).some(k => k.startsWith('$'));
