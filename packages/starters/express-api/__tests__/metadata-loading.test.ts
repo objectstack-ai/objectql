@@ -35,30 +35,28 @@ describe('Metadata Loading', () => {
     });
 
     afterAll(async () => {
-        if (app) {
-            await app.close();
-        }
+        // ObjectQL doesn't have close() method yet
     });
 
     describe('Object Metadata', () => {
         it('should load User object metadata', () => {
-            const userConfig = app.getObject('User');
+            const userConfig = app.getObject('user');
             
             expect(userConfig).toBeDefined();
-            expect(userConfig.name).toBe('User');
+            expect(userConfig.name).toBe('user');
             expect(userConfig.label).toBe('Users');
         });
 
         it('should load Task object metadata', () => {
-            const taskConfig = app.getObject('Task');
+            const taskConfig = app.getObject('task');
             
             expect(taskConfig).toBeDefined();
-            expect(taskConfig.name).toBe('Task');
+            expect(taskConfig.name).toBe('task');
             expect(taskConfig.label).toBe('Tasks');
         });
 
         it('should load User fields correctly', () => {
-            const userConfig = app.getObject('User');
+            const userConfig = app.getObject('user');
             
             expect(userConfig.fields).toBeDefined();
             expect(userConfig.fields.name).toEqual(expect.objectContaining({
@@ -83,7 +81,7 @@ describe('Metadata Loading', () => {
         });
 
         it('should load Task fields correctly', () => {
-            const taskConfig = app.getObject('Task');
+            const taskConfig = app.getObject('task');
             
             expect(taskConfig.fields).toBeDefined();
             expect(taskConfig.fields.title).toEqual(expect.objectContaining({
@@ -118,16 +116,16 @@ describe('Metadata Loading', () => {
             const configs = app.getConfigs();
             const objectNames = Object.keys(configs);
             
-            expect(objectNames).toContain('User');
-            expect(objectNames).toContain('Task');
+            expect(objectNames).toContain('user');
+            expect(objectNames).toContain('task');
             expect(objectNames.length).toBeGreaterThanOrEqual(2);
         });
 
         it('should support metadata.get for objects', () => {
-            const userMetadata = app.metadata.get('object', 'User');
+            const userMetadata = app.metadata.get('object', 'user');
             
             expect(userMetadata).toBeDefined();
-            expect(userMetadata.name).toBe('User');
+            expect(userMetadata.name).toBe('user');
         });
 
         it('should support metadata.list for objects', () => {
@@ -137,8 +135,8 @@ describe('Metadata Loading', () => {
             expect(objects.length).toBeGreaterThanOrEqual(2);
             
             const objectIds = objects.map((o: any) => o.id);
-            expect(objectIds).toContain('User');
-            expect(objectIds).toContain('Task');
+            expect(objectIds).toContain('user');
+            expect(objectIds).toContain('task');
         });
     });
 

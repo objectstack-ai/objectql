@@ -51,9 +51,7 @@ describe('Data API', () => {
     });
 
     afterAll(async () => {
-        if (app) {
-            await app.close();
-        }
+        // ObjectQL doesn't have close() method yet
     });
 
     describe('JSON-RPC API (/api/objectql)', () => {
@@ -65,7 +63,7 @@ describe('Data API', () => {
                     .post('/api/objectql')
                     .send({
                         op: 'create',
-                        object: 'User',
+                        object: 'user',
                         args: {
                             data: {
                                 name: 'John Doe',
@@ -91,7 +89,7 @@ describe('Data API', () => {
                     .post('/api/objectql')
                     .send({
                         op: 'find',
-                        object: 'User',
+                        object: 'user',
                         args: {}
                     })
                     .set('Accept', 'application/json');
@@ -107,7 +105,7 @@ describe('Data API', () => {
                     .post('/api/objectql')
                     .send({
                         op: 'findOne',
-                        object: 'User',
+                        object: 'user',
                         args: {
                             id: createdUserId
                         }
@@ -125,7 +123,7 @@ describe('Data API', () => {
                     .post('/api/objectql')
                     .send({
                         op: 'update',
-                        object: 'User',
+                        object: 'user',
                         args: {
                             id: createdUserId,
                             data: {
@@ -144,7 +142,7 @@ describe('Data API', () => {
                     .post('/api/objectql')
                     .send({
                         op: 'count',
-                        object: 'User',
+                        object: 'user',
                         args: {}
                     })
                     .set('Accept', 'application/json');
@@ -160,7 +158,7 @@ describe('Data API', () => {
                     .post('/api/objectql')
                     .send({
                         op: 'delete',
-                        object: 'User',
+                        object: 'user',
                         args: {
                             id: createdUserId
                         }
@@ -180,7 +178,7 @@ describe('Data API', () => {
                     .post('/api/objectql')
                     .send({
                         op: 'create',
-                        object: 'Task',
+                        object: 'task',
                         args: {
                             data: {
                                 title: 'Test Task',
@@ -206,7 +204,7 @@ describe('Data API', () => {
                     .post('/api/objectql')
                     .send({
                         op: 'find',
-                        object: 'Task',
+                        object: 'task',
                         args: {
                             filters: {
                                 status: 'pending'
@@ -225,7 +223,7 @@ describe('Data API', () => {
                     .post('/api/objectql')
                     .send({
                         op: 'update',
-                        object: 'Task',
+                        object: 'task',
                         args: {
                             id: createdTaskId,
                             data: {
@@ -245,7 +243,7 @@ describe('Data API', () => {
                     .post('/api/objectql')
                     .send({
                         op: 'delete',
-                        object: 'Task',
+                        object: 'task',
                         args: {
                             id: createdTaskId
                         }

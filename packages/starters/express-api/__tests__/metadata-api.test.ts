@@ -49,9 +49,7 @@ describe('Metadata API', () => {
     });
 
     afterAll(async () => {
-        if (app) {
-            await app.close();
-        }
+        // ObjectQL doesn't have close() method yet
     });
 
     describe('List Objects', () => {
@@ -66,8 +64,8 @@ describe('Metadata API', () => {
             expect(response.body.objects.length).toBeGreaterThanOrEqual(2);
             
             const objectNames = response.body.objects.map((o: any) => o.name);
-            expect(objectNames).toContain('User');
-            expect(objectNames).toContain('Task');
+            expect(objectNames).toContain('user');
+            expect(objectNames).toContain('task');
         });
 
         it('should list all objects via GET /api/metadata/objects', async () => {
@@ -98,7 +96,7 @@ describe('Metadata API', () => {
                 .set('Accept', 'application/json');
 
             expect(response.status).toBe(200);
-            expect(response.body.name).toBe('User');
+            expect(response.body.name).toBe('user');
             expect(response.body.label).toBe('Users');
             expect(response.body.fields).toBeDefined();
         });
@@ -109,7 +107,7 @@ describe('Metadata API', () => {
                 .set('Accept', 'application/json');
 
             expect(response.status).toBe(200);
-            expect(response.body.name).toBe('Task');
+            expect(response.body.name).toBe('task');
             expect(response.body.label).toBe('Tasks');
             expect(response.body.fields).toBeDefined();
         });
@@ -266,7 +264,7 @@ describe('Metadata API', () => {
                 .get('/api/metadata/object/User')
                 .set('Accept', 'application/json');
 
-            const userMeta = app.getObject('User');
+            const userMeta = app.getObject('user');
 
             expect(response1.body.name).toBe(userMeta.name);
             expect(response1.body.label).toBe(userMeta.label);
