@@ -2,10 +2,11 @@ import { MongoDriver } from '../src';
 import { MongoClient } from 'mongodb';
 
 /**
- * Integration tests for MongoDriver with real MongoDB operations
+ * Integration tests for MongoDriver with real MongoDB operations.
  * Note: These tests connect to a local MongoDB instance (default: mongodb://localhost:27017)
- * or a custom instance via MONGO_URL environment variable.
- * Tests automatically skip when MongoDB is not available.
+ * or a custom instance via the MONGO_URL environment variable.
+ * If MongoDB is not available, the setup/cleanup hooks return early; the tests themselves
+ * are not automatically skipped and are intended to be run only when MongoDB is available.
  */
 
 // Skip tests if MongoDB is not available
