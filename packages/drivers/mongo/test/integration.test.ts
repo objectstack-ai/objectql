@@ -3,8 +3,9 @@ import { MongoClient } from 'mongodb';
 
 /**
  * Integration tests for MongoDriver with real MongoDB operations
- * Note: These tests use mongodb-memory-server for in-memory testing
- * or can be run against a local MongoDB instance
+ * Note: These tests connect to a local MongoDB instance (default: mongodb://localhost:27017)
+ * or a custom instance via MONGO_URL environment variable.
+ * Tests automatically skip when MongoDB is not available.
  */
 
 // Skip tests if MongoDB is not available

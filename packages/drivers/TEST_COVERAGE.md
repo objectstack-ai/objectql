@@ -161,13 +161,20 @@ pnpm test -- advanced.test.ts
 
 The MongoDB integration tests are designed to:
 - Automatically skip when MongoDB is not available
-- Use an in-memory database when possible
+- Connect to a local MongoDB instance (default: mongodb://localhost:27017)
 - Clean up test data after each test
 - Support custom MongoDB URL via `MONGO_URL` environment variable
 
 ### Running with custom MongoDB instance
 ```bash
 MONGO_URL=mongodb://localhost:27017 pnpm test
+```
+
+### Running with Docker MongoDB
+```bash
+docker run -d -p 27017:27017 --name mongodb-test mongo:latest
+cd packages/drivers/mongo
+pnpm test
 ```
 
 ## Test Coverage Summary
