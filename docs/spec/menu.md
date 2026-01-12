@@ -21,6 +21,7 @@ Navigation features include:
 name: main_navigation
 label: Main Menu
 type: sidebar  # sidebar, topnav, context, mobile
+app: sales     # Optional: Link to a specific application
 
 # Menu Items
 items:
