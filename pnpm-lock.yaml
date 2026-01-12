@@ -198,6 +198,12 @@ importers:
       '@objectql/core':
         specifier: workspace:*
         version: link:../../foundation/core
+      '@objectql/driver-sql':
+        specifier: workspace:*
+        version: link:../../drivers/sql
+      '@objectql/platform-node':
+        specifier: workspace:*
+        version: link:../../foundation/platform-node
       '@objectql/types':
         specifier: workspace:*
         version: link:../../foundation/types

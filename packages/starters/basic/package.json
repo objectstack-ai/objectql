@@ -30,6 +30,8 @@
   "devDependencies": {
     "@objectql/cli": "workspace:*",
     "@objectql/core": "workspace:*",
+    "@objectql/driver-sql": "workspace:*",
+    "@objectql/platform-node": "workspace:*",
     "@objectql/types": "workspace:*",
     "typescript": "^5.3.0"
   }
