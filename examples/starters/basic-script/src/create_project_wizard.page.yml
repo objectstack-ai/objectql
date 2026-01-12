@@ -1,0 +1,244 @@
+# Project Creation Wizard
+# A multi-step wizard for creating new projects
+
+name: create_project_wizard
+label: Create New Project
+description: Step-by-step wizard for creating a project
+icon: plus-circle
+layout: wizard
+
+# Only admins and managers can create projects
+permissions:
+  view: ['admin', 'manager']
+
+# Wizard steps
+components:
+  # Step 1: Basic Information
+  - id: step_basic
+    type: container
+    label: Basic Information
+    description: Enter the project name and description
+    config:
+      step: 1
+      icon: info
+    components:
+      - id: basic_form
+        type: form
+        config:
+          layout: vertical
+          fields:
+            - name: name
+              label: Project Name
+              type: text
+              required: true
+              placeholder: My Awesome Project
+              help_text: Choose a descriptive name for your project
+            - name: description
+              label: Project Description
+              type: textarea
+              rows: 5
+              placeholder: Describe what this project is about
+            - name: category
+              label: Category
+              type: select
+              options:
+                - label: Development
+                  value: development
+                - label: Marketing
+                  value: marketing
+                - label: Research
+                  value: research
+                - label: Operations
+                  value: operations
+        actions:
+          on_validate:
+            type: custom
+            handler: validateBasicInfo
+  
+  # Step 2: Team & Resources
+  - id: step_team
+    type: container
+    label: Team & Resources
+    description: Assign team members and set budget
+    config:
+      step: 2
+      icon: users
+    components:
+      - id: team_form
+        type: form
+        config:
+          layout: vertical
+          fields:
+            - name: owner
+              label: Project Manager
+              type: lookup
+              reference_to: users
+              required: true
+              help_text: Select the person responsible for this project
+            - name: team_members
+              label: Team Members
+              type: lookup
+              reference_to: users
+              multiple: true
+              help_text: Add team members who will work on this project
+            - name: budget
+              label: Budget
+              type: currency
+              currency: USD
+              help_text: Estimated budget for this project
+            - name: department
+              label: Department
+              type: select
+              options:
+                - label: Engineering
+                  value: engineering
+                - label: Product
+                  value: product
+                - label: Sales
+                  value: sales
+                - label: Marketing
+                  value: marketing
+  
+  # Step 3: Timeline
+  - id: step_timeline
+    type: container
+    label: Timeline
+    description: Set project dates and milestones
+    config:
+      step: 3
+      icon: calendar
+    components:
+      - id: timeline_form
+        type: form
+        config:
+          layout: vertical
+          fields:
+            - name: start_date
+              label: Start Date
+              type: date
+              required: true
+              defaultValue: '{{today}}'
+            - name: end_date
+              label: Target End Date
+              type: date
+              required: true
+              help_text: Expected completion date
+            - name: priority
+              label: Priority
+              type: select
+              required: true
+              options:
+                - label: Low
+                  value: low
+                - label: Medium
+                  value: medium
+                - label: High
+                  value: high
+                - label: Critical
+                  value: critical
+              defaultValue: medium
+            - name: milestones
+              label: Key Milestones
+              type: grid
+              help_text: Define important project milestones
+              config:
+                columns:
+                  - name: name
+                    label: Milestone
+                    type: text
+                  - name: date
+                    label: Target Date
+                    type: date
+                  - name: description
+                    label: Description
+                    type: text
+                allow_add: true
+                allow_delete: true
+  
+  # Step 4: Review & Create
+  - id: step_review
+    type: container
+    label: Review & Create
+    description: Review your project details before creating
+    config:
+      step: 4
+      icon: check-square
+    components:
+      - id: review_summary
+        type: detail_view
+        label: Project Summary
+        config:
+          mode: readonly
+          sections:
+            - label: Basic Information
+              fields: ['name', 'description', 'category']
+            - label: Team
+              fields: ['owner', 'team_members', 'budget', 'department']
+            - label: Timeline
+              fields: ['start_date', 'end_date', 'priority']
+      
+      - id: terms_checkbox
+        type: container
+        components:
+          - id: accept_terms
+            type: boolean
+            label: I confirm that all information is correct
+            required: true
+
+# Wizard navigation actions
+actions:
+  next_step:
+    type: custom
+    handler: validateAndProceed
+  
+  previous_step:
+    type: custom
+    handler: goToPreviousStep
+  
+  submit_wizard:
+    type: run_action
+    object: projects
+    action: create
+    success_message: Project created successfully!
+    on_error: show_modal
+  
+  save_draft:
+    type: custom
+    handler: saveDraft
+    success_message: Draft saved
+
+# Page state to track wizard progress
+state:
+  initial:
+    current_step: 1
+    completed_steps: []
+    form_data:
+      name: ''
+      description: ''
+      category: ''
+      owner: null
+      team_members: []
+      budget: 0
+      department: ''
+      start_date: null
+      end_date: null
+      priority: medium
+      milestones: []
+  persist: true
+  storage_key: project_wizard_draft
+
+# Page styling
+style:
+  max_width: 800px
+  margin: 0 auto
+  padding: 40px 20px
+
+# AI context
+ai_context:
+  intent: Guide users through project creation with validation
+  persona: Project managers and team leads
+  tasks:
+    - Create new projects step by step
+    - Validate input at each stage
+    - Review before submission
+    - Save drafts for later
