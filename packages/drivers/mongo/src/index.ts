@@ -232,7 +232,7 @@ export class MongoDriver implements Driver {
         const filter = this.mapFilters(filters);
         
         // Remove 'id' field from update data as it shouldn't be updated
-        const { id: _, ...updateData } = data;
+        const { id: idToIgnore, ...updateData } = data;
         
         const isAtomic = Object.keys(updateData).some(k => k.startsWith('$'));
         const update = isAtomic ? updateData : { $set: updateData };
