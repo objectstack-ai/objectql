@@ -98,10 +98,6 @@ export class ObjectRepository {
                 user: this.getUserFromContext(),
                 api: this.getHookAPI(),
                 changedFields,
-                metadata: {
-                    objectName: this.objectName,
-                    ruleName: '',
-                }
             };
 
             const result = await this.validator.validate(schema.validation.rules, validationContext);

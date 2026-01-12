@@ -283,9 +283,13 @@ describe('ObjectQL Repository Validation Integration', () => {
             const ctx = app.createContext({ userId: 'u1', isSystem: true });
             const repo = ctx.object('user');
 
+            await expect(async () => {
+                await repo.create({ name: 'Jo', email: 'invalid' });
+            }).rejects.toThrow(ValidationError);
+
+            // Additional validation of error structure
             try {
                 await repo.create({ name: 'Jo', email: 'invalid' });
-                fail('Should have thrown ValidationError');
             } catch (error) {
                 expect(error).toBeInstanceOf(ValidationError);
                 expect((error as ValidationError).results).toBeDefined();
