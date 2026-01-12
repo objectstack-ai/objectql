@@ -220,4 +220,104 @@ describe('MongoDriver', () => {
         expect(results[0]).toEqual({ id: '456', name: 'Dave' });
     });
 
+    it('should handle nested filter groups', async () => {
+        const query = {
+            filters: [
+                [
+                    ['status', '=', 'completed'],
+                    'and',
+                    ['amount', '>', 100]
+                ],
+                'or',
+                [
+                    ['customer', '=', 'Alice'],
+                    'and',
+                    ['status', '=', 'pending']
+                ]
+            ]
+        };
+        await driver.find('orders', query);
+        
+        // Expected MongoDB query structure:
+        // { $or: [
+        //     { $and: [{ status: { $eq: 'completed' } }, { amount: { $gt: 100 } }] },
+        //     { $and: [{ customer: { $eq: 'Alice' } }, { status: { $eq: 'pending' } }] }
+        // ] }
+        expect(mockCollection.find).toHaveBeenCalledWith(
+            {
+                $or: [
+                    { $and: [{ status: { $eq: 'completed' } }, { amount: { $gt: 100 } }] },
+                    { $and: [{ customer: { $eq: 'Alice' } }, { status: { $eq: 'pending' } }] }
+                ]
+            },
+            expect.any(Object)
+        );
+    });
+
+    it('should handle deeply nested filter groups', async () => {
+        const query = {
+            filters: [
+                [
+                    [
+                        ['age', '>', 22],
+                        'and',
+                        ['status', '=', 'active']
+                    ],
+                    'or',
+                    ['role', '=', 'admin']
+                ],
+                'and',
+                ['name', '!=', 'Bob']
+            ]
+        };
+        await driver.find('users', query);
+        
+        // Expected structure:
+        // { $and: [
+        //     { $or: [
+        //         { $and: [{ age: { $gt: 22 } }, { status: { $eq: 'active' } }] },
+        //         { role: { $eq: 'admin' } }
+        //     ] },
+        //     { name: { $ne: 'Bob' } }
+        // ] }
+        expect(mockCollection.find).toHaveBeenCalledWith(
+            {
+                $and: [
+                    {
+                        $or: [
+                            { $and: [{ age: { $gt: 22 } }, { status: { $eq: 'active' } }] },
+                            { role: { $eq: 'admin' } }
+                        ]
+                    },
+                    { name: { $ne: 'Bob' } }
+                ]
+            },
+            expect.any(Object)
+        );
+    });
+
+    it('should handle nested groups with implicit AND', async () => {
+        const query = {
+            filters: [
+                [
+                    ['status', '=', 'active'],
+                    ['role', '=', 'admin']
+                ],
+                ['age', '>', 25]
+            ]
+        };
+        await driver.find('users', query);
+        
+        // Nested array without explicit 'and' should still be treated as AND
+        expect(mockCollection.find).toHaveBeenCalledWith(
+            {
+                $and: [
+                    { $and: [{ status: { $eq: 'active' } }, { role: { $eq: 'admin' } }] },
+                    { age: { $gt: 25 } }
+                ]
+            },
+            expect.any(Object)
+        );
+    });
+
 });

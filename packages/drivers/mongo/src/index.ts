@@ -64,65 +64,102 @@ export class MongoDriver implements Driver {
     private mapFilters(filters: any): Filter<any> {
         if (!filters || filters.length === 0) return {};
         
-        // Simple case: Array of arrays [['a','=','1'], ['b','=','2']] (Implicit AND)
-        // or Mixed: [['a','=','1'], 'and', ['b','=','2']]
-        
+        const result = this.buildFilterConditions(filters);
+        return result;
+    }
+
+    /**
+     * Build MongoDB filter conditions from ObjectQL filter array.
+     * Supports nested filter groups and logical operators (AND/OR).
+     */
+    private buildFilterConditions(filters: any[]): Filter<any> {
         const conditions: any[] = [];
-        let currentLogic = '$and'; // Default implicit logic
+        let nextJoin = '$and'; // Default logic operator for next condition
 
         for (const item of filters) {
-             if (Array.isArray(item)) {
-                 const [field, op, value] = item;
-                 let mongoCondition: any = {};
-                 
-                 // Map both 'id' and '_id' to '_id' for MongoDB compatibility
-                 // This ensures backward compatibility for queries using '_id'
-                 const dbField = (field === 'id' || field === '_id') ? '_id' : field;
-                 
-                 if (dbField === '_id') {
-                     mongoCondition[dbField] = this.normalizeId(value);
-                 } else {
-                     switch (op) {
-                        case '=': mongoCondition[dbField] = { $eq: value }; break;
-                        case '!=': mongoCondition[dbField] = { $ne: value }; break;
-                        case '>': mongoCondition[dbField] = { $gt: value }; break;
-                        case '>=': mongoCondition[dbField] = { $gte: value }; break;
-                        case '<': mongoCondition[dbField] = { $lt: value }; break;
-                        case '<=': mongoCondition[dbField] = { $lte: value }; break;
-                        case 'in': mongoCondition[dbField] = { $in: value }; break;
-                        case 'nin': mongoCondition[dbField] = { $nin: value }; break;
-                        case 'contains': 
-                             // Basic regex escape should be added for safety
-                             mongoCondition[dbField] = { $regex: value, $options: 'i' }; 
-                             break;
-                        default: mongoCondition[dbField] = { $eq: value };
-                     }
-                 }
-                 conditions.push(mongoCondition);
-
-             } else if (typeof item === 'string') {
+             if (typeof item === 'string') {
+                 // Update the logic operator for the next condition
                  if (item.toLowerCase() === 'or') {
-                     // If we encounter an OR, we might need to restructure.
-                     // For simplicity in this v1, let's assume simple ANDs usually, 
-                     // OR handling requires more complex tree parsing if mixed.
-                     // But if it's strictly [A, 'or', B], we can do strict mapping.
-                     // This is a simplified parser:
-                     currentLogic = '$or';
+                     nextJoin = '$or';
                  } else if (item.toLowerCase() === 'and') {
-                     currentLogic = '$and';
+                     nextJoin = '$and';
                  }
+                 continue;
+             }
+
+             if (Array.isArray(item)) {
+                 // Heuristic to detect if it is a criterion [field, op, value] or a nested group
+                 const [fieldRaw, op, value] = item;
+                 const isCriterion = typeof fieldRaw === 'string' && typeof op === 'string';
+
+                 let condition: any;
+                 
+                 if (isCriterion) {
+                     // This is a single criterion [field, op, value]
+                     condition = this.buildSingleCondition(fieldRaw, op, value);
+                 } else {
+                     // This is a nested group - recursively process it
+                     condition = this.buildFilterConditions(item);
+                 }
+                 
+                 // Apply the join logic
+                 if (conditions.length > 0 && nextJoin === '$or') {
+                     // Collect all OR conditions together
+                     const lastItem = conditions[conditions.length - 1];
+                     if (lastItem && lastItem.$or) {
+                         // Extend existing $or array
+                         lastItem.$or.push(condition);
+                     } else {
+                         // Create new $or with previous and current condition
+                         const previous = conditions.pop();
+                         conditions.push({ $or: [previous, condition] });
+                     }
+                 } else {
+                     // Default AND - just add to conditions array
+                     conditions.push(condition);
+                 }
+                 
+                 // Reset to default AND logic after processing each item
+                 nextJoin = '$and';
              }
         }
 
         if (conditions.length === 0) return {};
         if (conditions.length === 1) return conditions[0];
         
-        // If 'or' was detected, wrap all in $or (very naive implementation)
-        if (currentLogic === '$or') {
-            return { $or: conditions };
+        // Multiple conditions - wrap in AND
+        return { $and: conditions };
+    }
+
+    /**
+     * Build a single MongoDB condition from field, operator, and value.
+     */
+    private buildSingleCondition(fieldRaw: string, op: string, value: any): any {
+        const mongoCondition: any = {};
+        
+        // Map both 'id' and '_id' to '_id' for MongoDB compatibility
+        const dbField = (fieldRaw === 'id' || fieldRaw === '_id') ? '_id' : fieldRaw;
+        
+        if (dbField === '_id') {
+            mongoCondition[dbField] = this.normalizeId(value);
+        } else {
+            switch (op) {
+               case '=': mongoCondition[dbField] = { $eq: value }; break;
+               case '!=': mongoCondition[dbField] = { $ne: value }; break;
+               case '>': mongoCondition[dbField] = { $gt: value }; break;
+               case '>=': mongoCondition[dbField] = { $gte: value }; break;
+               case '<': mongoCondition[dbField] = { $lt: value }; break;
+               case '<=': mongoCondition[dbField] = { $lte: value }; break;
+               case 'in': mongoCondition[dbField] = { $in: value }; break;
+               case 'nin': mongoCondition[dbField] = { $nin: value }; break;
+               case 'contains': 
+                    mongoCondition[dbField] = { $regex: value, $options: 'i' }; 
+                    break;
+               default: mongoCondition[dbField] = { $eq: value };
+            }
         }
         
-        return { $and: conditions };
+        return mongoCondition;
     }
 
     async find(objectName: string, query: any, options?: any): Promise<any[]> {

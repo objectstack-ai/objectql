@@ -539,6 +539,68 @@ describe('MongoDriver Integration Tests', () => {
             expect(results.length).toBe(2);
         });
 
+        test('should handle nested filter groups', async () => {
+            // Create test data matching the SQL driver's advanced test
+            await driver.create('orders', { customer: 'Alice', product: 'Laptop', amount: 1200.00, quantity: 1, status: 'completed' });
+            await driver.create('orders', { customer: 'Bob', product: 'Mouse', amount: 25.50, quantity: 2, status: 'completed' });
+            await driver.create('orders', { customer: 'Alice', product: 'Keyboard', amount: 75.00, quantity: 1, status: 'pending' });
+            await driver.create('orders', { customer: 'Charlie', product: 'Monitor', amount: 350.00, quantity: 1, status: 'completed' });
+
+            // Nested filter: (status = 'completed' AND amount > 100) OR (customer = 'Alice' AND status = 'pending')
+            const results = await driver.find('orders', {
+                filters: [
+                    [
+                        ['status', '=', 'completed'],
+                        'and',
+                        ['amount', '>', 100]
+                    ],
+                    'or',
+                    [
+                        ['customer', '=', 'Alice'],
+                        'and',
+                        ['status', '=', 'pending']
+                    ]
+                ]
+            });
+
+            // Should match: Alice's Laptop (completed, 1200), Charlie's Monitor (completed, 350), Alice's Keyboard (pending)
+            expect(results.length).toBe(3);
+            
+            const customers = results.map(r => r.customer).sort();
+            expect(customers).toEqual(['Alice', 'Alice', 'Charlie']);
+        });
+
+        test('should handle deeply nested filters', async () => {
+            await driver.create('users', { name: 'Alice', age: 25, status: 'active', role: 'admin' });
+            await driver.create('users', { name: 'Bob', age: 30, status: 'active', role: 'user' });
+            await driver.create('users', { name: 'Charlie', age: 20, status: 'inactive', role: 'user' });
+            await driver.create('users', { name: 'Dave', age: 35, status: 'active', role: 'admin' });
+
+            // Complex nested: ((age > 22 AND status = 'active') OR role = 'admin') AND name != 'Bob'
+            const results = await driver.find('users', {
+                filters: [
+                    [
+                        [
+                            ['age', '>', 22],
+                            'and',
+                            ['status', '=', 'active']
+                        ],
+                        'or',
+                        ['role', '=', 'admin']
+                    ],
+                    'and',
+                    ['name', '!=', 'Bob']
+                ]
+            });
+
+            // Should match: Alice (age>22 AND active), Dave (age>22 AND active AND admin)
+            // Should NOT match: Bob (excluded by name filter), Charlie (age<=22, inactive, not admin)
+            expect(results.length).toBe(2);
+            const names = results.map(r => r.name).sort();
+            expect(names).toEqual(['Alice', 'Dave']);
+        });
+
+
         test('should handle nin (not in) filter', async () => {
             await driver.create('users', { name: 'Alice', status: 'active' });
             await driver.create('users', { name: 'Bob', status: 'inactive' });
