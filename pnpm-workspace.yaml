@@ -3,7 +3,7 @@ packages:
   - packages/drivers/*
   - packages/runtime/*
   - packages/tools/*
-  - examples/starters/*
+  - packages/starters/*
   - examples/scenarios/*
   - examples/plugins/*
 

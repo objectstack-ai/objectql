@@ -74,35 +74,14 @@ importers:
         specifier: ^5.3.0
         version: 5.9.3
 
-  examples/scenarios/enterprise-structure:
-    devDependencies:
-      '@objectql/cli':
-        specifier: workspace:*
-        version: link:../../../packages/tools/cli
-      '@objectql/core':
-        specifier: workspace:*
-        version: link:../../../packages/foundation/core
-      '@objectql/driver-sql':
-        specifier: workspace:*
-        version: link:../../../packages/drivers/sql
-      '@objectql/platform-node':
-        specifier: workspace:*
-        version: link:../../../packages/foundation/platform-node
-      '@objectql/types':
-        specifier: workspace:*
-        version: link:../../../packages/foundation/types
-      typescript:
-        specifier: ^5.3.0
-        version: 5.9.3
-
   examples/scenarios/preset-usage:
     dependencies:
       '@example/audit-log':
         specifier: workspace:*
         version: link:../../plugins/audit-log
-      '@objectql/starter-basic-script':
+      '@objectql/starter-basic':
         specifier: workspace:*
-        version: link:../../starters/basic-script
+        version: link:../../../packages/starters/basic
     devDependencies:
       '@objectql/cli':
         specifier: workspace:*
@@ -124,52 +103,6 @@ importers:
         version: 5.1.7
       typescript:
         specifier: ^5.3.0
-        version: 5.9.3
-
-  examples/starters/basic-script:
-    devDependencies:
-      '@objectql/cli':
-        specifier: workspace:*
-        version: link:../../../packages/tools/cli
-      '@objectql/core':
-        specifier: workspace:*
-        version: link:../../../packages/foundation/core
-      '@objectql/types':
-        specifier: workspace:*
-        version: link:../../../packages/foundation/types
-      typescript:
-        specifier: ^5.3.0
-        version: 5.9.3
-
-  examples/starters/express-api:
-    dependencies:
-      '@objectql/core':
-        specifier: workspace:*
-        version: link:../../../packages/foundation/core
-      '@objectql/driver-sql':
-        specifier: workspace:*
-        version: link:../../../packages/drivers/sql
-      '@objectql/platform-node':
-        specifier: workspace:*
-        version: link:../../../packages/foundation/platform-node
-      '@objectql/server':
-        specifier: workspace:*
-        version: link:../../../packages/runtime/server
-      '@objectql/types':
-        specifier: workspace:*
-        version: link:../../../packages/foundation/types
-      express:
-        specifier: ^4.18.2
-        version: 4.22.1
-      sqlite3:
-        specifier: ^5.1.7
-        version: 5.1.7
-    devDependencies:
-      '@types/express':
-        specifier: ^4.17.21
-        version: 4.17.25
-      typescript:
-        specifier: ^5.0.0
         version: 5.9.3
 
   packages/drivers/mongo:
@@ -255,6 +188,73 @@ importers:
         version: 20.19.28
       typescript:
         specifier: ^5.3.0
+        version: 5.9.3
+
+  packages/starters/basic:
+    devDependencies:
+      '@objectql/cli':
+        specifier: workspace:*
+        version: link:../../tools/cli
+      '@objectql/core':
+        specifier: workspace:*
+        version: link:../../foundation/core
+      '@objectql/types':
+        specifier: workspace:*
+        version: link:../../foundation/types
+      typescript:
+        specifier: ^5.3.0
+        version: 5.9.3
+
+  packages/starters/enterprise:
+    devDependencies:
+      '@objectql/cli':
+        specifier: workspace:*
+        version: link:../../tools/cli
+      '@objectql/core':
+        specifier: workspace:*
+        version: link:../../foundation/core
+      '@objectql/driver-sql':
+        specifier: workspace:*
+        version: link:../../drivers/sql
+      '@objectql/platform-node':
+        specifier: workspace:*
+        version: link:../../foundation/platform-node
+      '@objectql/types':
+        specifier: workspace:*
+        version: link:../../foundation/types
+      typescript:
+        specifier: ^5.3.0
+        version: 5.9.3
+
+  packages/starters/express-api:
+    dependencies:
+      '@objectql/core':
+        specifier: workspace:*
+        version: link:../../foundation/core
+      '@objectql/driver-sql':
+        specifier: workspace:*
+        version: link:../../drivers/sql
+      '@objectql/platform-node':
+        specifier: workspace:*
+        version: link:../../foundation/platform-node
+      '@objectql/server':
+        specifier: workspace:*
+        version: link:../../runtime/server
+      '@objectql/types':
+        specifier: workspace:*
+        version: link:../../foundation/types
+      express:
+        specifier: ^4.18.2
+        version: 4.22.1
+      sqlite3:
+        specifier: ^5.1.7
+        version: 5.1.7
+    devDependencies:
+      '@types/express':
+        specifier: ^4.17.21
+        version: 4.17.25
+      typescript:
+        specifier: ^5.0.0
         version: 5.9.3
 
   packages/tools/cli:

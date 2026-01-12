@@ -6,9 +6,9 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/objectql/objectql.git",
-    "directory": "examples/starters/express-api"
+    "directory": "packages/starters/express-api"
   },
-  "private": true,
+  "private": false,
   "scripts": {
     "build": "tsc && cp src/*.yml dist/ || true",
     "start": "node dist/index.js"

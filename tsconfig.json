@@ -10,9 +10,9 @@
     { "path": "./packages/runtime/server" },
     { "path": "./packages/tools/cli" },
     { "path": "./packages/tools/studio" },
-    { "path": "./examples/starters/express-api" },
-    { "path": "./examples/starters/basic-script" },
-    { "path": "./examples/scenarios/enterprise-structure" },
+    { "path": "./packages/starters/express-api" },
+    { "path": "./packages/starters/basic" },
+    { "path": "./packages/starters/enterprise" },
     { "path": "./examples/plugins/audit-log" },
     { "path": "./examples/scenarios/preset-usage" }
   ]

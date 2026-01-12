@@ -16,7 +16,7 @@
     "repl": "objectql repl"
   },
   "dependencies": {
-    "@objectql/starter-basic-script": "workspace:*",
+    "@objectql/starter-basic": "workspace:*",
     "@example/audit-log": "workspace:*"
   },
   "devDependencies": {
