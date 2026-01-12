@@ -5,7 +5,7 @@
     "build": "tsc -b && pnpm -r run build",
     "check-versions": "node scripts/check-versions.js",
     "test": "pnpm run check-versions && pnpm -r run test",
-    "studio": "node packages/cli/dist/index.js studio --dir examples/starters/basic-script",
+    "studio": "node packages/tools/cli/dist/index.js studio",
     "changeset": "changeset",
     "version": "changeset version",
     "release": "pnpm run build && changeset publish",

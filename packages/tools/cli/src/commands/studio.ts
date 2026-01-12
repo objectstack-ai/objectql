@@ -78,6 +78,49 @@ export async function startStudio(options: { port: number; dir: string, open?: b
          process.exit(1);
     }
 
+    // Initialize App if it's a configuration object
+    if (typeof (app as any).init !== 'function') {
+        const config = app as any;
+        console.log(chalk.gray('Configuration object detected. Initializing ObjectQL instance...'));
+        
+        const datasources: any = {};
+        
+        if (config.datasource && config.datasource.default) {
+            const dbConfig = config.datasource.default;
+            if (dbConfig.type === 'sqlite') {
+                try {
+                    const { KnexDriver } = require('@objectql/driver-sql');
+                    datasources.default = new KnexDriver({
+                        client: 'sqlite3',
+                        connection: {
+                            filename: dbConfig.filename ? path.resolve(rootDir, dbConfig.filename) : ':memory:'
+                        },
+                        useNullAsDefault: true
+                    });
+                } catch (e) {
+                    console.warn(chalk.yellow('Failed to load @objectql/driver-sql. Ensure it is installed.'));
+                }
+            }
+        }
+
+        // Fallback to memory if no datasource
+        if (!datasources.default) {
+            console.warn(chalk.yellow('No valid datasource found. Using in-memory SQLite.'));
+            const { KnexDriver } = require('@objectql/driver-sql');
+            datasources.default = new KnexDriver({
+                client: 'sqlite3',
+                connection: { filename: ':memory:' },
+                useNullAsDefault: true
+            });
+        }
+
+        app = new ObjectQL({ datasources });
+        
+        // Load Schema
+        const loader = new ObjectLoader(app.metadata);
+        loader.load(rootDir);
+    }
+
     // 2. Load Schema & Init
     try {
         await app.init();

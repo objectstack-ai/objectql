@@ -13,7 +13,6 @@
     { "path": "./packages/starters/express-api" },
     { "path": "./packages/starters/basic" },
     { "path": "./packages/starters/enterprise" },
-    { "path": "./examples/plugins/audit-log" },
-    { "path": "./examples/scenarios/preset-usage" }
+    { "path": "./examples/plugins/audit-log" }
   ]
 }

@@ -24,6 +24,7 @@ export function createStudioHandler() {
         const possiblePaths = [
             path.join(__dirname, '../../studio/dist'),
             path.join(process.cwd(), 'packages/studio/dist'),
+            path.join(process.cwd(), 'packages/tools/studio/dist'),
         ];
         
         for (const p of possiblePaths) {
