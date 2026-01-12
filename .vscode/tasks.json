@@ -29,6 +29,19 @@
       "args": ["run", "build"],
       "group": "build",
       "problemMatcher": ["$tsc"]
+    },
+    {
+      "label": "Build and Test On Open",
+      "type": "shell",
+      "command": "pnpm run build && pnpm run test",
+      "group": "test",
+      "runOptions": {
+        "runOn": "folderOpen"
+      },
+      "presentation": {
+        "reveal": "silent",
+        "panel": "dedicated"
+      }
     }
   ]
 }

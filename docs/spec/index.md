@@ -47,6 +47,7 @@ fields:
 *   [**Workflows & Processes**](./workflow.md) - Automated business processes and approval chains
 
 ### Presentation Layer
+*   [**Pages**](./page.md) - Composable UI pages with layouts, components, and interactions
 *   [**Views & Layouts**](./view.md) - Data presentation configurations
 *   [**Forms**](./form.md) - Data entry and editing interfaces
 *   [**Reports & Dashboards**](./report.md) - Analytics and BI
@@ -78,6 +79,9 @@ src/
   
   workflows/           # Business processes
     *.workflow.yml     # Workflow definitions
+  
+  pages/              # UI pages
+    *.page.yml         # Page definitions
   
   views/              # UI presentation
     *.view.yml         # View configurations

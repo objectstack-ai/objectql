@@ -11,7 +11,7 @@ export * from './plugin';
 export * from './config';
 export * from './context';
 export * from './validation';
-
-
+export * from './permission';
+export * from './page';
 export * from './loader';
 export * from './application';

@@ -4,6 +4,15 @@ label: Demo Application
 description: "A showcase of ObjectQL capabilities including all field types."
 home_page: /kitchen_sink
 
+# Access Control - Define system-wide roles
+permissions:
+  roles:
+    - admin
+    - manager
+    - developer
+    - user
+    - viewer
+
 # Navigation Menu Structure
 navigation:
   - section: Core Business

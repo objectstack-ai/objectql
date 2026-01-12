@@ -1,11 +1,12 @@
 # Permission & Security Metadata
 
-Permission metadata defines access control rules for objects, fields, actions, and views. It implements role-based access control (RBAC) and field-level security.
+Permission metadata defines access control rules for objects, fields, actions, and views using Role-Based Access Control (RBAC) and field-level security.
 
 ## 1. Overview
 
-ObjectQL's permission system provides:
+ObjectQL's permission system provides a pure RBAC model with:
 
+- **Role-based access control**: Define roles and assign permissions to roles
 - **Object-level permissions**: Control CRUD operations on entire objects
 - **Field-level security**: Hide/protect sensitive fields from unauthorized users
 - **Record-level rules**: Dynamic filtering based on ownership, sharing, or custom rules
@@ -276,69 +277,7 @@ sharing_rules:
       update: true
 ```
 
-## 7. Profile-Based Permissions
-
-Organize permissions into profiles for easier management.
-
-```yaml
-profiles:
-  # System Administrator
-  - name: system_admin
-    label: System Administrator
-    description: Full system access
-    object_permissions:
-      "*": [create, read, update, delete, view_all, modify_all]
-    field_permissions:
-      "*": [read, update]
-  
-  # Standard User
-  - name: standard_user
-    label: Standard User
-    description: Regular user access
-    object_permissions:
-      projects: [create, read, update]
-      tasks: [create, read, update, delete]
-      reports: [read]
-    field_permissions:
-      projects.budget: [read]
-      tasks.*: [read, update]
-  
-  # Read-Only
-  - name: read_only
-    label: Read Only
-    description: View-only access
-    object_permissions:
-      "*": [read]
-    field_permissions:
-      "*": [read]
-```
-
-## 8. Permission Sets
-
-Grant additional permissions beyond a user's profile.
-
-```yaml
-permission_sets:
-  # Financial Data Access
-  - name: finance_access
-    label: Financial Data Access
-    description: Grant access to financial fields
-    field_permissions:
-      "*.budget": [read, update]
-      "*.cost": [read, update]
-      "*.revenue": [read, update]
-  
-  # API Integration Access
-  - name: api_access
-    label: API Access
-    description: Allow API access
-    api_permissions:
-      enabled: true
-      rate_limit: 10000
-      allowed_operations: [create, read, update]
-```
-
-## 9. Action Permissions
+## 7. Action Permissions
 
 Control execution of custom actions.
 
@@ -365,7 +304,7 @@ action_permissions:
       requests_per_hour: 10
 ```
 
-## 10. View Permissions
+## 8. View Permissions
 
 Control access to specific views.
 
@@ -387,9 +326,9 @@ view_permissions:
         visible_to: [admin]
 ```
 
-## 11. Data Security Features
+## 9. Data Security Features
 
-### 11.1 Row-Level Security
+### 9.1 Row-Level Security
 
 Automatically filter queries based on permissions.
 
@@ -415,7 +354,7 @@ row_level_security:
         value: $current_user.department_id
 ```
 
-### 11.2 Field Masking
+### 9.2 Field Masking
 
 Mask sensitive data for unauthorized users.
 
@@ -437,7 +376,7 @@ field_masking:
     visible_to: [admin, hr]
 ```
 
-### 11.3 Audit Trail
+### 9.3 Audit Trail
 
 Track permission changes and access.
 
@@ -463,9 +402,9 @@ audit:
       notify: [security_team]
 ```
 
-## 12. Implementation
+## 10. Implementation
 
-### 12.1 Permission Check API
+### 10.1 Permission Check API
 
 ```typescript
 // Check if user can perform operation
@@ -486,7 +425,7 @@ const canViewSalary = await objectql.checkFieldPermission({
 });
 ```
 
-### 12.2 Permission Context
+### 10.2 Permission Context
 
 Hooks and actions receive permission context:
 
@@ -499,17 +438,17 @@ beforeUpdate: async ({ user, permissions }) => {
 }
 ```
 
-## 13. Best Practices
+## 11. Best Practices
 
 1. **Principle of Least Privilege**: Grant minimum necessary permissions
-2. **Role Hierarchy**: Use role inheritance to simplify management
+2. **Define Clear Roles**: Create well-defined roles that match organizational structure
 3. **Test Permissions**: Validate permission rules with different user roles
 4. **Document Rules**: Add clear descriptions to all permission rules
 5. **Regular Audits**: Review permissions regularly for compliance
 6. **Separation of Duties**: Prevent conflicts of interest with permission design
 7. **Default Deny**: Deny access unless explicitly granted
 
-## 14. Security Considerations
+## 12. Security Considerations
 
 1. **SQL Injection**: All permission filters use parameterized queries
 2. **Privilege Escalation**: Validate permission changes require admin access
@@ -517,7 +456,7 @@ beforeUpdate: async ({ user, permissions }) => {
 4. **API Security**: Rate limiting on permission checks to prevent DoS
 5. **Audit Logging**: All permission denials logged for security analysis
 
-## 15. Related Specifications
+## 13. Related Specifications
 
 - [Objects & Fields](./object.md) - Data model definition
 - [Actions](./action.md) - Custom operations

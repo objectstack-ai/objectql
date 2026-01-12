@@ -53,7 +53,7 @@ export interface KitchenSink extends ObjectDoc {
     /**
      * Tags
      */
-    tags?: string[]; // Multiple select
+    tags?: string;
     /**
      * Email
      */

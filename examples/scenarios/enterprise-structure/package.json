@@ -30,6 +30,7 @@
     "@objectql/core": "workspace:*",
     "@objectql/types": "workspace:*",
     "@objectql/cli": "workspace:*",
+    "@objectql/driver-knex": "workspace:*",
     "typescript": "^5.3.0"
   }
 }
