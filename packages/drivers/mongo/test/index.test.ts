@@ -92,4 +92,86 @@ describe('MongoDriver', () => {
         );
     });
 
+    it('should map "id" field to "_id" in filters', async () => {
+        const query = {
+            filters: [['id', '=', '12345']]
+        };
+        await driver.find('users', query);
+        
+        expect(mockCollection.find).toHaveBeenCalledWith(
+            { _id: '12345' },
+            expect.any(Object)
+        );
+    });
+
+    it('should map "id" to "_id" in sorting', async () => {
+        const query = {
+            sort: [['id', 'desc']]
+        };
+        await driver.find('users', query);
+        
+        expect(mockCollection.find).toHaveBeenCalledWith(
+            {},
+            expect.objectContaining({ 
+                sort: { _id: -1 }
+            })
+        );
+    });
+
+    it('should map "id" to "_id" in field projection', async () => {
+        mockCollection.toArray.mockResolvedValueOnce([{ _id: '123', name: 'Test' }]);
+        
+        const query = {
+            fields: ['id', 'name']
+        };
+        const results = await driver.find('users', query);
+        
+        expect(mockCollection.find).toHaveBeenCalledWith(
+            {},
+            expect.objectContaining({ 
+                projection: { _id: 1, name: 1 }
+            })
+        );
+        
+        // Should return 'id' instead of '_id'
+        expect(results[0]).toEqual({ id: '123', name: 'Test' });
+    });
+
+    it('should return documents with "id" field instead of "_id"', async () => {
+        mockCollection.toArray.mockResolvedValueOnce([
+            { _id: 'abc123', name: 'Alice', age: 30 }
+        ]);
+        
+        const results = await driver.find('users', {});
+        
+        expect(results).toHaveLength(1);
+        expect(results[0]).toHaveProperty('id', 'abc123');
+        expect(results[0]).not.toHaveProperty('_id');
+        expect(results[0]).toHaveProperty('name', 'Alice');
+    });
+
+    it('should accept "id" field in create and map to "_id"', async () => {
+        mockCollection.insertOne.mockResolvedValueOnce({ insertedId: 'custom-id' });
+        
+        const result = await driver.create('users', { id: 'custom-id', name: 'Bob' });
+        
+        expect(mockCollection.insertOne).toHaveBeenCalledWith(
+            expect.objectContaining({ _id: 'custom-id', name: 'Bob' })
+        );
+        
+        // Should return 'id' instead of '_id'
+        expect(result).toHaveProperty('id', 'custom-id');
+        expect(result).not.toHaveProperty('_id');
+    });
+
+    it('should map "_id" to "id" in findOne result', async () => {
+        mockCollection.findOne.mockResolvedValueOnce({ _id: '123', name: 'Charlie' });
+        
+        const result = await driver.findOne('users', '123');
+        
+        expect(result).toHaveProperty('id', '123');
+        expect(result).not.toHaveProperty('_id');
+        expect(result).toHaveProperty('name', 'Charlie');
+    });
+
 });
