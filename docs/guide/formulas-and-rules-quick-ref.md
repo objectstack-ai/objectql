@@ -231,12 +231,18 @@ rules:
     type: state_machine
     field: status
     transitions:
-      draft: [submitted, cancelled]
-      submitted: [approved, rejected]
-      approved: [processing, cancelled]
-      processing: [shipped, cancelled]
-      shipped: [delivered]
-      delivered: []  # terminal
+      draft:
+        allowed_next: [submitted, cancelled]
+      submitted:
+        allowed_next: [approved, rejected]
+      approved:
+        allowed_next: [processing, cancelled]
+      processing:
+        allowed_next: [shipped, cancelled]
+      shipped:
+        allowed_next: [delivered]
+      delivered:
+        allowed_next: []  # terminal
 ```
 
 ### Calculated Metrics
