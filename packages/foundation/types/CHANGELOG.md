@@ -1,5 +1,11 @@
 # @objectql/core
 
+## 1.7.1
+
+### Patch Changes
+
+- Release small version update with latest improvements
+
 ## 1.7.0
 
 ### Minor Changes
@@ -8,8 +14,6 @@
   - Updated default port for ObjectQL Studio to 5555
   - Improved port listening logic in Studio
   - Enhanced stability and performance
-
-
 
 ## 1.6.1
 

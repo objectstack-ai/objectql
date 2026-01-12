@@ -13,3 +13,6 @@ docs/.vitepress/dist
 # Database
 *.sqlite3
 *.db
+
+# Example tutorials CHANGELOG (auto-generated, not tracked)
+examples/tutorials/*/CHANGELOG.md
