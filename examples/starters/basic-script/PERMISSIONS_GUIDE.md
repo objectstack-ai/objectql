@@ -132,7 +132,7 @@ record_rules:
 Use these in permission conditions:
 
 - `$current_user.id` - Current user's ID
-- `$current_user.role` - Current user's role
+- `$current_user.roles` - Current user's roles (array)
 - `$current_user.department_id` - User's department
 - `$current_user.team_id` - User's team
 - `$current_date` - Current date
