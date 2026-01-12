@@ -1,5 +1,11 @@
 # @objectql/studio
 
+## 1.6.0
+
+### Minor Changes
+
+- Minor version release - 1.6.0
+
 ## 1.5.0
 
 ### Minor Changes

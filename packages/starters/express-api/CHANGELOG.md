@@ -1,5 +1,16 @@
 # @example/express-server
 
+## 1.1.5
+
+### Patch Changes
+
+- Updated dependencies
+  - @objectql/core@1.6.0
+  - @objectql/driver-sql@1.6.0
+  - @objectql/server@1.6.0
+  - @objectql/types@1.6.0
+  - @objectql/platform-node@1.6.0
+
 ## 1.1.4
 
 ### Patch Changes

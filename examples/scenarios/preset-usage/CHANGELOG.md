@@ -1,5 +1,12 @@
 # @example/integrated-app
 
+## 1.1.5
+
+### Patch Changes
+
+- @example/audit-log@0.2.0
+- @objectql/starter-basic@7.0.0
+
 ## 1.1.4
 
 ### Patch Changes

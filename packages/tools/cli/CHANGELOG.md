@@ -1,5 +1,20 @@
 # @objectql/cli
 
+## 1.6.0
+
+### Minor Changes
+
+- Minor version release - 1.6.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @objectql/core@1.6.0
+  - @objectql/driver-sql@1.6.0
+  - @objectql/server@1.6.0
+  - @objectql/types@1.6.0
+  - @objectql/platform-node@1.6.0
+
 ## 1.5.0
 
 ### Minor Changes
