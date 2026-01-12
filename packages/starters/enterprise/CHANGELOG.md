@@ -1,5 +1,15 @@
 # @example/enterprise-structure
 
+## 1.6.1
+
+### Patch Changes
+
+- Updated dependencies
+  - @objectql/core@1.6.1
+  - @objectql/platform-node@1.6.1
+  - @objectql/driver-sql@1.6.1
+  - @objectql/types@1.6.1
+
 ## 2.0.0
 
 ### Patch Changes
