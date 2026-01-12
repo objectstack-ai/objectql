@@ -42,5 +42,8 @@ export interface HrPosition extends ObjectDoc {
      * Key Responsibilities
      */
     responsibilities?: string;
+    /**
+     * Status
+     */
     status?: string;
 }

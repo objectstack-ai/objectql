@@ -42,11 +42,17 @@ export interface FinanceInvoice extends ObjectDoc {
      * Balance Due
      */
     balance?: number;
+    /**
+     * Status
+     */
     status: string;
     /**
      * Payment Terms
      */
     payment_terms?: string;
+    /**
+     * Currency
+     */
     currency?: string;
     /**
      * Billing Address

@@ -30,6 +30,9 @@ export interface ProjectTimesheetEntry extends ObjectDoc {
      * Billable
      */
     billable?: boolean;
+    /**
+     * Status
+     */
     status?: string;
     /**
      * Approved By

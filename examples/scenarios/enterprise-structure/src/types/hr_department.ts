@@ -30,5 +30,8 @@ export interface HrDepartment extends ObjectDoc {
      * Description
      */
     description?: string;
+    /**
+     * Status
+     */
     status?: string;
 }

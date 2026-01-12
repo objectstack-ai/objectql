@@ -10,6 +10,9 @@ export interface FinanceBudget extends ObjectDoc {
      * Fiscal Year
      */
     fiscal_year: number;
+    /**
+     * Period
+     */
     period?: string;
     /**
      * Department
@@ -19,6 +22,9 @@ export interface FinanceBudget extends ObjectDoc {
      * Project
      */
     project?: string | number;
+    /**
+     * Category
+     */
     category?: string;
     /**
      * Allocated Amount
@@ -40,6 +46,9 @@ export interface FinanceBudget extends ObjectDoc {
      * End Date
      */
     end_date: Date | string;
+    /**
+     * Status
+     */
     status?: string;
     /**
      * Budget Owner

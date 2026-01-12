@@ -10,6 +10,9 @@ export interface CrmAccount extends ObjectDoc {
      * Account Number
      */
     account_number?: string;
+    /**
+     * Type
+     */
     type?: string;
     /**
      * Industry
@@ -51,5 +54,8 @@ export interface CrmAccount extends ObjectDoc {
      * Description
      */
     description?: string;
+    /**
+     * Status
+     */
     status?: string;
 }

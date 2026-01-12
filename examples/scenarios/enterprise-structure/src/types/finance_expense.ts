@@ -14,11 +14,17 @@ export interface FinanceExpense extends ObjectDoc {
      * Expense Date
      */
     expense_date: Date | string;
+    /**
+     * Category
+     */
     category: string;
     /**
      * Amount
      */
     amount: number;
+    /**
+     * Currency
+     */
     currency?: string;
     /**
      * Merchant/Vendor
@@ -32,6 +38,9 @@ export interface FinanceExpense extends ObjectDoc {
      * Receipt Attachment
      */
     receipt_url?: any;
+    /**
+     * Status
+     */
     status: string;
     /**
      * Approved By

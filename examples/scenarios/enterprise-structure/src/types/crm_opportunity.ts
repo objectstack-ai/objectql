@@ -18,6 +18,9 @@ export interface CrmOpportunity extends ObjectDoc {
      * Expected Close Date
      */
     close_date: Date | string;
+    /**
+     * Stage
+     */
     stage: string;
     /**
      * Probability (%)

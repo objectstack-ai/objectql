@@ -54,7 +54,13 @@ export interface HrEmployee extends ObjectDoc {
      * Termination Date
      */
     termination_date?: Date | string;
+    /**
+     * Employment Type
+     */
     employment_type?: string;
+    /**
+     * Status
+     */
     status: string;
     /**
      * Base Salary

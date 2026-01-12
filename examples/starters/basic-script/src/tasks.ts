@@ -2,10 +2,25 @@
 import { ObjectDoc } from '@objectql/types';
 
 export interface Tasks extends ObjectDoc {
+    /**
+     * Name
+     */
     name: string;
+    /**
+     * Project
+     */
     project?: string | number;
+    /**
+     * Due Date
+     */
     due_date?: Date | string;
+    /**
+     * Completed
+     */
     completed?: boolean;
+    /**
+     * Priority
+     */
     priority?: string;
     /**
      * Assignee

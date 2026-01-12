@@ -26,6 +26,9 @@ export interface CrmLead extends ObjectDoc {
      * Phone
      */
     phone?: string;
+    /**
+     * Status
+     */
     status: string;
     /**
      * Lead Source

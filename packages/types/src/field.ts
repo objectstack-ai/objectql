@@ -135,4 +135,15 @@ export interface FieldConfig {
     // Vector properties
     /** Dimension of the vector for 'vector' type fields. */
     dimension?: number;
+
+    // Formula & Summary
+    /** Formula expression. */
+    formula?: string;
+    /** Object to summarize. */
+    summary_object?: string;
+    /** Field on the summary object. */
+    summary_field?: string;
+    /** Type of summary (count, sum, min, max, avg). */
+    summary_type?: string;
+    filters?: any[];
 }

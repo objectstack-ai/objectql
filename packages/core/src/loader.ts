@@ -257,7 +257,7 @@ function registerObject(registry: MetadataRegistry, obj: any, file: string, pack
     if (obj.fields) {
         for (const [key, field] of Object.entries(obj.fields)) {
             if (typeof field === 'object' && field !== null) {
-                const f = field as any;
+                const f = field as FieldConfig;
                 
                 // Ensure field has a name
                 if (!f.name) {

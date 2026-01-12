@@ -10,6 +10,9 @@ export interface Organization extends ObjectDoc {
      * Organization Code
      */
     code?: string;
+    /**
+     * Type
+     */
     type?: string;
     /**
      * Parent Organization
@@ -43,5 +46,8 @@ export interface Organization extends ObjectDoc {
      * Contact Email
      */
     email?: string;
+    /**
+     * Status
+     */
     status?: string;
 }

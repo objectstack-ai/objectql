@@ -22,12 +22,21 @@ export interface FinancePayment extends ObjectDoc {
      * Payment Amount
      */
     amount: number;
+    /**
+     * Payment Method
+     */
     payment_method: string;
+    /**
+     * Currency
+     */
     currency?: string;
     /**
      * Reference/Transaction Number
      */
     reference_number?: string;
+    /**
+     * Status
+     */
     status: string;
     /**
      * Processed By

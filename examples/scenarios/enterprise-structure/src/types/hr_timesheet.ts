@@ -34,7 +34,13 @@ export interface HrTimesheet extends ObjectDoc {
      * Break Hours
      */
     break_hours?: number;
+    /**
+     * Work Type
+     */
     work_type?: string;
+    /**
+     * Status
+     */
     status: string;
     /**
      * Approved By

@@ -42,7 +42,13 @@ export interface User extends ObjectDoc {
      * Profile Picture
      */
     avatar?: any;
+    /**
+     * Status
+     */
     status?: string;
+    /**
+     * Role
+     */
     role?: string;
     /**
      * Last Login Time

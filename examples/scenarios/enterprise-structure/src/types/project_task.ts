@@ -18,7 +18,13 @@ export interface ProjectTask extends ObjectDoc {
      * Description
      */
     description?: string;
+    /**
+     * Status
+     */
     status: string;
+    /**
+     * Priority
+     */
     priority?: string;
     /**
      * Assigned To

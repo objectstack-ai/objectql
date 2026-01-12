@@ -22,6 +22,9 @@ export interface ProjectMilestone extends ObjectDoc {
      * Completion Date
      */
     completed_date?: Date | string;
+    /**
+     * Status
+     */
     status: string;
     /**
      * Milestone Owner

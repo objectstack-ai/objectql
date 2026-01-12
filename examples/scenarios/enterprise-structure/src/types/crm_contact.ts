@@ -54,5 +54,8 @@ export interface CrmContact extends ObjectDoc {
      * Notes
      */
     description?: string;
+    /**
+     * Status
+     */
     status?: string;
 }

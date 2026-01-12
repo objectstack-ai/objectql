@@ -14,8 +14,17 @@ export interface ProjectProject extends ObjectDoc {
      * Description
      */
     description?: string;
+    /**
+     * Status
+     */
     status: string;
+    /**
+     * Priority
+     */
     priority?: string;
+    /**
+     * Type
+     */
     type?: string;
     /**
      * Customer Account

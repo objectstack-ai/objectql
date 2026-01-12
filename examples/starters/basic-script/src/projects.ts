@@ -6,8 +6,17 @@ export interface Projects extends ObjectDoc {
      * Name
      */
     name: string;
+    /**
+     * Status
+     */
     status?: string;
+    /**
+     * Priority
+     */
     priority?: string;
+    /**
+     * Description
+     */
     description?: string;
     /**
      * Project Owner
