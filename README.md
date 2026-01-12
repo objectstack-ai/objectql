@@ -41,6 +41,13 @@ It is **not** an ORM, but a high-level data protocol designed for AI agents, low
 * Template messages with internationalization support.
 
 
+* **📝 Clean, Minimal Syntax:**
+* **Filename-based identification** - No redundant `name` properties needed
+* Object name automatically inferred from `project.object.yml` → `project`
+* 10-15% less boilerplate compared to traditional metadata formats
+* Crystal-clear file organization and conventions
+
+
 * **⚡ Modern & Lightweight:**
 * Written in 100% **TypeScript**.
 * **Zero heavy legacy dependencies.** No runtime environment requirements beyond Node.js.
@@ -289,7 +296,9 @@ ObjectQL includes a comprehensive **visual reporting system** similar to Salesfo
 
 **Example Report Definition:**
 ```yaml
-name: tasks_by_project
+# File: tasks_by_project.report.yml
+# Report name is inferred from filename!
+
 label: Tasks by Project and Priority
 type: summary
 object: tasks
