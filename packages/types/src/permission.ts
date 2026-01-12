@@ -97,13 +97,22 @@ export interface SimpleCondition {
 }
 
 /**
+ * Simple condition element (inline form for complex expressions)
+ */
+export interface ConditionElement {
+    field: string;
+    operator: PermissionOperator;
+    value: any;
+}
+
+/**
  * Expression element in complex conditions
  */
 export type ConditionExpression = 
     | SimpleCondition
+    | ConditionElement
     | 'and'
-    | 'or'
-    | { field: string; operator: PermissionOperator; value: any };
+    | 'or';
 
 /**
  * Complex condition with multiple clauses
@@ -470,7 +479,7 @@ export interface PermissionCheckContext {
     /** Current user */
     user: {
         id: string;
-        role?: string;
+        /** User roles (array for consistency, single role represented as one-element array) */
         roles?: string[];
         department_id?: string;
         team_id?: string;

@@ -188,7 +188,7 @@ row_level_security:
 # Field masking for sensitive data
 field_masking:
   estimated_hours:
-    mask_format: "***"
+    mask_format: "XX.X hours"  # Mask numeric values appropriately
     visible_to: [admin, project_manager, team_lead]
 
 # Audit configuration
