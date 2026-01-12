@@ -111,7 +111,7 @@ When creating documents without specifying an `id`, the driver automatically gen
 
 ```typescript
 const newUser = await app.create('users', {
-  name: 'Bob'
+  name: 'Bob',
   // No id specified
 });
 
