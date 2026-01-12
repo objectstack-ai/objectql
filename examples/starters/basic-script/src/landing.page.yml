@@ -1,0 +1,275 @@
+# Custom Landing Page
+# A canvas layout for flexible positioning
+
+name: landing_page
+label: Welcome
+description: Custom landing page with free-form layout
+icon: home
+layout: canvas
+
+# Public page - no authentication required
+permissions:
+  view: ['*']
+
+# Components with absolute positioning
+components:
+  # Hero Section
+  - id: hero_section
+    type: container
+    style:
+      position: absolute
+      top: 0
+      left: 0
+      width: 100%
+      height: 400px
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)
+      padding: 60px 20px
+    components:
+      - id: hero_title
+        type: text
+        config:
+          content: Welcome to ObjectQL
+          format: markdown
+        style:
+          font_size: 48px
+          font_weight: bold
+          color: white
+          text_align: center
+          margin: 0 0 20px 0
+      
+      - id: hero_subtitle
+        type: text
+        config:
+          content: One Protocol, Any Database, AI-Ready
+          format: text
+        style:
+          font_size: 24px
+          color: white
+          text_align: center
+          opacity: 0.9
+      
+      - id: cta_button
+        type: button
+        label: Get Started
+        config:
+          variant: primary
+          size: large
+        style:
+          margin: 40px auto 0
+          display: block
+          width: 200px
+        actions:
+          on_click:
+            type: navigate
+            path: /dashboard
+  
+  # Features Grid
+  - id: features_section
+    type: container
+    style:
+      position: absolute
+      top: 450px
+      left: 50%
+      transform: translateX(-50%)
+      width: 90%
+      max_width: 1200px
+    components:
+      - id: features_title
+        type: text
+        config:
+          content: '## Key Features'
+          format: markdown
+        style:
+          text_align: center
+          margin: 0 0 40px 0
+      
+      - id: features_grid
+        type: container
+        style:
+          display: grid
+          grid_template_columns: repeat(3, 1fr)
+          gap: 30px
+        components:
+          - id: feature_1
+            type: container
+            style:
+              padding: 30px
+              background: white
+              border_radius: 8px
+              box_shadow: 0 2px 8px rgba(0,0,0,0.1)
+            components:
+              - id: feature_1_icon
+                type: image
+                config:
+                  src: /icons/database.svg
+                  alt: Database
+                style:
+                  width: 64px
+                  height: 64px
+                  margin: 0 auto 20px
+              - id: feature_1_title
+                type: text
+                config:
+                  content: '**Universal Engine**'
+                  format: markdown
+                style:
+                  text_align: center
+                  margin: 0 0 10px 0
+              - id: feature_1_desc
+                type: text
+                config:
+                  content: Run on MongoDB or PostgreSQL with the same API
+                  format: text
+                style:
+                  text_align: center
+                  color: '#666'
+          
+          - id: feature_2
+            type: container
+            style:
+              padding: 30px
+              background: white
+              border_radius: 8px
+              box_shadow: 0 2px 8px rgba(0,0,0,0.1)
+            components:
+              - id: feature_2_icon
+                type: image
+                config:
+                  src: /icons/ai.svg
+                  alt: AI
+                style:
+                  width: 64px
+                  height: 64px
+                  margin: 0 auto 20px
+              - id: feature_2_title
+                type: text
+                config:
+                  content: '**AI-Native**'
+                  format: markdown
+                style:
+                  text_align: center
+                  margin: 0 0 10px 0
+              - id: feature_2_desc
+                type: text
+                config:
+                  content: JSON-based queries perfect for LLM integration
+                  format: text
+                style:
+                  text_align: center
+                  color: '#666'
+          
+          - id: feature_3
+            type: container
+            style:
+              padding: 30px
+              background: white
+              border_radius: 8px
+              box_shadow: 0 2px 8px rgba(0,0,0,0.1)
+            components:
+              - id: feature_3_icon
+                type: image
+                config:
+                  src: /icons/metadata.svg
+                  alt: Metadata
+                style:
+                  width: 64px
+                  height: 64px
+                  margin: 0 auto 20px
+              - id: feature_3_title
+                type: text
+                config:
+                  content: '**Metadata-Driven**'
+                  format: markdown
+                style:
+                  text_align: center
+                  margin: 0 0 10px 0
+              - id: feature_3_desc
+                type: text
+                config:
+                  content: Define schemas in YAML with built-in validation
+                  format: text
+                style:
+                  text_align: center
+                  color: '#666'
+  
+  # Stats Section
+  - id: stats_section
+    type: container
+    style:
+      position: absolute
+      top: 900px
+      left: 0
+      width: 100%
+      background: '#f7fafc'
+      padding: 60px 20px
+    components:
+      - id: stats_grid
+        type: container
+        style:
+          display: grid
+          grid_template_columns: repeat(4, 1fr)
+          gap: 40px
+          max_width: 1200px
+          margin: 0 auto
+        components:
+          - id: stat_1
+            type: metric
+            label: Objects Created
+            data_source:
+              object: objects
+              query:
+                op: count
+            config:
+              format: number
+              size: large
+              color: blue
+          
+          - id: stat_2
+            type: metric
+            label: Total Records
+            data_source:
+              object: records
+              query:
+                op: count
+            config:
+              format: number
+              size: large
+              color: green
+          
+          - id: stat_3
+            type: metric
+            label: API Calls Today
+            config:
+              value: 12453
+              format: number
+              size: large
+              color: purple
+          
+          - id: stat_4
+            type: metric
+            label: Uptime
+            config:
+              value: 99.9
+              format: percent
+              size: large
+              color: orange
+
+# Responsive overrides
+responsive:
+  mobile:
+    # Override grid layouts to single column
+    visible: true
+  tablet:
+    visible: true
+
+# No real-time updates needed for landing page
+realtime: false
+
+# AI context
+ai_context:
+  intent: Introduce users to ObjectQL and showcase key features
+  persona: New visitors and potential users
+  tasks:
+    - Learn about ObjectQL
+    - Understand key features
+    - Navigate to dashboard

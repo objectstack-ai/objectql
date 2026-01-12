@@ -14,7 +14,7 @@ In ObjectQL, **metadata** is machine-readable configuration that describes:
 2. **How to validate it** (Validation Rules, Constraints)
 3. **Who can access it** (Permissions, Security)
 4. **What business logic to execute** (Hooks, Actions, Workflows)
-5. **How to present it** (Views, Forms, Reports)
+5. **How to present it** (Pages, Views, Forms, Reports)
 6. **How to navigate it** (Menus, Dashboards)
 
 ## Complete Metadata Taxonomy
@@ -193,6 +193,42 @@ steps:
 ```
 
 ### 3. Presentation Layer
+
+#### [Pages](./page.md)
+**Purpose**: Define composable UI pages with layouts, components, and interactions.
+
+**What you define**:
+- Page layouts (dashboard, wizard, canvas, two-column)
+- UI components (data grids, forms, charts, metrics)
+- Data source bindings
+- Component actions (navigate, submit, open modal)
+- Responsive configurations
+- Page-level permissions and state
+- AI context for page understanding
+
+**Example**:
+```yaml
+name: dashboard
+label: Project Dashboard
+layout: dashboard
+
+components:
+  - id: total_projects
+    type: metric
+    label: Total Projects
+    data_source:
+      object: projects
+      query: { op: count }
+    grid: { x: 0, y: 0, w: 3, h: 2 }
+  
+  - id: tasks_grid
+    type: data_grid
+    data_source:
+      object: tasks
+      fields: [name, status, due_date]
+      sort: [[created_at, desc]]
+    grid: { x: 0, y: 2, w: 12, h: 6 }
+```
 
 #### [Views & Layouts](./view.md)
 **Purpose**: Define how data is displayed to users.
@@ -528,7 +564,7 @@ columns:
 
 1. **Start Simple**: Define your first object → [Objects & Fields](./object.md)
 2. **Add Logic**: Implement validation and hooks
-3. **Build UI**: Create views and forms
+3. **Build UI**: Create pages, views, and forms
 4. **Secure**: Configure permissions
 5. **Automate**: Add workflows
 6. **Analyze**: Create reports
@@ -541,6 +577,7 @@ columns:
 - [Hooks](./hook.md) - Event triggers
 - [Actions](./action.md) - Custom operations
 - [Workflows](./workflow.md) - Process automation
+- [Pages](./page.md) - UI pages and components
 - [Views](./view.md) - Data presentation
 - [Forms](./form.md) - Data entry
 - [Reports](./report.md) - Analytics

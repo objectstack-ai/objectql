@@ -1,0 +1,206 @@
+# Dashboard Page Example
+# A comprehensive dashboard showing project metrics and tasks
+
+name: dashboard
+label: Project Dashboard
+description: Overview of projects, tasks, and key metrics
+icon: dashboard
+layout: dashboard
+
+# Page-level permissions
+permissions:
+  view: ['admin', 'manager', 'user']
+  edit: ['admin', 'manager']
+
+# SEO metadata
+meta:
+  title: Project Dashboard - ObjectQL Demo
+  description: Real-time overview of project status and team performance
+
+# Real-time updates
+realtime: true
+
+# Components arranged in a grid layout
+components:
+  # KPI Metrics Row
+  - id: total_projects
+    type: metric
+    label: Total Projects
+    data_source:
+      object: projects
+      query:
+        op: count
+    config:
+      format: number
+      icon: folder
+      color: blue
+    grid:
+      x: 0
+      y: 0
+      w: 3
+      h: 2
+    
+  - id: active_tasks
+    type: metric
+    label: Active Tasks
+    data_source:
+      object: tasks
+      filters:
+        - ['status', 'in', ['in_progress', 'pending']]
+      query:
+        op: count
+    config:
+      format: number
+      icon: check-circle
+      color: green
+    grid:
+      x: 3
+      y: 0
+      w: 3
+      h: 2
+    
+  - id: overdue_tasks
+    type: metric
+    label: Overdue Tasks
+    data_source:
+      object: tasks
+      filters:
+        - ['due_date', '<', '{{today}}']
+        - 'and'
+        - ['status', '!=', 'completed']
+      query:
+        op: count
+    config:
+      format: number
+      icon: alert-circle
+      color: red
+    grid:
+      x: 6
+      y: 0
+      w: 3
+      h: 2
+    
+  - id: completion_rate
+    type: metric
+    label: Completion Rate
+    data_source:
+      object: tasks
+      query:
+        op: aggregate
+        function: avg
+        field: completed
+    config:
+      format: percent
+      icon: trending-up
+      color: purple
+    grid:
+      x: 9
+      y: 0
+      w: 3
+      h: 2
+  
+  # Charts Row
+  - id: projects_by_status
+    type: chart
+    label: Projects by Status
+    data_source:
+      object: projects
+      fields: ['status']
+      query:
+        op: group_by
+        field: status
+        aggregate: count
+    config:
+      chart_type: pie
+      colors: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444']
+    grid:
+      x: 0
+      y: 2
+      w: 6
+      h: 4
+    
+  - id: tasks_timeline
+    type: chart
+    label: Tasks Completion Timeline
+    data_source:
+      object: tasks
+      fields: ['created_at', 'completed_at']
+      query:
+        op: time_series
+        field: created_at
+        interval: week
+    config:
+      chart_type: line
+      show_trend: true
+    grid:
+      x: 6
+      y: 2
+      w: 6
+      h: 4
+  
+  # Recent Tasks List
+  - id: recent_tasks
+    type: data_grid
+    label: Recent Tasks
+    data_source:
+      object: tasks
+      fields: ['name', 'status', 'priority', 'due_date', 'assigned_to']
+      sort: [['created_at', 'desc']]
+      limit: 10
+      expand:
+        assigned_to:
+          fields: ['name', 'email']
+    config:
+      columns:
+        - field: name
+          label: Task Name
+          width: 300
+        - field: status
+          label: Status
+          width: 120
+          badge: true
+        - field: priority
+          label: Priority
+          width: 100
+        - field: due_date
+          label: Due Date
+          width: 120
+          format: date
+        - field: assigned_to.name
+          label: Assigned To
+          width: 150
+      row_actions:
+        - label: View
+          action: navigate
+          path: /tasks/{{id}}
+        - label: Edit
+          action: open_modal
+          modal: edit_task
+      enable_search: true
+      enable_filters: true
+    grid:
+      x: 0
+      y: 6
+      w: 12
+      h: 6
+
+# Page-level actions
+actions:
+  refresh_data:
+    type: refresh
+    success_message: Data refreshed successfully
+  
+  export_dashboard:
+    type: custom
+    handler: exportDashboardData
+    confirm: Export dashboard data to CSV?
+
+# AI context for understanding this page
+ai_context:
+  intent: Provide a comprehensive overview of project and task status
+  persona: Project managers and team leads
+  tasks:
+    - Monitor project progress
+    - Identify overdue tasks
+    - Track team performance
+    - Export data for reporting

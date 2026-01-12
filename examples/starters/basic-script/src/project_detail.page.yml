@@ -1,0 +1,258 @@
+# Project Detail Page
+# A page for viewing and editing project details with a clean layout
+
+name: project_detail
+label: Project Details
+description: View and edit project information
+icon: folder
+layout: two_column
+
+# Page permissions
+permissions:
+  view: ['admin', 'manager', 'user']
+  edit: ['admin', 'manager']
+
+# Sections-based layout for two-column design
+sections:
+  # Left Column - Main Content
+  - id: main_content
+    type: content
+    style:
+      width: 70%
+    components:
+      # Project Information Form
+      - id: project_form
+        type: form
+        label: Project Information
+        data_source:
+          object: projects
+          query:
+            op: findOne
+            filter: [['_id', '=', '{{route.params.id}}']]
+        config:
+          mode: edit  # view, edit, create
+          layout: vertical
+          fields:
+            - name: name
+              label: Project Name
+              type: text
+              required: true
+              placeholder: Enter project name
+            - name: description
+              label: Description
+              type: textarea
+              rows: 4
+            - name: status
+              label: Status
+              type: select
+              options:
+                - label: Planning
+                  value: planning
+                - label: Active
+                  value: active
+                - label: On Hold
+                  value: on_hold
+                - label: Completed
+                  value: completed
+            - name: owner
+              label: Project Manager
+              type: lookup
+              reference_to: users
+              display_field: name
+            - name: start_date
+              label: Start Date
+              type: date
+            - name: end_date
+              label: End Date
+              type: date
+            - name: budget
+              label: Budget
+              type: currency
+              currency: USD
+          field_layout:
+            - row: [name]
+            - row: [description]
+            - row: [status, owner]
+            - row: [start_date, end_date]
+            - row: [budget]
+        actions:
+          on_submit:
+            type: run_action
+            object: projects
+            action: update
+            success_message: Project updated successfully
+          on_cancel:
+            type: navigate
+            path: /projects
+        style:
+          margin: 0 0 24px 0
+      
+      # Tasks List
+      - id: project_tasks
+        type: data_grid
+        label: Tasks
+        data_source:
+          object: tasks
+          filters:
+            - ['project', '=', '{{route.params.id}}']
+          fields: ['name', 'status', 'priority', 'assigned_to', 'due_date']
+          sort: [['created_at', 'desc']]
+          expand:
+            assigned_to:
+              fields: ['name']
+        config:
+          columns:
+            - field: name
+              label: Task
+              width: 250
+            - field: status
+              label: Status
+              width: 120
+            - field: priority
+              label: Priority
+              width: 100
+            - field: assigned_to.name
+              label: Assigned To
+              width: 150
+            - field: due_date
+              label: Due Date
+              width: 120
+          toolbar_actions:
+            - label: New Task
+              icon: plus
+              action: create_task
+          row_actions:
+            - label: Edit
+              icon: edit
+              action: edit_task
+            - label: Delete
+              icon: trash
+              action: delete_task
+              confirm: Are you sure you want to delete this task?
+        actions:
+          on_load:
+            type: refresh
+
+  # Right Column - Sidebar
+  - id: sidebar
+    type: sidebar
+    style:
+      width: 30%
+      padding: 0 0 0 24px
+    components:
+      # Project Metrics
+      - id: project_stats
+        type: container
+        label: Project Statistics
+        components:
+          - id: task_count
+            type: metric
+            label: Total Tasks
+            data_source:
+              object: tasks
+              filters:
+                - ['project', '=', '{{route.params.id}}']
+              query:
+                op: count
+            config:
+              format: number
+              size: small
+          
+          - id: completed_tasks
+            type: metric
+            label: Completed
+            data_source:
+              object: tasks
+              filters:
+                - ['project', '=', '{{route.params.id}}']
+                - 'and'
+                - ['status', '=', 'completed']
+              query:
+                op: count
+            config:
+              format: number
+              size: small
+              color: green
+          
+          - id: progress
+            type: metric
+            label: Progress
+            config:
+              format: percent
+              value: '{{completed_tasks / task_count}}'
+              size: small
+      
+      # Activity Timeline
+      - id: activity_timeline
+        type: timeline
+        label: Recent Activity
+        data_source:
+          object: activities
+          filters:
+            - ['related_to', '=', '{{route.params.id}}']
+            - 'and'
+            - ['entity_type', '=', 'project']
+          fields: ['action', 'user', 'created_at', 'description']
+          sort: [['created_at', 'desc']]
+          limit: 10
+        config:
+          group_by: date
+          show_user_avatar: true
+      
+      # Quick Actions
+      - id: quick_actions
+        type: container
+        label: Quick Actions
+        components:
+          - id: archive_btn
+            type: button
+            label: Archive Project
+            config:
+              variant: outline
+              icon: archive
+            actions:
+              on_click:
+                type: run_action
+                object: projects
+                action: archive
+                confirm: Archive this project?
+                success_message: Project archived
+          
+          - id: export_btn
+            type: button
+            label: Export Data
+            config:
+              variant: outline
+              icon: download
+            actions:
+              on_click:
+                type: custom
+                handler: exportProjectData
+
+# Responsive configuration
+responsive:
+  mobile:
+    # Stack columns vertically on mobile
+    columns: 1
+  tablet:
+    columns: 1
+  desktop:
+    columns: 2
+
+# Page-level state
+state:
+  initial:
+    edit_mode: false
+  persist: true
+  storage_key: project_detail_state
+
+# AI context
+ai_context:
+  intent: View and manage individual project details with tasks and metrics
+  persona: Project managers and team members
+  tasks:
+    - View project information
+    - Update project details
+    - Manage tasks within the project
+    - Track project progress
+    - View activity history

@@ -61,6 +61,7 @@ export default defineConfig({
           text: 'Core Fundamentals',
           items: [
             { text: 'Data Modeling', link: '/guide/data-modeling' },
+            { text: 'Page Metadata', link: '/guide/page-metadata' },
             { text: 'Metadata Organization', link: '/guide/metadata-organization' },
             { text: 'Querying Data', link: '/guide/querying' },
             { text: 'Business Logic', link: '/guide/logic-hooks' },
@@ -113,6 +114,7 @@ export default defineConfig({
         {
           text: 'Presentation Layer',
           items: [
+            { text: 'Pages', link: '/spec/page' },
             { text: 'Views & Layouts', link: '/spec/view' },
             { text: 'Forms', link: '/spec/form' },
             { text: 'Reports & Dashboards', link: '/spec/report' },
