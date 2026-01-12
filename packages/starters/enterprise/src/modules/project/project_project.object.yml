@@ -1,0 +1,135 @@
+label: Project
+description: Project or initiative
+icon: folder-line
+
+fields:
+  name:
+    type: text
+    required: true
+    label: Project Name
+    index: true
+  
+  code:
+    type: text
+    required: true
+    label: Project Code
+    unique: true
+    index: true
+  
+  description:
+    type: textarea
+    label: Description
+  
+  status:
+    type: select
+    options:
+      - planning
+      - active
+      - on_hold
+      - completed
+      - cancelled
+    defaultValue: planning
+    required: true
+    index: true
+  
+  priority:
+    type: select
+    options:
+      - low
+      - medium
+      - high
+      - critical
+    defaultValue: medium
+    index: true
+  
+  type:
+    type: select
+    options:
+      - internal
+      - customer
+      - research
+      - maintenance
+    index: true
+  
+  account:
+    type: lookup
+    reference_to: crm_account
+    label: Customer Account
+    index: true
+  
+  owner:
+    type: lookup
+    reference_to: user
+    label: Project Manager
+    required: true
+    index: true
+  
+  department:
+    type: lookup
+    reference_to: hr_department
+    label: Department
+    index: true
+  
+  start_date:
+    type: date
+    required: true
+    label: Start Date
+    index: true
+  
+  end_date:
+    type: date
+    label: Target End Date
+    index: true
+  
+  actual_end_date:
+    type: date
+    label: Actual End Date
+  
+  budget:
+    type: currency
+    label: Project Budget
+  
+  estimated_hours:
+    type: number
+    label: Estimated Hours
+  
+  actual_hours:
+    type: number
+    label: Actual Hours
+  
+  completion_percentage:
+    type: percent
+    label: Completion %
+    min: 0
+    max: 100
+    defaultValue: 0
+
+indexes:
+  # For project portfolio view
+  status_priority_idx:
+    fields: [status, priority]
+  
+  # For owner queries
+  owner_status_idx:
+    fields: [owner, status]
+  
+  # For timeline reports
+  start_date_status_idx:
+    fields: [start_date, status]
+  
+  # For customer projects
+  account_status_idx:
+    fields: [account, status]
+
+ai:
+  search:
+    enabled: true
+    fields: [name, description, code]
+    model: text-embedding-3-small
+
+actions:
+  complete:
+    type: record
+    label: Mark as Completed
+    icon: checkbox-circle-line
+    confirm_text: "Mark this project as completed?"

@@ -1,0 +1,38 @@
+{
+  "name": "@objectql/starter-enterprise",
+  "version": "1.0.0",
+  "license": "MIT",
+  "author": "ObjectQL Contributors",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/objectql/objectql.git",
+    "directory": "packages/starters/enterprise"
+  },
+  "private": false,
+  "description": "Enterprise-scale metadata organization example for ObjectQL",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "codegen": "objectql generate -s src -o src/types",
+    "build": "npm run codegen && tsc",
+    "test": "echo \"No tests specified\" && exit 0"
+  },
+  "peerDependencies": {
+    "@objectql/core": "workspace:*",
+    "@objectql/types": "workspace:*",
+    "@objectql/driver-sql": "workspace:*",
+    "@objectql/platform-node": "workspace:*",
+    "sqlite3": "^5.1.7"
+  },
+  "devDependencies": {
+    "@objectql/core": "workspace:*",
+    "@objectql/types": "workspace:*",
+    "@objectql/cli": "workspace:*",
+    "@objectql/driver-sql": "workspace:*",
+    "@objectql/platform-node": "workspace:*",
+    "typescript": "^5.3.0"
+  }
+}

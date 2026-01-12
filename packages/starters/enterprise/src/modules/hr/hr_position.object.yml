@@ -1,0 +1,79 @@
+label: Position
+description: Job position or role
+icon: briefcase-line
+
+fields:
+  title:
+    type: text
+    required: true
+    label: Position Title
+    index: true
+  
+  code:
+    type: text
+    required: true
+    label: Position Code
+    unique: true
+    index: true
+  
+  level:
+    type: select
+    options:
+      - entry
+      - junior
+      - mid
+      - senior
+      - lead
+      - manager
+      - director
+      - executive
+    label: Position Level
+    index: true
+  
+  department:
+    type: lookup
+    reference_to: hr_department
+    label: Department
+    index: true
+  
+  reports_to:
+    type: lookup
+    reference_to: hr_position
+    label: Reports To Position
+  
+  min_salary:
+    type: currency
+    label: Minimum Salary
+  
+  max_salary:
+    type: currency
+    label: Maximum Salary
+  
+  description:
+    type: textarea
+    label: Job Description
+  
+  requirements:
+    type: textarea
+    label: Requirements & Qualifications
+  
+  responsibilities:
+    type: textarea
+    label: Key Responsibilities
+  
+  status:
+    type: select
+    options:
+      - active
+      - inactive
+    defaultValue: active
+    index: true
+
+indexes:
+  # For department positions
+  department_level_idx:
+    fields: [department, level]
+  
+  # For position hierarchy
+  reports_to_status_idx:
+    fields: [reports_to, status]

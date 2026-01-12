@@ -14,7 +14,13 @@ Reporting features include:
 - **Export**: PDF, Excel, CSV formats
 - **Dashboards**: Combine multiple reports and charts
 
-**File Naming Convention:** `[report_name].report.yml`, `[dashboard_name].dashboard.yml`
+**File Naming Convention:** `<report_name>.report.yml`, `<dashboard_name>.dashboard.yml`
+
+The filename (without the `.report.yml` or `.dashboard.yml` extension) automatically becomes the report/dashboard identifier.
+
+**Examples:**
+- `sales_summary.report.yml` → Report name: `sales_summary`
+- `executive_dashboard.dashboard.yml` → Dashboard name: `executive_dashboard`
 
 ## 2. Report Types
 
@@ -30,7 +36,9 @@ Reporting features include:
 Simple list reports with columns and filters:
 
 ```yaml
-name: open_tasks_report
+# File: open_tasks.report.yml
+# Report name is inferred from filename!
+
 label: Open Tasks
 type: tabular
 object: tasks

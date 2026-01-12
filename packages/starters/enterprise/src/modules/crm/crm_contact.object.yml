@@ -1,0 +1,103 @@
+label: Contact
+description: Individual contact person
+icon: user-line
+
+fields:
+  first_name:
+    type: text
+    required: true
+    label: First Name
+    index: true
+  
+  last_name:
+    type: text
+    required: true
+    label: Last Name
+    index: true
+  
+  full_name:
+    type: formula
+    formula: "CONCAT(first_name, ' ', last_name)"
+    label: Full Name
+  
+  email:
+    type: text
+    label: Email
+    unique: true
+    index: true
+  
+  phone:
+    type: text
+    label: Phone
+  
+  mobile:
+    type: text
+    label: Mobile
+  
+  title:
+    type: text
+    label: Job Title
+    index: true
+  
+  department:
+    type: text
+    label: Department
+  
+  account:
+    type: lookup
+    reference_to: crm_account
+    label: Account
+    required: true
+    index: true
+  
+  owner:
+    type: lookup
+    reference_to: user
+    label: Contact Owner
+    index: true
+  
+  lead_source:
+    type: select
+    options:
+      - web
+      - referral
+      - trade_show
+      - partner
+      - other
+    label: Lead Source
+    index: true
+  
+  linkedin_url:
+    type: url
+    label: LinkedIn Profile
+  
+  description:
+    type: textarea
+    label: Notes
+  
+  status:
+    type: select
+    options:
+      - active
+      - inactive
+    defaultValue: active
+    index: true
+
+indexes:
+  # For account contact lookup
+  account_status_idx:
+    fields: [account, status]
+  
+  # For owner queries
+  owner_account_idx:
+    fields: [owner, account]
+  
+  # For name search
+  name_idx:
+    fields: [last_name, first_name]
+
+ai:
+  search:
+    enabled: true
+    fields: [first_name, last_name, email, title]
+    model: text-embedding-3-small

@@ -16,14 +16,15 @@
     "repl": "objectql repl"
   },
   "dependencies": {
-    "@example/basic-script": "workspace:*",
+    "@objectql/starter-basic": "workspace:*",
     "@example/audit-log": "workspace:*"
   },
   "devDependencies": {
     "@objectql/core": "workspace:*",
     "@objectql/types": "workspace:*",
     "@objectql/cli": "workspace:*",
-    "@objectql/driver-knex": "workspace:*",
+    "@objectql/driver-sql": "workspace:*",
+    "@objectql/platform-node": "workspace:*",
     "sqlite3": "^5.1.7",
     "typescript": "^5.3.0"
   }

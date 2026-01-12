@@ -1,0 +1,36 @@
+{
+  "name": "@objectql/starter-basic",
+  "version": "6.0.0",
+  "license": "MIT",
+  "author": "ObjectQL Contributors",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/objectql/objectql.git",
+    "directory": "packages/starters/basic"
+  },
+  "private": false,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "codegen": "objectql generate -s src -o src/types",
+    "build": "npm run codegen && tsc && rsync -a --include '*/' --include '*.yml' --exclude '*' src/ dist/",
+    "repl": "objectql repl",
+    "test": "echo \"No tests specified\" && exit 0"
+  },
+  "peerDependencies": {
+    "@objectql/core": "workspace:*",
+    "@objectql/driver-sql": "workspace:*",
+    "@objectql/platform-node": "workspace:*",
+    "@objectql/types": "workspace:*",
+    "sqlite3": "^5.1.7"
+  },
+  "devDependencies": {
+    "@objectql/cli": "workspace:*",
+    "@objectql/core": "workspace:*",
+    "@objectql/types": "workspace:*",
+    "typescript": "^5.3.0"
+  }
+}

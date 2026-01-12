@@ -1,0 +1,137 @@
+label: Employee
+description: Company employee record
+icon: user-line
+
+fields:
+  employee_number:
+    type: text
+    required: true
+    label: Employee Number
+    unique: true
+    index: true
+  
+  user:
+    type: lookup
+    reference_to: user
+    label: System User Account
+    unique: true
+  
+  first_name:
+    type: text
+    required: true
+    label: First Name
+    index: true
+  
+  last_name:
+    type: text
+    required: true
+    label: Last Name
+    index: true
+  
+  full_name:
+    type: formula
+    formula: "CONCAT(first_name, ' ', last_name)"
+    label: Full Name
+  
+  email:
+    type: text
+    required: true
+    label: Work Email
+    unique: true
+    index: true
+  
+  phone:
+    type: text
+    label: Work Phone
+  
+  mobile:
+    type: text
+    label: Mobile Phone
+  
+  department:
+    type: lookup
+    reference_to: hr_department
+    label: Department
+    required: true
+    index: true
+  
+  position:
+    type: lookup
+    reference_to: hr_position
+    label: Position
+    required: true
+    index: true
+  
+  manager:
+    type: lookup
+    reference_to: hr_employee
+    label: Direct Manager
+    index: true
+  
+  hire_date:
+    type: date
+    required: true
+    label: Hire Date
+    index: true
+  
+  termination_date:
+    type: date
+    label: Termination Date
+  
+  employment_type:
+    type: select
+    options:
+      - full_time
+      - part_time
+      - contract
+      - intern
+    defaultValue: full_time
+    index: true
+  
+  status:
+    type: select
+    options:
+      - active
+      - on_leave
+      - terminated
+    defaultValue: active
+    required: true
+    index: true
+  
+  salary:
+    type: currency
+    label: Base Salary
+  
+  location:
+    type: text
+    label: Office Location
+    index: true
+  
+  emergency_contact_name:
+    type: text
+    label: Emergency Contact Name
+  
+  emergency_contact_phone:
+    type: text
+    label: Emergency Contact Phone
+  
+  notes:
+    type: textarea
+    label: Notes
+
+indexes:
+  # For department roster
+  department_status_idx:
+    fields: [department, status]
+  
+  # For org chart
+  manager_department_idx:
+    fields: [manager, department]
+  
+  # For position analysis
+  position_status_idx:
+    fields: [position, status]
+  
+  # For tenure reporting
+  hire_date_status_idx:
+    fields: [hire_date, status]

@@ -21,7 +21,8 @@
     "@objectql/cli": "workspace:*",
     "@objectql/core": "workspace:*",
     "@objectql/types": "workspace:*",
-    "@objectql/driver-knex": "workspace:*",
+    "@objectql/driver-sql": "workspace:*",
+    "@objectql/platform-node": "workspace:*",
     "typescript": "^5.3.0"
   }
 }

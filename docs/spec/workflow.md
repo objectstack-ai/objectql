@@ -13,12 +13,20 @@ Workflow features include:
 - **Event-Driven**: React to record changes
 - **Integration**: Connect with external systems
 
-**File Naming Convention:** `[workflow_name].workflow.yml`
+**File Naming Convention:** `<workflow_name>.workflow.yml`
+
+The filename (without the `.workflow.yml` extension) automatically becomes the workflow's identifier.
+
+**Examples:**
+- `order_approval.workflow.yml` → Workflow name: `order_approval`
+- `customer_onboarding.workflow.yml` → Workflow name: `customer_onboarding`
 
 ## 2. Root Structure with AI Context
 
 ```yaml
-name: order_approval_workflow
+# File: order_approval.workflow.yml
+# Workflow name is inferred from filename!
+
 label: Order Approval Process
 description: Multi-level approval workflow for orders
 object: orders

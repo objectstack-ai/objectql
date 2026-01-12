@@ -1,0 +1,70 @@
+label: Milestone
+description: Project milestone or checkpoint
+icon: flag-line
+
+fields:
+  name:
+    type: text
+    required: true
+    label: Milestone Name
+    index: true
+  
+  project:
+    type: lookup
+    reference_to: project_project
+    label: Project
+    required: true
+    index: true
+  
+  description:
+    type: textarea
+    label: Description
+  
+  due_date:
+    type: date
+    required: true
+    label: Target Date
+    index: true
+  
+  completed_date:
+    type: date
+    label: Completion Date
+  
+  status:
+    type: select
+    options:
+      - pending
+      - in_progress
+      - completed
+      - missed
+    defaultValue: pending
+    required: true
+    index: true
+  
+  owner:
+    type: lookup
+    reference_to: user
+    label: Milestone Owner
+  
+  deliverables:
+    type: textarea
+    label: Deliverables
+  
+  success_criteria:
+    type: textarea
+    label: Success Criteria
+
+indexes:
+  # For project milestones
+  project_due_date_idx:
+    fields: [project, due_date]
+  
+  # For status tracking
+  status_due_date_idx:
+    fields: [status, due_date]
+
+actions:
+  mark_completed:
+    type: record
+    label: Mark as Completed
+    icon: checkbox-circle-line

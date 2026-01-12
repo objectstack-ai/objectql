@@ -1,0 +1,15 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src"
+  },
+  "include": ["src"],
+  "references": [
+    { "path": "../../foundation/types" },
+    { "path": "../../foundation/core" },
+    { "path": "../../runtime/server" },
+    { "path": "../../foundation/platform-node" },
+    { "path": "../../drivers/sql" }
+  ]
+}

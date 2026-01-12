@@ -1,0 +1,114 @@
+label: Timesheet
+description: Employee time tracking
+icon: time-line
+
+fields:
+  employee:
+    type: lookup
+    reference_to: hr_employee
+    label: Employee
+    required: true
+    index: true
+  
+  work_date:
+    type: date
+    required: true
+    label: Work Date
+    index: true
+  
+  clock_in:
+    type: datetime
+    label: Clock In Time
+  
+  clock_out:
+    type: datetime
+    label: Clock Out Time
+  
+  total_hours:
+    type: number
+    label: Total Hours
+    scale: 2
+  
+  regular_hours:
+    type: number
+    label: Regular Hours
+    scale: 2
+  
+  overtime_hours:
+    type: number
+    label: Overtime Hours
+    scale: 2
+  
+  break_hours:
+    type: number
+    label: Break Hours
+    scale: 2
+  
+  work_type:
+    type: select
+    options:
+      - office
+      - remote
+      - field
+      - client_site
+    defaultValue: office
+    index: true
+  
+  status:
+    type: select
+    options:
+      - draft
+      - submitted
+      - approved
+      - rejected
+    defaultValue: draft
+    required: true
+    index: true
+  
+  approved_by:
+    type: lookup
+    reference_to: user
+    label: Approved By
+  
+  approved_at:
+    type: datetime
+    label: Approval Time
+  
+  notes:
+    type: textarea
+    label: Notes
+
+indexes:
+  # For employee timesheet lookup
+  employee_date_idx:
+    fields: [employee, work_date]
+    unique: true
+  
+  # For approval workflow
+  status_employee_idx:
+    fields: [status, employee]
+  
+  # For date range reports
+  work_date_status_idx:
+    fields: [work_date, status]
+
+actions:
+  submit:
+    type: record
+    label: Submit for Approval
+    icon: send-plane-line
+  
+  approve:
+    type: record
+    label: Approve Timesheet
+    icon: checkbox-circle-line
+  
+  reject:
+    type: record
+    label: Reject Timesheet
+    icon: close-circle-line
+    params:
+      reason:
+        type: textarea
+        label: Rejection Reason
+        required: true

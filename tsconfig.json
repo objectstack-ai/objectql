@@ -1,12 +1,19 @@
 {
   "files": [],
   "references": [
-    { "path": "./packages/types" },
-    { "path": "./packages/core" },
-    { "path": "./packages/driver-mongo" },
-    { "path": "./packages/driver-knex" },
-    { "path": "./packages/driver-remote" },
-    { "path": "./packages/server" },
-    { "path": "./packages/cli" }
+    { "path": "./packages/foundation/types" },
+    { "path": "./packages/foundation/core" },
+    { "path": "./packages/drivers/mongo" },
+    { "path": "./packages/drivers/sql" },
+    { "path": "./packages/drivers/sdk" },
+    { "path": "./packages/foundation/platform-node" },
+    { "path": "./packages/runtime/server" },
+    { "path": "./packages/tools/cli" },
+    { "path": "./packages/tools/studio" },
+    { "path": "./packages/starters/express-api" },
+    { "path": "./packages/starters/basic" },
+    { "path": "./packages/starters/enterprise" },
+    { "path": "./examples/plugins/audit-log" },
+    { "path": "./examples/scenarios/preset-usage" }
   ]
 }

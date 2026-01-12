@@ -1,0 +1,30 @@
+name: main
+label: Main Menu
+type: sidebar
+app: demo_app
+
+items:
+  - name: core_business
+    label: Core Business
+    icon: briefcase
+    type: section
+    items:
+      - object: projects
+      - object: tasks
+
+  - name: showcase
+    label: Showcase
+    icon: flask
+    type: section
+    items:
+      - object: kitchen_sink
+        label: Component Gallery
+
+  - name: reporting
+    label: Reporting
+    icon: bar-chart
+    type: section
+    items:
+      - type: url
+        label: Dashboard
+        path: /dashboard

@@ -1,0 +1,32 @@
+{
+  "name": "@objectql/cli",
+  "version": "1.5.0",
+  "main": "dist/index.js",
+  "bin": {
+    "objectql": "./bin/objectql"
+  },
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "studio": "node dist/index.js studio"
+  },
+  "dependencies": {
+    "@objectql/types": "workspace:*",
+    "@objectql/core": "workspace:*",
+    "@objectql/server": "workspace:*",
+    "@objectql/driver-sql": "workspace:*",
+    "@objectql/platform-node": "workspace:*",
+    "sqlite3": "^5.1.7",
+    "commander": "^11.0.0",
+    "chalk": "^4.1.2",
+    "fast-glob": "^3.3.0",
+    "js-yaml": "^4.1.0",
+    "prettier": "^3.0.0",
+    "ts-node": "^10.9.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "@types/node": "^20.0.0",
+    "@types/js-yaml": "^4.0.5"
+  }
+}

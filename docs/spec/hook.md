@@ -4,7 +4,13 @@ Hooks allow you to execute server-side logic before or after database operations
 
 ## 1. Overview
 
-Hook files should be named `[object_name].hook.ts` and placed alongside your `*.object.yml` files.
+**File Naming Convention:** `<object_name>.hook.ts`
+
+Hook implementation files should be named to match the object they apply to, and placed alongside your object definition files.
+
+**Examples:**
+- `project.hook.ts` → Hooks for `project` object
+- `customer_order.hook.ts` → Hooks for `customer_order` object
 
 ### The "Optimal" Design Philosophy
 
@@ -32,7 +38,9 @@ Unlike traditional ORMs that provide generic contexts, ObjectQL hooks are **Type
 The recommended way to define hooks is using the `ObjectHookDefinition` interface.
 
 ```typescript
-// src/objects/project.hook.ts
+// File: project.hook.ts
+// Hooks for the "project" object (name matches object definition file)
+
 import { ObjectHookDefinition } from '@objectql/types';
 import { Project } from './types'; // Your generated type
 

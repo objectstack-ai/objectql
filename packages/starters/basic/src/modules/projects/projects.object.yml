@@ -1,0 +1,148 @@
+label: Project
+icon: building-line
+fields:
+  name:
+    type: text
+    required: true
+    index: true # Field-level index
+
+  status:
+    options:
+      - planned
+      - in_progress
+      - completed
+    defaultValue: planned
+    index: true
+
+  priority:
+    options:
+      - low
+      - normal
+      - high
+    defaultValue: normal
+
+  description:
+    type: textarea
+
+  owner:
+    type: text
+
+  budget:
+    type: currency
+
+  start_date:
+    type: date
+
+  end_date:
+    type: date
+  
+  approved_by:
+    type: text
+  
+  approved_at:
+    type: datetime
+  
+  approval_comment:
+    type: textarea
+
+indexes:
+  # Composite index for reporting
+  status_priority_idx:
+    fields: [status, priority]
+
+ai:
+  search:
+    enabled: true
+    fields: [name, description]
+    model: text-embedding-3-small
+
+actions:
+  # Record Actions (operate on specific records)
+  complete:
+    type: record
+    label: Complete Project
+    icon: checkbox-circle-line
+    confirm_text: "Are you sure you want to complete this project?"
+    params:
+      comment:
+        type: textarea
+        label: Completion Comment
+      completion_date:
+        type: date
+        label: Completion Date
+  
+  approve:
+    type: record
+    label: Approve Project
+    icon: shield-check-line
+    confirm_text: "Are you sure you want to approve this project?"
+    params:
+      comment:
+        type: textarea
+        required: true
+        label: Approval Comment
+        help_text: "Provide a reason for approving this project"
+  
+  clone:
+    type: record
+    label: Clone Project
+    icon: file-copy-line
+    description: Create a copy of this project
+    params:
+      new_name:
+        type: text
+        required: true
+        label: New Project Name
+      copy_tasks:
+        type: checkbox
+        label: Copy Associated Tasks
+        defaultValue: false
+
+  # Global Actions (operate on collections)
+  import_projects:
+    type: global
+    label: Import Projects
+    icon: download-line
+    internal: false
+    description: Import multiple projects from various sources
+    params:
+      source:
+        required: true
+        label: Import Source
+        options:
+          - csv
+          - json
+          - api
+      data:
+        type: textarea
+        label: JSON Data
+        help_text: "Paste JSON array of projects (optional if using file_url)"
+      file_url:
+        type: text
+        label: File URL
+        help_text: "URL to fetch data from (optional if using data field)"
+  
+  bulk_update_status:
+    type: global
+    label: Bulk Update Status
+    icon: edit-box-line
+    description: Update status for multiple projects at once
+    params:
+      project_ids:
+        type: textarea
+        required: true
+        label: Project IDs
+        help_text: "List of project IDs"
+      new_status:
+        required: true
+        label: New Status
+        options:
+          - planned
+          - in_progress
+          - completed
+  
+  generate_report:
+    type: global
+    label: Generate Project Report
+    icon: file-chart-line
+    description: Generate statistical report of all projects

@@ -107,19 +107,41 @@ Each module should have a README explaining:
 
 ## Object Naming Conventions
 
-### Prefixing Strategy
+### File-Based Naming
 
-For large projects with multiple modules, use prefixes to avoid name collisions:
+**ObjectQL uses filename-based identification.** The object name is automatically inferred from the filename (without the `.object.yml` extension), eliminating redundancy.
+
+**Examples:**
+- `crm_account.object.yml` → Object name: `crm_account`
+- `finance_invoice.object.yml` → Object name: `finance_invoice`
+- `project_task.object.yml` → Object name: `project_task`
+
+Inside the file, you **no longer need** to specify `name: crm_account` - it's inferred from the filename!
 
 ```yaml
-# ✅ Good: Clear module ownership
-name: crm_account
-name: finance_invoice
-name: project_task
+# File: crm_account.object.yml
+# Object name "crm_account" is automatically inferred!
+
+label: CRM Account
+fields:
+  company_name:
+    type: text
+    required: true
+```
+
+### Prefixing Strategy
+
+For large projects with multiple modules, use prefixes in your **filenames** to avoid name collisions:
+
+```
+# ✅ Good: Clear module ownership via filenames
+crm/objects/crm_account.object.yml       → Object: crm_account
+finance/objects/finance_invoice.object.yml → Object: finance_invoice
+project/objects/project_task.object.yml   → Object: project_task
 
 # ❌ Avoid: Risk of collision
-name: account  # Which account? CRM or Finance?
-name: task     # Project task or general task?
+crm/objects/account.object.yml           → Object: account (ambiguous)
+finance/objects/account.object.yml       → Object: account (collision!)
 ```
 
 **When to prefix:**
@@ -128,7 +150,7 @@ name: task     # Project task or general task?
 - ✅ When similar concepts exist across domains
 
 **When NOT to prefix:**
-- ❌ Core shared objects (`user`, `organization`)
+- ❌ Core shared objects (`user.object.yml`, `organization.object.yml`)
 - ❌ Small applications (< 30 objects)
 - ❌ When it reduces clarity
 
@@ -198,11 +220,13 @@ fields:
 
 ## Extension Pattern
 
-Use extensions to customize objects without modifying source:
+Use extensions to customize objects without modifying source files.
 
 **Original** (`core/objects/user.object.yml`):
 ```yaml
-name: user
+# File: user.object.yml
+# Object name "user" is inferred from filename
+
 fields:
   name: { type: text }
   email: { type: text }
@@ -210,7 +234,9 @@ fields:
 
 **Extension** (`extensions/user.extension.object.yml`):
 ```yaml
-name: user  # Same name triggers merge
+# File: user.extension.object.yml
+# Extends the "user" object (matches by filename base)
+
 fields:
   employee_id: { type: text }
   email: { required: true, unique: true }

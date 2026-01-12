@@ -1,6 +1,9 @@
 packages:
-  - packages/*
-  - examples/starters/*
+  - packages/foundation/*
+  - packages/drivers/*
+  - packages/runtime/*
+  - packages/tools/*
+  - packages/starters/*
   - examples/scenarios/*
   - examples/plugins/*
 

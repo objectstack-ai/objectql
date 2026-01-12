@@ -1,0 +1,11 @@
+name: erp_main
+label: ERP Main Menu
+app: erp
+type: sidebar
+items:
+  - name: projects
+    label: Projects
+    type: section
+    items:
+      - object: project_project
+      - object: project_task

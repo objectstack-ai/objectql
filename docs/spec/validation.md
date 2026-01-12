@@ -13,14 +13,21 @@ ObjectQL's validation system provides:
 - **Conditional validation**: Rules that apply only in specific contexts
 - **State machine validation**: Enforce valid state transitions
 
-**File Naming Convention:** `[object_name].validation.yml`
+**File Naming Convention:** `<object_name>.validation.yml`
+
+The filename (without the `.validation.yml` extension) automatically identifies which object these validation rules apply to. This eliminates the need for redundant `name` and `object` properties.
+
+**Examples:**
+- `project.validation.yml` → Applies to object: `project`
+- `customer_order.validation.yml` → Applies to object: `customer_order`
 
 ## 2. Root Structure
 
 ```yaml
-name: project_validation
-object: projects
-description: Validation rules for project object
+# File: project.validation.yml
+# Object "project" is inferred from filename!
+
+description: "Validation rules for project object"
 
 # AI-friendly context (optional)
 ai_context:

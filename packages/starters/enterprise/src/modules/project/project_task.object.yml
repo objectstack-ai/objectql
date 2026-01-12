@@ -1,0 +1,121 @@
+label: Task
+description: Project task or work item
+icon: task-line
+
+fields:
+  name:
+    type: text
+    required: true
+    label: Task Name
+    index: true
+  
+  project:
+    type: lookup
+    reference_to: project_project
+    label: Project
+    required: true
+    index: true
+  
+  parent_task:
+    type: lookup
+    reference_to: project_task
+    label: Parent Task
+    index: true
+  
+  description:
+    type: textarea
+    label: Description
+  
+  status:
+    type: select
+    options:
+      - todo
+      - in_progress
+      - in_review
+      - blocked
+      - completed
+    defaultValue: todo
+    required: true
+    index: true
+  
+  priority:
+    type: select
+    options:
+      - low
+      - medium
+      - high
+      - critical
+    defaultValue: medium
+    index: true
+  
+  assigned_to:
+    type: lookup
+    reference_to: user
+    label: Assigned To
+    index: true
+  
+  due_date:
+    type: date
+    label: Due Date
+    index: true
+  
+  completed_date:
+    type: datetime
+    label: Completion Date
+  
+  estimated_hours:
+    type: number
+    label: Estimated Hours
+    scale: 2
+  
+  actual_hours:
+    type: number
+    label: Actual Hours
+    scale: 2
+  
+  milestone:
+    type: lookup
+    reference_to: project_milestone
+    label: Milestone
+    index: true
+  
+  tags:
+    type: text
+    label: Tags
+
+indexes:
+  # For project task list
+  project_status_idx:
+    fields: [project, status]
+  
+  # For user task list
+  assigned_to_status_idx:
+    fields: [assigned_to, status]
+  
+  # For due date tracking
+  due_date_status_idx:
+    fields: [due_date, status]
+  
+  # For task hierarchy
+  parent_task_idx:
+    fields: [parent_task, status]
+  
+  # For milestone tasks
+  milestone_status_idx:
+    fields: [milestone, status]
+
+actions:
+  start:
+    type: record
+    label: Start Task
+    icon: play-circle-line
+  
+  complete:
+    type: record
+    label: Complete Task
+    icon: checkbox-circle-line
+    params:
+      actual_hours:
+        type: number
+        label: Actual Hours Spent
+        scale: 2

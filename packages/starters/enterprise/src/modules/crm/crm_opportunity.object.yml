@@ -1,0 +1,128 @@
+label: Opportunity
+description: Sales opportunity or deal
+icon: currency-line
+
+fields:
+  name:
+    type: text
+    required: true
+    label: Opportunity Name
+    index: true
+  
+  account:
+    type: lookup
+    reference_to: crm_account
+    label: Account
+    required: true
+    index: true
+  
+  amount:
+    type: currency
+    label: Amount
+    required: true
+  
+  close_date:
+    type: date
+    label: Expected Close Date
+    required: true
+    index: true
+  
+  stage:
+    type: select
+    options:
+      - prospecting
+      - qualification
+      - proposal
+      - negotiation
+      - closed_won
+      - closed_lost
+    defaultValue: prospecting
+    required: true
+    index: true
+  
+  probability:
+    type: percent
+    label: Probability (%)
+    min: 0
+    max: 100
+  
+  type:
+    type: select
+    options:
+      - new_business
+      - existing_customer
+      - renewal
+    label: Opportunity Type
+    index: true
+  
+  lead_source:
+    type: select
+    options:
+      - web
+      - referral
+      - trade_show
+      - partner
+      - cold_call
+      - other
+    label: Lead Source
+    index: true
+  
+  owner:
+    type: lookup
+    reference_to: user
+    label: Opportunity Owner
+    required: true
+    index: true
+  
+  next_step:
+    type: text
+    label: Next Step
+  
+  description:
+    type: textarea
+    label: Description
+  
+  competitors:
+    type: textarea
+    label: Known Competitors
+
+indexes:
+  # For pipeline reports
+  stage_close_date_idx:
+    fields: [stage, close_date]
+  
+  # For owner queries
+  owner_stage_idx:
+    fields: [owner, stage]
+  
+  # For forecasting
+  close_date_amount_idx:
+    fields: [close_date, amount]
+  
+  # For account opportunity history
+  account_stage_idx:
+    fields: [account, stage]
+
+ai:
+  search:
+    enabled: true
+    fields: [name, description, next_step]
+    model: text-embedding-3-small
+
+actions:
+  mark_won:
+    type: record
+    label: Mark as Won
+    icon: checkbox-circle-line
+    confirm_text: "Mark this opportunity as won?"
+  
+  mark_lost:
+    type: record
+    label: Mark as Lost
+    icon: close-circle-line
+    confirm_text: "Mark this opportunity as lost?"
+    params:
+      reason:
+        type: textarea
+        label: Loss Reason
+        required: true

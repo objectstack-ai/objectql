@@ -1,0 +1,34 @@
+label: Task
+icon: checkbox-circle-line
+fields:
+  name:
+    type: text
+    required: true
+    index: true # Simple index
+    
+  project:
+    reference_to: projects
+    
+  due_date:
+    type: date
+    
+  completed:
+    type: boolean
+    defaultValue: false
+    index: true # Helpful for finding pending tasks
+    
+  priority:
+    options:
+      - low
+      - medium
+      - high
+    defaultValue: medium
+    
+  assigned_to:
+    type: text
+    label: Assignee
+    
+  estimated_hours:
+    type: number
+    label: Estimated Hours
+

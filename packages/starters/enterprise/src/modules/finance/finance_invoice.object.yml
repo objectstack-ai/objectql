@@ -1,0 +1,143 @@
+label: Invoice
+description: Customer invoice
+icon: file-text-line
+
+fields:
+  invoice_number:
+    type: text
+    required: true
+    label: Invoice Number
+    unique: true
+    index: true
+  
+  account:
+    type: lookup
+    reference_to: crm_account
+    label: Customer Account
+    required: true
+    index: true
+  
+  invoice_date:
+    type: date
+    required: true
+    label: Invoice Date
+    index: true
+  
+  due_date:
+    type: date
+    required: true
+    label: Due Date
+    index: true
+  
+  subtotal:
+    type: currency
+    required: true
+    label: Subtotal
+  
+  tax_amount:
+    type: currency
+    label: Tax Amount
+    defaultValue: 0
+  
+  discount_amount:
+    type: currency
+    label: Discount Amount
+    defaultValue: 0
+  
+  total_amount:
+    type: currency
+    required: true
+    label: Total Amount
+  
+  paid_amount:
+    type: currency
+    label: Paid Amount
+    defaultValue: 0
+  
+  balance:
+    type: currency
+    label: Balance Due
+  
+  status:
+    type: select
+    options:
+      - draft
+      - sent
+      - partial_paid
+      - paid
+      - overdue
+      - cancelled
+    defaultValue: draft
+    required: true
+    index: true
+  
+  payment_terms:
+    type: select
+    options:
+      - net_15
+      - net_30
+      - net_60
+      - net_90
+      - due_on_receipt
+    label: Payment Terms
+  
+  currency:
+    type: select
+    options:
+      - USD
+      - EUR
+      - GBP
+      - CNY
+      - JPY
+    defaultValue: USD
+    index: true
+  
+  billing_address:
+    type: textarea
+    label: Billing Address
+  
+  notes:
+    type: textarea
+    label: Notes
+  
+  internal_notes:
+    type: textarea
+    label: Internal Notes
+
+indexes:
+  # For account invoice history
+  account_date_idx:
+    fields: [account, invoice_date]
+  
+  # For payment tracking
+  status_due_date_idx:
+    fields: [status, due_date]
+  
+  # For aging reports
+  due_date_status_idx:
+    fields: [due_date, status]
+
+actions:
+  send:
+    type: record
+    label: Send Invoice
+    icon: mail-send-line
+    confirm_text: "Send this invoice to customer?"
+  
+  mark_paid:
+    type: record
+    label: Mark as Paid
+    icon: checkbox-circle-line
+    params:
+      payment_date:
+        type: date
+        label: Payment Date
+        required: true
+      payment_method:
+        type: select
+        label: Payment Method
+        options:
+          - bank_transfer
+          - credit_card
+          - check
+          - cash

@@ -19,9 +19,17 @@ Input parameters (`params`) are defined using the same `FieldConfig` schema as o
 
 ## 2. Configuration (YAML)
 
-Actions are declared in `*.object.yml` or JSON.
+Actions are declared in your object definition file (`<object_name>.object.yml`).
 
 ```yaml
+# File: order.object.yml
+# Object name is inferred from filename!
+
+label: Order
+fields:
+  # ... field definitions
+
+# Custom Actions
 actions:
   # 1. A Record Action (Button on a row)
   approve_order:
@@ -48,10 +56,18 @@ actions:
 
 ## 3. Implementation (TypeScript)
 
-Implement the logic in a companion `*.action.ts` file.
+Implement the logic in a companion `<object_name>.action.ts` file.
+
+**File Naming Convention:** `<object_name>.action.ts`
+
+The filename (without `.action.ts`) must match your object name to enable automatic binding.
+
+**Examples:**
+- `order.action.ts` → Actions for `order` object
+- `project.action.ts` → Actions for `project` object
 
 ```typescript
-// src/objects/order.action.ts
+// File: order.action.ts
 import { ActionDefinition } from '@objectql/types';
 import { Order } from './types';
 

@@ -14,12 +14,21 @@ Form metadata provides:
 - **Responsive design**: Mobile-optimized layouts
 - **AI assistance**: Smart defaults, auto-complete, validation helpers
 
-**File Naming Convention:** `[object_name].form.yml` or `[form_name].form.yml`
+**File Naming Convention:** `<form_name>.form.yml`
+
+The filename (without the `.form.yml` extension) automatically becomes the form's identifier. This eliminates the need for a redundant `name` property.
+
+**Examples:**
+- `project_form.form.yml` → Form name: `project_form`
+- `quick_task.form.yml` → Form name: `quick_task`
+- `customer_edit.form.yml` → Form name: `customer_edit`
 
 ## 2. Root Structure with AI Context
 
 ```yaml
-name: project_form
+# File: project_form.form.yml
+# Form name is inferred from filename!
+
 label: Project Information
 type: edit  # create, edit, view
 object: projects

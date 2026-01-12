@@ -1,0 +1,17 @@
+label: Users
+fields:
+  name:
+    type: string
+    label: Full Name
+    required: true
+  email:
+    type: string
+    label: Email Address
+    required: true
+  status:
+    type: string
+    label: Status
+    defaultValue: active
+  age:
+    type: number
+    label: Age

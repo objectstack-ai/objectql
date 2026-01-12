@@ -1,27 +1,38 @@
 # Object Definition
 
-Object files are defined in YAML (or JSON) and represent a business entity or database table. They are the foundation of your application's data model and are designed to be both human-readable and AI-friendly for automated code generation.
+Object files define business entities or database tables in YAML (or JSON). They are the foundation of your application's data model and are designed to be both human-readable and AI-friendly for automated code generation.
 
-Files should use **Snake Case** filenames (e.g., `project_tasks.object.yml`).
+**File Naming Convention:** `<object_name>.object.yml`
+
+The filename (without the `.object.yml` extension) automatically becomes the object's API name. This eliminates the need for a redundant `name` property inside the file.
+
+**Examples:**
+- `project.object.yml` → Object API name: `project`
+- `task.object.yml` → Object API name: `task`
+- `customer_order.object.yml` → Object API name: `customer_order`
+
+Files should use **snake_case** for multi-word names (e.g., `project_tasks.object.yml`).
 
 ## 1. Root Properties
 
-| Property | Type | Description |
-| :--- | :--- | :--- |
-| `name` | `string` | **Required.** Unique API name of the object. Should match filename. |
-| `label` | `string` | Human-readable label (e.g., "Project Task"). |
-| `icon` | `string` | SLDS icon string (e.g., `standard:task`). |
-| `description` | `string` | Internal description of the object. |
-| `fields` | `Map` | Dictionary of field definitions. |
-| `actions` | `Map` | Dictionary of custom action definitions. |
-| `ai_context` | `object` | **Optional.** AI-friendly context for code generation and understanding. |
+| Property | Type | Required | Description |
+| :--- | :--- | :--- | :--- |
+| `label` | `string` | Recommended | Human-readable label (e.g., "Project Task"). Defaults to capitalized filename if omitted. |
+| `icon` | `string` | Optional | SLDS icon string (e.g., `standard:task`). |
+| `description` | `string` | Optional | Internal description of the object. |
+| `fields` | `Map` | **Required** | Dictionary of field definitions. |
+| `actions` | `Map` | Optional | Dictionary of custom action definitions. |
+| `ai_context` | `object` | Optional | AI-friendly context for code generation and understanding. |
+
+**Note:** The `name` property is **no longer needed** - it's automatically inferred from the filename.
 
 ### 1.1 AI Context (Optional)
 
 The `ai_context` block provides semantic information to help AI tools understand the business purpose and usage patterns of your object. This improves code generation accuracy and enables intelligent suggestions.
 
 ```yaml
-name: project
+# File: project.object.yml
+
 label: Project
 
 # AI-friendly context
@@ -510,8 +521,9 @@ const myTask: Todo = {
 Here's a complete example showing how to leverage AI context throughout your object definition:
 
 ```yaml
-# project.object.yml
-name: project
+# File: project.object.yml
+# Object name "project" is automatically inferred from filename
+
 label: Project
 icon: standard:project
 description: Core object for project management

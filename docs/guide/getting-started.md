@@ -26,9 +26,12 @@ Let's build a simple **To-Do List** backend.
 
 In ObjectQL, everything is an "Object" (like a Table or Collection).
 
+**ObjectQL uses filename-based identification** - the object name is automatically inferred from the filename, making your metadata files cleaner.
+
 ```yaml
-# todo.object.yml
-name: todo
+# File: todo.object.yml
+# Object name "todo" is automatically inferred from filename!
+
 label: To-Do Item
 fields:
   title:
@@ -38,6 +41,8 @@ fields:
     type: boolean
     default: false
 ```
+
+**Note:** You no longer need to specify `name: todo` - it's inferred from the filename `todo.object.yml`!
 
 ### 2. Configure the Engine
 

@@ -4,18 +4,30 @@ Data source files allow you to seed the database with initial data. This is usef
 
 ## 1. Overview
 
-- **Implicit Naming**: Name the file `<object_name>.data.yml` to automatically map it to an object.
-- **Explicit Naming**: Use the `object` and `records` properties in the YAML content.
-- **Auto-deduplication**: Currently, data seeding attempts to create records. Duplicate key errors are typically ignored (depending on driver implementation), allowing for basic idempotency.
+**File Naming Convention:** `<object_name>.data.yml`
+
+The filename (without the `.data.yml` extension) automatically identifies which object to seed data into. This is the **recommended approach** as it eliminates redundancy.
+
+**Examples:**
+- `status.data.yml` → Seeds data into object: `status`
+- `users.data.yml` → Seeds data into object: `users`
+- `product_categories.data.yml` → Seeds data into object: `product_categories`
+
+**Features:**
+- **Implicit object mapping**: Object name inferred from filename
+- **Auto-deduplication**: Duplicate key errors are typically ignored (depending on driver implementation), allowing for basic idempotency
+- **Order matters**: Files loaded alphabetically, so ensure parent data is seeded before child data
 
 ## 2. File Format
 
-### Option A: Implicit (Recommended)
+### Recommended Format: Filename-based (Implicit)
 
-File Name: `status.data.yml`
-Target Object: `status`
+File: `status.data.yml`
 
 ```yaml
+# File: status.data.yml
+# Object "status" is inferred from filename!
+
 - code: "draft"
   label: "Draft"
   is_active: true
@@ -23,13 +35,39 @@ Target Object: `status`
 - code: "published"
   label: "Published"
   is_active: true
+
+- code: "archived"
+  label: "Archived"
+  is_active: false
 ```
 
-### Option B: Explicit
-
-File Name: `initial_setup.data.yml` (can be anything)
+File: `users.data.yml`
 
 ```yaml
+# File: users.data.yml
+# Object "users" is inferred from filename!
+
+- _id: admin_001
+  name: "System Administrator"
+  email: "admin@company.com"
+  role: "admin"
+  is_active: true
+
+- _id: user_001
+  name: "John Doe"
+  email: "john@company.com"
+  role: "user"
+  is_active: true
+```
+
+### Alternative Format: Explicit Object (Legacy)
+
+For backwards compatibility, you can still explicitly specify the object:
+
+```yaml
+# File: initial_setup.data.yml
+# Explicit object specification
+
 object: status
 records:
   - code: "draft"
@@ -39,12 +77,38 @@ records:
     label: "Published"
 ```
 
-### Option C: Multiple Objects (Bundled)
-
-Not currently supported in a single file. Please use separate files.
+**Note:** The filename-based approach is preferred as it reduces redundancy and makes file organization clearer.
 
 ## 3. Best Practices
 
-1.  **Use Immutable IDs**: If possible, provide explicit IDs (`_id`) to ensure consistent referencing across environments.
-2.  **Versioning**: Include a metadata field if you need to track data versions.
-3.  **Order Matters**: If you have relationships, ensure the parent data is loaded before child data (ObjectQL loads data files in alphabetical order).
+1. **Use Immutable IDs**: Provide explicit IDs (`_id`) to ensure consistent referencing across environments:
+   ```yaml
+   - _id: admin_role_001
+     name: "Administrator"
+     permissions: ["all"]
+   ```
+
+2. **Versioning**: Include a metadata field if you need to track data versions:
+   ```yaml
+   - code: "feature_x"
+     enabled: true
+     version: "1.0"
+   ```
+
+3. **Order Matters**: ObjectQL loads data files in alphabetical order. If you have relationships, ensure parent data loads first:
+   ```
+   01_users.data.yml        # Parent data
+   02_departments.data.yml  # Parent data
+   03_employees.data.yml    # Child data (references users and departments)
+   ```
+
+4. **Use Prefix Numbering**: For complex dependencies, use numeric prefixes:
+   ```
+   data/
+     01_core/
+       01_users.data.yml
+       02_roles.data.yml
+     02_business/
+       01_customers.data.yml
+       02_orders.data.yml
+   ```
