@@ -15,6 +15,12 @@ importers:
       '@changesets/cli':
         specifier: ^2.29.8
         version: 2.29.8(@types/node@20.19.28)
+      '@objectql/starter-basic':
+        specifier: ^1.7.1
+        version: 1.7.1(@objectql/core@1.7.1)(@objectql/driver-sql@1.7.1(sqlite3@5.1.7))(@objectql/platform-node@1.7.1)(@objectql/types@1.7.1)(sqlite3@5.1.7)
+      '@objectql/starter-enterprise':
+        specifier: ^1.7.1
+        version: 1.7.1(@objectql/core@1.7.1)(@objectql/driver-sql@1.7.1(sqlite3@5.1.7))(@objectql/platform-node@1.7.1)(@objectql/types@1.7.1)(sqlite3@5.1.7)
       '@types/jest':
         specifier: ^30.0.0
         version: 30.0.0
@@ -1291,6 +1297,36 @@ packages:
     resolution: {integrity: sha512-1SUf/Cg2GzGDyaf15aR9St9TWlb+XvbZXWpDx8YKs7MLzMH/BCeopv+y9vzrzgkfykCGuWOlSu3mZhj2+FQcrg==}
     engines: {node: '>=10'}
     deprecated: This functionality has been moved to @npmcli/fs
+
+  '@objectql/core@1.7.1':
+    resolution: {integrity: sha512-+oMm0nvi1N48Lb733c3HAmLhmmLB0NBQs2q5YtYw/kg67105LOvt9twbG0FZmlJQGYLqkOfdYeLeQto2XGSPAA==}
+
+  '@objectql/driver-sql@1.7.1':
+    resolution: {integrity: sha512-VIS6Na//5BI1WoF5z8WgyaDDoruyH+hSqKEKmR0rXvK5IO+v4LTEGDd8sJkooyeANc1OXDDF8ilncEn4pR/Big==}
+
+  '@objectql/platform-node@1.7.1':
+    resolution: {integrity: sha512-7yEcq9aaJrPkvE6KvpDTfF3UnC4YWfzwGfx5y1NHjs/LDCmrOUg6BJyd1OiwnwZ8j9RH3SmfMrBZkjaHU34zwg==}
+
+  '@objectql/starter-basic@1.7.1':
+    resolution: {integrity: sha512-mJaCOeti39nzZok2yI04KX+27M70rn7IzBGR3Lu6xXbCd+lrgSWWLjhLb2KtOGr5X8RaDL09A0cQJlhFZNhBKQ==}
+    peerDependencies:
+      '@objectql/core': 1.7.1
+      '@objectql/driver-sql': 1.7.1
+      '@objectql/platform-node': 1.7.1
+      '@objectql/types': 1.7.1
+      sqlite3: ^5.1.7
+
+  '@objectql/starter-enterprise@1.7.1':
+    resolution: {integrity: sha512-D2Vy0d4QUHwhFTQrvlTY7gsf8we46aLtaNro5YN5U5RuZSurhw9jOGlsszwl6RlfX3Ngrq8hOjdUjMd9CNy9QA==}
+    peerDependencies:
+      '@objectql/core': 1.7.1
+      '@objectql/driver-sql': 1.7.1
+      '@objectql/platform-node': 1.7.1
+      '@objectql/types': 1.7.1
+      sqlite3: ^5.1.7
+
+  '@objectql/types@1.7.1':
+    resolution: {integrity: sha512-oZ8svFY50i212ZdgLVtHmejFbLzkCJO8Hb51wSfS/q+3JvI0diDVZreS+yHVik1hk2vWBIMDfraBG2bvfznEMQ==}
 
   '@paralleldrive/cuid2@2.3.1':
     resolution: {integrity: sha512-XO7cAxhnTZl0Yggq6jOgjiOHhbgcO4NqFqwSmQpjK3b6TEE6Uj/jfSk6wzYyemh3+I0sHirKSetjQwn5cZktFw==}
@@ -5519,6 +5555,49 @@ snapshots:
       mkdirp: 1.0.4
       rimraf: 3.0.2
     optional: true
+
+  '@objectql/core@1.7.1':
+    dependencies:
+      '@objectql/types': 1.7.1
+
+  '@objectql/driver-sql@1.7.1(sqlite3@5.1.7)':
+    dependencies:
+      '@objectql/types': 1.7.1
+      knex: 3.1.0(sqlite3@5.1.7)
+    transitivePeerDependencies:
+      - better-sqlite3
+      - mysql
+      - mysql2
+      - pg
+      - pg-native
+      - sqlite3
+      - supports-color
+      - tedious
+
+  '@objectql/platform-node@1.7.1':
+    dependencies:
+      '@objectql/core': 1.7.1
+      '@objectql/types': 1.7.1
+      fast-glob: 3.3.3
+      js-yaml: 4.1.1
+
+  '@objectql/starter-basic@1.7.1(@objectql/core@1.7.1)(@objectql/driver-sql@1.7.1(sqlite3@5.1.7))(@objectql/platform-node@1.7.1)(@objectql/types@1.7.1)(sqlite3@5.1.7)':
+    dependencies:
+      '@objectql/core': 1.7.1
+      '@objectql/driver-sql': 1.7.1(sqlite3@5.1.7)
+      '@objectql/platform-node': 1.7.1
+      '@objectql/types': 1.7.1
+      sqlite3: 5.1.7
+
+  '@objectql/starter-enterprise@1.7.1(@objectql/core@1.7.1)(@objectql/driver-sql@1.7.1(sqlite3@5.1.7))(@objectql/platform-node@1.7.1)(@objectql/types@1.7.1)(sqlite3@5.1.7)':
+    dependencies:
+      '@objectql/core': 1.7.1
+      '@objectql/driver-sql': 1.7.1(sqlite3@5.1.7)
+      '@objectql/platform-node': 1.7.1
+      '@objectql/types': 1.7.1
+      sqlite3: 5.1.7
+
+  '@objectql/types@1.7.1': {}
 
   '@paralleldrive/cuid2@2.3.1':
     dependencies:
