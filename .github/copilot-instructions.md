@@ -56,7 +56,7 @@ You must strictly enforce the following dependency rules:
 
 * **Role:** It orchestrates the flow. It validates the request using `SimpleRegistry` and delegates execution to the injected `driver`.
 
-### 📦 `packages/driver-*` (Knex / Mongo)
+### 📦 `packages/driver-*` (SQL / Mongo)
 
 * **Content:** Implementation of `ObjectQLDriver`.
 * **Role:**

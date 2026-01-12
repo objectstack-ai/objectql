@@ -8,7 +8,7 @@ You can configure multiple drivers for different parts of your application, or u
 
 We currently support the following official drivers:
 
-*   **[SQL Driver (Knex)](./sql)**: Supports PostgreSQL, MySQL, SQLite, MSSQL, etc.
+*   **[SQL Driver](./sql)**: Supports PostgreSQL, MySQL, SQLite, MSSQL, etc.
 *   **[MongoDB Driver](./mongo)**: Supports MongoDB.
 
 ## Unified ID Field
