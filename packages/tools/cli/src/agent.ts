@@ -101,6 +101,30 @@ export interface ValidateMetadataResult {
 }
 
 /**
+ * Regular expression patterns for parsing AI responses
+ */
+const AI_RESPONSE_PATTERNS = {
+    /**
+     * Matches YAML file blocks with explicit headers in the format:
+     * # filename.object.yml or File: filename.object.yml
+     * followed by a YAML code block
+     * 
+     * Groups:
+     * 1. filename (e.g., "user.object.yml")
+     * 2. YAML content
+     */
+    FILE_BLOCK: /(?:^|\n)(?:#|File:)\s*([a-zA-Z0-9_-]+\.[a-z]+\.yml)\s*\n```(?:yaml|yml)?\n([\s\S]*?)```/gi,
+    
+    /**
+     * Matches generic YAML/YML code blocks without explicit headers
+     * 
+     * Groups:
+     * 1. YAML content
+     */
+    CODE_BLOCK: /```(?:yaml|yml)\n([\s\S]*?)```/g,
+};
+
+/**
  * ObjectQL AI Agent for programmatic application generation and validation
  */
 export class ObjectQLAgent {
@@ -401,10 +425,9 @@ Provide feedback in the specified format.`;
         const files: GenerateAppResult['files'] = [];
         
         // Pattern: Files with explicit headers
-        const fileBlockPattern = /(?:^|\n)(?:#|File:)\s*([a-zA-Z0-9_-]+\.[a-z]+\.yml)\s*\n```(?:yaml|yml)?\n([\s\S]*?)```/gi;
         let match;
         
-        while ((match = fileBlockPattern.exec(response)) !== null) {
+        while ((match = AI_RESPONSE_PATTERNS.FILE_BLOCK.exec(response)) !== null) {
             const filename = match[1];
             const content = match[2].trim();
             const type = this.inferFileType(filename);
@@ -414,10 +437,9 @@ Provide feedback in the specified format.`;
 
         // Fallback: Generic code blocks
         if (files.length === 0) {
-            const codeBlockPattern = /```(?:yaml|yml)\n([\s\S]*?)```/g;
             let blockIndex = 0;
             
-            while ((match = codeBlockPattern.exec(response)) !== null) {
+            while ((match = AI_RESPONSE_PATTERNS.CODE_BLOCK.exec(response)) !== null) {
                 const content = match[1].trim();
                 const filename = `generated_${blockIndex}.object.yml`;
                 

@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as yaml from 'js-yaml';
+import * as readline from 'readline';
 import chalk from 'chalk';
 import OpenAI from 'openai';
 import { Validator } from '@objectql/core';
@@ -300,7 +301,7 @@ export async function aiChat(options: ChatOptions): Promise<void> {
     console.log(chalk.gray('Ask me anything about ObjectQL metadata, data modeling, or best practices.'));
     console.log(chalk.gray('Type "exit" to quit.\n'));
 
-    const readline = require('readline').createInterface({
+    const rl = readline.createInterface({
         input: process.stdin,
         output: process.stdout,
     });
@@ -324,10 +325,10 @@ Provide clear, actionable advice with examples when appropriate.`;
     }
 
     const askQuestion = () => {
-        readline.question(chalk.cyan('You: '), async (input: string) => {
+        rl.question(chalk.cyan('You: '), async (input: string) => {
             if (input.toLowerCase() === 'exit') {
                 console.log(chalk.blue('\nGoodbye! 👋'));
-                readline.close();
+                rl.close();
                 return;
             }
 
