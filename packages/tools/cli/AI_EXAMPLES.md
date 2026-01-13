@@ -1,33 +1,69 @@
 # ObjectQL AI Command - Examples
 
-This document provides comprehensive examples of using ObjectQL's unified AI command.
+This document provides comprehensive examples of using ObjectQL's AI-powered features.
 
 ## Quick Reference
 
 ```bash
-# Generation mode
-objectql ai -d "description" [output-dir] [-t type]
+# Interactive mode (default, most common)
+objectql ai [output-dir]
 
-# Validation mode  
-objectql ai --validate [path] [--fix] [-v]
+# One-shot generation
+objectql ai generate -d "description" [-o output] [-t type]
 
-# Interactive mode
-objectql ai --interactive [output-dir]
+# Validation
+objectql ai validate <path> [--fix] [-v]
 
-# Chat mode
-objectql ai --chat [-p "prompt"]
+# Chat assistant
+objectql ai chat [-p "prompt"]
 ```
 
 ---
 
-## Example 1: Generate a Blog System
+## Example 1: Interactive Mode (Recommended)
 
 ### Command
 ```bash
-objectql ai \
+# Simply type this to start!
+objectql ai
+
+# Or specify output directory
+objectql ai ./my-app
+```
+
+### What Happens
+1. AI greets you and asks what you want to build
+2. You describe your application in natural language
+3. AI generates files incrementally based on your conversation
+4. You can request changes, additions, or improvements
+5. Files are created in real-time
+6. Type "done" to finish and save, "exit" to quit
+
+### Example Conversation
+```
+AI: What would you like to build today?
+You: A blog system with posts, comments, and categories
+
+AI: Great! I'll create a blog system. Let me start with the core entities...
+[Generates post.object.yml, comment.object.yml, category.object.yml]
+
+AI: I've created the basic objects. Would you like me to add forms and views?
+You: Yes, and also add tags for posts
+
+AI: Adding forms, views, and a tag system...
+[Generates additional files]
+```
+
+---
+
+## Example 2: One-Shot Generation
+
+### Command
+```bash
+objectql ai generate \
   -d "A blogging platform with posts, comments, categories, and tags. Posts have title, content, author, published status, and publish date. Comments belong to posts. Posts can have multiple categories and tags." \
   -t complete \
-  ./blog-system
+  -o ./blog-system
 ```
 
 ### Expected Output
@@ -75,11 +111,11 @@ fields:
 
 ---
 
-## Example 2: Validate Existing Metadata
+## Example 3: Validate Existing Metadata
 
 ### Command
 ```bash
-objectql ai --validate ./my-app -v
+objectql ai validate ./my-app -v
 ```
 
 ### Sample Output (without AI - fallback)

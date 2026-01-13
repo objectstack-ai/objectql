@@ -190,57 +190,63 @@ program
         });
     });
 
-// AI command - Unified interface for all AI features
-program
+// AI command - Interactive by default, with specific subcommands for other modes
+const aiCmd = program
     .command('ai')
-    .description('AI-powered application generation, validation, and assistance')
-    .argument('[path]', 'Path to validate (for validation mode) or output directory')
-    .option('-d, --description <text>', 'Application description for generation mode')
+    .description('AI-powered interactive application builder (starts conversational mode by default)');
+
+// Default action: Interactive conversational mode
+aiCmd
+    .argument('[output-dir]', 'Output directory for generated files', './src')
+    .action(async (outputDir) => {
+        try {
+            await aiConversational({ output: outputDir });
+        } catch (error) {
+            console.error(error);
+            process.exit(1);
+        }
+    });
+
+// Subcommand: Generate (one-shot generation)
+aiCmd
+    .command('generate')
+    .description('Generate application from description (one-shot, non-interactive)')
+    .requiredOption('-d, --description <text>', 'Application description')
+    .option('-o, --output <path>', 'Output directory', './src')
     .option('-t, --type <type>', 'Generation type: basic, complete, or custom', 'custom')
-    .option('--validate', 'Validate existing metadata files')
-    .option('--chat', 'Start interactive AI assistant')
-    .option('--interactive', 'Interactive step-by-step generation')
-    .option('--fix', 'Automatically fix validation issues')
-    .option('-v, --verbose', 'Show detailed output')
-    .option('-p, --prompt <text>', 'Initial prompt for chat mode')
+    .action(async (options) => {
+        try {
+            await aiGenerate(options);
+        } catch (error) {
+            console.error(error);
+            process.exit(1);
+        }
+    });
+
+// Subcommand: Validate
+aiCmd
+    .command('validate')
+    .description('Validate metadata files with AI analysis')
+    .argument('<path>', 'Path to metadata files directory')
+    .option('--fix', 'Automatically fix issues')
+    .option('-v, --verbose', 'Detailed output')
     .action(async (pathArg, options) => {
         try {
-            // Determine mode based on flags
-            if (options.chat) {
-                // Chat mode
-                await aiChat({ initialPrompt: options.prompt });
-            } else if (options.validate) {
-                // Validation mode
-                const validationPath = pathArg || './src';
-                await aiValidate({ path: validationPath, fix: options.fix, verbose: options.verbose });
-            } else if (options.interactive) {
-                // Interactive conversational mode
-                const outputDir = pathArg || './src';
-                await aiConversational({ output: outputDir });
-            } else if (options.description) {
-                // Generation mode
-                const outputDir = pathArg || './src';
-                await aiGenerate({ 
-                    description: options.description, 
-                    output: outputDir,
-                    type: options.type 
-                });
-            } else {
-                // No mode specified - show help
-                console.log('Usage: objectql ai [options]');
-                console.log('');
-                console.log('Modes:');
-                console.log('  Generation:    objectql ai -d "your app description" [output-dir]');
-                console.log('  Validation:    objectql ai --validate [path]');
-                console.log('  Interactive:   objectql ai --interactive [output-dir]');
-                console.log('  Chat:          objectql ai --chat');
-                console.log('');
-                console.log('Examples:');
-                console.log('  objectql ai -d "CRM system" -t complete ./src');
-                console.log('  objectql ai --validate ./src');
-                console.log('  objectql ai --interactive');
-                console.log('  objectql ai --chat');
-            }
+            await aiValidate({ path: pathArg, ...options });
+        } catch (error) {
+            console.error(error);
+            process.exit(1);
+        }
+    });
+
+// Subcommand: Chat
+aiCmd
+    .command('chat')
+    .description('AI assistant for questions and guidance')
+    .option('-p, --prompt <text>', 'Initial prompt')
+    .action(async (options) => {
+        try {
+            await aiChat({ initialPrompt: options.prompt });
         } catch (error) {
             console.error(error);
             process.exit(1);
