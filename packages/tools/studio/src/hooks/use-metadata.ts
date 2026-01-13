@@ -18,14 +18,14 @@ export function useMetadata() {
     const [error, setError] = useState<Error | null>(null);
 
     useEffect(() => {
-        fetch('/api/metadata')
+        fetch('/api/metadata/object')
             .then(async res => {
                 if (!res.ok) throw new Error('Failed to fetch metadata');
                 // The API might return { objects: [...] } or just [...]
                 // Assuming standard objectql server returns { objects: [...] } or Array
                 const data = await res.json();
                 // Check format
-                const list = Array.isArray(data) ? data : (data.objects || []);
+                const list = Array.isArray(data) ? data : (data.items || []);
                 setObjects(list);
             })
             .catch(err => {

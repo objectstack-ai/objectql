@@ -25,7 +25,7 @@ function ObjectList() {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
-      setObjects(data.object || data.objects || []);
+      setObjects(data.items || []);
     } catch (e: any) {
       console.error('Failed to fetch objects:', e);
       setError(e.message);

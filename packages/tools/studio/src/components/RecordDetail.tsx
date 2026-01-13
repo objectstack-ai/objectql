@@ -42,8 +42,10 @@ function RecordDetail() {
       }
 
       const result = await response.json();
-      setRecord(result.data);
-      setFormData(result.data || {});
+      // For findOne, the result is the record itself (no data wrapper)
+      const recordData = result.data || result;
+      setRecord(recordData);
+      setFormData(recordData || {});
     } catch (e: any) {
       console.error('Failed to fetch record:', e);
       setError(e.message);

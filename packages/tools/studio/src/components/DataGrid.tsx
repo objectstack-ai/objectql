@@ -27,7 +27,8 @@ function DataGrid() {
       if (response.ok) {
         const data = await response.json();
         if (data.fields) {
-          setFields(data.fields.map((f: any) => f.name || f));
+          const fieldsArray = Array.isArray(data.fields) ? data.fields : Object.values(data.fields);
+          setFields(fieldsArray.map((f: any) => f.name || f));
         }
       }
     } catch (e) {
@@ -53,7 +54,7 @@ function DataGrid() {
       }
 
       const result = await response.json();
-      const data = result.data || [];
+      const data = result.items || result.data || [];
       setRecords(data);
 
       // Auto-detect fields if not already set

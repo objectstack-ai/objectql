@@ -63,7 +63,7 @@ export function MetadataBrowser() {
                 const data = await res.json();
                 // API returns { [type]: [...] } or for object: { object: [...], objects: [...] }
                 // Handle singular/plural mismatch from API response
-                const list = data[selectedType] || data.objects || data.object || []; 
+                const list = data[selectedType] || data.items || []; 
                 setItems(list);
             })
             .catch(err => setError(err.message))

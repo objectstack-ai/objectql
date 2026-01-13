@@ -20,7 +20,22 @@ export class SqlDriver implements Driver {
     }
 
     private applyFilters(builder: Knex.QueryBuilder, filters: any) {
-        if (!filters || filters.length === 0) return;
+        if (!filters) return;
+        
+        // Handle Plain Object filters (MongoDB style simple query)
+        // e.g. { name: 'John', age: 20 }
+        if (!Array.isArray(filters)) {
+            if (typeof filters === 'object') {
+                for (const [key, value] of Object.entries(filters)) {
+                    // Ignore special query properties if they leak here
+                    if (['filters', 'sort', 'limit', 'skip', 'fields'].includes(key)) continue;
+                    builder.where(key, value as any);
+                }
+            }
+            return;
+        }
+
+        if (filters.length === 0) return;
 
         let nextJoin = 'and';
 
@@ -177,8 +192,15 @@ export class SqlDriver implements Driver {
 
     async count(objectName: string, filters: any, options?: any): Promise<number> {
         const builder = this.getBuilder(objectName, options);
-        if (filters) {
-            this.applyFilters(builder, filters);
+        
+        let actualFilters = filters;
+        // If filters is a query object with a 'filters' property, use that
+        if (filters && !Array.isArray(filters) && filters.filters) {
+            actualFilters = filters.filters;
+        }
+
+        if (actualFilters) {
+            this.applyFilters(builder, actualFilters);
         }
         const result = await builder.count<{count: number}[]>('* as count');
         // result is usually [{count: 123}] or similar depending on driver

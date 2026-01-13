@@ -98,7 +98,8 @@ export function ObjectView({ objectName }: ObjectViewProps) {
                         })
                     });
                     const resJson = await response.json();
-                    const rows = resJson.data || resJson; // normalize
+                    // Support new format (items) and old format (data)
+                    const rows = resJson.items || resJson.data || resJson; // normalize
 
                     // 4. Fetch Count (for total pagination)
                     // Optimization: Only fetch count if we don't know it or filter changed? 
@@ -113,11 +114,14 @@ export function ObjectView({ objectName }: ObjectViewProps) {
                             body: JSON.stringify({
                                 op: 'count',
                                 object: objectName,
-                                args: filters.length > 0 ? filters : {}
+                                args: {
+                                    filters: filters.length > 0 ? filters : undefined
+                                }
                             })
                         });
                         const countJson = await countRes.json();
-                        lastRow = typeof countJson === 'number' ? countJson : countJson.data;
+                        // Count operation returns { count: number, '@type': string }
+                        lastRow = typeof countJson === 'number' ? countJson : countJson.count;
                     }
 
                    params.successCallback(rows, lastRow);

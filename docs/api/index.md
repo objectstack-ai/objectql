@@ -103,14 +103,31 @@ curl http://localhost:3000/api/metadata/objects/users
 
 ## Response Format
 
-All APIs return consistent JSON responses:
+ObjectQL APIs return consistent JSON responses based on the operation type:
 
-**Success:**
+**List Operations (find):**
 ```json
 {
-  "data": {
-    // Your data here
+  "items": [
+    // Array of records
+  ],
+  "meta": {
+    "total": 100,
+    "page": 1,
+    "size": 20,
+    "pages": 5,
+    "has_next": true
   }
+}
+```
+
+**Single Item Operations (findOne, create, update):**
+```json
+{
+  "id": "record_123",
+  "name": "Example",
+  "@type": "objectName"
+  // ... other record fields
 }
 ```
 

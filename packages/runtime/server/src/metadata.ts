@@ -152,7 +152,7 @@ export function createMetadataHandler(app: IObjectQL) {
             // 4. Object Sub-resources (Fields, Actions)
             // ---------------------------------------------------------
             
-            // GET /api/metadata/objects/:name/fields/:field
+            // GET /api/metadata/object/:name/fields/:field
             // Legacy path support.
             const fieldMatch = url.match(/^\/api\/metadata\/(?:objects|object)\/([^\/]+)\/fields\/([^\/\?]+)$/);
             if (method === 'GET' && fieldMatch) {
@@ -180,7 +180,7 @@ export function createMetadataHandler(app: IObjectQL) {
                 });
             }
 
-            // GET /api/metadata/objects/:name/actions
+            // GET /api/metadata/object/:name/actions
             const actionsMatch = url.match(/^\/api\/metadata\/(?:objects|object)\/([^\/]+)\/actions$/);
             if (method === 'GET' && actionsMatch) {
                 const [, objectName] = actionsMatch;

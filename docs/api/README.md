@@ -230,11 +230,10 @@ Retrieve a single record by ID or query.
 **Response:**
 ```json
 {
-  "data": {
-    "id": "user_123",
-    "name": "Alice",
-    "email": "alice@example.com"
-  }
+  "id": "user_123",
+  "name": "Alice",
+  "email": "alice@example.com",
+  "@type": "users"
 }
 ```
 
@@ -463,11 +462,13 @@ GET /api/data/users?filter={"status":"active"}&sort=created_at&limit=20
 **Response:**
 ```json
 {
-  "data": [...],
+  "items": [...],
   "meta": {
     "total": 150,
     "page": 1,
-    "per_page": 20
+    "size": 20,
+    "pages": 8,
+    "has_next": true
   }
 }
 ```
@@ -481,11 +482,10 @@ GET /api/data/users/user_123
 **Response:**
 ```json
 {
-  "data": {
-    "id": "user_123",
-    "name": "Alice",
-    "email": "alice@example.com"
-  }
+  "id": "user_123",
+  "name": "Alice",
+  "email": "alice@example.com",
+  "@type": "users"
 }
 ```
 
@@ -505,13 +505,12 @@ Content-Type: application/json
 **Response:**
 ```json
 {
-  "data": {
-    "id": "user_456",
-    "name": "Bob",
-    "email": "bob@example.com",
-    "role": "admin",
-    "created_at": "2024-01-15T10:30:00Z"
-  }
+  "id": "user_456",
+  "name": "Bob",
+  "email": "bob@example.com",
+  "role": "admin",
+  "created_at": "2024-01-15T10:30:00Z",
+  "@type": "users"
 }
 ```
 
@@ -529,11 +528,10 @@ Content-Type: application/json
 **Response:**
 ```json
 {
-  "data": {
-    "id": "user_456",
-    "role": "user",
-    "updated_at": "2024-01-15T11:00:00Z"
-  }
+  "id": "user_456",
+  "role": "user",
+  "updated_at": "2024-01-15T11:00:00Z",
+  "@type": "users"
 }
 ```
 
@@ -546,10 +544,9 @@ DELETE /api/data/users/user_456
 **Response:**
 ```json
 {
-  "data": {
-    "id": "user_456",
-    "deleted": true
-  }
+  "id": "user_456",
+  "deleted": true,
+  "@type": "users"
 }
 ```
 
@@ -756,15 +753,14 @@ curl -X POST https://api.example.com/api/files/upload \
 
 ```json
 {
-  "data": {
-    "id": "file_abc123",
-    "name": "invoice.pdf",
-    "url": "https://cdn.example.com/files/invoice.pdf",
-    "size": 245760,
-    "type": "application/pdf",
-    "uploaded_at": "2024-01-15T10:30:00Z",
-    "uploaded_by": "user_xyz"
-  }
+  "id": "file_abc123",
+  "name": "invoice.pdf",
+  "url": "https://cdn.example.com/files/invoice.pdf",
+  "size": 245760,
+  "type": "application/pdf",
+  "uploaded_at": "2024-01-15T10:30:00Z",
+  "uploaded_by": "user_xyz",
+  "@type": "files"
 }
 ```
 
@@ -784,7 +780,7 @@ const uploadResponse = await fetch('/api/files/upload', {
   body: formData
 });
 
-const uploadedFile = (await uploadResponse.json()).data;
+const uploadedFile = await uploadResponse.json();
 ```
 
 **Step 2: Create record with file metadata**
@@ -1127,8 +1123,8 @@ const response = await fetch('/api/objectql', {
   })
 });
 
-const { data: user } = await response.json();
-// { id: 'user_123', email: 'alice@example.com', ... }
+const user = await response.json();
+// { id: 'user_123', email: 'alice@example.com', '@type': 'users', ... }
 
 // 2. Send verification email (triggered by hook)
 // 3. User verifies email via action
@@ -1183,7 +1179,7 @@ const response = await fetch('/api/objectql', {
   })
 });
 
-const { data } = await response.json();
+const { items } = await response.json();
 // [
 //   { category: 'Electronics', month: '2024-01', revenue: 50000, order_count: 120, avg_order_value: 416.67 },
 //   { category: 'Clothing', month: '2024-01', revenue: 30000, order_count: 250, avg_order_value: 120.00 },

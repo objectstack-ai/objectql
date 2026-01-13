@@ -76,7 +76,7 @@ app.init().then(async () => {
         console.log(`\nTest REST API:`);
         console.log(`curl http://localhost:${port}/api/data/User`);
         console.log(`\nTest Metadata API:`);
-        console.log(`curl http://localhost:${port}/api/metadata/objects`);
+        console.log(`curl http://localhost:${port}/api/metadata/object`);
     });
   });
 }

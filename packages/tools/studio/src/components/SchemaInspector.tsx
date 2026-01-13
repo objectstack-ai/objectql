@@ -41,7 +41,7 @@ function SchemaInspector() {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
-      setObjects(data.object || data.objects || []);
+      setObjects(data.items || []);
     } catch (e: any) {
       console.error('Failed to fetch objects:', e);
       setError(e.message);
@@ -57,6 +57,9 @@ function SchemaInspector() {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
+      if (data.fields && !Array.isArray(data.fields)) {
+        data.fields = Object.values(data.fields);
+      }
       setSelectedObject(data);
     } catch (e: any) {
       console.error('Failed to fetch object details:', e);
