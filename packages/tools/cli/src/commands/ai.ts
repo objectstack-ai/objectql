@@ -4,9 +4,15 @@ import * as yaml from 'js-yaml';
 import * as readline from 'readline';
 import chalk from 'chalk';
 import OpenAI from 'openai';
-import { Validator } from '@objectql/core';
-import { ObjectQLAgent, createAgent } from '../agent';
+import { Validator, ObjectQLAgent } from '@objectql/core';
 import { glob } from 'fast-glob';
+
+/**
+ * Create an ObjectQL AI agent instance
+ */
+export function createAgent(apiKey: string): ObjectQLAgent {
+    return new ObjectQLAgent({ apiKey });
+}
 
 interface GenerateOptions {
     description: string;

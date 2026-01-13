@@ -7,7 +7,7 @@
 
 import OpenAI from 'openai';
 import * as yaml from 'js-yaml';
-import { Validator } from '@objectql/core';
+import { Validator } from './validator';
 import { 
     ObjectConfig, 
     AnyValidationRule, 
