@@ -81,6 +81,9 @@ export interface ObjectQLResponse {
     // For single item operations (findOne, create, update)
     data?: any;
     
+    // Object type identifier (for type assertion and polymorphism)
+    object?: string;
+    
     // Pagination metadata (for list operations)
     meta?: PaginationMeta;
     
@@ -88,6 +91,6 @@ export interface ObjectQLResponse {
     error?: {
         code: ErrorCode | string;
         message: string;
-        details?: ErrorDetails;
+        details?: ErrorDetails | any; // Allow flexible details structure
     };
 }

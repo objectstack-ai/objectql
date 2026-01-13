@@ -63,13 +63,13 @@ export class ObjectQLServer {
                 case 'findOne':
                     // Support both string ID and query object
                     result = await repo.findOne(req.args);
-                    return { data: result };
+                    return { data: result, object: req.object };
                 case 'create':
                     result = await repo.create(req.args);
-                    return { data: result };
+                    return { data: result, object: req.object };
                 case 'update':
                     result = await repo.update(req.args.id, req.args.data);
-                    return { data: result };
+                    return { data: result, object: req.object };
                 case 'delete':
                     result = await repo.delete(req.args.id);
                     if (!result) {
@@ -78,11 +78,14 @@ export class ObjectQLServer {
                             `Record with id '${req.args.id}' not found for delete`
                         );
                     }
-                    // Return standardized delete response on success
-                    return { data: { id: req.args.id, deleted: true } };
+                    // Return standardized delete response with object type
+                    return { 
+                        data: { id: req.args.id, deleted: true },
+                        object: req.object
+                    };
                 case 'count':
                     result = await repo.count(req.args);
-                    return { data: result };
+                    return { data: result, object: req.object };
                 case 'action':
                     // Map generic args to ActionContext
                     result = await app.executeAction(req.object, req.args.action, {
@@ -90,7 +93,7 @@ export class ObjectQLServer {
                          id: req.args.id,
                          input: req.args.input || req.args.params // Support both for convenience
                     });
-                    return { data: result };
+                    return { data: result, object: req.object };
                 default:
                     return this.errorResponse(
                         ErrorCode.INVALID_REQUEST,
