@@ -2,6 +2,12 @@
 
 Welcome to the ObjectQL examples collection. This directory is organized to help you find the right starting point for your needs, from simple scripts to complex real-world applications.
 
+## 📚 Quick References
+
+| Resource | Description |
+| :--- | :--- |
+| **[Attachment Upload Demo](./attachment-upload-demo.md)** | Complete guide to uploading files, handling images, creating records with attachments, and implementing file upload components |
+
 ## 🚀 Starters
 *Boilerplates and minimal setups to get you coding in seconds.*
 
