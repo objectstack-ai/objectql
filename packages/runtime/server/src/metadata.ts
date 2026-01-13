@@ -73,14 +73,14 @@ export function createMetadataHandler(app: IObjectQL) {
                         description: obj.description,
                         fields: obj.fields || {}
                     }));
-                    // Return both keys for compatibility during migration
-                    return sendJson({ objects, object: objects });
+                    // Return standardized format with items
+                    return sendJson({ items: objects });
                 }
                 
                 const entries = app.metadata.list(type);
-                // Return simple list
+                // Return standardized list format
                 return sendJson({ 
-                    [type]: entries
+                    items: entries
                 });
             }
 
@@ -201,7 +201,7 @@ export function createMetadataHandler(app: IObjectQL) {
                     };
                 });
 
-                return sendJson({ actions: formattedActions });
+                return sendJson({ items: formattedActions });
             }
 
             // Not found
