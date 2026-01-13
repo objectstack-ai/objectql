@@ -14,97 +14,142 @@ pnpm add -D @objectql/cli
 
 ### AI-Powered Features
 
-#### `ai generate`
+The `ai` command provides a unified interface for all AI-powered features with different modes.
 
-Generate ObjectQL metadata from natural language descriptions using AI.
+#### Basic Usage
+
+```bash
+# Generation mode - Create new applications
+objectql ai -d "your app description" [output-dir]
+
+# Validation mode - Validate existing metadata
+objectql ai --validate [path]
+
+# Interactive mode - Step-by-step generation
+objectql ai --interactive [output-dir]
+
+# Chat mode - AI assistant for questions
+objectql ai --chat
+```
+
+#### Generation Mode
+
+Generate ObjectQL metadata and TypeScript implementations from natural language.
 
 ```bash
 # Generate a basic application
-objectql ai generate -d "A task management system with projects and tasks"
+objectql ai -d "A task management system with projects and tasks"
 
-# Generate a complete enterprise application
-objectql ai generate -d "A CRM system with customers, contacts, and opportunities" -t complete
+# Generate a complete enterprise application with all metadata types
+objectql ai -d "A CRM system with customers, contacts, and opportunities" -t complete
 
 # Specify output directory
-objectql ai generate -d "An inventory management system" -o ./src/modules/inventory
+objectql ai -d "An inventory management system" ./src/inventory
 ```
 
 **Options:**
-- `-d, --description <text>` - Description of the application to generate (required)
-- `-o, --output <path>` - Output directory for generated files [default: "./src"]
+- `-d, --description <text>` - Application description (required for generation)
 - `-t, --type <type>` - Generation type: basic, complete, or custom [default: "custom"]
+- `[path]` - Output directory [default: "./src"]
 
-**Prerequisites:**
-- Set `OPENAI_API_KEY` environment variable with your OpenAI API key
-- Example: `export OPENAI_API_KEY=sk-...`
-
-**Example:**
-```bash
-# Set your API key
-export OPENAI_API_KEY=sk-your-api-key-here
-
-# Generate a project management application
-objectql ai generate \
-  -d "A project management system with projects, tasks, milestones, and team members. Include time tracking and reporting features." \
-  -t complete \
-  -o ./src
-
-# Review generated files
-ls -la ./src/*.yml
-```
+**Generates:**
+- ObjectQL metadata (objects, forms, views, pages, menus, etc.)
+- TypeScript implementations for actions and hooks
+- Jest test files for business logic validation
 
 ---
 
-#### `ai validate`
+#### Validation Mode
 
-Validate metadata files using AI to check compliance, business logic, and best practices.
+Validate metadata files using AI for compliance, business logic, and best practices.
 
 ```bash
-# Validate all metadata files in src directory
-objectql ai validate ./src
+# Validate all metadata files
+objectql ai --validate ./src
 
-# Validate with verbose output
-objectql ai validate ./src --verbose
+# Validate with detailed output
+objectql ai --validate ./src -v
+
+# Validate and auto-fix issues
+objectql ai --validate ./src --fix
 ```
 
 **Options:**
-- `<path>` - Path to metadata files directory (required)
+- `--validate` - Enable validation mode
+- `[path]` - Path to metadata directory [default: "./src"]
 - `--fix` - Automatically fix issues where possible
 - `-v, --verbose` - Show detailed validation output
 
-**Features:**
+**Checks:**
 - YAML syntax validation
-- ObjectQL metadata specification compliance
-- Business logic consistency checks
+- ObjectQL specification compliance
+- Business logic consistency
 - Data model best practices
 - Security and performance analysis
 - Falls back to basic validation if no API key is set
 
-**Example:**
-```bash
-# Set API key for AI-powered validation
-export OPENAI_API_KEY=sk-your-api-key-here
-
-# Validate all metadata
-objectql ai validate ./src
-```
-
 ---
 
-#### `ai chat`
+#### Interactive Mode
 
-Interactive AI assistant for ObjectQL metadata, data modeling, and best practices.
+Build applications step-by-step through conversation with AI guidance.
 
 ```bash
-# Start interactive chat
-objectql ai chat
+# Start interactive generation
+objectql ai --interactive
 
-# Start with an initial question
-objectql ai chat -p "How do I create a lookup relationship?"
+# Specify output directory
+objectql ai --interactive ./src/modules
 ```
 
 **Options:**
+- `--interactive` - Enable interactive mode
+- `[path]` - Output directory [default: "./src"]
+
+**Features:**
+- Step-by-step application building
+- AI suggests next steps based on current state
+- Iterative refinement through dialogue
+- Real-time file creation and modification
+
+---
+
+#### Chat Mode
+
+Interactive AI assistant for ObjectQL questions and guidance.
+
+```bash
+# Start interactive chat
+objectql ai --chat
+
+# Start with an initial question
+objectql ai --chat -p "How do I create a lookup relationship?"
+```
+
+**Options:**
+- `--chat` - Enable chat mode
 - `-p, --prompt <text>` - Initial prompt for the AI
+
+---
+
+#### Complete Example
+
+```bash
+# Set your API key
+export OPENAI_API_KEY=sk-your-api-key-here
+
+# Generate a complete application
+objectql ai -d "Project management system with tasks and milestones" -t complete ./src
+
+# Validate the generated files
+objectql ai --validate ./src -v
+
+# Get help with modifications
+objectql ai --chat -p "How do I add email notifications?"
+
+# Make interactive improvements
+objectql ai --interactive ./src
+```
 
 ---
 

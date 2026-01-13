@@ -1,24 +1,45 @@
-# ObjectQL AI Commands - Examples
+# ObjectQL AI Command - Examples
 
-This document provides comprehensive examples of using ObjectQL's AI-powered features.
+This document provides comprehensive examples of using ObjectQL's unified AI command.
+
+## Quick Reference
+
+```bash
+# Generation mode
+objectql ai -d "description" [output-dir] [-t type]
+
+# Validation mode  
+objectql ai --validate [path] [--fix] [-v]
+
+# Interactive mode
+objectql ai --interactive [output-dir]
+
+# Chat mode
+objectql ai --chat [-p "prompt"]
+```
+
+---
 
 ## Example 1: Generate a Blog System
 
 ### Command
 ```bash
-objectql ai generate \
+objectql ai \
   -d "A blogging platform with posts, comments, categories, and tags. Posts have title, content, author, published status, and publish date. Comments belong to posts. Posts can have multiple categories and tags." \
   -t complete \
-  -o ./blog-system
+  ./blog-system
 ```
 
 ### Expected Output
 The AI will generate:
 - `post.object.yml` - Blog post entity
-- `comment.object.yml` - Comment entity
+- `comment.object.yml` - Comment entity  
 - `category.object.yml` - Category entity
 - `tag.object.yml` - Tag entity
 - `post.validation.yml` - Validation rules for posts
+- `publish_post.action.ts` - TypeScript action implementation
+- `post.hook.ts` - Lifecycle hooks
+- `post.test.ts` - Jest tests
 
 ### Sample Generated File: post.object.yml
 ```yaml
@@ -52,11 +73,13 @@ fields:
     multiple: true
 ```
 
+---
+
 ## Example 2: Validate Existing Metadata
 
 ### Command
 ```bash
-objectql ai validate ./my-app
+objectql ai --validate ./my-app -v
 ```
 
 ### Sample Output (without AI - fallback)

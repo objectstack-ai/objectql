@@ -190,62 +190,57 @@ program
         });
     });
 
-// AI commands
-const aiCmd = program
+// AI command - Unified interface for all AI features
+program
     .command('ai')
-    .description('AI-powered application generation and validation');
-
-aiCmd
-    .command('generate')
-    .description('Generate ObjectQL metadata from natural language description')
-    .requiredOption('-d, --description <text>', 'Description of the application to generate')
-    .option('-o, --output <path>', 'Output directory for generated files', './src')
+    .description('AI-powered application generation, validation, and assistance')
+    .argument('[path]', 'Path to validate (for validation mode) or output directory')
+    .option('-d, --description <text>', 'Application description for generation mode')
     .option('-t, --type <type>', 'Generation type: basic, complete, or custom', 'custom')
-    .action(async (options) => {
-        try {
-            await aiGenerate(options);
-        } catch (error) {
-            console.error(error);
-            process.exit(1);
-        }
-    });
-
-aiCmd
-    .command('validate')
-    .description('Validate metadata files using AI')
-    .argument('<path>', 'Path to metadata files directory')
-    .option('--fix', 'Automatically fix issues where possible')
-    .option('-v, --verbose', 'Show detailed validation output')
+    .option('--validate', 'Validate existing metadata files')
+    .option('--chat', 'Start interactive AI assistant')
+    .option('--interactive', 'Interactive step-by-step generation')
+    .option('--fix', 'Automatically fix validation issues')
+    .option('-v, --verbose', 'Show detailed output')
+    .option('-p, --prompt <text>', 'Initial prompt for chat mode')
     .action(async (pathArg, options) => {
         try {
-            await aiValidate({ path: pathArg, ...options });
-        } catch (error) {
-            console.error(error);
-            process.exit(1);
-        }
-    });
-
-aiCmd
-    .command('chat')
-    .description('Interactive AI assistant for ObjectQL')
-    .option('-p, --prompt <text>', 'Initial prompt for the AI')
-    .action(async (options) => {
-        try {
-            await aiChat({ initialPrompt: options.prompt });
-        } catch (error) {
-            console.error(error);
-            process.exit(1);
-        }
-    });
-
-aiCmd
-    .command('conversational')
-    .alias('convo')
-    .description('Build application through step-by-step conversation')
-    .option('-o, --output <path>', 'Output directory for generated files', './src')
-    .action(async (options) => {
-        try {
-            await aiConversational(options);
+            // Determine mode based on flags
+            if (options.chat) {
+                // Chat mode
+                await aiChat({ initialPrompt: options.prompt });
+            } else if (options.validate) {
+                // Validation mode
+                const validationPath = pathArg || './src';
+                await aiValidate({ path: validationPath, fix: options.fix, verbose: options.verbose });
+            } else if (options.interactive) {
+                // Interactive conversational mode
+                const outputDir = pathArg || './src';
+                await aiConversational({ output: outputDir });
+            } else if (options.description) {
+                // Generation mode
+                const outputDir = pathArg || './src';
+                await aiGenerate({ 
+                    description: options.description, 
+                    output: outputDir,
+                    type: options.type 
+                });
+            } else {
+                // No mode specified - show help
+                console.log('Usage: objectql ai [options]');
+                console.log('');
+                console.log('Modes:');
+                console.log('  Generation:    objectql ai -d "your app description" [output-dir]');
+                console.log('  Validation:    objectql ai --validate [path]');
+                console.log('  Interactive:   objectql ai --interactive [output-dir]');
+                console.log('  Chat:          objectql ai --chat');
+                console.log('');
+                console.log('Examples:');
+                console.log('  objectql ai -d "CRM system" -t complete ./src');
+                console.log('  objectql ai --validate ./src');
+                console.log('  objectql ai --interactive');
+                console.log('  objectql ai --chat');
+            }
         } catch (error) {
             console.error(error);
             process.exit(1);
