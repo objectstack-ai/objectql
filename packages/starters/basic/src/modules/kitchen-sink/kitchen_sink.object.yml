@@ -101,8 +101,10 @@ fields:
 
   # --- Media ---
   profile_pic:
-    type: avatar
+    type: image
     label: Avatar
+    multiple: false
+    max_size: 1048576  # 1MB
   
   attachment:
     type: file

@@ -708,8 +708,7 @@ ObjectQL provides comprehensive support for file uploads and attachments. The sy
 ### Supported Field Types
 
 - **`file`**: General file attachments (documents, PDFs, archives)
-- **`image`**: Image files with image-specific metadata
-- **`avatar`**: User profile pictures
+- **`image`**: Image files with image-specific metadata (including avatars, photos, galleries)
 
 ### Upload Endpoint
 

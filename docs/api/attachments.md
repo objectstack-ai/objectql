@@ -19,13 +19,14 @@ This document specifies how to handle file uploads, image uploads, and attachmen
 
 ## Overview
 
-ObjectQL supports three attachment-related field types:
+ObjectQL supports two attachment-related field types:
 
 - **`file`**: General file attachments (documents, PDFs, archives, etc.)
-- **`image`**: Image files with optional image-specific metadata
-- **`avatar`**: User profile pictures (single image optimized for avatars)
+- **`image`**: Image files with optional image-specific metadata (including user avatars, product photos, galleries, etc.)
 
 All attachment fields store metadata as JSON in the database, while the actual file content is stored in a configurable storage backend (local filesystem, S3, cloud storage, etc.).
+
+**Note:** User profile pictures (avatars) should use the `image` type with appropriate constraints (e.g., `multiple: false`, size limits, aspect ratio requirements). UI frameworks can identify avatar fields by naming conventions (e.g., `profile_picture`, `avatar`) to apply specific rendering (circular cropping, etc.).
 
 ### Design Principles
 
@@ -113,30 +114,16 @@ fields:
     label: Product Gallery
     multiple: true
     max_size: 5242880  # 5MB per image
-```
-
-### `avatar` Field Type
-
-Specialized single-image field for user profile pictures.
-
-**Properties:**
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `type` | `'avatar'` | **Required.** Field type identifier |
-| `label` | `string` | Display label |
-| `required` | `boolean` | Whether avatar is mandatory |
-| `max_size` | `number` | Maximum file size (default: 1MB) |
-
-**Example Definition:**
-
-```yaml
-# user.object.yml
-fields:
+  
+  # User avatar (profile picture)
   profile_picture:
-    type: avatar
+    type: image
     label: Profile Picture
+    multiple: false  # Single image only
     max_size: 1048576  # 1MB
+    max_width: 500
+    max_height: 500
+    accept: ['.jpg', '.png', '.webp']
 ```
 
 ---

@@ -115,10 +115,10 @@ const { data: product } = await createResponse.json();
 console.log('Created product:', product);
 ```
 
-## Example 3: Update User Avatar
+## Example 3: Update User Profile Picture (Avatar)
 
 ```javascript
-// Upload new avatar
+// Upload new profile picture
 const avatarFile = document.getElementById('avatar-input').files[0];
 
 const formData = new FormData();
@@ -134,9 +134,9 @@ const uploadResponse = await fetch('http://localhost:3000/api/files/upload', {
   body: formData
 });
 
-const { data: uploadedAvatar } = await uploadResponse.json();
+const { data: uploadedImage } = await uploadResponse.json();
 
-// Update user record with new avatar
+// Update user record with new profile picture
 const updateResponse = await fetch('http://localhost:3000/api/objectql', {
   method: 'POST',
   headers: {
@@ -149,7 +149,7 @@ const updateResponse = await fetch('http://localhost:3000/api/objectql', {
     args: {
       id: 'user_123',
       data: {
-        profile_picture: uploadedAvatar
+        profile_picture: uploadedImage  // image type field
       }
     }
   })

@@ -81,7 +81,6 @@ export type FieldType =
     | 'url'
     | 'image'
     | 'file'
-    | 'avatar'
     | 'location'
     | 'lookup' 
     | 'master_detail'  
@@ -169,7 +168,7 @@ export interface FieldConfig {
     accept?: string[];
     
     /**
-     * Maximum file size in bytes for file/image/avatar fields.
+     * Maximum file size in bytes for file/image fields.
      * Example: 5242880 (5MB)
      */
     max_size?: number;
