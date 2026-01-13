@@ -124,7 +124,7 @@ describe('REST API Adapter', () => {
 
         expect(response.status).toBe(200);
         expect(response.body.name).toBe('Alice');
-        expect(response.body.__object).toBe('user');
+        expect(response.body.'@type').toBe('user');
     });
 
     it('should handle POST /api/data/:object - Create record', async () => {
@@ -136,7 +136,7 @@ describe('REST API Adapter', () => {
         expect(response.status).toBe(201);
         expect(response.body.name).toBe('Charlie');
         expect(response.body._id).toBeDefined();
-        expect(response.body.__object).toBe('user');
+        expect(response.body.'@type').toBe('user');
     });
 
     it('should handle PUT /api/data/:object/:id - Update record', async () => {
@@ -155,7 +155,7 @@ describe('REST API Adapter', () => {
 
         expect(response.status).toBe(200);
         expect(response.body.deleted).toBe(true);
-        expect(response.body.__object).toBe('user');
+        expect(response.body.'@type').toBe('user');
     });
 
     it('should return 404 for non-existent object', async () => {

@@ -88,7 +88,7 @@ export interface ObjectQLResponse {
         details?: ErrorDetails | any; // Allow flexible details structure
     };
     
-    // For single item operations, the response is the object itself with __object field
+    // For single item operations, the response is the object itself with '@type' field
     // This allows any additional fields from the actual data object
     [key: string]: any;
 }

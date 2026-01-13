@@ -64,19 +64,19 @@ export class ObjectQLServer {
                     // Support both string ID and query object
                     result = await repo.findOne(req.args);
                     if (result) {
-                        return { ...result, __object: req.object };
+                        return { ...result, '@type': req.object };
                     }
                     return result;
                 case 'create':
                     result = await repo.create(req.args);
                     if (result) {
-                        return { ...result, __object: req.object };
+                        return { ...result, '@type': req.object };
                     }
                     return result;
                 case 'update':
                     result = await repo.update(req.args.id, req.args.data);
                     if (result) {
-                        return { ...result, __object: req.object };
+                        return { ...result, '@type': req.object };
                     }
                     return result;
                 case 'delete':
@@ -91,11 +91,11 @@ export class ObjectQLServer {
                     return { 
                         id: req.args.id,
                         deleted: true,
-                        __object: req.object
+                        '@type': req.object
                     };
                 case 'count':
                     result = await repo.count(req.args);
-                    return { count: result, __object: req.object };
+                    return { count: result, '@type': req.object };
                 case 'action':
                     // Map generic args to ActionContext
                     result = await app.executeAction(req.object, req.args.action, {
@@ -104,7 +104,7 @@ export class ObjectQLServer {
                          input: req.args.input || req.args.params // Support both for convenience
                     });
                     if (result && typeof result === 'object') {
-                        return { ...result, __object: req.object };
+                        return { ...result, '@type': req.object };
                     }
                     return result;
                 default:

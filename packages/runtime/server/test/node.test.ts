@@ -80,7 +80,7 @@ describe('Node Adapter', () => {
         expect(response.body).toEqual({
             id: 2,
             name: 'Bob',
-            __object: 'user'
+            '@type': 'user'
         });
     });
 
