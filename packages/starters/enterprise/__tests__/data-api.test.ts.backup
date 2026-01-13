@@ -60,6 +60,8 @@ describe('Enterprise Data API', () => {
                     username: 'johndoe'
                 });
                 
+                console.log('DEBUG USER: result =', JSON.stringify(result));
+                console.log('DEBUG USER: result.id =', result.id);
 
                 expect(result).toBeDefined();
                 expect(result.id).toBeDefined();
@@ -233,6 +235,9 @@ describe('Enterprise Data API', () => {
                     code: 'ENGD'
                 });
                 
+                console.log('DEBUG: dept =', JSON.stringify(dept));
+                console.log('DEBUG: dept.id =', dept.id);
+                console.log('DEBUG: dept._id =', (dept as any)._id);
                 
                 expect(dept).toBeDefined();
                 expect(dept.id).toBeDefined();
@@ -244,6 +249,7 @@ describe('Enterprise Data API', () => {
                     code: 'SWE'
                 });
                 
+                console.log('DEBUG: pos =', JSON.stringify(pos));
                 
                 expect(pos).toBeDefined();
                 expect(pos.id).toBeDefined();
