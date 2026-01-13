@@ -77,7 +77,9 @@ src/
  * Config Format: Prefer YAML (.yml) for metadata definitions over JSON for readability.
  * Metadata Validation: When generating metadata, ensure it adheres to the Schema defined in @objectql/types.
 6. Common Code Patterns
-Object Definition:
+
+## Object Definition
+```yaml
 # project.object.yml
 label: Project
 fields:
@@ -86,4 +88,90 @@ fields:
     type: select
     options: [planning, active, completed]
   owner: { type: lookup, reference_to: users }
+```
+
+## Data Operations
+**CRITICAL**: Always use `app` as the instance name, NEVER `db`.
+
+```typescript
+// Initialize ObjectQL
+const app = new ObjectQL({ driver });
+
+// Create context for operations
+const ctx = app.createContext({ userId: 'user123' });
+
+// Query with filters
+const projects = await ctx.object('project').find({
+  filters: [
+    ['status', '=', 'active'],
+    ['owner', '=', userId]
+  ],
+  fields: ['name', 'status', 'owner.name'],
+  sort: [['created_at', 'desc']],
+  limit: 20
+});
+
+// Create record
+const projectId = await ctx.object('project').create({
+  name: 'New Project',
+  status: 'planning'
+});
+
+// Update record
+await ctx.object('project').update(projectId, {
+  status: 'active'
+});
+
+// Delete record
+await ctx.object('project').delete(projectId);
+```
+
+## Business Logic - Hooks
+```typescript
+// project.hook.ts
+import { HookContext } from '@objectql/types';
+
+export const beforeCreate = async (ctx: HookContext) => {
+  // Validate or modify data before create
+  if (!ctx.data.owner) {
+    ctx.data.owner = ctx.user?.id;
+  }
+};
+
+export const afterUpdate = async (ctx: HookContext) => {
+  // Trigger side effects after update
+  if (ctx.data.status === 'completed') {
+    // Notify stakeholders
+  }
+};
+```
+
+## Business Logic - Actions
+```typescript
+// project.action.ts
+import { ActionContext } from '@objectql/types';
+
+export const archiveProject = async (ctx: ActionContext) => {
+  const { input, api } = ctx;
+  const projectId = input.id;
+  
+  // Business logic here
+  await api.object('project').update(projectId, {
+    status: 'archived',
+    archived_at: new Date()
+  });
+  
+  return { success: true, message: 'Project archived' };
+};
+```
+
+## Error Handling
+```typescript
+import { ObjectQLError } from '@objectql/types';
+
+// Never use generic Error
+if (!record) {
+  throw new ObjectQLError('Record not found', { code: 'NOT_FOUND' });
+}
+```
 

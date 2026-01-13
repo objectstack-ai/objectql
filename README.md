@@ -370,12 +370,26 @@ See the [API Reference](./docs/api/README.md) for complete documentation with ex
 
 ObjectQL is designed to be **AI-native** from the ground up:
 
+### For AI Agents
 * **Natural Language to Queries**: Convert plain English to database queries
 * **Schema Generation**: Generate object definitions from business requirements
 * **AI-Powered Analytics**: Automated insights and trend detection
 * **Safe AI Operations**: Built-in validation, sandboxing, and rate limiting
 
-See our [AI Integration Guide](./docs/guide/ai-integration.md) and [AI Capabilities Roadmap](./docs/AI_CAPABILITIES_ROADMAP.md) for details.
+### For Developers (AI-Assisted Coding)
+ObjectQL includes pre-configured AI coding assistance for popular IDEs:
+
+* **Cursor**: `.cursorrules` files included in all starter templates
+* **GitHub Copilot**: Enhanced with `.github/copilot-instructions.md`
+* **Windsurf & Other Tools**: Universal compatibility through standard patterns
+
+These configurations teach your AI assistant about ObjectQL's:
+- Metadata-first architecture
+- Context-driven API patterns
+- Correct naming conventions (`app` not `db`)
+- Proper error handling with `ObjectQLError`
+
+**Get Started:** See the [AI Coding Assistant Guide](./docs/ai/coding-assistant.md) to configure your IDE for optimal ObjectQL development.
 
 ## 🤝 Contributing
 

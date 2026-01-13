@@ -341,6 +341,18 @@ src/
 
 5. **Code Generation** - Run `objectql generate` to create TypeScript types for each module separately.
 
+## 🤖 AI Assistant Support
+
+This starter includes a `.cursorrules` file that configures Cursor and other AI coding assistants to understand ObjectQL's metadata-driven architecture. The AI will help you:
+
+- Generate object definitions in the correct YAML format
+- Write queries using the context-based API pattern  
+- Create hooks and actions following ObjectQL conventions
+- Ensure proper error handling with `ObjectQLError`
+- Organize metadata following domain-driven design principles
+
+For other IDEs, see the [AI Coding Assistant Guide](https://objectql.org/ai/coding-assistant).
+
 ## 📚 See Also
 
 - [Data Modeling Guide](../../../docs/guide/data-modeling.md)
