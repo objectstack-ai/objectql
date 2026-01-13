@@ -1,5 +1,13 @@
 # @objectql/driver-remote
 
+## 1.7.3
+
+### Patch Changes
+
+- Release patch version 1.7.3 with latest improvements and bug fixes
+- Updated dependencies
+  - @objectql/types@1.7.3
+
 ## 1.7.2
 
 ### Patch Changes
