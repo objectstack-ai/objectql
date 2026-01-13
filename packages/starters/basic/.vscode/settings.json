@@ -4,5 +4,40 @@
         "./node_modules/@objectql/types/schemas/app.schema.json": "*.app.yml",
         "./node_modules/@objectql/types/schemas/page.schema.json": "*.page.yml",
         "./node_modules/@objectql/types/schemas/menu.schema.json": "*.menu.yml"
+    },
+    "yaml.format.enable": true,
+    "yaml.validate": true,
+    "yaml.completion": true,
+    "editor.quickSuggestions": {
+        "other": true,
+        "comments": false,
+        "strings": true
+    },
+    "[yaml]": {
+        "editor.defaultFormatter": "redhat.vscode-yaml",
+        "editor.tabSize": 2,
+        "editor.insertSpaces": true
+    },
+    "[typescript]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": "explicit"
+        }
+    },
+    "typescript.tsdk": "node_modules/typescript/lib",
+    "typescript.enablePromptUseWorkspaceTsdk": true,
+    "files.associations": {
+        "*.object.yml": "yaml",
+        "*.validation.yml": "yaml",
+        "*.permission.yml": "yaml",
+        "*.page.yml": "yaml",
+        "*.view.yml": "yaml",
+        "*.form.yml": "yaml",
+        "*.app.yml": "yaml",
+        "*.menu.yml": "yaml",
+        "*.workflow.yml": "yaml",
+        "*.report.yml": "yaml",
+        "*.data.yml": "yaml"
     }
 }
