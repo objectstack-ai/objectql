@@ -1,6 +1,6 @@
 {
   "name": "@objectql/studio",
-  "version": "1.7.2",
+  "version": "1.7.3",
   "license": "PolyForm-Shield-1.0.0",
   "description": "Web-based admin studio for ObjectQL database management",
   "type": "module",
