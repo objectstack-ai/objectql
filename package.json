@@ -6,6 +6,7 @@
     "check-versions": "node scripts/check-versions.js",
     "test": "pnpm run check-versions && pnpm -r run test",
     "studio": "node packages/tools/cli/dist/index.js studio",
+    "ai": "node packages/tools/cli/dist/index.js ai",
     "changeset": "changeset",
     "version": "changeset version",
     "release": "pnpm run build && changeset publish",

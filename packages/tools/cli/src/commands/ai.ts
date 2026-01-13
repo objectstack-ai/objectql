@@ -487,7 +487,7 @@ Provide clear, actionable advice with examples when appropriate.`;
 
             try {
                 const completion = await openai.chat.completions.create({
-                    model: 'gpt-4',
+                    model: process.env.OPENAI_MODEL || 'gpt-4',
                     messages: messages,
                     temperature: 0.7,
                 });

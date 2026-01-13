@@ -27,7 +27,7 @@ import { ObjectQLAgent } from '@objectql/core';
 
 const agent = new ObjectQLAgent({
   apiKey: process.env.OPENAI_API_KEY!,
-  model: 'gpt-4', // optional, default: 'gpt-4'
+  model: process.env.OPENAI_MODEL || 'gpt-4', // optional, default: 'gpt-4'
   temperature: 0.7, // optional, default: 0.7
   language: 'en' // optional, default: 'en'
 });
