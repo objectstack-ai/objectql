@@ -31,6 +31,8 @@ export interface ObjectConfig {
     label?: string;
     icon?: string;
     description?: string;
+    /** Package namespace - used to prefix object name to avoid conflicts */
+    namespace?: string;
     
     fields: Record<string, FieldConfig>;
     indexes?: Record<string, IndexConfig>;

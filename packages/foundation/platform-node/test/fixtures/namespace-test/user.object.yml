@@ -1,0 +1,8 @@
+name: user
+label: User
+fields:
+  name:
+    type: text
+    required: true
+  email:
+    type: email

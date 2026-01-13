@@ -3,12 +3,14 @@ import * as glob from 'fast-glob';
 import * as path from 'path';
 import { MetadataRegistry, ObjectConfig, LoaderPlugin, LoaderHandlerContext, FieldConfig } from '@objectql/types';
 import * as yaml from 'js-yaml';
-import { toTitleCase } from '@objectql/core';
+import { toTitleCase, applyNamespace } from '@objectql/core';
 
 export class ObjectLoader {
     private plugins: LoaderPlugin[] = [];
+    private packageNamespaces: Record<string, string> = {};
 
-    constructor(protected registry: MetadataRegistry) {
+    constructor(protected registry: MetadataRegistry, packageNamespaces?: Record<string, string>) {
+        this.packageNamespaces = packageNamespaces || {};
         this.registerBuiltinPlugins();
     }
 
@@ -38,7 +40,7 @@ export class ObjectLoader {
                         }
 
                         const packageEntry = ctx.registry.getEntry('package-map', ctx.file);
-                        registerObject(ctx.registry, doc, ctx.file, ctx.packageName || (packageEntry && packageEntry.package));
+                        registerObject(ctx.registry, doc, ctx.file, ctx.packageName || (packageEntry && packageEntry.package), ctx.namespace);
                         return;
                     }
 
@@ -48,7 +50,7 @@ export class ObjectLoader {
                         if (typeof value === 'object' && (value as any).fields) {
                             const obj = value as any;
                             if (!obj.name) obj.name = key;
-                            registerObject(ctx.registry, obj, ctx.file, ctx.packageName);
+                            registerObject(ctx.registry, obj, ctx.file, ctx.packageName, ctx.namespace);
                         }
                     }
                 } catch (e) {
@@ -165,26 +167,69 @@ export class ObjectLoader {
         this.plugins.push(plugin);
     }
 
-    load(dir: string, packageName?: string) {
+    load(dir: string, packageName?: string, namespace?: string) {
+        // Use provided namespace, or look up from configured packageNamespaces
+        const effectiveNamespace = namespace || (packageName ? this.packageNamespaces[packageName] : undefined);
+        
         for (const plugin of this.plugins) {
-            this.runPlugin(plugin, dir, packageName);
+            this.runPlugin(plugin, dir, packageName, effectiveNamespace);
         }
     }
 
-    loadPackage(packageName: string) {
+    loadPackage(packageName: string, namespace?: string) {
         try {
             const entryPath = require.resolve(packageName, { paths: [process.cwd()] });
             // clean cache
             delete require.cache[entryPath];
             const packageDir = path.dirname(entryPath);
-            this.load(packageDir, packageName);
+            
+            // Determine namespace: explicit > configured > extracted from package name
+            let effectiveNamespace: string | undefined = namespace || this.packageNamespaces[packageName];
+            
+            // If still no namespace, try to extract from package.json
+            if (!effectiveNamespace) {
+                effectiveNamespace = this.extractNamespaceFromPackage(packageDir, packageName);
+            }
+            
+            this.load(packageDir, packageName, effectiveNamespace);
         } catch (e) {
             // fallback to directory
             this.load(packageName, packageName);
         }
     }
+    
+    /**
+     * Extract namespace from package.json or package name
+     */
+    private extractNamespaceFromPackage(packageDir: string, packageName: string): string | undefined {
+        try {
+            const packageJsonPath = path.join(packageDir, 'package.json');
+            if (fs.existsSync(packageJsonPath)) {
+                const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+                
+                // Check for explicit namespace in package.json
+                if (packageJson.objectql && packageJson.objectql.namespace) {
+                    return packageJson.objectql.namespace;
+                }
+            }
+        } catch (e) {
+            // Ignore errors
+        }
+        
+        // Fallback: derive from package name
+        // @example/audit-log -> audit_log
+        // audit-log-plugin -> audit_log_plugin
+        if (packageName.startsWith('@')) {
+            const parts = packageName.split('/');
+            if (parts.length > 1) {
+                return parts[1].replace(/-/g, '_');
+            }
+        }
+        
+        return undefined;
+    }
 
-    private runPlugin(plugin: LoaderPlugin, dir: string, packageName?: string) {
+    private runPlugin(plugin: LoaderPlugin, dir: string, packageName?: string, namespace?: string) {
         // Enforce path conventions: 
         // 1. Never scan node_modules (unless explicitly loaded via loadPackage which sets cwd inside it)
         // 2. Ignore build artifacts (dist, build, out) to avoid double-loading metadata if both src and dist exist.
@@ -226,7 +271,8 @@ export class ObjectLoader {
                     file,
                     content: '',
                     registry: this.registry,
-                    packageName
+                    packageName,
+                    namespace
                 };
                 
                 // Pre-read for convenience
@@ -243,14 +289,23 @@ export class ObjectLoader {
     }
 }
 
-function registerObject(registry: MetadataRegistry, obj: any, file: string, packageName?: string) {
+function registerObject(registry: MetadataRegistry, obj: any, file: string, packageName?: string, namespace?: string) {
     if (!obj.name) return;
+
+    // Store original name before namespace is applied
+    const originalName = obj.name;
+    
+    // Apply namespace to object name if provided
+    if (namespace) {
+        obj.name = applyNamespace(obj.name, namespace);
+        obj.namespace = namespace;
+    }
 
     // --- Smart Defaults & Normalization ---
 
-    // 1. Object Label: Infer from name if missing
+    // 1. Object Label: Infer from name if missing (use original name for label)
     if (!obj.label) {
-        obj.label = toTitleCase(obj.name);
+        obj.label = toTitleCase(originalName);
     }
 
     // 2. Normalize Fields
@@ -279,6 +334,14 @@ function registerObject(registry: MetadataRegistry, obj: any, file: string, pack
                         f.type = 'formula';
                     } else if (f.summary_object) {
                         f.type = 'summary';
+                    }
+                }
+                
+                // Apply namespace to reference_to if namespace is set
+                if (namespace && f.reference_to && typeof f.reference_to === 'string') {
+                    // Only apply namespace if reference doesn't already have one
+                    if (!f.reference_to.includes('__')) {
+                        f.reference_to = applyNamespace(f.reference_to, namespace);
                     }
                 }
             }
@@ -312,6 +375,7 @@ function registerObject(registry: MetadataRegistry, obj: any, file: string, pack
         if (obj.icon) base.icon = obj.icon;
         if (obj.description) base.description = obj.description;
         if (obj.datasource) base.datasource = obj.datasource;
+        if (obj.namespace) base.namespace = obj.namespace;
         
         // Update the content reference
         existing.content = base;
@@ -327,9 +391,9 @@ function registerObject(registry: MetadataRegistry, obj: any, file: string, pack
     });
 }
 
-export function loadObjectConfigs(dir: string): Record<string, ObjectConfig> {
+export function loadObjectConfigs(dir: string, packageNamespaces?: Record<string, string>): Record<string, ObjectConfig> {
     const registry = new MetadataRegistry();
-    const loader = new ObjectLoader(registry);
+    const loader = new ObjectLoader(registry, packageNamespaces);
     loader.load(dir);
 
     // Merge actions into objects

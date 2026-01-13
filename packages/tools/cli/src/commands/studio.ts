@@ -117,7 +117,7 @@ export async function startStudio(options: { port: number; dir: string, open?: b
         app = new ObjectQL({ datasources });
         
         // Load Schema
-        const loader = new ObjectLoader(app.metadata);
+        const loader = new ObjectLoader(app.metadata, config.packageNamespaces);
 
         // Load Presets
         if (Array.isArray(config.presets)) {

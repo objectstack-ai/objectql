@@ -5,6 +5,7 @@ export interface LoaderHandlerContext {
     content: string;
     registry: MetadataRegistry;
     packageName?: string;
+    namespace?: string;
 }
 
 export type LoaderHandler = (ctx: LoaderHandlerContext) => void;

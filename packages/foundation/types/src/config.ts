@@ -25,6 +25,12 @@ export interface ObjectQLConfig {
      */
     presets?: string[];
     /**
+     * Configuration for package namespaces.
+     * Maps package names to their namespace prefixes.
+     * e.g. { '@example/audit-log': 'audit' } will prefix all objects with 'audit__'
+     */
+    packageNamespaces?: Record<string, string>;
+    /**
      * List of plugins to load. 
      * Can be an instance of ObjectQLPlugin or a package name string.
      */

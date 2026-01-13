@@ -873,6 +873,10 @@
         "name": {
           "type": "string"
         },
+        "namespace": {
+          "description": "Package namespace - used to prefix object name to avoid conflicts",
+          "type": "string"
+        },
         "validation": {
           "additionalProperties": false,
           "description": "Validation rules for this object",

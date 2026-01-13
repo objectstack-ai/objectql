@@ -1,0 +1,11 @@
+name: note
+label: Note
+fields:
+  title:
+    type: text
+    required: true
+  content:
+    type: text
+  author:
+    type: lookup
+    reference_to: user
