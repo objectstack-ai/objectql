@@ -597,6 +597,57 @@ export async function beforeUpdate(context: HookContext) {
 }
 \`\`\`
 
+**For Tests - Generate test files:**
+Example:
+// approve_order.test.ts
+\`\`\`typescript
+import { describe, it, expect, beforeEach } from '@jest/globals';
+import { ObjectQL } from '@objectql/core';
+import approveOrder from './approve_order.action';
+
+describe('approve_order action', () => {
+  let app: ObjectQL;
+  let testUser: any;
+  
+  beforeEach(async () => {
+    // Setup test environment
+    app = new ObjectQL(/* test config */);
+    await app.connect();
+    testUser = { id: 'user123', name: 'Test User' };
+  });
+  
+  it('should approve an order successfully', async () => {
+    // Create test order
+    const order = await app.create('orders', {
+      status: 'pending',
+      total: 100
+    });
+    
+    // Execute action
+    const result = await approveOrder({
+      recordId: order.id,
+      params: { comment: 'Approved' },
+      user: testUser,
+      app
+    });
+    
+    // Verify
+    expect(result.success).toBe(true);
+    const updated = await app.findOne('orders', { _id: order.id });
+    expect(updated.status).toBe('approved');
+  });
+  
+  it('should reject if order not found', async () => {
+    await expect(approveOrder({
+      recordId: 'invalid_id',
+      params: { comment: 'Test' },
+      user: testUser,
+      app
+    })).rejects.toThrow('Order not found');
+  });
+});
+\`\`\`
+
 **Best Practices:**
 - Use snake_case for names
 - Clear, business-friendly labels
@@ -607,8 +658,10 @@ export async function beforeUpdate(context: HookContext) {
 - Implement actual business logic in TypeScript files
 - Include error handling in implementations
 - Add comments explaining complex logic
+- Write comprehensive tests for all business logic
+- Test both success and failure cases
 
-Output format: Provide each file in code blocks with filename headers (e.g., "# filename.object.yml" or "# filename.action.ts").`;
+Output format: Provide each file in code blocks with filename headers (e.g., "# filename.object.yml" or "// filename.action.ts").`;
     }
 
     /**
@@ -644,40 +697,48 @@ Include:
 - Basic relationships between objects
 - Simple validation rules
 - At least one form and view per object
+- At least one action with TypeScript implementation
+- At least one hook with TypeScript implementation
 
-Output: Provide each file separately with clear filename headers (e.g., "# filename.object.yml").`;
+Output: Provide each file separately with clear filename headers (e.g., "# filename.object.yml" or "// filename.action.ts").`;
 
             case 'complete':
                 return `Generate a complete ObjectQL enterprise application for: ${description}
 
-Include ALL necessary metadata types:
+Include ALL necessary metadata types WITH implementations:
 1. **Objects**: All entities with comprehensive fields
 2. **Validations**: Business rules and constraints
 3. **Forms**: Create and edit forms for each object
 4. **Views**: List views for browsing data
 5. **Pages**: Dashboard and detail pages
 6. **Menus**: Navigation structure
-7. **Actions**: Common operations (approve, export, etc.)
-8. **Permissions**: Basic access control
-9. **Data**: Sample seed data (optional)
-10. **Workflows**: Approval processes if applicable
-11. **Reports**: Key reports for analytics
+7. **Actions WITH TypeScript implementations**: Common operations (approve, export, etc.) - Generate BOTH .yml metadata AND .action.ts implementation files
+8. **Hooks WITH TypeScript implementations**: Lifecycle triggers - Generate .hook.ts implementation files
+9. **Permissions**: Basic access control
+10. **Data**: Sample seed data (optional)
+11. **Workflows**: Approval processes if applicable
+12. **Reports**: Key reports for analytics
+13. **Tests**: Generate test files (.test.ts) for actions and hooks to validate business logic
 
 Consider:
 - Security and permissions from the start
 - User experience in form/view design
 - Business processes and workflows
 - Data integrity and validation
+- Complete TypeScript implementations for all actions and hooks
+- Test coverage for business logic
 
-Output: Provide each file separately with clear filename headers (e.g., "# filename.object.yml").`;
+Output: Provide each file separately with clear filename headers (e.g., "# filename.object.yml" or "// filename.action.ts").`;
 
             default:
                 return `Generate ObjectQL metadata for: ${description}
 
 Analyze the requirements and create appropriate metadata across ALL relevant types:
 - Objects, Validations, Forms, Views, Pages, Menus, Actions, Hooks, Permissions, Workflows, Reports, Data, Application
+- For Actions and Hooks: Generate BOTH YAML metadata AND TypeScript implementation files
+- Include test files to validate business logic
 
-Output: Provide each file separately with clear filename headers (e.g., "# filename.object.yml").`;
+Output: Provide each file separately with clear filename headers (e.g., "# filename.object.yml" or "// filename.action.ts").`;
         }
     }
 
@@ -715,11 +776,19 @@ Provide feedback in the specified format.`;
      */
     private parseGenerationResponse(response: string): GenerateAppResult['files'] {
         const files: GenerateAppResult['files'] = [];
-        
-        // Pattern: Files with explicit headers
         let match;
         
-        while ((match = AI_RESPONSE_PATTERNS.FILE_BLOCK.exec(response)) !== null) {
+        // Extract YAML files with explicit headers
+        while ((match = AI_RESPONSE_PATTERNS.FILE_BLOCK_YAML.exec(response)) !== null) {
+            const filename = match[1];
+            const content = match[2].trim();
+            const type = this.inferFileType(filename);
+            
+            files.push({ filename, content, type });
+        }
+        
+        // Extract TypeScript files with explicit headers
+        while ((match = AI_RESPONSE_PATTERNS.FILE_BLOCK_TS.exec(response)) !== null) {
             const filename = match[1];
             const content = match[2].trim();
             const type = this.inferFileType(filename);
@@ -727,16 +796,27 @@ Provide feedback in the specified format.`;
             files.push({ filename, content, type });
         }
 
-        // Fallback: Generic code blocks
+        // Fallback: Generic code blocks if no explicit headers found
         if (files.length === 0) {
-            let blockIndex = 0;
+            let yamlIndex = 0;
+            let tsIndex = 0;
             
-            while ((match = AI_RESPONSE_PATTERNS.CODE_BLOCK.exec(response)) !== null) {
+            // Try to extract generic YAML blocks
+            while ((match = AI_RESPONSE_PATTERNS.CODE_BLOCK_YAML.exec(response)) !== null) {
                 const content = match[1].trim();
-                const filename = `generated_${blockIndex}.object.yml`;
+                const filename = `generated_${yamlIndex}.object.yml`;
                 
                 files.push({ filename, content, type: 'object' });
-                blockIndex++;
+                yamlIndex++;
+            }
+            
+            // Try to extract generic TypeScript blocks
+            while ((match = AI_RESPONSE_PATTERNS.CODE_BLOCK_TS.exec(response)) !== null) {
+                const content = match[1].trim();
+                const filename = `generated_${tsIndex}.action.ts`;
+                
+                files.push({ filename, content, type: 'typescript' });
+                tsIndex++;
             }
         }
 
@@ -793,6 +873,8 @@ Provide feedback in the specified format.`;
         if (filename.includes('.report.yml')) return 'report';
         if (filename.includes('.data.yml')) return 'data';
         if (filename.includes('.application.yml') || filename.includes('.app.yml')) return 'application';
+        if (filename.includes('.action.ts') || filename.includes('.hook.ts')) return 'typescript';
+        if (filename.includes('.test.ts') || filename.includes('.spec.ts')) return 'test';
         return 'other';
     }
 }
