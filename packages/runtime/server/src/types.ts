@@ -65,7 +65,7 @@ export interface ErrorDetails {
  */
 export interface PaginationMeta {
     total: number;        // Total number of records
-    page?: number;        // Current page number (1-indexed)
+    page?: number;        // Current page number (1-indexed, e.g. page 1 corresponds to skip=0)
     size?: number;        // Number of items per page
     pages?: number;       // Total number of pages
     has_next?: boolean;   // Whether there is a next page
