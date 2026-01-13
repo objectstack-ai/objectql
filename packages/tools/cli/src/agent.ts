@@ -143,7 +143,18 @@ const AI_RESPONSE_PATTERNS = {
      * 1. filename (e.g., "user.object.yml")
      * 2. YAML content
      */
-    FILE_BLOCK: /(?:^|\n)(?:#|File:)\s*([a-zA-Z0-9_-]+\.[a-z]+\.yml)\s*\n```(?:yaml|yml)?\n([\s\S]*?)```/gi,
+    FILE_BLOCK_YAML: /(?:^|\n)(?:#|File:)\s*([a-zA-Z0-9_-]+\.[a-z]+\.yml)\s*\n```(?:yaml|yml)?\n([\s\S]*?)```/gi,
+    
+    /**
+     * Matches TypeScript file blocks with explicit headers in the format:
+     * # filename.action.ts or File: filename.hook.ts
+     * followed by a TypeScript code block
+     * 
+     * Groups:
+     * 1. filename (e.g., "approve_order.action.ts")
+     * 2. TypeScript content
+     */
+    FILE_BLOCK_TS: /(?:^|\n)(?:#|File:)\s*([a-zA-Z0-9_-]+\.(?:action|hook)\.ts)\s*\n```(?:typescript|ts)?\n([\s\S]*?)```/gi,
     
     /**
      * Matches generic YAML/YML code blocks without explicit headers
@@ -151,7 +162,15 @@ const AI_RESPONSE_PATTERNS = {
      * Groups:
      * 1. YAML content
      */
-    CODE_BLOCK: /```(?:yaml|yml)\n([\s\S]*?)```/g,
+    CODE_BLOCK_YAML: /```(?:yaml|yml)\n([\s\S]*?)```/g,
+    
+    /**
+     * Matches generic TypeScript code blocks without explicit headers
+     * 
+     * Groups:
+     * 1. TypeScript content
+     */
+    CODE_BLOCK_TS: /```(?:typescript|ts)\n([\s\S]*?)```/g,
 };
 
 /**
@@ -478,7 +497,7 @@ export class ObjectQLAgent {
      * Get system prompt for metadata generation
      */
     private getSystemPrompt(): string {
-        return `You are an expert ObjectQL architect. Generate valid ObjectQL metadata in YAML format.
+        return `You are an expert ObjectQL architect. Generate valid ObjectQL metadata in YAML format AND TypeScript implementation files for business logic.
 
 Follow ObjectQL metadata standards for ALL metadata types:
 
@@ -487,9 +506,10 @@ Follow ObjectQL metadata standards for ALL metadata types:
 - Validations (*.validation.yml): validation rules, business constraints
 - Data (*.data.yml): seed data and initial records
 
-**2. Business Logic Layer:**
-- Actions (*.action.yml): custom RPC operations
-- Hooks (*.hook.yml): lifecycle triggers (beforeCreate, afterUpdate, etc.)
+**2. Business Logic Layer (YAML + TypeScript):**
+- Actions (*.action.yml + *.action.ts): custom RPC operations with TypeScript implementation
+- Hooks (*.hook.yml + *.hook.ts): lifecycle triggers with TypeScript implementation
+  - beforeCreate, afterCreate, beforeUpdate, afterUpdate, beforeDelete, afterDelete
 - Workflows (*.workflow.yml): approval processes, automation
 
 **3. Presentation Layer:**
@@ -505,6 +525,78 @@ Follow ObjectQL metadata standards for ALL metadata types:
 
 **Field Types:** text, number, boolean, select, date, datetime, lookup, currency, email, phone, url, textarea, formula, file, image
 
+**For Actions - Generate BOTH files:**
+Example:
+# approve_order.action.yml
+\`\`\`yaml
+label: Approve Order
+type: record
+params:
+  comment:
+    type: textarea
+    label: Comment
+\`\`\`
+
+# approve_order.action.ts
+\`\`\`typescript
+import { ActionContext } from '@objectql/types';
+
+export default async function approveOrder(context: ActionContext) {
+  const { recordId, params, user, app } = context;
+  
+  // Business logic here
+  const record = await app.findOne('orders', { _id: recordId });
+  
+  if (!record) {
+    throw new Error('Order not found');
+  }
+  
+  await app.update('orders', recordId, {
+    status: 'approved',
+    approved_by: user.id,
+    approved_at: new Date(),
+    approval_comment: params.comment
+  });
+  
+  return { success: true, message: 'Order approved successfully' };
+}
+\`\`\`
+
+**For Hooks - Generate BOTH files:**
+Example:
+# user.hook.yml
+\`\`\`yaml
+triggers:
+  - beforeCreate
+  - beforeUpdate
+\`\`\`
+
+# user.hook.ts
+\`\`\`typescript
+import { HookContext } from '@objectql/types';
+
+export async function beforeCreate(context: HookContext) {
+  const { data, user } = context;
+  
+  // Auto-assign creator
+  data.created_by = user.id;
+  data.created_at = new Date();
+  
+  // Validate email uniqueness (example)
+  const existing = await context.app.findOne('users', { email: data.email });
+  if (existing) {
+    throw new Error('Email already exists');
+  }
+}
+
+export async function beforeUpdate(context: HookContext) {
+  const { data, previousData, user } = context;
+  
+  data.updated_by = user.id;
+  data.updated_at = new Date();
+}
+\`\`\`
+
 **Best Practices:**
 - Use snake_case for names
 - Clear, business-friendly labels
@@ -512,8 +604,11 @@ Follow ObjectQL metadata standards for ALL metadata types:
 - Add help text for clarity
 - Define proper relationships
 - Consider security from the start
+- Implement actual business logic in TypeScript files
+- Include error handling in implementations
+- Add comments explaining complex logic
 
-Output format: Provide each file in a YAML code block with filename header (e.g., "# filename.object.yml").`;
+Output format: Provide each file in code blocks with filename headers (e.g., "# filename.object.yml" or "# filename.action.ts").`;
     }
 
     /**
