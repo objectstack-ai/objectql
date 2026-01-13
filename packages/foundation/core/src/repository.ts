@@ -57,6 +57,11 @@ export class ObjectRepository {
         };
     }
 
+    /**
+     * Validates a record against field-level and object-level validation rules.
+     * For updates, only fields present in the update payload are validated at the field level,
+     * while object-level rules use the merged record (previousRecord + updates).
+     */
     private async validateRecord(
         operation: 'create' | 'update',
         record: any,
