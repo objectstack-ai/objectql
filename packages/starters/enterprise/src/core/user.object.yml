@@ -28,8 +28,10 @@ fields:
     label: Mobile Phone
   
   avatar:
-    type: avatar
+    type: image
     label: Profile Picture
+    multiple: false
+    max_size: 1048576  # 1MB
   
   status:
     type: select

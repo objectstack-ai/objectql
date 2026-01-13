@@ -180,9 +180,8 @@ fields:
 | `datetime` | Date and time (ISO string). | |
 | `time` | Time only (HH:mm:ss). | |
 | **Complex/Media** | | |
-| `file` | File attachment (stored as JSON). | `multiple` |
-| `image` | Image attachment (stored as JSON). | `multiple` |
-| `avatar` | User avatar image. | |
+| `file` | File attachment (stored as JSON). See [Attachment API](../api/attachments.md). | `multiple`, `accept`, `max_size` |
+| `image` | Image attachment (stored as JSON). Supports avatars, photos, galleries. See [Attachment API](../api/attachments.md). | `multiple`, `accept`, `max_size`, `max_width`, `max_height` |
 | `location` | Geolocation (lat/lng JSON). | |
 | **Relationships** | | |
 | `select` | Selection from a list. | `options`, `multiple` |

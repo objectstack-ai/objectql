@@ -1,6 +1,58 @@
 import { FieldValidation, ValidationAiContext } from './validation';
 
 /**
+ * Attachment field data structure for file and image types.
+ * Stores metadata about uploaded files, with actual file content stored separately.
+ */
+export interface AttachmentData {
+    /** Unique identifier for this file */
+    id?: string;
+    
+    /** File name (e.g., "invoice.pdf") */
+    name: string;
+    
+    /** Publicly accessible URL to the file */
+    url: string;
+    
+    /** File size in bytes */
+    size: number;
+    
+    /** MIME type (e.g., "application/pdf", "image/jpeg") */
+    type: string;
+    
+    /** Original filename as uploaded by user */
+    original_name?: string;
+    
+    /** Upload timestamp (ISO 8601) */
+    uploaded_at?: string;
+    
+    /** User ID who uploaded the file */
+    uploaded_by?: string;
+}
+
+/**
+ * Image-specific attachment data with additional metadata.
+ * Extends AttachmentData with image-specific properties.
+ */
+export interface ImageAttachmentData extends AttachmentData {
+    /** Image width in pixels */
+    width?: number;
+    
+    /** Image height in pixels */
+    height?: number;
+    
+    /** Thumbnail URL (if generated) */
+    thumbnail_url?: string;
+    
+    /** Alternative sizes/versions */
+    variants?: {
+        small?: string;
+        medium?: string;
+        large?: string;
+    };
+}
+
+/**
  * Represents the supported field data types in the ObjectQL schema.
  * These types determine how data is stored, validated, and rendered.
  * 
@@ -8,6 +60,8 @@ import { FieldValidation, ValidationAiContext } from './validation';
  * - `textarea`: Long string.
  * - `select`: Choice from a list.
  * - `lookup`: Relationship to another object.
+ * - `file`: File attachment. Value stored as AttachmentData (single) or AttachmentData[] (multiple).
+ * - `image`: Image attachment. Value stored as ImageAttachmentData (single) or ImageAttachmentData[] (multiple).
  */
 export type FieldType = 
     | 'text' 
@@ -27,7 +81,6 @@ export type FieldType =
     | 'url'
     | 'image'
     | 'file'
-    | 'avatar'
     | 'location'
     | 'lookup' 
     | 'master_detail'  
@@ -107,6 +160,43 @@ export interface FieldConfig {
      * Specifies the target object name for relationship fields.
      */
     reference_to?: string;
+    
+    /**
+     * Allowed file extensions for file/image fields.
+     * Example: ['.pdf', '.docx'] or ['.jpg', '.png', '.gif']
+     */
+    accept?: string[];
+    
+    /**
+     * Maximum file size in bytes for file/image fields.
+     * Example: 5242880 (5MB)
+     */
+    max_size?: number;
+    
+    /**
+     * Minimum file size in bytes for file/image fields.
+     */
+    min_size?: number;
+    
+    /**
+     * Maximum image width in pixels for image fields.
+     */
+    max_width?: number;
+    
+    /**
+     * Maximum image height in pixels for image fields.
+     */
+    max_height?: number;
+    
+    /**
+     * Minimum image width in pixels for image fields.
+     */
+    min_width?: number;
+    
+    /**
+     * Minimum image height in pixels for image fields.
+     */
+    min_height?: number;
     
     // Validation properties
     /** Minimum for number/currency/percent. */

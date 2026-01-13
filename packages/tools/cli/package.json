@@ -23,7 +23,9 @@
     "fast-glob": "^3.3.0",
     "js-yaml": "^4.1.0",
     "prettier": "^3.0.0",
-    "ts-node": "^10.9.1"
+    "ts-node": "^10.9.1",
+    "openai": "^4.28.0",
+    "dotenv": "^16.4.5"
   },
   "devDependencies": {
     "typescript": "^5.0.0",

@@ -7,6 +7,7 @@ import { initProject } from './commands/init';
 import { newMetadata } from './commands/new';
 import { i18nExtract, i18nInit, i18nValidate } from './commands/i18n';
 import { migrate, migrateCreate, migrateStatus } from './commands/migrate';
+import { aiGenerate, aiValidate, aiChat, aiConversational } from './commands/ai';
 
 const program = new Command();
 
@@ -187,6 +188,69 @@ program
             dir: options.dir,
             open: options.open
         });
+    });
+
+// AI command - Interactive by default, with specific subcommands for other modes
+const aiCmd = program
+    .command('ai')
+    .description('AI-powered interactive application builder (starts conversational mode by default)');
+
+// Default action: Interactive conversational mode
+aiCmd
+    .argument('[output-dir]', 'Output directory for generated files', './src')
+    .action(async (outputDir) => {
+        try {
+            await aiConversational({ output: outputDir });
+        } catch (error) {
+            console.error(error);
+            process.exit(1);
+        }
+    });
+
+// Subcommand: Generate (one-shot generation)
+aiCmd
+    .command('generate')
+    .description('Generate application from description (one-shot, non-interactive)')
+    .requiredOption('-d, --description <text>', 'Application description')
+    .option('-o, --output <path>', 'Output directory', './src')
+    .option('-t, --type <type>', 'Generation type: basic, complete, or custom', 'custom')
+    .action(async (options) => {
+        try {
+            await aiGenerate(options);
+        } catch (error) {
+            console.error(error);
+            process.exit(1);
+        }
+    });
+
+// Subcommand: Validate
+aiCmd
+    .command('validate')
+    .description('Validate metadata files with AI analysis')
+    .argument('<path>', 'Path to metadata files directory')
+    .option('--fix', 'Automatically fix issues')
+    .option('-v, --verbose', 'Detailed output')
+    .action(async (pathArg, options) => {
+        try {
+            await aiValidate({ path: pathArg, ...options });
+        } catch (error) {
+            console.error(error);
+            process.exit(1);
+        }
+    });
+
+// Subcommand: Chat
+aiCmd
+    .command('chat')
+    .description('AI assistant for questions and guidance')
+    .option('-p, --prompt <text>', 'Initial prompt')
+    .action(async (options) => {
+        try {
+            await aiChat({ initialPrompt: options.prompt });
+        } catch (error) {
+            console.error(error);
+            process.exit(1);
+        }
     });
 
 program.parse();

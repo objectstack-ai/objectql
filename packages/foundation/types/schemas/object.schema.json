@@ -548,6 +548,13 @@
       "additionalProperties": false,
       "description": "Configuration for a single field on an object. This defines the schema, validation rules, and UI hints for the attribute.",
       "properties": {
+        "accept": {
+          "description": "Allowed file extensions for file/image fields. Example: ['.pdf', '.docx'] or ['.jpg', '.png', '.gif']",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
         "ai_context": {
           "$ref": "#/definitions/ValidationAiContext",
           "description": "AI context for the field. Provides semantic information for AI tools."
@@ -591,16 +598,40 @@
           "description": "Maximum for number/currency/percent.",
           "type": "number"
         },
+        "max_height": {
+          "description": "Maximum image height in pixels for image fields.",
+          "type": "number"
+        },
         "max_length": {
           "description": "Maximum length for text based fields.",
+          "type": "number"
+        },
+        "max_size": {
+          "description": "Maximum file size in bytes for file/image fields. Example: 5242880 (5MB)",
+          "type": "number"
+        },
+        "max_width": {
+          "description": "Maximum image width in pixels for image fields.",
           "type": "number"
         },
         "min": {
           "description": "Minimum for number/currency/percent.",
           "type": "number"
         },
+        "min_height": {
+          "description": "Minimum image height in pixels for image fields.",
+          "type": "number"
+        },
         "min_length": {
           "description": "Minimum length for text based fields.",
+          "type": "number"
+        },
+        "min_size": {
+          "description": "Minimum file size in bytes for file/image fields.",
+          "type": "number"
+        },
+        "min_width": {
+          "description": "Minimum image width in pixels for image fields.",
           "type": "number"
         },
         "multiple": {
@@ -687,7 +718,7 @@
       "type": "object"
     },
     "FieldType": {
-      "description": "Represents the supported field data types in the ObjectQL schema. These types determine how data is stored, validated, and rendered.\n\n- `text`: Simple string.\n- `textarea`: Long string.\n- `select`: Choice from a list.\n- `lookup`: Relationship to another object.",
+      "description": "Represents the supported field data types in the ObjectQL schema. These types determine how data is stored, validated, and rendered.\n\n- `text`: Simple string.\n- `textarea`: Long string.\n- `select`: Choice from a list.\n- `lookup`: Relationship to another object.\n- `file`: File attachment. Value stored as AttachmentData (single) or AttachmentData[] (multiple).\n- `image`: Image attachment. Value stored as ImageAttachmentData (single) or ImageAttachmentData[] (multiple).",
       "enum": [
         "text",
         "textarea",
@@ -706,7 +737,6 @@
         "url",
         "image",
         "file",
-        "avatar",
         "location",
         "lookup",
         "master_detail",

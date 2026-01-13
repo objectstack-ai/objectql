@@ -143,7 +143,7 @@ export function createRESTHandler(app: IObjectQL) {
                                 : [[queryParams.sort, 'asc']];
                         }
                         if (queryParams.top || queryParams.limit) {
-                            args.top = queryParams.top || queryParams.limit;
+                            args.limit = queryParams.top || queryParams.limit;
                         }
                         if (queryParams.skip || queryParams.offset) {
                             args.skip = queryParams.skip || queryParams.offset;

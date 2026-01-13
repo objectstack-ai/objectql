@@ -9,9 +9,12 @@
     "test": "jest"
   },
   "dependencies": {
-    "@objectql/types": "workspace:*"
+    "@objectql/types": "workspace:*",
+    "openai": "^4.28.0",
+    "js-yaml": "^4.1.0"
   },
   "devDependencies": {
-    "typescript": "^5.3.0"
+    "typescript": "^5.3.0",
+    "@types/js-yaml": "^4.0.5"
   }
 }
