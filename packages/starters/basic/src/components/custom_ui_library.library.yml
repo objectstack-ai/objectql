@@ -1,0 +1,71 @@
+# Component Library Definition Example
+# This shows how to package multiple related components into a library
+
+name: custom_ui_library
+label: Custom UI Component Library
+description: A collection of enhanced UI components for ObjectQL applications
+version: 1.0.0
+author: Your Company
+
+# Components included in this library
+components:
+  - custom_table
+  - ObjectForm  # Override
+  - kanban_board
+  - advanced_search
+  - export_panel
+
+# Library dependencies (npm packages required)
+dependencies:
+  react: "^18.0.0"
+  "@tanstack/react-table": "^8.0.0"
+  "react-beautiful-dnd": "^13.0.0"
+  "date-fns": "^2.0.0"
+
+# Installation instructions for users
+installation: |
+  # Install the component library
+  npm install @mycompany/custom-ui-library
+  
+  # Or with yarn
+  yarn add @mycompany/custom-ui-library
+  
+  # Then configure ObjectQL to load components from this library
+  # In your objectql.config.ts:
+  
+  export default {
+    components: [
+      './src/components/**/*.component.yml',
+      './node_modules/@mycompany/custom-ui-library/components'
+    ]
+  }
+
+# Documentation
+docs_url: https://docs.mycompany.com/ui-library
+repository: https://github.com/mycompany/custom-ui-library
+license: MIT
+
+# AI Context for the library
+ai_context:
+  purpose: "Provide enhanced, production-ready UI components for ObjectQL applications"
+  use_cases:
+    - "Enterprise applications requiring advanced data grids"
+    - "Projects needing kanban/workflow visualizations"
+    - "Applications with complex filtering and export requirements"
+  integration_guide: |
+    This library extends ObjectQL's built-in components with:
+    1. Enhanced data table with advanced filtering
+    2. Custom form component with auto-save
+    3. Kanban board for workflow management
+    4. Advanced search component with saved searches
+    5. Multi-format export panel (CSV, Excel, PDF)
+
+# Changelog
+changelog:
+  "1.0.0":
+    date: 2024-01-15
+    changes:
+      - Initial release
+      - Added custom_table component
+      - Added kanban_board component
+      - Overrode ObjectForm with enhanced version
