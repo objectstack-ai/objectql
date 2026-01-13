@@ -12,6 +12,138 @@ pnpm add -D @objectql/cli
 
 ## Commands
 
+### AI-Powered Features
+
+The `ai` command provides AI-powered application generation and assistance. **By default, it starts in interactive conversational mode** for the best experience.
+
+#### Interactive Mode (Default)
+
+Simply type `objectql ai` to start building your application through conversation.
+
+```bash
+# Start interactive conversational builder (most common use case)
+objectql ai
+
+# Specify output directory
+objectql ai ./src/my-app
+```
+
+The interactive mode:
+- Guides you step-by-step through application creation
+- Lets you describe what you want in natural language
+- Generates metadata, TypeScript implementations, and tests
+- Allows iterative refinement through dialogue
+- Provides suggestions for next steps
+
+---
+
+#### One-Shot Generation
+
+For quick, non-interactive generation from a single description.
+
+```bash
+# Generate from a description
+objectql ai generate -d "A task management system with projects and tasks"
+
+# Generate complete enterprise application
+objectql ai generate -d "CRM with customers, contacts, opportunities" -t complete -o ./src
+
+# Generation types: basic, complete, custom (default)
+objectql ai generate -d "Inventory system" -t complete
+```
+
+**Options:**
+- `-d, --description <text>` - Application description (required)
+- `-o, --output <path>` - Output directory [default: "./src"]
+- `-t, --type <type>` - Generation type: basic, complete, or custom [default: "custom"]
+
+**Generates:**
+- ObjectQL metadata (objects, forms, views, pages, menus, etc.)
+- TypeScript implementations for actions and hooks
+- Jest test files for business logic validation
+
+---
+
+#### Validation
+
+Validate metadata files using AI for compliance and best practices.
+
+```bash
+# Validate all metadata files
+objectql ai validate ./src
+
+# Validate with detailed output
+objectql ai validate ./src -v
+
+# Validate and auto-fix issues
+objectql ai validate ./src --fix
+```
+
+**Options:**
+- `<path>` - Path to metadata directory (required)
+- `--fix` - Automatically fix issues where possible
+- `-v, --verbose` - Show detailed validation output
+
+**Checks:**
+- YAML syntax validation
+- ObjectQL specification compliance
+- Business logic consistency
+- Data model best practices
+- Security and performance analysis
+- Falls back to basic validation if no API key is set
+
+---
+
+#### Chat Assistant
+
+Interactive AI assistant for ObjectQL questions and guidance.
+
+```bash
+# Start chat assistant
+objectql ai chat
+
+# Start with an initial question
+objectql ai chat -p "How do I create a lookup relationship?"
+```
+
+**Options:**
+- `-p, --prompt <text>` - Initial prompt for the AI
+
+---
+
+#### Complete Example Workflow
+
+```bash
+# Set your API key
+export OPENAI_API_KEY=sk-your-api-key-here
+
+# Option 1: Interactive (recommended) - Just type this!
+objectql ai
+
+# Option 2: Quick one-shot generation
+objectql ai generate -d "Project management with tasks and milestones" -t complete
+
+# Validate the generated files
+objectql ai validate ./src -v
+
+# Get help with questions
+objectql ai chat -p "How do I add email notifications?"
+```
+
+---
+
+### Prerequisites
+
+For AI-powered features, set your OpenAI API key:
+
+```bash
+export OPENAI_API_KEY=sk-your-api-key-here
+```
+
+Without an API key, basic validation (YAML syntax) is still available.
+
+---
+
 ### Project Initialization
 
 #### `init`
