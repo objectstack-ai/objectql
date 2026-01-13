@@ -12,6 +12,9 @@ Welcome to the ObjectQL API Reference.
 - [Rate Limiting](./README.md#rate-limiting)
 - [Error Handling](./README.md#error-handling)
 
+### File & Attachment Handling
+- **[Attachment API Specification](./attachments.md)** - File uploads, image handling, and attachment fields
+
 ### API Styles
 
 ObjectQL supports multiple API styles to fit your use case:
@@ -124,6 +127,7 @@ All APIs return consistent JSON responses:
 ## Related Documentation
 
 - [Query Language Specification](../spec/query-language.md) - Deep dive into filter syntax
+- [Attachment API Specification](./attachments.md) - File and image handling
 - [Actions Guide](../guide/logic-actions.md) - Building custom operations
 - [Hooks Guide](../guide/logic-hooks.md) - Event-driven logic
 - [Server Integration](../guide/server-integration.md) - Deploying ObjectQL

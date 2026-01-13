@@ -10,11 +10,12 @@ This document provides a comprehensive reference for all ObjectQL API interfaces
 2. [JSON-RPC Style API](#json-rpc-style-api)
 3. [REST-Style API](#rest-style-api)
 4. [Metadata API](#metadata-api)
-5. [WebSocket API](#websocket-api)
-6. [Authentication & Authorization](#authentication--authorization)
-7. [Error Handling](#error-handling)
-8. [Rate Limiting](#rate-limiting)
-9. [Examples](#examples)
+5. [File & Attachment API](#file--attachment-api)
+6. [WebSocket API](#websocket-api)
+7. [Authentication & Authorization](#authentication--authorization)
+8. [Error Handling](#error-handling)
+9. [Rate Limiting](#rate-limiting)
+10. [Examples](#examples)
 
 ---
 
@@ -697,6 +698,151 @@ GET /api/metadata/objects/orders/actions
   ]
 }
 ```
+
+---
+
+## File & Attachment API
+
+ObjectQL provides comprehensive support for file uploads and attachments. The system handles files using a metadata-driven approach where file metadata (URL, size, type) is stored in the database while actual file content is stored in a configurable storage backend.
+
+### Supported Field Types
+
+- **`file`**: General file attachments (documents, PDFs, archives)
+- **`image`**: Image files with image-specific metadata
+- **`avatar`**: User profile pictures
+
+### Upload Endpoint
+
+```
+POST /api/files/upload
+Content-Type: multipart/form-data
+Authorization: Bearer <token>
+```
+
+**Request (using cURL):**
+
+```bash
+curl -X POST https://api.example.com/api/files/upload \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -F "file=@/path/to/invoice.pdf" \
+  -F "object=expense" \
+  -F "field=receipt"
+```
+
+**Response:**
+
+```json
+{
+  "data": {
+    "id": "file_abc123",
+    "name": "invoice.pdf",
+    "url": "https://cdn.example.com/files/invoice.pdf",
+    "size": 245760,
+    "type": "application/pdf",
+    "uploaded_at": "2024-01-15T10:30:00Z",
+    "uploaded_by": "user_xyz"
+  }
+}
+```
+
+### Creating Records with Attachments
+
+**Step 1: Upload the file**
+
+```javascript
+const formData = new FormData();
+formData.append('file', file);
+formData.append('object', 'expense');
+formData.append('field', 'receipt');
+
+const uploadResponse = await fetch('/api/files/upload', {
+  method: 'POST',
+  headers: { 'Authorization': 'Bearer ' + token },
+  body: formData
+});
+
+const uploadedFile = (await uploadResponse.json()).data;
+```
+
+**Step 2: Create record with file metadata**
+
+```javascript
+const createResponse = await fetch('/api/objectql', {
+  method: 'POST',
+  headers: { 
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer ' + token
+  },
+  body: JSON.stringify({
+    op: 'create',
+    object: 'expense',
+    args: {
+      expense_number: 'EXP-2024-001',
+      amount: 125.50,
+      description: 'Office supplies',
+      receipt: uploadedFile  // File metadata from upload
+    }
+  })
+});
+```
+
+### Attachment Data Format
+
+**Single File:**
+
+```json
+{
+  "id": "file_abc123",
+  "name": "receipt.pdf",
+  "url": "https://cdn.example.com/files/receipt.pdf",
+  "size": 245760,
+  "type": "application/pdf"
+}
+```
+
+**Multiple Files (when `multiple: true`):**
+
+```json
+[
+  {
+    "id": "img_001",
+    "name": "product_front.jpg",
+    "url": "https://cdn.example.com/images/product_front.jpg",
+    "size": 156789,
+    "type": "image/jpeg"
+  },
+  {
+    "id": "img_002",
+    "name": "product_back.jpg",
+    "url": "https://cdn.example.com/images/product_back.jpg",
+    "size": 142356,
+    "type": "image/jpeg"
+  }
+]
+```
+
+### Image-Specific Metadata
+
+Images can include additional metadata like dimensions and thumbnails:
+
+```json
+{
+  "id": "img_abc123",
+  "name": "product_hero.jpg",
+  "url": "https://cdn.example.com/images/product_hero.jpg",
+  "size": 523400,
+  "type": "image/jpeg",
+  "width": 1920,
+  "height": 1080,
+  "thumbnail_url": "https://cdn.example.com/images/product_hero_thumb.jpg"
+}
+```
+
+### Complete Documentation
+
+For comprehensive documentation on file uploads, image handling, batch uploads, validation, and more examples, see:
+
+**[Attachment API Specification](./attachments.md)**
 
 ---
 
