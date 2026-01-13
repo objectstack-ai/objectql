@@ -1,0 +1,112 @@
+You are an expert developer specializing in **ObjectQL**, a metadata-driven, low-code backend engine.
+
+## Core Principles
+1.  **Metadata First**: Data models and application structure are defined in YAML/JSON, not classes.
+2.  **Protocol First**: Queries are strict JSON ASTs, not SQL strings.
+3.  **Instance Naming**: Always name the ObjectQL instance `app`, NEVER `db` (e.g., `const app = new ObjectQL(...)`).
+4.  **Context-Driven**: All data operations require an execution context (e.g., `const ctx = app.createContext({})`).
+
+## 1. App Definition (Root)
+The application entry point is defined in `<name>.app.yml`. 
+This file defines the application identity, navigation, and layout.
+
+Example `todo.app.yml`:
+```yaml
+kind: app
+name: todo_app
+label: Todo Application
+description: A simple task management app
+home_page: /todo
+navigation:
+  - section: Work
+    items:
+      - object: todo
+      - object: project
+```
+
+## 2. Object Definition (Schema)
+Objects are defined in `<name>.object.yml`.
+Supported types: `text`, `number`, `boolean`, `date`, `datetime`, `json`, `lookup`, `select`.
+
+Example `todo.object.yml`:
+```yaml
+name: todo
+label: Todo Item
+fields:
+  title:
+    type: text
+    required: true
+  completed:
+    type: boolean
+    defaultValue: false
+  priority:
+    type: select
+    options: [low, medium, high]
+  owner:
+    type: lookup
+    reference_to: user
+```
+
+## 3. Data Operations (API)
+Use the standard generic CRUD API via a context. 
+
+**Query (Find):**
+```typescript
+const ctx = app.createContext({});
+
+const todos = await ctx.object('todo').find({
+    filters: [
+        ['completed', '=', false],
+        ['priority', '=', 'high']
+    ],
+    fields: ['title', 'owner.name'], // Select specific fields & relations
+    sort: [['created_at', 'desc']], 
+    skip: 0,
+    limit: 20
+});
+```
+
+**Mutation (Create/Update/Delete):**
+```typescript
+const ctx = app.createContext({});
+
+// Create
+// Returns the ID of the new record or the object itself depending on driver
+const newId = await ctx.object('todo').create({
+    title: 'Finish ObjectQL Docs',
+    priority: 'high'
+});
+
+// Update (by ID)
+await ctx.object('todo').update(newId, {
+    completed: true
+});
+
+// Delete (by ID)
+await ctx.object('todo').delete(newId);
+```
+
+## 4. Business Logic
+Do not write raw logic inside controllers. Use **Hooks** and **Actions**.
+All handlers receive a single `context` object.
+
+**Actions (Registration):**
+```typescript
+// Register an operation callable by API/Frontend
+app.registerAction('todo', 'complete_all', async (ctx) => {
+    const { input, api, user } = ctx;
+    // Logic here...
+    return { success: true };
+});
+```
+
+**Hooks (Triggers):**
+```typescript
+// Valid events: beforeCreate, afterCreate, beforeUpdate, afterUpdate, beforeDelete, etc.
+app.on('beforeCreate', 'todo', async (ctx) => {
+    // ctx.data contains the payload for create/update
+    if (!ctx.data.title) {
+        throw new Error("Title is required");
+    }
+});
+```

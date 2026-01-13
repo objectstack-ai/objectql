@@ -1,0 +1,45 @@
+# Build outputs
+dist/
+*.tsbuildinfo
+node_modules/
+
+# Documentation builds
+docs/.vitepress/cache/
+docs/.vitepress/dist/
+
+# Database files
+*.sqlite3
+*.db
+
+# Lock files (large and not useful for AI context)
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+
+# Generated schemas (can be derived from source)
+packages/foundation/types/schemas/*.json
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Cache directories
+.cache/
+.turbo/
+.next/
+
+# Environment files
+.env
+.env.*
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
