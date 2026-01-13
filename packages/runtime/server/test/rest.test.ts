@@ -17,7 +17,19 @@ class MockDriver implements Driver {
     async init() {}
     
     async find(objectName: string, query: any) {
-        return this.data[objectName] || [];
+        let items = this.data[objectName] || [];
+        
+        // Apply skip and limit if provided
+        if (query) {
+            if (query.skip) {
+                items = items.slice(query.skip);
+            }
+            if (query.limit) {
+                items = items.slice(0, query.limit);
+            }
+        }
+        
+        return items;
     }
     
     async findOne(objectName: string, id: string | number, query?: any, options?: any) {
@@ -101,8 +113,8 @@ describe('REST API Adapter', () => {
             .set('Accept', 'application/json');
 
         expect(response.status).toBe(200);
-        expect(response.body.data).toHaveLength(2);
-        expect(response.body.data[0].name).toBe('Alice');
+        expect(response.body.items).toHaveLength(2);
+        expect(response.body.items[0].name).toBe('Alice');
     });
 
     it('should handle GET /api/data/:object/:id - Get single record', async () => {
@@ -111,7 +123,8 @@ describe('REST API Adapter', () => {
             .set('Accept', 'application/json');
 
         expect(response.status).toBe(200);
-        expect(response.body.data.name).toBe('Alice');
+        expect(response.body.name).toBe('Alice');
+        expect(response.body['@type']).toBe('user');
     });
 
     it('should handle POST /api/data/:object - Create record', async () => {
@@ -121,8 +134,9 @@ describe('REST API Adapter', () => {
             .set('Accept', 'application/json');
 
         expect(response.status).toBe(201);
-        expect(response.body.data.name).toBe('Charlie');
-        expect(response.body.data._id).toBeDefined();
+        expect(response.body.name).toBe('Charlie');
+        expect(response.body._id).toBeDefined();
+        expect(response.body['@type']).toBe('user');
     });
 
     it('should handle PUT /api/data/:object/:id - Update record', async () => {
@@ -140,7 +154,8 @@ describe('REST API Adapter', () => {
             .set('Accept', 'application/json');
 
         expect(response.status).toBe(200);
-        expect(response.body.data.deleted).toBe(true);
+        expect(response.body.deleted).toBe(true);
+        expect(response.body['@type']).toBe('user');
     });
 
     it('should return 404 for non-existent object', async () => {
@@ -160,5 +175,30 @@ describe('REST API Adapter', () => {
 
         expect(response.status).toBe(400);
         expect(response.body.error.code).toBe('INVALID_REQUEST');
+    });
+
+    it('should include pagination metadata with limit and skip', async () => {
+        const response = await request(server)
+            .get('/api/data/user?limit=1&skip=0')
+            .set('Accept', 'application/json');
+
+        expect(response.status).toBe(200);
+        expect(response.body.items).toBeDefined();
+        expect(response.body.meta).toBeDefined();
+        expect(response.body.meta.total).toBe(2);
+        expect(response.body.meta.page).toBe(1);
+        expect(response.body.meta.size).toBe(1);
+        expect(response.body.meta.pages).toBe(2);
+        expect(response.body.meta.has_next).toBe(true);
+    });
+
+    it('should calculate pagination metadata correctly for second page', async () => {
+        const response = await request(server)
+            .get('/api/data/user?limit=1&skip=1')
+            .set('Accept', 'application/json');
+
+        expect(response.status).toBe(200);
+        expect(response.body.meta.page).toBe(2);
+        expect(response.body.meta.has_next).toBe(false);
     });
 });

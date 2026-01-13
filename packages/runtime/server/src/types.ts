@@ -61,18 +61,34 @@ export interface ErrorDetails {
 }
 
 /**
+ * Pagination metadata
+ */
+export interface PaginationMeta {
+    total: number;        // Total number of records
+    page?: number;        // Current page number (1-indexed, e.g. page 1 corresponds to skip=0)
+    size?: number;        // Number of items per page
+    pages?: number;       // Total number of pages
+    has_next?: boolean;   // Whether there is a next page
+}
+
+/**
  * ObjectQL API response
  */
 export interface ObjectQLResponse {
-    data?: any;
+    // For list operations (find)
+    items?: any[];
+    
+    // Pagination metadata (for list operations)
+    meta?: PaginationMeta;
+    
+    // Error information
     error?: {
         code: ErrorCode | string;
         message: string;
-        details?: ErrorDetails;
+        details?: ErrorDetails | any; // Allow flexible details structure
     };
-    meta?: {
-        total?: number;
-        page?: number;
-        per_page?: number;
-    };
+    
+    // For single item operations, the response is the object itself with '@type' field
+    // This allows any additional fields from the actual data object
+    [key: string]: any;
 }
