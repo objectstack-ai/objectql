@@ -396,4 +396,6 @@ pnpm run build
 
 ## 📄 License
 
-MIT © [ObjectQL Contributors](https://github.com/objectql)
+PolyForm Shield License 1.0.0 © [ObjectQL Contributors](https://github.com/objectql)
+
+See [LICENSE](./LICENSE) for full text.
