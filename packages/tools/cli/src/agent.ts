@@ -51,7 +51,7 @@ export interface GenerateAppResult {
     files: Array<{
         filename: string;
         content: string;
-        type: 'object' | 'validation' | 'form' | 'view' | 'page' | 'menu' | 'action' | 'hook' | 'permission' | 'workflow' | 'report' | 'data' | 'application' | 'other';
+        type: 'object' | 'validation' | 'form' | 'view' | 'page' | 'menu' | 'action' | 'hook' | 'permission' | 'workflow' | 'report' | 'data' | 'application' | 'typescript' | 'test' | 'other';
     }>;
     /** Any errors encountered */
     errors?: string[];
@@ -147,14 +147,14 @@ const AI_RESPONSE_PATTERNS = {
     
     /**
      * Matches TypeScript file blocks with explicit headers in the format:
-     * # filename.action.ts or File: filename.hook.ts
+     * // filename.action.ts or File: filename.hook.ts or filename.test.ts
      * followed by a TypeScript code block
      * 
      * Groups:
-     * 1. filename (e.g., "approve_order.action.ts")
+     * 1. filename (e.g., "approve_order.action.ts", "user.hook.ts", "user.test.ts")
      * 2. TypeScript content
      */
-    FILE_BLOCK_TS: /(?:^|\n)(?:#|File:)\s*([a-zA-Z0-9_-]+\.(?:action|hook)\.ts)\s*\n```(?:typescript|ts)?\n([\s\S]*?)```/gi,
+    FILE_BLOCK_TS: /(?:^|\n)(?:\/\/|File:)\s*([a-zA-Z0-9_-]+\.(?:action|hook|test|spec)\.ts)\s*\n```(?:typescript|ts)?\n([\s\S]*?)```/gi,
     
     /**
      * Matches generic YAML/YML code blocks without explicit headers
@@ -813,7 +813,8 @@ Provide feedback in the specified format.`;
             // Try to extract generic TypeScript blocks
             while ((match = AI_RESPONSE_PATTERNS.CODE_BLOCK_TS.exec(response)) !== null) {
                 const content = match[1].trim();
-                const filename = `generated_${tsIndex}.action.ts`;
+                // Use generic .ts extension since we can't determine the specific type
+                const filename = `generated_${tsIndex}.ts`;
                 
                 files.push({ filename, content, type: 'typescript' });
                 tsIndex++;
