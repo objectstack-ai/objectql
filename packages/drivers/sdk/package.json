@@ -1,7 +1,7 @@
 {
   "name": "@objectql/sdk",
   "version": "1.7.3",
-  "license": "PolyForm-Shield-1.0.0",
+  "license": "MIT",
   "description": "Remote/HTTP Driver for ObjectQL",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

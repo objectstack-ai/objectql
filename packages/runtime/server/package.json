@@ -1,7 +1,7 @@
 {
   "name": "@objectql/server",
   "version": "1.7.3",
-  "license": "PolyForm-Shield-1.0.0",
+  "license": "MIT",
   "description": "HTTP Server Adapter for ObjectQL",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
