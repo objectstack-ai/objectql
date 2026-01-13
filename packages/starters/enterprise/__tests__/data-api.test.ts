@@ -56,10 +56,10 @@ describe('Enterprise Data API', () => {
                 });
 
                 expect(result).toBeDefined();
-                expect(result._id).toBeDefined();
+                expect(result.id).toBeDefined();
                 expect(result.name).toBe('John Doe');
                 
-                userId = result._id;
+                userId = result.id;
             });
 
             it('should find users', async () => {
@@ -76,7 +76,7 @@ describe('Enterprise Data API', () => {
                 const result = await ctx.object('user').findOne(userId);
 
                 expect(result).toBeDefined();
-                expect(result._id).toBe(userId);
+                expect(result.id).toBe(userId);
                 expect(result.name).toBe('John Doe');
             });
 
@@ -110,10 +110,10 @@ describe('Enterprise Data API', () => {
                 });
 
                 expect(result).toBeDefined();
-                expect(result._id).toBeDefined();
+                expect(result.id).toBeDefined();
                 expect(result.name).toBe('Acme Corp');
                 
-                orgId = result._id;
+                orgId = result.id;
             });
 
             it('should find organizations', async () => {
@@ -143,10 +143,10 @@ describe('Enterprise Data API', () => {
                 });
 
                 expect(result).toBeDefined();
-                expect(result._id).toBeDefined();
+                expect(result.id).toBeDefined();
                 expect(result.name).toBe('Global Solutions Inc');
                 
-                accountId = result._id;
+                accountId = result.id;
             });
 
             it('should find CRM accounts', async () => {
@@ -176,14 +176,21 @@ describe('Enterprise Data API', () => {
         describe('Contact and Lead CRUD', () => {
             it('should create a CRM contact', async () => {
                 const ctx = app.createContext({ isSystem: true });
+                // First create an account (required for contact)
+                const account = await ctx.object('crm_account').create({
+                    name: 'Test Company',
+                    account_number: 'TC001'
+                });
+                
                 const result = await ctx.object('crm_contact').create({
                     first_name: 'Jane',
                     last_name: 'Smith',
-                    email: 'jane.smith@example.com'
+                    email: 'jane.smith@example.com',
+                    account: account.id // Required field
                 });
 
                 expect(result).toBeDefined();
-                expect(result._id).toBeDefined();
+                expect(result.id).toBeDefined();
                 expect(result.first_name).toBe('Jane');
             });
 
@@ -192,11 +199,12 @@ describe('Enterprise Data API', () => {
                 const result = await ctx.object('crm_lead').create({
                     first_name: 'Bob',
                     last_name: 'Johnson',
-                    company: 'Tech Startup'
+                    company: 'Tech Startup',
+                    status: 'new' // Required field
                 });
 
                 expect(result).toBeDefined();
-                expect(result._id).toBeDefined();
+                expect(result.id).toBeDefined();
                 expect(result.company).toBe('Tech Startup');
             });
         });
@@ -208,17 +216,31 @@ describe('Enterprise Data API', () => {
 
             it('should create an HR employee', async () => {
                 const ctx = app.createContext({ isSystem: true });
+                // Create required department and position first
+                const dept = await ctx.object('hr_department').create({
+                    name: 'Engineering',
+                    code: 'ENG'
+                });
+                const pos = await ctx.object('hr_position').create({
+                    title: 'Software Engineer', // Position uses 'title', not 'name'
+                    code: 'SE'
+                });
+                
                 const result = await ctx.object('hr_employee').create({
                     first_name: 'Alice',
                     last_name: 'Brown',
-                    employee_number: 'EMP001'
+                    employee_number: 'EMP001',
+                    email: 'alice.brown@example.com', // Required
+                    department: dept.id, // Required
+                    position: pos.id, // Required
+                    hire_date: '2024-01-01' // Required
                 });
 
                 expect(result).toBeDefined();
-                expect(result._id).toBeDefined();
+                expect(result.id).toBeDefined();
                 expect(result.first_name).toBe('Alice');
                 
-                employeeId = result._id;
+                employeeId = result.id;
             });
 
             it('should find HR employees', async () => {
@@ -244,7 +266,7 @@ describe('Enterprise Data API', () => {
                 });
 
                 expect(result).toBeDefined();
-                expect(result._id).toBeDefined();
+                expect(result.id).toBeDefined();
                 expect(result.name).toBe('Engineering');
             });
         });
@@ -258,14 +280,15 @@ describe('Enterprise Data API', () => {
                 const ctx = app.createContext({ isSystem: true });
                 const result = await ctx.object('project_project').create({
                     name: 'Website Redesign',
-                    code: 'WEB-001'
+                    code: 'WEB-001',
+                    status: 'planning' // Required field
                 });
 
                 expect(result).toBeDefined();
-                expect(result._id).toBeDefined();
+                expect(result.id).toBeDefined();
                 expect(result.name).toBe('Website Redesign');
                 
-                projectId = result._id;
+                projectId = result.id;
             });
 
             it('should find projects', async () => {
@@ -285,13 +308,21 @@ describe('Enterprise Data API', () => {
         describe('Task CRUD', () => {
             it('should create a project task', async () => {
                 const ctx = app.createContext({ isSystem: true });
+                // Create a project first (required for task)
+                const project = await ctx.object('project_project').create({
+                    name: 'Test Project',
+                    code: 'TEST-001',
+                    status: 'planning'
+                });
+                
                 const result = await ctx.object('project_task').create({
                     name: 'Design mockups',
-                    description: 'Create initial design mockups'
+                    description: 'Create initial design mockups',
+                    project: project.id // Required field
                 });
 
                 expect(result).toBeDefined();
-                expect(result._id).toBeDefined();
+                expect(result.id).toBeDefined();
                 expect(result.name).toBe('Design mockups');
             });
         });
@@ -301,13 +332,23 @@ describe('Enterprise Data API', () => {
         describe('Invoice CRUD', () => {
             it('should create a finance invoice', async () => {
                 const ctx = app.createContext({ isSystem: true });
+                // Create an account first (required for invoice)
+                const account = await ctx.object('crm_account').create({
+                    name: 'Invoice Test Company',
+                    account_number: 'ITC001'
+                });
+                
                 const result = await ctx.object('finance_invoice').create({
                     invoice_number: 'INV-001',
-                    total_amount: 1000
+                    total_amount: 1000,
+                    account: account.id, // Required
+                    invoice_date: '2024-01-01', // Required
+                    due_date: '2024-01-31', // Required
+                    subtotal: 1000 // Required
                 });
 
                 expect(result).toBeDefined();
-                expect(result._id).toBeDefined();
+                expect(result.id).toBeDefined();
                 expect(result.invoice_number).toBe('INV-001');
             });
         });
@@ -315,13 +356,22 @@ describe('Enterprise Data API', () => {
         describe('Payment CRUD', () => {
             it('should create a finance payment', async () => {
                 const ctx = app.createContext({ isSystem: true });
+                // Create an account first (required for payment)
+                const account = await ctx.object('crm_account').create({
+                    name: 'Payment Test Company',
+                    account_number: 'PTC001'
+                });
+                
                 const result = await ctx.object('finance_payment').create({
+                    payment_number: 'PAY-001', // Required
                     amount: 500,
-                    payment_method: 'Bank Transfer'
+                    payment_method: 'bank_transfer', // Use underscore format
+                    account: account.id, // Required
+                    payment_date: '2024-01-01' // Required
                 });
 
                 expect(result).toBeDefined();
-                expect(result._id).toBeDefined();
+                expect(result.id).toBeDefined();
                 expect(result.amount).toBe(500);
             });
         });
@@ -333,13 +383,28 @@ describe('Enterprise Data API', () => {
 
             // Create records in different modules
             const account = await ctx.object('crm_account').create({
-                name: 'Multi-Module Test'
+                name: 'Multi-Module Test',
+                account_number: 'MMT001'
+            });
+
+            // Create required department and position first
+            const dept = await ctx.object('hr_department').create({
+                name: 'Test Department',
+                code: 'TD'
+            });
+            const pos = await ctx.object('hr_position').create({
+                title: 'Test Position', // Position uses 'title', not 'name'
+                code: 'TP'
             });
 
             const employee = await ctx.object('hr_employee').create({
                 first_name: 'Test',
                 last_name: 'Employee',
-                employee_number: 'TEST001'
+                employee_number: 'TEST001',
+                email: 'test.employee@example.com', // Required
+                department: dept.id, // Required
+                position: pos.id, // Required
+                hire_date: '2024-01-01' // Required
             });
 
             const project = await ctx.object('project_project').create({
@@ -347,22 +412,22 @@ describe('Enterprise Data API', () => {
                 code: 'CROSS-001'
             });
 
-            expect(account._id).toBeDefined();
-            expect(employee._id).toBeDefined();
-            expect(project._id).toBeDefined();
+            expect(account.id).toBeDefined();
+            expect(employee.id).toBeDefined();
+            expect(project.id).toBeDefined();
 
             // Cleanup
-            await ctx.object('crm_account').delete(account._id);
-            await ctx.object('hr_employee').delete(employee._id);
-            await ctx.object('project_project').delete(project._id);
+            await ctx.object('crm_account').delete(account.id);
+            await ctx.object('hr_employee').delete(employee.id);
+            await ctx.object('project_project').delete(project.id);
         });
 
         it('should count records across modules', async () => {
             const ctx = app.createContext({ isSystem: true });
 
-            const accountCount = await ctx.object('crm_account').count({});
-            const employeeCount = await ctx.object('hr_employee').count({});
-            const projectCount = await ctx.object('project_project').count({});
+            const accountCount = await ctx.object('crm_account').count([]);
+            const employeeCount = await ctx.object('hr_employee').count([]);
+            const projectCount = await ctx.object('project_project').count([]);
 
             expect(typeof accountCount).toBe('number');
             expect(typeof employeeCount).toBe('number');
