@@ -3,7 +3,7 @@ import * as glob from 'fast-glob';
 import * as path from 'path';
 import { MetadataRegistry, ObjectConfig, LoaderPlugin, LoaderHandlerContext, FieldConfig } from '@objectql/types';
 import * as yaml from 'js-yaml';
-import { toTitleCase, applyNamespace } from '@objectql/core';
+import { toTitleCase, applyNamespace, hasNamespace } from '@objectql/core';
 
 export class ObjectLoader {
     private plugins: LoaderPlugin[] = [];
@@ -216,9 +216,9 @@ export class ObjectLoader {
             // Ignore errors
         }
         
-        // Fallback: derive from package name
-        // @example/audit-log -> audit_log
-        // audit-log-plugin -> audit_log_plugin
+        // Fallback: derive from scoped package name
+        // Only works for scoped packages: @example/audit-log -> audit_log
+        // Non-scoped packages must use explicit namespace configuration
         if (packageName.startsWith('@')) {
             const parts = packageName.split('/');
             if (parts.length > 1) {
@@ -340,7 +340,7 @@ function registerObject(registry: MetadataRegistry, obj: any, file: string, pack
                 // Apply namespace to reference_to if namespace is set
                 if (namespace && f.reference_to && typeof f.reference_to === 'string') {
                     // Only apply namespace if reference doesn't already have one
-                    if (!f.reference_to.includes('__')) {
+                    if (!hasNamespace(f.reference_to)) {
                         f.reference_to = applyNamespace(f.reference_to, namespace);
                     }
                 }
