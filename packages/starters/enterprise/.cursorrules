@@ -106,7 +106,7 @@ app.registerAction('todo', 'complete_all', async (ctx) => {
 app.on('beforeCreate', 'todo', async (ctx) => {
     // ctx.data contains the payload for create/update
     if (!ctx.data.title) {
-        throw new Error("Title is required");
+        throw new ObjectQLError("Title is required", { code: 'VALIDATION_ERROR' });
     }
 });
 ```
