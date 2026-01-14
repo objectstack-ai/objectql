@@ -66,6 +66,17 @@ npm install @objectql/types
 - `Driver` - Database driver interface
 - `DriverConfig` - Driver configuration
 
+### Migration & Schema Evolution Types
+- `SchemaChangeType` - Types of schema change operations
+- `SchemaChangeInstruction` - Union of all schema change instructions
+- `FieldUpdateInstruction` - Instruction to update/modify a field
+- `FieldDeleteInstruction` - Instruction to delete/remove a field
+- `ObjectUpdateInstruction` - Instruction to update/modify an object
+- `ObjectDeleteInstruction` - Instruction to delete/remove an object
+- `MigrationConfig` - Complete migration configuration
+- `MigrationStep` - Single step in a migration
+- `MigrationStatus` - Execution status of a migration
+
 ## Usage Examples
 
 ### Object Definition with Validation
@@ -251,6 +262,128 @@ interface FieldValidation {
     pattern?: string;
     message?: string;
 }
+```
+
+### Migration & Schema Evolution
+
+Define schema changes declaratively for object and field updates/deletions:
+
+```typescript
+import { 
+    MigrationConfig, 
+    FieldUpdateInstruction, 
+    FieldDeleteInstruction,
+    ObjectUpdateInstruction,
+    ObjectDeleteInstruction 
+} from '@objectql/types';
+
+// Define a migration with multiple schema changes
+const migration: MigrationConfig = {
+    id: 'v1.2_refactor_user_fields',
+    version: '1.2.0',
+    name: 'Refactor User Fields',
+    description: 'Update user object schema and remove deprecated fields',
+    author: 'dev-team',
+    created_at: '2026-01-14T00:00:00Z',
+    steps: [
+        {
+            id: 'rename_username_field',
+            name: 'Rename username to user_name',
+            instruction: {
+                type: 'field_update',
+                object_name: 'users',
+                field_name: 'username',
+                new_field_name: 'user_name',
+                changes: {
+                    label: 'User Name',
+                    description: 'Updated field name for consistency'
+                },
+                data_migration_strategy: 'auto'
+            } as FieldUpdateInstruction,
+            reversible: true
+        },
+        {
+            id: 'update_email_field',
+            name: 'Make email field required',
+            instruction: {
+                type: 'field_update',
+                object_name: 'users',
+                field_name: 'email',
+                changes: {
+                    required: true,
+                    unique: true
+                },
+                data_migration_strategy: 'auto'
+            } as FieldUpdateInstruction,
+            reversible: true
+        },
+        {
+            id: 'delete_legacy_field',
+            name: 'Remove deprecated legacy_id field',
+            instruction: {
+                type: 'field_delete',
+                object_name: 'users',
+                field_name: 'legacy_id',
+                deletion_strategy: 'archive',
+                archive_location: 'backup/users_legacy_id'
+            } as FieldDeleteInstruction,
+            reversible: true
+        },
+        {
+            id: 'update_object_label',
+            name: 'Update Users object label',
+            instruction: {
+                type: 'object_update',
+                object_name: 'users',
+                changes: {
+                    label: 'System Users',
+                    description: 'Updated to reflect new naming convention'
+                }
+            } as ObjectUpdateInstruction,
+            reversible: true
+        }
+    ],
+    reversible: true,
+    tags: ['schema', 'refactor']
+};
+```
+
+**Field Update Example (Type Change):**
+
+```typescript
+const changeFieldType: FieldUpdateInstruction = {
+    type: 'field_update',
+    object_name: 'products',
+    field_name: 'price',
+    changes: {
+        type: 'currency',  // Changed from 'number' to 'currency'
+        defaultValue: 0
+    },
+    data_migration_strategy: 'manual',
+    transform_script: `
+        // Custom transformation for price field
+        return {
+            amount: oldValue,
+            currency: 'USD'
+        };
+    `,
+    description: 'Convert price from number to currency type',
+    reason: 'Support multi-currency pricing'
+};
+```
+
+**Object Deletion Example:**
+
+```typescript
+const deleteObject: ObjectDeleteInstruction = {
+    type: 'object_delete',
+    object_name: 'temp_imports',
+    deletion_strategy: 'archive',
+    archive_location: 'backups/temp_imports_archive',
+    cascade_strategy: 'nullify',
+    description: 'Remove temporary import table',
+    reason: 'No longer needed after migration to new import system'
+};
 ```
 
 ## See Also
