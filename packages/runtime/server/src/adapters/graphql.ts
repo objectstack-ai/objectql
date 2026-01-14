@@ -2,13 +2,12 @@ import { IObjectQL, ObjectConfig, FieldConfig } from '@objectql/types';
 import { ObjectQLServer } from '../server';
 import { ErrorCode } from '../types';
 import { IncomingMessage, ServerResponse } from 'http';
-import { graphql, GraphQLSchema, GraphQLObjectType, GraphQLString, GraphQLInt, GraphQLFloat, GraphQLBoolean, GraphQLList, GraphQLNonNull, GraphQLInputObjectType, GraphQLFieldConfig, GraphQLFieldConfigMap, GraphQLEnumType } from 'graphql';
-import { makeExecutableSchema } from '@graphql-tools/schema';
+import { graphql, GraphQLSchema, GraphQLObjectType, GraphQLString, GraphQLInt, GraphQLFloat, GraphQLBoolean, GraphQLList, GraphQLNonNull, GraphQLInputObjectType, GraphQLFieldConfigMap, GraphQLOutputType, GraphQLInputType } from 'graphql';
 
 /**
  * Normalize ObjectQL response to use 'id' instead of '_id'
  */
-function normalizeId(data: any): any {
+function normalizeId(data: unknown): unknown {
     if (!data) return data;
     
     if (Array.isArray(data)) {
@@ -16,7 +15,7 @@ function normalizeId(data: any): any {
     }
     
     if (typeof data === 'object') {
-        const normalized = { ...data };
+        const normalized = { ...data as Record<string, unknown> };
         
         // Map _id to id if present
         if ('_id' in normalized) {
@@ -36,7 +35,7 @@ function normalizeId(data: any): any {
 /**
  * Map ObjectQL field types to GraphQL types
  */
-function mapFieldTypeToGraphQL(field: FieldConfig, isInput: boolean = false): any {
+function mapFieldTypeToGraphQL(field: FieldConfig, isInput: boolean = false): GraphQLOutputType | GraphQLInputType {
     const type = field.type;
     
     switch (type) {
@@ -66,8 +65,8 @@ function mapFieldTypeToGraphQL(field: FieldConfig, isInput: boolean = false): an
             return GraphQLString;
         case 'lookup':
         case 'master_detail':
-            // For relationships, return ID in input, object in output
-            return isInput ? GraphQLString : GraphQLString; // ID reference
+            // For relationships, return ID reference
+            return GraphQLString;
         case 'file':
         case 'image':
             // File fields return metadata object (simplified as String for now)
@@ -86,13 +85,50 @@ function mapFieldTypeToGraphQL(field: FieldConfig, isInput: boolean = false): an
 }
 
 /**
+ * Sanitize field/object names to be valid GraphQL identifiers
+ * GraphQL names must match /^[_a-zA-Z][_a-zA-Z0-9]*$/
+ */
+function sanitizeGraphQLName(name: string): string {
+    // Replace invalid characters with underscores
+    let sanitized = name.replace(/[^_a-zA-Z0-9]/g, '_');
+    
+    // Ensure it starts with a letter or underscore
+    if (!/^[_a-zA-Z]/.test(sanitized)) {
+        sanitized = '_' + sanitized;
+    }
+    
+    return sanitized;
+}
+
+/**
  * Generate GraphQL schema from ObjectQL metadata
  */
 export function generateGraphQLSchema(app: IObjectQL): GraphQLSchema {
     const objects = app.metadata.list<ObjectConfig>('object');
     
+    // Validate that there are objects to generate schema from
+    if (!objects || objects.length === 0) {
+        // Create a minimal schema with a dummy query to avoid GraphQL error
+        return new GraphQLSchema({
+            query: new GraphQLObjectType({
+                name: 'Query',
+                fields: {
+                    _schema: {
+                        type: GraphQLString,
+                        description: 'Schema introspection placeholder',
+                        resolve: () => 'No objects registered in ObjectQL metadata'
+                    }
+                }
+            })
+        });
+    }
+    
     const typeMap: Record<string, GraphQLObjectType> = {};
     const inputTypeMap: Record<string, GraphQLInputObjectType> = {};
+    const deleteResultTypeMap: Record<string, GraphQLObjectType> = {};
+    
+    // Create a shared ObjectQL server instance to reuse across resolvers
+    const server = new ObjectQLServer(app);
     
     // First pass: Create all object types
     for (const config of objects) {
@@ -103,21 +139,24 @@ export function generateGraphQLSchema(app: IObjectQL): GraphQLSchema {
             continue;
         }
         
+        const sanitizedTypeName = sanitizeGraphQLName(objectName.charAt(0).toUpperCase() + objectName.slice(1));
+        
         // Create output type
         const fields: GraphQLFieldConfigMap<any, any> = {
             id: { type: new GraphQLNonNull(GraphQLString) }
         };
         
         for (const [fieldName, fieldConfig] of Object.entries(config.fields)) {
-            const gqlType = mapFieldTypeToGraphQL(fieldConfig, false);
-            fields[fieldName] = {
+            const sanitizedFieldName = sanitizeGraphQLName(fieldName);
+            const gqlType = mapFieldTypeToGraphQL(fieldConfig, false) as GraphQLOutputType;
+            fields[sanitizedFieldName] = {
                 type: fieldConfig.required ? new GraphQLNonNull(gqlType) : gqlType,
                 description: fieldConfig.label || fieldName
             };
         }
         
         typeMap[objectName] = new GraphQLObjectType({
-            name: objectName.charAt(0).toUpperCase() + objectName.slice(1),
+            name: sanitizedTypeName,
             description: config.label || objectName,
             fields
         });
@@ -126,17 +165,27 @@ export function generateGraphQLSchema(app: IObjectQL): GraphQLSchema {
         const inputFields: Record<string, any> = {};
         
         for (const [fieldName, fieldConfig] of Object.entries(config.fields)) {
-            const gqlType = mapFieldTypeToGraphQL(fieldConfig, true);
-            inputFields[fieldName] = {
+            const sanitizedFieldName = sanitizeGraphQLName(fieldName);
+            const gqlType = mapFieldTypeToGraphQL(fieldConfig, true) as GraphQLInputType;
+            inputFields[sanitizedFieldName] = {
                 type: gqlType,
                 description: fieldConfig.label || fieldName
             };
         }
         
         inputTypeMap[objectName] = new GraphQLInputObjectType({
-            name: objectName.charAt(0).toUpperCase() + objectName.slice(1) + 'Input',
+            name: sanitizedTypeName + 'Input',
             description: `Input type for ${config.label || objectName}`,
             fields: inputFields
+        });
+        
+        // Create delete result type (shared across all delete mutations for this object)
+        deleteResultTypeMap[objectName] = new GraphQLObjectType({
+            name: 'Delete' + sanitizedTypeName + 'Result',
+            fields: {
+                id: { type: new GraphQLNonNull(GraphQLString) },
+                deleted: { type: new GraphQLNonNull(GraphQLBoolean) }
+            }
         });
     }
     
@@ -148,17 +197,13 @@ export function generateGraphQLSchema(app: IObjectQL): GraphQLSchema {
         
         if (!objectName || !typeMap[objectName]) continue;
         
-        const capitalizedName = objectName.charAt(0).toUpperCase() + objectName.slice(1);
-        
         // Query single record by ID
         queryFields[objectName] = {
             type: typeMap[objectName],
             args: {
                 id: { type: new GraphQLNonNull(GraphQLString) }
             },
-            resolve: async (_, args, context) => {
-                const { app } = context;
-                const server = new ObjectQLServer(app);
+            resolve: async (_, args) => {
                 const result = await server.handle({
                     op: 'findOne',
                     object: objectName,
@@ -173,7 +218,8 @@ export function generateGraphQLSchema(app: IObjectQL): GraphQLSchema {
             }
         };
         
-        // Query list of records
+        // Query list of records (simple pluralization with 's')
+        // Note: This uses naive pluralization. For irregular plurals, consider using a pluralization library.
         queryFields[objectName + 's'] = {
             type: new GraphQLList(typeMap[objectName]),
             args: {
@@ -183,10 +229,7 @@ export function generateGraphQLSchema(app: IObjectQL): GraphQLSchema {
                 fields: { type: new GraphQLList(GraphQLString) },
                 sort: { type: GraphQLString } // JSON string
             },
-            resolve: async (_, args, context) => {
-                const { app } = context;
-                const server = new ObjectQLServer(app);
-                
+            resolve: async (_, args) => {
                 const queryArgs: any = {};
                 if (args.limit) queryArgs.limit = args.limit;
                 if (args.skip) queryArgs.skip = args.skip;
@@ -234,7 +277,7 @@ export function generateGraphQLSchema(app: IObjectQL): GraphQLSchema {
         
         if (!objectName || !typeMap[objectName] || !inputTypeMap[objectName]) continue;
         
-        const capitalizedName = objectName.charAt(0).toUpperCase() + objectName.slice(1);
+        const capitalizedName = sanitizeGraphQLName(objectName.charAt(0).toUpperCase() + objectName.slice(1));
         
         // Create mutation
         mutationFields['create' + capitalizedName] = {
@@ -242,9 +285,7 @@ export function generateGraphQLSchema(app: IObjectQL): GraphQLSchema {
             args: {
                 input: { type: new GraphQLNonNull(inputTypeMap[objectName]) }
             },
-            resolve: async (_, args, context) => {
-                const { app } = context;
-                const server = new ObjectQLServer(app);
+            resolve: async (_, args) => {
                 const result = await server.handle({
                     op: 'create',
                     object: objectName,
@@ -266,9 +307,7 @@ export function generateGraphQLSchema(app: IObjectQL): GraphQLSchema {
                 id: { type: new GraphQLNonNull(GraphQLString) },
                 input: { type: new GraphQLNonNull(inputTypeMap[objectName]) }
             },
-            resolve: async (_, args, context) => {
-                const { app } = context;
-                const server = new ObjectQLServer(app);
+            resolve: async (_, args) => {
                 const result = await server.handle({
                     op: 'update',
                     object: objectName,
@@ -286,21 +325,13 @@ export function generateGraphQLSchema(app: IObjectQL): GraphQLSchema {
             }
         };
         
-        // Delete mutation
+        // Delete mutation - use shared delete result type
         mutationFields['delete' + capitalizedName] = {
-            type: new GraphQLObjectType({
-                name: 'Delete' + capitalizedName + 'Result',
-                fields: {
-                    id: { type: new GraphQLNonNull(GraphQLString) },
-                    deleted: { type: new GraphQLNonNull(GraphQLBoolean) }
-                }
-            }),
+            type: deleteResultTypeMap[objectName],
             args: {
                 id: { type: new GraphQLNonNull(GraphQLString) }
             },
-            resolve: async (_, args, context) => {
-                const { app } = context;
-                const server = new ObjectQLServer(app);
+            resolve: async (_, args) => {
                 const result = await server.handle({
                     op: 'delete',
                     object: objectName,
@@ -358,10 +389,13 @@ function sendJSON(res: ServerResponse, statusCode: number, data: any) {
 /**
  * Creates a GraphQL HTTP request handler for ObjectQL
  * 
- * Endpoint:
+ * Endpoints:
  * - POST /api/graphql - GraphQL queries and mutations
+ * - GET /api/graphql - GraphQL queries via URL parameters
  */
 export function createGraphQLHandler(app: IObjectQL) {
+    // Generate schema once - Note: Schema is static after handler creation.
+    // If metadata changes at runtime, create a new handler or regenerate the schema.
     const schema = generateGraphQLSchema(app);
     
     return async (req: IncomingMessage & { body?: any }, res: ServerResponse) => {
@@ -403,7 +437,7 @@ export function createGraphQLHandler(app: IObjectQL) {
 
             if (method === 'GET') {
                 // Parse query string for GET requests
-                const urlObj = new URL(url, `http://${req.headers.host}`);
+                const urlObj = new URL(url, `http://${req.headers.host || 'localhost'}`);
                 query = urlObj.searchParams.get('query') || '';
                 const varsParam = urlObj.searchParams.get('variables');
                 if (varsParam) {
@@ -449,14 +483,39 @@ export function createGraphQLHandler(app: IObjectQL) {
 
         } catch (e: any) {
             console.error('[GraphQL Handler] Error:', e);
-            sendJSON(res, 500, {
+            
+            const errorResponse: {
+                errors: Array<{
+                    message: string;
+                    extensions: {
+                        code: ErrorCode;
+                        debug?: {
+                            message?: string;
+                            stack?: string;
+                        };
+                    };
+                }>;
+            } = {
                 errors: [{
                     message: 'Internal server error',
                     extensions: {
                         code: ErrorCode.INTERNAL_ERROR
                     }
                 }]
-            });
+            };
+
+            // In non-production environments, include additional error details to aid debugging
+            if (typeof process !== 'undefined' &&
+                process.env &&
+                process.env.NODE_ENV !== 'production') {
+                const firstError = errorResponse.errors[0];
+                firstError.extensions.debug = {
+                    message: e && typeof e.message === 'string' ? e.message : undefined,
+                    stack: e && typeof e.stack === 'string' ? e.stack : undefined
+                };
+            }
+
+            sendJSON(res, 500, errorResponse);
         }
     };
 }
