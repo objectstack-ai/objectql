@@ -37,7 +37,7 @@ export interface ObjectQLRequest {
     };
     
     // The actual operation
-    op: 'find' | 'findOne' | 'create' | 'update' | 'delete' | 'count' | 'action';
+    op: 'find' | 'findOne' | 'create' | 'update' | 'delete' | 'count' | 'action' | 'createMany' | 'updateMany' | 'deleteMany';
     object: string;
     
     // Arguments

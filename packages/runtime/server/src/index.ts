@@ -8,3 +8,5 @@ export * from './studio';
 export * from './adapters/node';
 // Export REST adapter
 export * from './adapters/rest';
+// Export GraphQL adapter
+export * from './adapters/graphql';

@@ -9,13 +9,14 @@ This document provides a comprehensive reference for all ObjectQL API interfaces
 1. [API Overview](#api-overview)
 2. [JSON-RPC Style API](#json-rpc-style-api)
 3. [REST-Style API](#rest-style-api)
-4. [Metadata API](#metadata-api)
-5. [File & Attachment API](#file--attachment-api)
-6. [WebSocket API](#websocket-api)
-7. [Authentication & Authorization](#authentication--authorization)
-8. [Error Handling](#error-handling)
-9. [Rate Limiting](#rate-limiting)
-10. [Examples](#examples)
+4. [GraphQL API](./graphql.md)
+5. [Metadata API](#metadata-api)
+6. [File & Attachment API](#file--attachment-api)
+7. [WebSocket API](#websocket-api)
+8. [Authentication & Authorization](#authentication--authorization)
+9. [Error Handling](#error-handling)
+10. [Rate Limiting](#rate-limiting)
+11. [Examples](#examples)
 
 ---
 
@@ -28,7 +29,7 @@ ObjectQL provides a **unified query protocol** that can be exposed through multi
 | **JSON-RPC** | Universal client, AI agents, microservices | `POST /api/objectql` |
 | **REST** | Traditional web apps, mobile apps | `GET/POST/PUT/DELETE /api/data/:object` |
 | **Metadata** | Admin interfaces, schema discovery, runtime config | `GET /api/metadata/*` |
-| **GraphQL** | Modern frontends with complex data requirements | `POST /api/graphql` *(Planned)* |
+| **GraphQL** | Modern frontends with complex data requirements | `POST /api/graphql` |
 | **WebSocket** | Real-time apps, live updates | `ws://host/api/realtime` *(Planned)* |
 
 ### Design Principles
@@ -106,7 +107,7 @@ interface ObjectQLRequest {
   };
   
   // The operation to perform
-  op: 'find' | 'findOne' | 'create' | 'update' | 'delete' | 'count' | 'action';
+  op: 'find' | 'findOne' | 'create' | 'update' | 'delete' | 'count' | 'action' | 'createMany' | 'updateMany' | 'deleteMany';
   
   // The target object/table
   object: string;
@@ -380,6 +381,148 @@ Execute a custom server-side action (RPC-style operation).
 }
 ```
 
+### Bulk Operations
+
+ObjectQL supports efficient bulk operations for creating, updating, and deleting multiple records in a single request.
+
+**Important Notes:**
+- **Validation & Hooks**: Bulk operations process each record individually to ensure validation rules and hooks (beforeCreate, afterCreate, etc.) are properly executed, maintaining data integrity
+- **Atomicity**: Operations are not atomic by default - if one record fails, others may have already been processed
+- **Performance**: While bulk operations are more efficient than separate API calls, they may be slower than driver-level bulk operations due to individual validation/hook execution
+- **Use Cases**: Use bulk operations when you need consistent validation and business logic enforcement. For high-performance batch imports where validation is already handled, consider using driver-level operations directly
+
+#### 8. `createMany` - Create Multiple Records
+
+Insert multiple records in a single operation.
+
+**Request:**
+```json
+{
+  "op": "createMany",
+  "object": "tasks",
+  "args": [
+    {
+      "name": "Task 1",
+      "priority": "high",
+      "assignee_id": "user_123"
+    },
+    {
+      "name": "Task 2",
+      "priority": "medium",
+      "assignee_id": "user_456"
+    },
+    {
+      "name": "Task 3",
+      "priority": "low",
+      "assignee_id": "user_789"
+    }
+  ]
+}
+```
+
+**Response:**
+```json
+{
+  "items": [
+    {
+      "id": "task_101",
+      "name": "Task 1",
+      "priority": "high",
+      "assignee_id": "user_123",
+      "created_at": "2024-01-15T10:30:00Z"
+    },
+    {
+      "id": "task_102",
+      "name": "Task 2",
+      "priority": "medium",
+      "assignee_id": "user_456",
+      "created_at": "2024-01-15T10:30:00Z"
+    },
+    {
+      "id": "task_103",
+      "name": "Task 3",
+      "priority": "low",
+      "assignee_id": "user_789",
+      "created_at": "2024-01-15T10:30:00Z"
+    }
+  ],
+  "count": 3,
+  "@type": "tasks"
+}
+```
+
+#### 9. `updateMany` - Update Multiple Records
+
+Update all records matching a filter.
+
+**Request:**
+```json
+{
+  "op": "updateMany",
+  "object": "tasks",
+  "args": {
+    "filters": {
+      "status": "pending",
+      "priority": "low"
+    },
+    "data": {
+      "status": "cancelled",
+      "cancelled_at": "2024-01-15T10:30:00Z"
+    }
+  }
+}
+```
+
+**Response:**
+```json
+{
+  "count": 15,
+  "@type": "tasks"
+}
+```
+
+#### 10. `deleteMany` - Delete Multiple Records
+
+Delete all records matching a filter.
+
+**Request:**
+```json
+{
+  "op": "deleteMany",
+  "object": "tasks",
+  "args": {
+    "filters": {
+      "status": "completed",
+      "completed_at": ["<", "2023-01-01"]
+    }
+  }
+}
+```
+
+**Response:**
+```json
+{
+  "count": 42,
+  "@type": "tasks"
+}
+```
+
+**Error Handling Example:**
+```json
+// If a record fails validation during bulk operation
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Validation failed",
+    "details": {
+      "fields": {
+        "priority": "Invalid priority value"
+      }
+    }
+  }
+}
+```
+
 ### Advanced Query Features
 
 #### AI Context (Optional)
@@ -449,7 +592,9 @@ For traditional REST clients, ObjectQL can expose a REST-style interface.
 |--------|------|-------------|
 | `GET` | `/api/data/:object` | List records |
 | `GET` | `/api/data/:object/:id` | Get single record |
-| `POST` | `/api/data/:object` | Create record |
+| `POST` | `/api/data/:object` | Create record (or create many if body is an array) |
+| `POST` | `/api/data/:object/bulk-update` | Update many records |
+| `POST` | `/api/data/:object/bulk-delete` | Delete many records |
 | `PUT` | `/api/data/:object/:id` | Update record |
 | `DELETE` | `/api/data/:object/:id` | Delete record |
 
@@ -546,6 +691,118 @@ DELETE /api/data/users/user_456
 {
   "id": "user_456",
   "deleted": true,
+  "@type": "users"
+}
+```
+
+### Bulk Operations (REST)
+
+#### Create Many Records
+
+Send an array in the POST body to create multiple records at once.
+
+```bash
+POST /api/data/users
+Content-Type: application/json
+
+[
+  {
+    "name": "User1",
+    "email": "user1@example.com",
+    "role": "user"
+  },
+  {
+    "name": "User2",
+    "email": "user2@example.com",
+    "role": "user"
+  },
+  {
+    "name": "User3",
+    "email": "user3@example.com",
+    "role": "admin"
+  }
+]
+```
+
+**Response:**
+```json
+{
+  "items": [
+    {
+      "id": "user_101",
+      "name": "User1",
+      "email": "user1@example.com",
+      "role": "user",
+      "created_at": "2024-01-15T10:30:00Z"
+    },
+    {
+      "id": "user_102",
+      "name": "User2",
+      "email": "user2@example.com",
+      "role": "user",
+      "created_at": "2024-01-15T10:30:00Z"
+    },
+    {
+      "id": "user_103",
+      "name": "User3",
+      "email": "user3@example.com",
+      "role": "admin",
+      "created_at": "2024-01-15T10:30:00Z"
+    }
+  ],
+  "count": 3,
+  "@type": "users"
+}
+```
+
+#### Update Many Records
+
+Update all records matching the provided filters.
+
+```bash
+POST /api/data/users/bulk-update
+Content-Type: application/json
+
+{
+  "filters": {
+    "role": "user",
+    "status": "inactive"
+  },
+  "data": {
+    "status": "archived",
+    "archived_at": "2024-01-15T10:30:00Z"
+  }
+}
+```
+
+**Response:**
+```json
+{
+  "count": 15,
+  "@type": "users"
+}
+```
+
+#### Delete Many Records
+
+Delete all records matching the provided filters.
+
+```bash
+POST /api/data/users/bulk-delete
+Content-Type: application/json
+
+{
+  "filters": {
+    "status": "archived",
+    "archived_at": ["<", "2023-01-01"]
+  }
+}
+```
+
+**Response:**
+```json
+{
+  "count": 42,
   "@type": "users"
 }
 ```
@@ -1409,7 +1666,7 @@ for (const order of orders) {
 - **[Actions Guide](../guide/logic-actions.md)** - Building custom RPC operations
 - **[Server Integration](../guide/server-integration.md)** - Deploying ObjectQL APIs
 - **[Authentication Guide](./authentication.md)** - Securing your APIs
-- **[GraphQL API](./graphql.md)** *(Planned)*
+- **[GraphQL API](./graphql.md)**
 
 ---
 

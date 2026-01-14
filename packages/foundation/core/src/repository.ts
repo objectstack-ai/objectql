@@ -290,27 +290,42 @@ export class ObjectRepository {
     async createMany(data: any[]): Promise<any> {
         const driver = this.getDriver();
         
-        if (!driver.createMany) {
-            // Fallback
-            const results = [];
-            for (const item of data) {
-                results.push(await this.create(item));
-            }
-            return results;
+        // Always use fallback to ensure validation and hooks are executed
+        // This maintains ObjectQL's metadata-driven architecture where
+        // validation rules, hooks, and permissions are enforced consistently
+        const results = [];
+        for (const item of data) {
+            results.push(await this.create(item));
         }
-        return driver.createMany(this.objectName, data, this.getOptions());
+        return results;
     }
 
     async updateMany(filters: any, data: any): Promise<any> {
-        const driver = this.getDriver();
-        if (!driver.updateMany) throw new Error("Driver does not support updateMany");
-        return driver.updateMany(this.objectName, filters, data, this.getOptions());
+        // Find all matching records and update them individually
+        // to ensure validation and hooks are executed
+        const records = await this.find({ filters });
+        let count = 0;
+        for (const record of records) {
+            if (record && record._id) {
+                await this.update(record._id, data);
+                count++;
+            }
+        }
+        return count;
     }
 
     async deleteMany(filters: any): Promise<any> {
-        const driver = this.getDriver();
-        if (!driver.deleteMany) throw new Error("Driver does not support deleteMany");
-        return driver.deleteMany(this.objectName, filters, this.getOptions());
+        // Find all matching records and delete them individually
+        // to ensure hooks are executed
+        const records = await this.find({ filters });
+        let count = 0;
+        for (const record of records) {
+            if (record && record._id) {
+                await this.delete(record._id);
+                count++;
+            }
+        }
+        return count;
     }
 
     async execute(actionName: string, id: string | number | undefined, params: any): Promise<any> {

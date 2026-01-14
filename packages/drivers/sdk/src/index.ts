@@ -53,4 +53,16 @@ export class RemoteDriver implements Driver {
     async count(objectName: string, filters: any, options?: any): Promise<number> {
         return this.request('count', objectName, filters);
     }
+
+    async createMany(objectName: string, data: any[], options?: any): Promise<any> {
+        return this.request('createMany', objectName, data);
+    }
+
+    async updateMany(objectName: string, filters: any, data: any, options?: any): Promise<any> {
+        return this.request('updateMany', objectName, { filters, data });
+    }
+
+    async deleteMany(objectName: string, filters: any, options?: any): Promise<any> {
+        return this.request('deleteMany', objectName, { filters });
+    }
 }
