@@ -269,6 +269,19 @@
         // The @objectql/sdk package automatically includes a polyfill for older browsers!
         
         // Simple DataApiClient implementation for demo
+        // This includes the same polyfill approach as the real SDK
+        
+        // Helper function to create timeout signal with fallback
+        function createTimeoutSignal(ms) {
+            if (typeof AbortSignal !== 'undefined' && AbortSignal.timeout) {
+                return AbortSignal.timeout(ms);
+            }
+            // Fallback for older browsers
+            const controller = new AbortController();
+            setTimeout(() => controller.abort(), ms);
+            return controller.signal;
+        }
+        
         class DataApiClient {
             constructor(config) {
                 this.baseUrl = config.baseUrl.replace(/\/$/, '');
@@ -301,7 +314,7 @@
                     method,
                     headers,
                     body: body ? JSON.stringify(body) : undefined,
-                    signal: AbortSignal.timeout(this.timeout)
+                    signal: createTimeoutSignal(this.timeout)
                 });
 
                 return await response.json();
@@ -345,7 +358,7 @@
                 const response = await fetch(`${this.baseUrl}${path}`, {
                     method,
                     headers,
-                    signal: AbortSignal.timeout(this.timeout)
+                    signal: createTimeoutSignal(this.timeout)
                 });
 
                 return await response.json();
