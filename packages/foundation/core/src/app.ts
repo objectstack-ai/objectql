@@ -158,6 +158,47 @@ export class ObjectQL implements IObjectQL {
         return driver;
     }
 
+    /**
+     * Introspect the database schema and automatically register objects.
+     * This allows connecting to an existing database without defining metadata.
+     * 
+     * @param datasourceName - The name of the datasource to introspect (default: 'default')
+     * @param options - Optional configuration for schema conversion
+     * @returns Array of registered ObjectConfig
+     */
+    async introspectAndRegister(
+        datasourceName: string = 'default',
+        options?: {
+            excludeTables?: string[];
+            includeTables?: string[];
+            skipSystemColumns?: boolean;
+        }
+    ): Promise<ObjectConfig[]> {
+        const driver = this.datasource(datasourceName);
+        
+        if (!driver.introspectSchema) {
+            throw new Error(`Driver for datasource '${datasourceName}' does not support schema introspection`);
+        }
+        
+        console.log(`Introspecting database schema from datasource '${datasourceName}'...`);
+        const introspectedSchema = await driver.introspectSchema();
+        
+        // Import the conversion utility
+        const { convertIntrospectedSchemaToObjects } = await import('./util');
+        
+        // Convert introspected schema to ObjectQL objects
+        const objects = convertIntrospectedSchemaToObjects(introspectedSchema, options);
+        
+        console.log(`Discovered ${objects.length} tables. Registering as objects...`);
+        
+        // Register each discovered object
+        for (const obj of objects) {
+            this.registerObject(obj);
+        }
+        
+        return objects;
+    }
+
     async init() {
         // 0. Init Plugins (This allows plugins to register custom loaders)
         for (const plugin of this.pluginsList) {
