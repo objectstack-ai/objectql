@@ -17,16 +17,12 @@ This section contains the complete metadata specifications for the ObjectQL plat
 *   [**Workflows & Processes**](./workflow.md) - Automated business processes and approval chains
 
 ### Presentation Layer
-*   [**Pages**](./page.md) - Composable UI pages with layouts, components, and interactions
-*   [**Views & Layouts**](./view.md) - Data presentation configurations
-*   [**Forms**](./form.md) - Data entry and editing interfaces
-*   [**Reports & Dashboards**](./report.md) - Analytics and BI
-*   [**Menus & Navigation**](./menu.md) - Application structure and navigation hierarchy
 *   [**Applications**](./app.md) - Application container and simple metadata
-
+*   [**Pages**](./page.md) - Composable UI pages with layouts, components, and interactions
+*   [**Menus & Navigation**](./menu.md) - Application structure and navigation hierarchy
 *   [**Views & Layouts**](./view.md) - Data presentation configurations (list, grid, kanban, calendar)
 *   [**Forms**](./form.md) - Data entry and editing interfaces
-*   [**Reports & Dashboards**](./report.md) - Analytics, visualizations, and business intelligence
+*   [**Reports & Dashboards**](./report.md) - Analytics and BI
 
 ## Security & Access Control
 
