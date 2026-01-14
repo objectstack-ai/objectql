@@ -187,7 +187,7 @@ export class DataApiClient implements IDataApiClient {
             'GET',
             `/api/data/${objectName}`,
             undefined,
-            params
+            params as Record<string, unknown>
         );
     }
 
