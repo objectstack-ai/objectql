@@ -21,6 +21,7 @@ import { ObjectRepository } from './repository';
 import { executeActionHelper, registerActionHelper, ActionEntry } from './action';
 import { registerHookHelper, triggerHookHelper, HookEntry } from './hook';
 import { registerObjectHelper, getConfigsHelper } from './object';
+import { convertIntrospectedSchemaToObjects } from './util';
 
 export class ObjectQL implements IObjectQL {
     public metadata: MetadataRegistry;
@@ -156,6 +157,44 @@ export class ObjectQL implements IObjectQL {
             throw new Error(`Datasource '${name}' not found`);
         }
         return driver;
+    }
+
+    /**
+     * Introspect the database schema and automatically register objects.
+     * This allows connecting to an existing database without defining metadata.
+     * 
+     * @param datasourceName - The name of the datasource to introspect (default: 'default')
+     * @param options - Optional configuration for schema conversion
+     * @returns Array of registered ObjectConfig
+     */
+    async introspectAndRegister(
+        datasourceName: string = 'default',
+        options?: {
+            excludeTables?: string[];
+            includeTables?: string[];
+            skipSystemColumns?: boolean;
+        }
+    ): Promise<ObjectConfig[]> {
+        const driver = this.datasource(datasourceName);
+        
+        if (!driver.introspectSchema) {
+            throw new Error(`Driver for datasource '${datasourceName}' does not support schema introspection`);
+        }
+        
+        console.log(`Introspecting datasource '${datasourceName}'...`);
+        const introspectedSchema = await driver.introspectSchema();
+        
+        // Convert introspected schema to ObjectQL objects
+        const objects = convertIntrospectedSchemaToObjects(introspectedSchema, options);
+        
+        console.log(`Discovered ${objects.length} table(s), registering as objects...`);
+        
+        // Register each discovered object
+        for (const obj of objects) {
+            this.registerObject(obj);
+        }
+        
+        return objects;
     }
 
     async init() {

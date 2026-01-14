@@ -1,4 +1,4 @@
-import { Driver } from '@objectql/types';
+import { Driver, IntrospectedSchema, IntrospectedTable, IntrospectedColumn, IntrospectedForeignKey } from '@objectql/types';
 import knex, { Knex } from 'knex';
 
 export class SqlDriver implements Driver {
@@ -490,6 +490,244 @@ export class SqlDriver implements Driver {
             }
         }
         return data;
+    }
+
+    /**
+     * Introspect the database schema to discover existing tables, columns, and relationships.
+     */
+    async introspectSchema(): Promise<IntrospectedSchema> {
+        const tables: Record<string, IntrospectedTable> = {};
+        
+        // Get list of all tables
+        let tableNames: string[] = [];
+        
+        if (this.config.client === 'pg' || this.config.client === 'postgresql') {
+            const result = await this.knex.raw(`
+                SELECT table_name 
+                FROM information_schema.tables 
+                WHERE table_schema = 'public' 
+                AND table_type = 'BASE TABLE'
+            `);
+            tableNames = result.rows.map((row: any) => row.table_name);
+        } else if (this.config.client === 'mysql' || this.config.client === 'mysql2') {
+            const result = await this.knex.raw(`
+                SELECT table_name 
+                FROM information_schema.tables 
+                WHERE table_schema = DATABASE()
+                AND table_type = 'BASE TABLE'
+            `);
+            tableNames = result[0].map((row: any) => row.TABLE_NAME);
+        } else if (this.config.client === 'sqlite3') {
+            const result = await this.knex.raw(`
+                SELECT name as table_name 
+                FROM sqlite_master 
+                WHERE type='table' 
+                AND name NOT LIKE 'sqlite_%'
+            `);
+            tableNames = result.map((row: any) => row.table_name);
+        }
+        
+        // For each table, get columns and foreign keys
+        for (const tableName of tableNames) {
+            const columns = await this.introspectColumns(tableName);
+            const foreignKeys = await this.introspectForeignKeys(tableName);
+            const primaryKeys = await this.introspectPrimaryKeys(tableName);
+            
+            tables[tableName] = {
+                name: tableName,
+                columns,
+                foreignKeys,
+                primaryKeys
+            };
+        }
+        
+        return { tables };
+    }
+    
+    /**
+     * Get column information for a specific table.
+     */
+    private async introspectColumns(tableName: string): Promise<IntrospectedColumn[]> {
+        const columnInfo = await this.knex(tableName).columnInfo();
+        const columns: IntrospectedColumn[] = [];
+        
+        for (const [colName, info] of Object.entries<any>(columnInfo)) {
+            let type = 'string';
+            let maxLength: number | undefined;
+            
+            // Map database type to a generic type string
+            if (this.config.client === 'sqlite3') {
+                type = info.type?.toLowerCase() || 'string';
+            } else if (this.config.client === 'pg' || this.config.client === 'postgresql') {
+                type = info.type || 'string';
+            } else if (this.config.client === 'mysql' || this.config.client === 'mysql2') {
+                type = info.type || 'string';
+            }
+            
+            // Extract max length if available
+            if (info.maxLength) {
+                maxLength = info.maxLength;
+            }
+            
+            columns.push({
+                name: colName,
+                type,
+                nullable: info.nullable !== false,
+                defaultValue: info.defaultValue,
+                isPrimary: false, // Will be set by introspectPrimaryKeys
+                isUnique: false,
+                maxLength
+            });
+        }
+        
+        return columns;
+    }
+    
+    /**
+     * Get foreign key information for a specific table.
+     */
+    private async introspectForeignKeys(tableName: string): Promise<IntrospectedForeignKey[]> {
+        const foreignKeys: IntrospectedForeignKey[] = [];
+        
+        try {
+            if (this.config.client === 'pg' || this.config.client === 'postgresql') {
+                const result = await this.knex.raw(`
+                    SELECT
+                        kcu.column_name,
+                        ccu.table_name AS referenced_table,
+                        ccu.column_name AS referenced_column,
+                        tc.constraint_name
+                    FROM information_schema.table_constraints AS tc
+                    JOIN information_schema.key_column_usage AS kcu
+                        ON tc.constraint_name = kcu.constraint_name
+                        AND tc.table_schema = kcu.table_schema
+                    JOIN information_schema.constraint_column_usage AS ccu
+                        ON ccu.constraint_name = tc.constraint_name
+                        AND ccu.table_schema = tc.table_schema
+                    WHERE tc.constraint_type = 'FOREIGN KEY'
+                        AND tc.table_name = ?
+                `, [tableName]);
+                
+                for (const row of result.rows) {
+                    foreignKeys.push({
+                        columnName: row.column_name,
+                        referencedTable: row.referenced_table,
+                        referencedColumn: row.referenced_column,
+                        constraintName: row.constraint_name
+                    });
+                }
+            } else if (this.config.client === 'mysql' || this.config.client === 'mysql2') {
+                const result = await this.knex.raw(`
+                    SELECT
+                        COLUMN_NAME as column_name,
+                        REFERENCED_TABLE_NAME as referenced_table,
+                        REFERENCED_COLUMN_NAME as referenced_column,
+                        CONSTRAINT_NAME as constraint_name
+                    FROM information_schema.KEY_COLUMN_USAGE
+                    WHERE TABLE_SCHEMA = DATABASE()
+                        AND TABLE_NAME = ?
+                        AND REFERENCED_TABLE_NAME IS NOT NULL
+                `, [tableName]);
+                
+                for (const row of result[0]) {
+                    foreignKeys.push({
+                        columnName: row.column_name,
+                        referencedTable: row.referenced_table,
+                        referencedColumn: row.referenced_column,
+                        constraintName: row.constraint_name
+                    });
+                }
+            } else if (this.config.client === 'sqlite3') {
+                // SQLite PRAGMA doesn't support parameter binding, so we need to ensure safe identifier.
+                // First, verify that the requested table actually exists using a parameterized query.
+                const tableExistsResult = await this.knex.raw(
+                    "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?",
+                    [tableName]
+                );
+                
+                if (!Array.isArray(tableExistsResult) || tableExistsResult.length === 0) {
+                    // If the table does not exist, there are no foreign keys to introspect.
+                    return foreignKeys;
+                }
+                
+                // Table names in ObjectQL are validated and should be safe, but we add extra protection
+                const safeTableName = tableName.replace(/[^a-zA-Z0-9_]/g, '');
+                const result = await this.knex.raw(`PRAGMA foreign_key_list(${safeTableName})`);
+                
+                for (const row of result) {
+                    foreignKeys.push({
+                        columnName: row.from,
+                        referencedTable: row.table,
+                        referencedColumn: row.to,
+                        constraintName: `fk_${tableName}_${row.from}`
+                    });
+                }
+            }
+        } catch (error) {
+            console.warn('Could not introspect foreign keys for requested table:', error);
+        }
+        
+        return foreignKeys;
+    }
+    
+    /**
+     * Get primary key information for a specific table.
+     */
+    private async introspectPrimaryKeys(tableName: string): Promise<string[]> {
+        const primaryKeys: string[] = [];
+        
+        try {
+            if (this.config.client === 'pg' || this.config.client === 'postgresql') {
+                const result = await this.knex.raw(`
+                    SELECT a.attname as column_name
+                    FROM pg_index i
+                    JOIN pg_attribute a ON a.attrelid = i.indrelid
+                        AND a.attnum = ANY(i.indkey)
+                    WHERE i.indrelid = ?::regclass
+                        AND i.indisprimary
+                `, [tableName]);
+                
+                for (const row of result.rows) {
+                    primaryKeys.push(row.column_name);
+                }
+            } else if (this.config.client === 'mysql' || this.config.client === 'mysql2') {
+                const result = await this.knex.raw(`
+                    SELECT COLUMN_NAME as column_name
+                    FROM information_schema.KEY_COLUMN_USAGE
+                    WHERE TABLE_SCHEMA = DATABASE()
+                        AND TABLE_NAME = ?
+                        AND CONSTRAINT_NAME = 'PRIMARY'
+                `, [tableName]);
+                
+                for (const row of result[0]) {
+                    primaryKeys.push(row.column_name);
+                }
+            } else if (this.config.client === 'sqlite3') {
+                // SQLite PRAGMA doesn't support parameter binding, so we need to ensure safe identifier
+                const safeTableName = tableName.replace(/[^a-zA-Z0-9_]/g, '');
+                
+                // Validate that the sanitized table name exists in the database before using it in PRAGMA
+                const tablesResult = await this.knex.raw("SELECT name FROM sqlite_master WHERE type = 'table'");
+                const tableNames = Array.isArray(tablesResult) ? tablesResult.map((row: any) => row.name) : [];
+                
+                if (!tableNames.includes(safeTableName)) {
+                    console.warn('Could not introspect primary keys: table name contains invalid characters or table does not exist.');
+                    return primaryKeys;
+                }
+                
+                const result = await this.knex.raw(`PRAGMA table_info(${safeTableName})`);
+                
+                for (const row of result) {
+                    if (row.pk === 1) {
+                        primaryKeys.push(row.name);
+                    }
+                }
+            }
+        } catch (error) {
+            console.warn('Could not introspect primary keys for a table:', error);
+        }
+        
+        return primaryKeys;
     }
 
     async disconnect() {
