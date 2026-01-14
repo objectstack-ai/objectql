@@ -29,6 +29,7 @@ jobs:
   # Build job
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -50,9 +51,11 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install
+        timeout-minutes: 5
 
       - name: Build with VitePress
         run: pnpm run docs:build
+        timeout-minutes: 5
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
@@ -66,6 +69,7 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     name: Deploy
     steps:
       - name: Deploy to GitHub Pages

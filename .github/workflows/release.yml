@@ -16,6 +16,7 @@ jobs:
   release:
     name: Release
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v3
@@ -47,10 +48,12 @@ jobs:
 
       - name: Install Dependencies
         run: pnpm install
+        timeout-minutes: 5
 
       - name: Create Release Pull Request or Publish to npm
         id: changesets
         uses: changesets/action@v1
+        timeout-minutes: 10
         with:
           # This executes the release script defined in package.json
           publish: pnpm release

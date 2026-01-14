@@ -9,6 +9,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     strategy:
       matrix:
         node-version: [18.x, 20.x]
@@ -28,9 +29,12 @@ jobs:
 
     - name: Install dependencies
       run: pnpm install --frozen-lockfile
+      timeout-minutes: 5
       
     - name: Build packages
       run: pnpm run build
+      timeout-minutes: 10
 
     - name: Run tests
       run: pnpm run test
+      timeout-minutes: 10
