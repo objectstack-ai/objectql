@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ObjectQL SDK Browser Example</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .config-panel {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            margin-bottom: 20px;
+        }
+
+        .config-panel h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: 500;
+        }
+
+        input[type="text"],
+        input[type="url"] {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-right: 10px;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background: #5568d3;
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .results-panel {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .results-panel h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        #results {
+            background: #f7f7f7;
+            padding: 20px;
+            border-radius: 5px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .loading {
+            text-align: center;
+            color: #667eea;
+            padding: 40px;
+        }
+
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #c33;
+        }
+
+        .success {
+            background: #efe;
+            color: #3c3;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #3c3;
+        }
+
+        pre {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .item-card {
+            background: white;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            border-left: 4px solid #667eea;
+        }
+
+        .item-card h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .item-card p {
+            color: #666;
+            margin: 5px 0;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            background: #f0f0f0;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚀 ObjectQL SDK Browser Example</h1>
+            <p class="subtitle">Demonstrating @objectql/sdk in a pure browser environment</p>
+        </header>
+
+        <div class="config-panel">
+            <h2>⚙️ Configuration</h2>
+            <div class="input-group">
+                <label for="baseUrl">API Base URL</label>
+                <input type="url" id="baseUrl" value="http://localhost:3000" placeholder="http://localhost:3000">
+            </div>
+            <div class="input-group">
+                <label for="token">Authentication Token (Optional)</label>
+                <input type="text" id="token" placeholder="your-auth-token">
+            </div>
+            <div class="input-group">
+                <label for="objectName">Object Name</label>
+                <input type="text" id="objectName" value="users" placeholder="users">
+            </div>
+        </div>
+
+        <div class="results-panel">
+            <h2>📊 Actions</h2>
+            <div class="tabs">
+                <button class="tab active" data-tab="list">List Records</button>
+                <button class="tab" data-tab="metadata">Get Metadata</button>
+                <button class="tab" data-tab="create">Create Record</button>
+                <button class="tab" data-tab="count">Count Records</button>
+            </div>
+
+            <div id="list" class="tab-content active">
+                <button onclick="listRecords()">📋 List All Records</button>
+                <button onclick="listActiveRecords()">✅ List Active Records</button>
+            </div>
+
+            <div id="metadata" class="tab-content">
+                <button onclick="getObjectMetadata()">🔍 Get Object Schema</button>
+                <button onclick="listAllObjects()">📚 List All Objects</button>
+            </div>
+
+            <div id="create" class="tab-content">
+                <button onclick="createSampleRecord()">➕ Create Sample Record</button>
+            </div>
+
+            <div id="count" class="tab-content">
+                <button onclick="countRecords()">🔢 Count All Records</button>
+                <button onclick="countActiveRecords()">🔢 Count Active Records</button>
+            </div>
+
+            <h2 style="margin-top: 30px;">📄 Results</h2>
+            <div id="results">
+                <p style="color: #999; text-align: center;">Click a button above to perform an action...</p>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Import ObjectQL SDK
+        // Note: In a real application, you would import from:
+        // - CDN: import { DataApiClient } from 'https://unpkg.com/@objectql/sdk/dist/index.js';
+        // - Bundler: import { DataApiClient } from '@objectql/sdk';
+        // 
+        // For this demo, we implement a simple version inline.
+        // The @objectql/sdk package automatically includes a polyfill for older browsers!
+        
+        // Simple DataApiClient implementation for demo
+        // This includes the same polyfill approach as the real SDK
+        
+        // Helper function to create timeout signal with fallback
+        function createTimeoutSignal(ms) {
+            if (typeof AbortSignal !== 'undefined' && AbortSignal.timeout) {
+                return AbortSignal.timeout(ms);
+            }
+            // Fallback for older browsers
+            const controller = new AbortController();
+            setTimeout(() => controller.abort(), ms);
+            return controller.signal;
+        }
+        
+        class DataApiClient {
+            constructor(config) {
+                this.baseUrl = config.baseUrl.replace(/\/$/, '');
+                this.token = config.token;
+                this.headers = config.headers || {};
+                this.timeout = config.timeout || 30000;
+            }
+
+            async request(method, path, body, queryParams) {
+                const url = new URL(`${this.baseUrl}${path}`);
+                
+                if (queryParams) {
+                    Object.entries(queryParams).forEach(([key, value]) => {
+                        if (value !== undefined && value !== null) {
+                            url.searchParams.append(key, typeof value === 'object' ? JSON.stringify(value) : String(value));
+                        }
+                    });
+                }
+
+                const headers = {
+                    'Content-Type': 'application/json',
+                    ...this.headers
+                };
+
+                if (this.token) {
+                    headers['Authorization'] = `Bearer ${this.token}`;
+                }
+
+                const response = await fetch(url.toString(), {
+                    method,
+                    headers,
+                    body: body ? JSON.stringify(body) : undefined,
+                    signal: createTimeoutSignal(this.timeout)
+                });
+
+                return await response.json();
+            }
+
+            async list(objectName, params) {
+                return this.request('GET', `/api/data/${objectName}`, undefined, params);
+            }
+
+            async get(objectName, id) {
+                return this.request('GET', `/api/data/${objectName}/${id}`);
+            }
+
+            async create(objectName, data) {
+                return this.request('POST', `/api/data/${objectName}`, data);
+            }
+
+            async count(objectName, filters) {
+                return this.request('GET', `/api/data/${objectName}`, undefined, { filter: filters, limit: 0 });
+            }
+        }
+
+        class MetadataApiClient {
+            constructor(config) {
+                this.baseUrl = config.baseUrl.replace(/\/$/, '');
+                this.token = config.token;
+                this.headers = config.headers || {};
+                this.timeout = config.timeout || 30000;
+            }
+
+            async request(method, path) {
+                const headers = {
+                    'Content-Type': 'application/json',
+                    ...this.headers
+                };
+
+                if (this.token) {
+                    headers['Authorization'] = `Bearer ${this.token}`;
+                }
+
+                const response = await fetch(`${this.baseUrl}${path}`, {
+                    method,
+                    headers,
+                    signal: createTimeoutSignal(this.timeout)
+                });
+
+                return await response.json();
+            }
+
+            async listObjects() {
+                return this.request('GET', '/api/metadata/objects');
+            }
+
+            async getObject(objectName) {
+                return this.request('GET', `/api/metadata/object/${objectName}`);
+            }
+        }
+
+        // Global clients
+        let dataClient;
+        let metadataClient;
+
+        function initClients() {
+            const baseUrl = document.getElementById('baseUrl').value;
+            const token = document.getElementById('token').value;
+
+            dataClient = new DataApiClient({ baseUrl, token });
+            metadataClient = new MetadataApiClient({ baseUrl, token });
+        }
+
+        function showLoading() {
+            document.getElementById('results').innerHTML = '<div class="loading">⏳ Loading...</div>';
+        }
+
+        function showError(error) {
+            document.getElementById('results').innerHTML = `
+                <div class="error">
+                    <strong>❌ Error:</strong> ${error.message || error}
+                </div>
+            `;
+        }
+
+        function showSuccess(message) {
+            document.getElementById('results').innerHTML = `
+                <div class="success">
+                    <strong>✅ Success:</strong> ${message}
+                </div>
+            `;
+        }
+
+        function showJSON(data) {
+            document.getElementById('results').innerHTML = `
+                <pre>${JSON.stringify(data, null, 2)}</pre>
+            `;
+        }
+
+        // Action handlers
+        window.listRecords = async function() {
+            try {
+                initClients();
+                showLoading();
+                const objectName = document.getElementById('objectName').value;
+                const response = await dataClient.list(objectName);
+                showJSON(response);
+            } catch (error) {
+                showError(error);
+            }
+        };
+
+        window.listActiveRecords = async function() {
+            try {
+                initClients();
+                showLoading();
+                const objectName = document.getElementById('objectName').value;
+                const response = await dataClient.list(objectName, {
+                    filter: [['status', '=', 'active']],
+                    limit: 10
+                });
+                showJSON(response);
+            } catch (error) {
+                showError(error);
+            }
+        };
+
+        window.getObjectMetadata = async function() {
+            try {
+                initClients();
+                showLoading();
+                const objectName = document.getElementById('objectName').value;
+                const response = await metadataClient.getObject(objectName);
+                showJSON(response);
+            } catch (error) {
+                showError(error);
+            }
+        };
+
+        window.listAllObjects = async function() {
+            try {
+                initClients();
+                showLoading();
+                const response = await metadataClient.listObjects();
+                showJSON(response);
+            } catch (error) {
+                showError(error);
+            }
+        };
+
+        window.createSampleRecord = async function() {
+            try {
+                initClients();
+                showLoading();
+                const objectName = document.getElementById('objectName').value;
+                const response = await dataClient.create(objectName, {
+                    name: 'Sample User ' + Date.now(),
+                    email: `user${Date.now()}@example.com`,
+                    status: 'active'
+                });
+                showJSON(response);
+            } catch (error) {
+                showError(error);
+            }
+        };
+
+        window.countRecords = async function() {
+            try {
+                initClients();
+                showLoading();
+                const objectName = document.getElementById('objectName').value;
+                const response = await dataClient.count(objectName);
+                showJSON(response);
+            } catch (error) {
+                showError(error);
+            }
+        };
+
+        window.countActiveRecords = async function() {
+            try {
+                initClients();
+                showLoading();
+                const objectName = document.getElementById('objectName').value;
+                const response = await dataClient.count(objectName, [['status', '=', 'active']]);
+                showJSON(response);
+            } catch (error) {
+                showError(error);
+            }
+        };
+
+        // Tab switching
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                const tabName = this.dataset.tab;
+                
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                
+                this.classList.add('active');
+                document.getElementById(tabName).classList.add('active');
+            });
+        });
+    </script>
+</body>
+</html>

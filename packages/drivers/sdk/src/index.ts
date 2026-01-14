@@ -1,3 +1,20 @@
+/**
+ * @objectql/sdk - Universal HTTP Client for ObjectQL
+ * 
+ * This package provides type-safe HTTP clients for ObjectQL servers.
+ * It works seamlessly in browsers, Node.js, Deno, and edge runtimes.
+ * 
+ * ## Browser Compatibility
+ * 
+ * The SDK uses modern JavaScript APIs:
+ * - fetch API (universal)
+ * - AbortSignal.timeout() (Chrome 103+, Firefox 100+, Safari 16.4+)
+ * 
+ * For older browsers, a polyfill is automatically applied if AbortSignal.timeout is not available.
+ * 
+ * @packageDocumentation
+ */
+
 import { 
     Driver,
     IDataApiClient,
@@ -25,6 +42,31 @@ import {
     ApiErrorCode,
     FilterExpression
 } from '@objectql/types';
+
+/**
+ * Polyfill for AbortSignal.timeout if not available (for older browsers)
+ * This ensures the SDK works universally across all JavaScript environments.
+ */
+if (typeof AbortSignal !== 'undefined' && !AbortSignal.timeout) {
+    (AbortSignal as any).timeout = function(ms: number): AbortSignal {
+        const controller = new AbortController();
+        setTimeout(() => controller.abort(), ms);
+        return controller.signal;
+    };
+}
+
+/**
+ * Helper function to create a timeout signal that works in all environments
+ */
+function createTimeoutSignal(ms: number): AbortSignal {
+    if (typeof AbortSignal !== 'undefined' && AbortSignal.timeout) {
+        return AbortSignal.timeout(ms);
+    }
+    // Fallback for environments without AbortSignal
+    const controller = new AbortController();
+    setTimeout(() => controller.abort(), ms);
+    return controller.signal;
+}
 
 /**
  * Legacy Driver implementation that uses JSON-RPC style API
@@ -166,7 +208,7 @@ export class DataApiClient implements IDataApiClient {
             method,
             headers,
             body: body ? JSON.stringify(body) : undefined,
-            signal: AbortSignal.timeout(this.timeout)
+            signal: createTimeoutSignal(this.timeout)
         });
 
         const json = await response.json();
@@ -306,7 +348,7 @@ export class MetadataApiClient implements IMetadataApiClient {
             method,
             headers,
             body: body ? JSON.stringify(body) : undefined,
-            signal: AbortSignal.timeout(this.timeout)
+            signal: createTimeoutSignal(this.timeout)
         });
 
         const json = await response.json();
