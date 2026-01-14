@@ -66,6 +66,8 @@ class MockDriver implements Driver {
         return newItem;
     }
     
+    // Note: update() returns the updated object to match the behavior of the SQL driver,
+    // which returns { id, ...data }. This is different from the affected row count pattern.
     async update(objectName: string, id: string, data: any) {
         const items = this.data[objectName] || [];
         const index = items.findIndex(item => item._id === id);
