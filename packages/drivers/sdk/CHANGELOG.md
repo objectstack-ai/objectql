@@ -1,9 +1,10 @@
 # @objectql/sdk
 
-## 1.8.2 (Unreleased)
+## 1.8.2
 
 ### Patch Changes
 
+- Patch release v1.8.2 - Small version update with latest improvements
 - **Enhanced Browser Compatibility:**
   - Added comprehensive README with browser usage examples
   - Added `browser` field to package.json for better bundler support
@@ -12,7 +13,6 @@
   - Expanded keywords for better discoverability (frontend, react, vue, angular, esm)
   - **Built-in polyfill for `AbortSignal.timeout()`** - SDK now works in older browsers automatically
   - Improved timeout handling with fallback mechanism for universal compatibility
-  
 - **Documentation Improvements:**
   - Added detailed browser compatibility notes (now works in Chrome 90+, Firefox 90+, Safari 15+)
   - Removed need for manual polyfills - SDK includes automatic polyfill
@@ -21,12 +21,13 @@
   - Added Node.js example demonstrating cross-runtime compatibility
   - Added package-level documentation comments
   - Updated examples to use CDN imports for browser usage
-
 - **Examples:**
   - Added `examples/browser/` with standalone HTML example
   - Added `examples/browser/example-node.ts` for Node.js usage
   - Demonstrates browser usage without build tools
   - Shows SDK works identically across all JavaScript runtimes
+- Updated dependencies
+  - @objectql/types@1.8.2
 
 ## 1.8.1
 
