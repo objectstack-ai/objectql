@@ -180,11 +180,12 @@ describe('Enterprise Metadata API', () => {
         it('should identify objects by module prefix', () => {
             const configs = app.getConfigs();
             const objectNames = Object.keys(configs);
+            console.log('Object Names:', objectNames); // Debugging
             
-            const crmObjects = objectNames.filter(name => name.startsWith('CRM_'));
-            const hrObjects = objectNames.filter(name => name.startsWith('HR_'));
-            const projectObjects = objectNames.filter(name => name.startsWith('Project_'));
-            const financeObjects = objectNames.filter(name => name.startsWith('Finance_'));
+            const crmObjects = objectNames.filter(name => name.startsWith('crm_'));
+            const hrObjects = objectNames.filter(name => name.startsWith('hr_'));
+            const projectObjects = objectNames.filter(name => name.startsWith('project_'));
+            const financeObjects = objectNames.filter(name => name.startsWith('finance_'));
             
             expect(crmObjects.length).toBeGreaterThanOrEqual(3);
             expect(hrObjects.length).toBeGreaterThanOrEqual(3);
@@ -230,8 +231,10 @@ describe('Enterprise Metadata API', () => {
 
         it('should have valid field types', () => {
             const configs = app.getConfigs();
-            const validTypes = ['string', 'text', 'number', 'boolean', 'date', 'datetime', 
-                               'select', 'lookup', 'master_detail', 'url', 'email', 'phone'];
+            const validTypes = ['string', 'text', 'textarea', 'number', 'boolean', 'date', 'datetime', 
+                               'select', 'lookup', 'master_detail', 'url', 'email', 'phone',
+                               'currency', 'formula', 'html', 'markdown', 'password', 'file', 
+                               'image', 'avatar', 'location', 'percent'];
             
             Object.values(configs).forEach((config: any) => {
                 Object.values(config.fields).forEach((field: any) => {

@@ -185,10 +185,10 @@ describe('Enterprise Metadata Loading', () => {
             const objectNames = Object.keys(configs);
             
             // Should have objects from different modules
-            const hasCRM = objectNames.some(name => name.startsWith('CRM_'));
-            const hasHR = objectNames.some(name => name.startsWith('HR_'));
-            const hasProject = objectNames.some(name => name.startsWith('Project_'));
-            const hasFinance = objectNames.some(name => name.startsWith('Finance_'));
+            const hasCRM = objectNames.some(name => name.startsWith('crm_'));
+            const hasHR = objectNames.some(name => name.startsWith('hr_'));
+            const hasProject = objectNames.some(name => name.startsWith('project_'));
+            const hasFinance = objectNames.some(name => name.startsWith('finance_'));
             
             expect(hasCRM).toBe(true);
             expect(hasHR).toBe(true);

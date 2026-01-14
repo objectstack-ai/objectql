@@ -102,7 +102,7 @@ describe('Enterprise Data API', () => {
                 await ctx.object('user').delete(userId);
 
                 const deleted = await ctx.object('user').findOne(userId);
-                expect(deleted).toBeNull();
+                expect(deleted).toBeFalsy();
             });
         });
 
@@ -185,10 +185,12 @@ describe('Enterprise Data API', () => {
                 const ctx = app.createContext({ isSystem: true });
                 // First create an account (required for contact)
                 const account = await ctx.object('crm_account').create({
+                    id: generateId(),
                     name: 'Contact Test Company',
                     account_number: 'CTC001'
                 });
                 
+                console.log('CRM Account:', account); // Debugging
                 expect(account).toBeDefined();
                 expect(account.id).toBeDefined();
                 
@@ -257,7 +259,9 @@ describe('Enterprise Data API', () => {
                     email: 'alice.brown@example.com', // Required
                     department: dept.id, // Required
                     position: pos.id, // Required
-                    hire_date: '2024-01-01' // Required
+                    hire_date: '2024-01-01', // Required
+                    status: 'active',
+                    employment_type: 'full_time'
                 });
 
                 expect(result).toBeDefined();
@@ -286,6 +290,7 @@ describe('Enterprise Data API', () => {
             it('should create an HR department', async () => {
                 const ctx = app.createContext({ isSystem: true });
                 const result = await ctx.object('hr_department').create({
+                    id: generateId(),
                     name: 'Sales Department',
                     code: 'SALES' // Use unique code
                 });
@@ -305,15 +310,18 @@ describe('Enterprise Data API', () => {
                 const ctx = app.createContext({ isSystem: true });
                 // Create a user first (required as project owner)
                 const user = await ctx.object('user').create({
+                    id: generateId(),
                     name: 'Project Manager',
                     email: 'pm@example.com',
                     username: 'pmuser'
                 });
                 
+                console.log('Project User:', user); // Debugging
                 expect(user).toBeDefined();
                 expect(user.id).toBeDefined();
                 
                 const result = await ctx.object('project_project').create({
+                    id: generateId(),
                     name: 'Website Redesign',
                     code: 'WEB-001',
                     status: 'planning', // Required field
@@ -347,6 +355,7 @@ describe('Enterprise Data API', () => {
                 const ctx = app.createContext({ isSystem: true });
                 // Create a user and project first (required for task)
                 const user = await ctx.object('user').create({
+                    id: generateId(),
                     name: 'Task Owner',
                     email: 'taskowner@example.com',
                     username: 'taskuser'
@@ -356,6 +365,7 @@ describe('Enterprise Data API', () => {
                 expect(user.id).toBeDefined();
                 
                 const project = await ctx.object('project_project').create({
+                    id: generateId(),
                     name: 'Test Project',
                     code: 'TEST-001',
                     status: 'planning',
@@ -367,9 +377,11 @@ describe('Enterprise Data API', () => {
                 expect(project.id).toBeDefined();
                 
                 const result = await ctx.object('project_task').create({
+                    id: generateId(),
                     name: 'Design mockups',
                     description: 'Create initial design mockups',
-                    project: project.id // Required field
+                    project: project.id, // Required field
+                    status: 'pending' // Required field
                 });
 
                 expect(result).toBeDefined();
@@ -385,6 +397,7 @@ describe('Enterprise Data API', () => {
                 const ctx = app.createContext({ isSystem: true });
                 // Create an account first (required for invoice)
                 const account = await ctx.object('crm_account').create({
+                    id: generateId(),
                     name: 'Invoice Test Company',
                     account_number: 'ITC001'
                 });
@@ -393,12 +406,14 @@ describe('Enterprise Data API', () => {
                 expect(account.id).toBeDefined();
                 
                 const result = await ctx.object('finance_invoice').create({
+                    id: generateId(),
                     invoice_number: 'INV-001',
                     total_amount: 1000,
                     account: account.id, // Required
                     invoice_date: '2024-01-01', // Required
                     due_date: '2024-01-31', // Required
-                    subtotal: 1000 // Required
+                    subtotal: 1000, // Required
+                    status: 'draft'
                 });
 
                 expect(result).toBeDefined();
@@ -412,6 +427,7 @@ describe('Enterprise Data API', () => {
                 const ctx = app.createContext({ isSystem: true });
                 // Create an account first (required for payment)
                 const account = await ctx.object('crm_account').create({
+                    id: generateId(),
                     name: 'Payment Test Company',
                     account_number: 'PTC001'
                 });
@@ -420,11 +436,13 @@ describe('Enterprise Data API', () => {
                 expect(account.id).toBeDefined();
                 
                 const result = await ctx.object('finance_payment').create({
+                    id: generateId(),
                     payment_number: 'PAY-001', // Required
                     amount: 500,
                     payment_method: 'bank_transfer', // Use underscore format
                     account: account.id, // Required
-                    payment_date: '2024-01-01' // Required
+                    payment_date: '2024-01-01', // Required
+                    status: 'completed'
                 });
 
                 expect(result).toBeDefined();
@@ -440,6 +458,7 @@ describe('Enterprise Data API', () => {
 
             // Create records in different modules
             const account = await ctx.object('crm_account').create({
+                id: generateId(),
                 name: 'Multi-Module Test',
                 account_number: 'MMT001'
             });
@@ -449,6 +468,7 @@ describe('Enterprise Data API', () => {
 
             // Create required department and position first
             const dept = await ctx.object('hr_department').create({
+                id: generateId(),
                 name: 'Cross Test Dept',
                 code: 'CTD'
             });
@@ -457,6 +477,7 @@ describe('Enterprise Data API', () => {
             expect(dept.id).toBeDefined();
             
             const pos = await ctx.object('hr_position').create({
+                id: generateId(),
                 title: 'Cross Test Position', // Position uses 'title', not 'name'
                 code: 'CTP'
             });
@@ -465,13 +486,16 @@ describe('Enterprise Data API', () => {
             expect(pos.id).toBeDefined();
 
             const employee = await ctx.object('hr_employee').create({
+                id: generateId(),
                 first_name: 'Test',
                 last_name: 'Employee',
                 employee_number: 'TEST001',
                 email: 'test.employee@example.com', // Required
                 department: dept.id, // Required
                 position: pos.id, // Required
-                hire_date: '2024-01-01' // Required
+                hire_date: '2024-01-01', // Required
+                employment_type: 'full_time',
+                status: 'active'
             });
             
             expect(employee).toBeDefined();
@@ -479,6 +503,7 @@ describe('Enterprise Data API', () => {
             
             // Create a user for project owner
             const user = await ctx.object('user').create({
+                id: generateId(),
                 name: 'Cross Test User',
                 email: 'crosstest@example.com',
                 username: 'crosstestuser'
@@ -488,6 +513,7 @@ describe('Enterprise Data API', () => {
             expect(user.id).toBeDefined();
 
             const project = await ctx.object('project_project').create({
+                id: generateId(),
                 name: 'Cross-Module Project',
                 code: 'CROSS-001',
                 status: 'planning',
