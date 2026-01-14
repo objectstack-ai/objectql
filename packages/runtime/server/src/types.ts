@@ -92,3 +92,82 @@ export interface ObjectQLResponse {
     // This allows any additional fields from the actual data object
     [key: string]: any;
 }
+
+/**
+ * Attachment/File metadata structure
+ */
+export interface AttachmentData {
+    /** Unique identifier for this file */
+    id: string;
+    /** File name (e.g., "invoice.pdf") */
+    name: string;
+    /** Publicly accessible URL to the file */
+    url: string;
+    /** File size in bytes */
+    size: number;
+    /** MIME type (e.g., "application/pdf", "image/jpeg") */
+    type: string;
+    /** Original filename as uploaded by user */
+    original_name?: string;
+    /** Upload timestamp (ISO 8601) */
+    uploaded_at?: string;
+    /** User ID who uploaded the file */
+    uploaded_by?: string;
+}
+
+/**
+ * Image-specific attachment data with metadata
+ */
+export interface ImageAttachmentData extends AttachmentData {
+    /** Image width in pixels */
+    width?: number;
+    /** Image height in pixels */
+    height?: number;
+    /** Thumbnail URL (if generated) */
+    thumbnail_url?: string;
+    /** Alternative sizes/versions */
+    variants?: {
+        small?: string;
+        medium?: string;
+        large?: string;
+    };
+}
+
+/**
+ * File storage provider interface
+ */
+export interface IFileStorage {
+    /**
+     * Save a file and return its metadata
+     */
+    save(file: Buffer, filename: string, mimeType: string, options?: FileStorageOptions): Promise<AttachmentData>;
+    
+    /**
+     * Retrieve a file by its ID or path
+     */
+    get(fileId: string): Promise<Buffer | null>;
+    
+    /**
+     * Delete a file
+     */
+    delete(fileId: string): Promise<boolean>;
+    
+    /**
+     * Generate a public URL for a file
+     */
+    getPublicUrl(fileId: string): string;
+}
+
+/**
+ * Options for file storage operations
+ */
+export interface FileStorageOptions {
+    /** Logical folder/path for organization */
+    folder?: string;
+    /** Object name (for context/validation) */
+    object?: string;
+    /** Field name (for validation against field config) */
+    field?: string;
+    /** User ID who uploaded the file */
+    userId?: string;
+}

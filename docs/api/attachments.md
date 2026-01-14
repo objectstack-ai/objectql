@@ -4,6 +4,11 @@
 
 This document specifies how to handle file uploads, image uploads, and attachment field types in ObjectQL APIs.
 
+> **💡 Quick Guides:**
+> - **How to upload multiple files to one field?** → [Multiple File Upload Guide (中文)](../examples/multiple-file-upload-guide-cn.md) ⭐
+> - **How to associate attachments with records?** → [Attachment Association Guide (中文)](../examples/attachment-association-guide-cn.md)
+> - **How to integrate S3 storage?** → [S3 Integration Guide (中文)](../examples/s3-integration-guide-cn.md)
+
 ## Table of Contents
 
 1. [Overview](#overview)
@@ -1070,6 +1075,164 @@ export interface BatchUploadResponse {
 
 ---
 
+## Server Implementation
+
+### Setting up File Storage
+
+ObjectQL provides a flexible file storage abstraction that supports multiple backends.
+
+#### Using Local File Storage
+
+```typescript
+import { createNodeHandler, LocalFileStorage } from '@objectql/server';
+import { ObjectQL } from '@objectql/core';
+import * as http from 'http';
+
+const app = new ObjectQL({ /* ... */ });
+
+// Configure local file storage
+const fileStorage = new LocalFileStorage({
+    baseDir: './uploads',  // or process.env.OBJECTQL_UPLOAD_DIR
+    baseUrl: 'http://localhost:3000/api/files'  // or process.env.OBJECTQL_BASE_URL
+});
+
+// Create HTTP handler with file storage
+const handler = createNodeHandler(app, { fileStorage });
+
+const server = http.createServer(handler);
+server.listen(3000);
+```
+
+#### Using Memory Storage (For Testing)
+
+```typescript
+import { MemoryFileStorage } from '@objectql/server';
+
+const fileStorage = new MemoryFileStorage({
+    baseUrl: 'http://localhost:3000/api/files'
+});
+
+const handler = createNodeHandler(app, { fileStorage });
+```
+
+#### Custom Storage Implementation
+
+You can implement custom storage backends by implementing the `IFileStorage` interface:
+
+```typescript
+import { IFileStorage, AttachmentData, FileStorageOptions } from '@objectql/server';
+
+class S3FileStorage implements IFileStorage {
+    async save(
+        file: Buffer,
+        filename: string,
+        mimeType: string,
+        options?: FileStorageOptions
+    ): Promise<AttachmentData> {
+        // Upload to S3
+        const key = `${options?.folder || 'uploads'}/${Date.now()}-${filename}`;
+        await s3.putObject({
+            Bucket: 'my-bucket',
+            Key: key,
+            Body: file,
+            ContentType: mimeType
+        }).promise();
+        
+        return {
+            id: key,
+            name: filename,
+            url: `https://my-bucket.s3.amazonaws.com/${key}`,
+            size: file.length,
+            type: mimeType,
+            uploaded_at: new Date().toISOString(),
+            uploaded_by: options?.userId
+        };
+    }
+    
+    async get(fileId: string): Promise<Buffer | null> {
+        // Download from S3
+        const result = await s3.getObject({
+            Bucket: 'my-bucket',
+            Key: fileId
+        }).promise();
+        
+        return result.Body as Buffer;
+    }
+    
+    async delete(fileId: string): Promise<boolean> {
+        // Delete from S3
+        await s3.deleteObject({
+            Bucket: 'my-bucket',
+            Key: fileId
+        }).promise();
+        
+        return true;
+    }
+    
+    getPublicUrl(fileId: string): string {
+        return `https://my-bucket.s3.amazonaws.com/${fileId}`;
+    }
+}
+
+// Use custom storage
+const fileStorage = new S3FileStorage();
+const handler = createNodeHandler(app, { fileStorage });
+```
+
+**For detailed S3 integration guide with complete implementation code, see:**
+- [S3 Integration Guide (中文)](../examples/s3-integration-guide-cn.md) - Comprehensive Chinese guide
+- [S3 Storage Implementation](../examples/s3-storage-implementation.ts) - Production-ready TypeScript code
+
+### API Endpoints
+
+The file upload/download functionality is automatically available when using `createNodeHandler`:
+
+- **POST /api/files/upload** - Single file upload
+- **POST /api/files/upload/batch** - Batch file upload
+- **GET /api/files/:fileId** - Download file
+
+### File Validation
+
+File validation is automatically enforced based on field configuration:
+
+```yaml
+# expense.object.yml
+fields:
+  receipt:
+    type: file
+    label: Receipt
+    accept: ['.pdf', '.jpg', '.png']  # Only these extensions
+    max_size: 5242880  # 5MB max
+    min_size: 1024     # 1KB min
+```
+
+Validation errors return standardized responses:
+
+```json
+{
+  "error": {
+    "code": "FILE_TOO_LARGE",
+    "message": "File size (6000000 bytes) exceeds maximum allowed size (5242880 bytes)",
+    "details": {
+      "file": "receipt.pdf",
+      "size": 6000000,
+      "max_size": 5242880
+    }
+  }
+}
+```
+
+### Environment Variables
+
+Configure file storage behavior using environment variables:
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `OBJECTQL_UPLOAD_DIR` | Directory for local file storage | `./uploads` |
+| `OBJECTQL_BASE_URL` | Base URL for file access | `http://localhost:3000/api/files` |
+
+---
+
 ## Related Documentation
 
 - [Object Definition Specification](../spec/object.md) - Field type definitions
@@ -1079,5 +1242,5 @@ export interface BatchUploadResponse {
 
 ---
 
-**Last Updated**: January 2024  
+**Last Updated**: January 2026  
 **API Version**: 1.0.0
