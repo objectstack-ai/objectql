@@ -9,13 +9,14 @@ This document provides a comprehensive reference for all ObjectQL API interfaces
 1. [API Overview](#api-overview)
 2. [JSON-RPC Style API](#json-rpc-style-api)
 3. [REST-Style API](#rest-style-api)
-4. [Metadata API](#metadata-api)
-5. [File & Attachment API](#file--attachment-api)
-6. [WebSocket API](#websocket-api)
-7. [Authentication & Authorization](#authentication--authorization)
-8. [Error Handling](#error-handling)
-9. [Rate Limiting](#rate-limiting)
-10. [Examples](#examples)
+4. [GraphQL API](./graphql.md)
+5. [Metadata API](#metadata-api)
+6. [File & Attachment API](#file--attachment-api)
+7. [WebSocket API](#websocket-api)
+8. [Authentication & Authorization](#authentication--authorization)
+9. [Error Handling](#error-handling)
+10. [Rate Limiting](#rate-limiting)
+11. [Examples](#examples)
 
 ---
 
@@ -28,7 +29,7 @@ ObjectQL provides a **unified query protocol** that can be exposed through multi
 | **JSON-RPC** | Universal client, AI agents, microservices | `POST /api/objectql` |
 | **REST** | Traditional web apps, mobile apps | `GET/POST/PUT/DELETE /api/data/:object` |
 | **Metadata** | Admin interfaces, schema discovery, runtime config | `GET /api/metadata/*` |
-| **GraphQL** | Modern frontends with complex data requirements | `POST /api/graphql` *(Planned)* |
+| **GraphQL** | Modern frontends with complex data requirements | `POST /api/graphql` |
 | **WebSocket** | Real-time apps, live updates | `ws://host/api/realtime` *(Planned)* |
 
 ### Design Principles
@@ -1665,7 +1666,7 @@ for (const order of orders) {
 - **[Actions Guide](../guide/logic-actions.md)** - Building custom RPC operations
 - **[Server Integration](../guide/server-integration.md)** - Deploying ObjectQL APIs
 - **[Authentication Guide](./authentication.md)** - Securing your APIs
-- **[GraphQL API](./graphql.md)** *(Planned)*
+- **[GraphQL API](./graphql.md)**
 
 ---
 
