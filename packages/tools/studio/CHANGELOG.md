@@ -1,5 +1,13 @@
 # @objectql/studio
 
+## 1.8.3
+
+### Patch Changes
+
+- Release patch version 1.8.3
+
+  Small version update with latest improvements and bug fixes.
+
 ## 1.8.2
 
 ### Patch Changes

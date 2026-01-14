@@ -1,6 +1,6 @@
 {
   "name": "@objectql/starter-enterprise",
-  "version": "1.8.2",
+  "version": "1.8.3",
   "description": "Enterprise-scale starter template for ObjectQL - Advanced metadata organization with modular architecture",
   "keywords": [
     "objectql",
