@@ -8,6 +8,7 @@ import { newMetadata } from './commands/new';
 import { i18nExtract, i18nInit, i18nValidate } from './commands/i18n';
 import { migrate, migrateCreate, migrateStatus } from './commands/migrate';
 import { aiGenerate, aiValidate, aiChat, aiConversational } from './commands/ai';
+import { syncDatabase } from './commands/sync';
 
 const program = new Command();
 
@@ -147,6 +148,23 @@ migrateCmd
     .action(async (options) => {
         try {
             await migrateStatus(options);
+        } catch (error) {
+            console.error(error);
+            process.exit(1);
+        }
+    });
+
+// Sync command - Introspect database and generate .object.yml files
+program
+    .command('sync')
+    .description('Sync database schema to ObjectQL object definitions')
+    .option('-c, --config <path>', 'Path to objectql.config.ts/js')
+    .option('-o, --output <path>', 'Output directory for .object.yml files', './src/objects')
+    .option('-t, --tables <tables...>', 'Specific tables to sync (default: all)')
+    .option('-f, --force', 'Overwrite existing files')
+    .action(async (options) => {
+        try {
+            await syncDatabase(options);
         } catch (error) {
             console.error(error);
             process.exit(1);

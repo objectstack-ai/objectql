@@ -22,7 +22,8 @@
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
-    "studio": "node dist/index.js studio"
+    "studio": "node dist/index.js studio",
+    "test": "jest"
   },
   "dependencies": {
     "@objectql/types": "workspace:*",
