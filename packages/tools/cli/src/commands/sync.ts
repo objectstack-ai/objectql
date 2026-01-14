@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import chalk from 'chalk';
 import * as yaml from 'js-yaml';
-import { IntrospectedSchema, IntrospectedTable, IntrospectedColumn, ObjectConfig, IObjectQL } from '@objectql/types';
+import { IntrospectedSchema, IntrospectedTable, IntrospectedColumn, ObjectConfig, IObjectQL, FieldConfig } from '@objectql/types';
 
 interface SyncOptions {
     config?: string;
@@ -148,7 +148,7 @@ function generateObjectDefinition(table: IntrospectedTable, schema: Introspected
             continue;
         }
 
-        const field: any = {};
+        const field: Partial<FieldConfig> = {};
         
         // Check if this is a foreign key
         const fk = table.foreignKeys.find(fk => fk.columnName === column.name);
@@ -167,7 +167,7 @@ function generateObjectDefinition(table: IntrospectedTable, schema: Introspected
         } else {
             // Regular field - map SQL type to ObjectQL type
             const fieldType = mapSqlTypeToObjectQL(column.type, column);
-            field.type = fieldType;
+            field.type = fieldType as any; // Type assertion needed as mapSqlTypeToObjectQL returns string
             
             // Add label
             field.label = formatLabel(column.name);
@@ -181,9 +181,9 @@ function generateObjectDefinition(table: IntrospectedTable, schema: Introspected
                 field.unique = true;
             }
             
-            // Add maxLength for text-based fields
+            // Add max_length for text-based fields
             if (column.maxLength && (fieldType === 'text' || fieldType === 'textarea')) {
-                field.maxLength = column.maxLength;
+                field.max_length = column.maxLength;
             }
             
             if (column.defaultValue !== undefined && column.defaultValue !== null) {
@@ -196,7 +196,7 @@ function generateObjectDefinition(table: IntrospectedTable, schema: Introspected
             }
         }
 
-        obj.fields[column.name] = field;
+        obj.fields[column.name] = field as FieldConfig;
     }
 
     return obj;
