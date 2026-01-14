@@ -5,7 +5,7 @@
  * These types enable frontend applications to make type-safe API calls.
  */
 
-import { UnifiedQuery } from './query';
+import { UnifiedQuery, FilterExpression } from './query';
 import { ObjectConfig } from './object';
 import { FieldConfig } from './field';
 import { ActionConfig } from './action';
@@ -51,6 +51,21 @@ export interface ApiError {
     details?: ApiErrorDetails;
 }
 
+/**
+ * ObjectQL Error class for throwing structured errors
+ */
+export class ObjectQLError extends Error {
+    public code: ApiErrorCode | string;
+    public details?: ApiErrorDetails;
+
+    constructor(error: { code: ApiErrorCode | string; message: string; details?: ApiErrorDetails }) {
+        super(error.message);
+        this.name = 'ObjectQLError';
+        this.code = error.code;
+        this.details = error.details;
+    }
+}
+
 // ============================================================================
 // Pagination Types
 // ============================================================================
@@ -78,17 +93,17 @@ export interface PaginationMeta {
 /**
  * Base response structure for Data API operations
  */
-export interface DataApiResponse<T = any> {
+export interface DataApiResponse<T = unknown> {
     /** Error information if the operation failed */
     error?: ApiError;
     /** Additional response fields for successful operations */
-    [key: string]: any;
+    [key: string]: unknown;
 }
 
 /**
  * Response for list operations (find)
  */
-export interface DataApiListResponse<T = any> extends DataApiResponse<T> {
+export interface DataApiListResponse<T = unknown> extends DataApiResponse<T> {
     /** Array of retrieved items */
     items?: T[];
     /** Pagination metadata */
@@ -98,7 +113,7 @@ export interface DataApiListResponse<T = any> extends DataApiResponse<T> {
 /**
  * Response for single item operations (findOne, create, update)
  */
-export interface DataApiItemResponse<T = any> extends DataApiResponse<T> {
+export interface DataApiItemResponse<T = unknown> extends DataApiResponse<T> {
     /** The item ID */
     _id?: string | number;
     /** Object type identifier */
@@ -114,7 +129,7 @@ export interface DataApiItemResponse<T = any> extends DataApiResponse<T> {
  */
 export interface DataApiListParams {
     /** Filter expression (can be FilterExpression array or JSON string) */
-    filter?: any;
+    filter?: FilterExpression | string;
     /** Fields to return (array or comma-separated string) */
     fields?: string[] | string;
     /** Sort criteria - array of [field, direction] tuples */
@@ -135,19 +150,19 @@ export interface DataApiListParams {
  * Request body for POST /api/data/:object (create single record)
  */
 export interface DataApiCreateRequest {
-    [key: string]: any;
+    [key: string]: unknown;
 }
 
 /**
  * Request body for POST /api/data/:object (create multiple records)
  */
-export type DataApiCreateManyRequest = Array<Record<string, any>>;
+export type DataApiCreateManyRequest = Array<Record<string, unknown>>;
 
 /**
  * Request body for PUT /api/data/:object/:id (update record)
  */
 export interface DataApiUpdateRequest {
-    [key: string]: any;
+    [key: string]: unknown;
 }
 
 /**
@@ -155,9 +170,9 @@ export interface DataApiUpdateRequest {
  */
 export interface DataApiBulkUpdateRequest {
     /** Filter criteria to select records to update */
-    filters: any;
+    filters: FilterExpression;
     /** Data to update */
-    data: Record<string, any>;
+    data: Record<string, unknown>;
 }
 
 /**
@@ -165,7 +180,7 @@ export interface DataApiBulkUpdateRequest {
  */
 export interface DataApiBulkDeleteRequest {
     /** Filter criteria to select records to delete */
-    filters: any;
+    filters: FilterExpression;
 }
 
 /**
@@ -193,17 +208,17 @@ export interface DataApiDeleteResponse extends DataApiResponse {
 /**
  * Base response structure for Metadata API operations
  */
-export interface MetadataApiResponse<T = any> {
+export interface MetadataApiResponse<T = unknown> {
     /** Error information if the operation failed */
     error?: ApiError;
     /** Additional response fields */
-    [key: string]: any;
+    [key: string]: unknown;
 }
 
 /**
  * Response for list metadata operations
  */
-export interface MetadataApiListResponse<T = any> extends MetadataApiResponse<T> {
+export interface MetadataApiListResponse<T = unknown> extends MetadataApiResponse<T> {
     /** Array of metadata items */
     items: T[];
 }
@@ -276,9 +291,9 @@ export interface FieldMetadataResponse extends MetadataApiResponse<FieldConfig> 
     /** Whether field must be unique */
     unique?: boolean;
     /** Default value */
-    defaultValue?: any;
+    defaultValue?: unknown;
     /** Options for select/radio fields */
-    options?: any[];
+    options?: unknown[];
     /** Minimum value (for number fields) */
     min?: number;
     /** Maximum value (for number fields) */
@@ -302,7 +317,7 @@ export interface ActionMetadataSummary {
     /** Display label */
     label?: string;
     /** Action parameters */
-    params?: Record<string, any>;
+    params?: Record<string, unknown>;
     /** Action description */
     description?: string;
 }
@@ -327,7 +342,7 @@ export interface MetadataEntry {
     /** Package name (if from a plugin) */
     package?: string;
     /** Actual metadata content */
-    content: any;
+    content: unknown;
 }
 
 // ============================================================================
@@ -371,28 +386,28 @@ export interface IDataApiClient {
      * @param objectName - Name of the object
      * @param params - Query parameters
      */
-    list<T = any>(objectName: string, params?: DataApiListParams): Promise<DataApiListResponse<T>>;
+    list<T = unknown>(objectName: string, params?: DataApiListParams): Promise<DataApiListResponse<T>>;
     
     /**
      * Get a single record by ID
      * @param objectName - Name of the object
      * @param id - Record ID
      */
-    get<T = any>(objectName: string, id: string | number): Promise<DataApiItemResponse<T>>;
+    get<T = unknown>(objectName: string, id: string | number): Promise<DataApiItemResponse<T>>;
     
     /**
      * Create a new record
      * @param objectName - Name of the object
      * @param data - Record data
      */
-    create<T = any>(objectName: string, data: DataApiCreateRequest): Promise<DataApiItemResponse<T>>;
+    create<T = unknown>(objectName: string, data: DataApiCreateRequest): Promise<DataApiItemResponse<T>>;
     
     /**
      * Create multiple records
      * @param objectName - Name of the object
      * @param data - Array of record data
      */
-    createMany<T = any>(objectName: string, data: DataApiCreateManyRequest): Promise<DataApiListResponse<T>>;
+    createMany<T = unknown>(objectName: string, data: DataApiCreateManyRequest): Promise<DataApiListResponse<T>>;
     
     /**
      * Update a record
@@ -400,7 +415,7 @@ export interface IDataApiClient {
      * @param id - Record ID
      * @param data - Updated data
      */
-    update<T = any>(objectName: string, id: string | number, data: DataApiUpdateRequest): Promise<DataApiItemResponse<T>>;
+    update<T = unknown>(objectName: string, id: string | number, data: DataApiUpdateRequest): Promise<DataApiItemResponse<T>>;
     
     /**
      * Update multiple records
@@ -428,7 +443,7 @@ export interface IDataApiClient {
      * @param objectName - Name of the object
      * @param filters - Filter criteria
      */
-    count(objectName: string, filters?: any): Promise<DataApiCountResponse>;
+    count(objectName: string, filters?: FilterExpression): Promise<DataApiCountResponse>;
 }
 
 /**
@@ -463,12 +478,12 @@ export interface IMetadataApiClient {
      * List metadata entries by type
      * @param metadataType - Type of metadata (e.g., 'view', 'form', 'page')
      */
-    listByType<T = any>(metadataType: string): Promise<MetadataApiListResponse<T>>;
+    listByType<T = unknown>(metadataType: string): Promise<MetadataApiListResponse<T>>;
     
     /**
      * Get a specific metadata entry
      * @param metadataType - Type of metadata
      * @param id - Unique identifier
      */
-    getMetadata<T = any>(metadataType: string, id: string): Promise<MetadataApiResponse<T>>;
+    getMetadata<T = unknown>(metadataType: string, id: string): Promise<MetadataApiResponse<T>>;
 }

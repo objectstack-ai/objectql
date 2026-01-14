@@ -20,7 +20,10 @@ import {
     FieldMetadataResponse,
     MetadataApiActionsResponse,
     MetadataApiListResponse,
-    MetadataApiResponse
+    MetadataApiResponse,
+    ObjectQLError,
+    ApiErrorCode,
+    FilterExpression
 } from '@objectql/types';
 
 /**
@@ -136,8 +139,8 @@ export class DataApiClient implements IDataApiClient {
     private async request<T>(
         method: string,
         path: string,
-        body?: any,
-        queryParams?: Record<string, any>
+        body?: unknown,
+        queryParams?: Record<string, unknown>
     ): Promise<T> {
         const url = new URL(`${this.baseUrl}${path}`);
         
@@ -169,13 +172,17 @@ export class DataApiClient implements IDataApiClient {
         const json = await response.json();
         
         if (json.error) {
-            throw new Error(`${json.error.code}: ${json.error.message}`);
+            throw new ObjectQLError({
+                code: json.error.code || ApiErrorCode.INTERNAL_ERROR,
+                message: json.error.message,
+                details: json.error.details
+            });
         }
 
         return json as T;
     }
 
-    async list<T = any>(objectName: string, params?: DataApiListParams): Promise<DataApiListResponse<T>> {
+    async list<T = unknown>(objectName: string, params?: DataApiListParams): Promise<DataApiListResponse<T>> {
         return this.request<DataApiListResponse<T>>(
             'GET',
             `/api/data/${objectName}`,
@@ -184,14 +191,14 @@ export class DataApiClient implements IDataApiClient {
         );
     }
 
-    async get<T = any>(objectName: string, id: string | number): Promise<DataApiItemResponse<T>> {
+    async get<T = unknown>(objectName: string, id: string | number): Promise<DataApiItemResponse<T>> {
         return this.request<DataApiItemResponse<T>>(
             'GET',
             `/api/data/${objectName}/${id}`
         );
     }
 
-    async create<T = any>(objectName: string, data: DataApiCreateRequest): Promise<DataApiItemResponse<T>> {
+    async create<T = unknown>(objectName: string, data: DataApiCreateRequest): Promise<DataApiItemResponse<T>> {
         return this.request<DataApiItemResponse<T>>(
             'POST',
             `/api/data/${objectName}`,
@@ -199,7 +206,7 @@ export class DataApiClient implements IDataApiClient {
         );
     }
 
-    async createMany<T = any>(objectName: string, data: DataApiCreateManyRequest): Promise<DataApiListResponse<T>> {
+    async createMany<T = unknown>(objectName: string, data: DataApiCreateManyRequest): Promise<DataApiListResponse<T>> {
         return this.request<DataApiListResponse<T>>(
             'POST',
             `/api/data/${objectName}`,
@@ -207,7 +214,7 @@ export class DataApiClient implements IDataApiClient {
         );
     }
 
-    async update<T = any>(objectName: string, id: string | number, data: DataApiUpdateRequest): Promise<DataApiItemResponse<T>> {
+    async update<T = unknown>(objectName: string, id: string | number, data: DataApiUpdateRequest): Promise<DataApiItemResponse<T>> {
         return this.request<DataApiItemResponse<T>>(
             'PUT',
             `/api/data/${objectName}/${id}`,
@@ -238,7 +245,7 @@ export class DataApiClient implements IDataApiClient {
         );
     }
 
-    async count(objectName: string, filters?: any): Promise<DataApiCountResponse> {
+    async count(objectName: string, filters?: FilterExpression): Promise<DataApiCountResponse> {
         return this.request<DataApiCountResponse>(
             'GET',
             `/api/data/${objectName}`,
@@ -285,7 +292,7 @@ export class MetadataApiClient implements IMetadataApiClient {
         this.timeout = config.timeout || 30000;
     }
 
-    private async request<T>(method: string, path: string, body?: any): Promise<T> {
+    private async request<T>(method: string, path: string, body?: unknown): Promise<T> {
         const headers: Record<string, string> = {
             'Content-Type': 'application/json',
             ...this.headers
@@ -305,7 +312,11 @@ export class MetadataApiClient implements IMetadataApiClient {
         const json = await response.json();
         
         if (json.error) {
-            throw new Error(`${json.error.code}: ${json.error.message}`);
+            throw new ObjectQLError({
+                code: json.error.code || ApiErrorCode.INTERNAL_ERROR,
+                message: json.error.message,
+                details: json.error.details
+            });
         }
 
         return json as T;
