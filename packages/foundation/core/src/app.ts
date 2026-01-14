@@ -21,6 +21,7 @@ import { ObjectRepository } from './repository';
 import { executeActionHelper, registerActionHelper, ActionEntry } from './action';
 import { registerHookHelper, triggerHookHelper, HookEntry } from './hook';
 import { registerObjectHelper, getConfigsHelper } from './object';
+import { convertIntrospectedSchemaToObjects } from './util';
 
 export class ObjectQL implements IObjectQL {
     public metadata: MetadataRegistry;
@@ -182,9 +183,6 @@ export class ObjectQL implements IObjectQL {
         
         console.log(`Introspecting database schema from datasource '${datasourceName}'...`);
         const introspectedSchema = await driver.introspectSchema();
-        
-        // Import the conversion utility
-        const { convertIntrospectedSchemaToObjects } = await import('./util');
         
         // Convert introspected schema to ObjectQL objects
         const objects = convertIntrospectedSchemaToObjects(introspectedSchema, options);

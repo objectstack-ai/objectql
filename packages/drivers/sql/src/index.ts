@@ -638,7 +638,10 @@ export class SqlDriver implements Driver {
                     });
                 }
             } else if (this.config.client === 'sqlite3') {
-                const result = await this.knex.raw(`PRAGMA foreign_key_list(${tableName})`);
+                // SQLite PRAGMA doesn't support parameter binding, so we need to ensure safe identifier
+                // Table names in ObjectQL are validated and should be safe, but we add extra protection
+                const safeTableName = tableName.replace(/[^a-zA-Z0-9_]/g, '');
+                const result = await this.knex.raw(`PRAGMA foreign_key_list(${safeTableName})`);
                 
                 for (const row of result) {
                     foreignKeys.push({
@@ -689,7 +692,10 @@ export class SqlDriver implements Driver {
                     primaryKeys.push(row.column_name);
                 }
             } else if (this.config.client === 'sqlite3') {
-                const result = await this.knex.raw(`PRAGMA table_info(${tableName})`);
+                // SQLite PRAGMA doesn't support parameter binding, so we need to ensure safe identifier
+                // Table names in ObjectQL are validated and should be safe, but we add extra protection
+                const safeTableName = tableName.replace(/[^a-zA-Z0-9_]/g, '');
+                const result = await this.knex.raw(`PRAGMA table_info(${safeTableName})`);
                 
                 for (const row of result) {
                     if (row.pk === 1) {

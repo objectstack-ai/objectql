@@ -124,12 +124,13 @@ export function convertIntrospectedSchemaToObjects(
                 }
                 
                 // Add max length for text fields
+                // Add max length for text fields
                 if (column.maxLength && (fieldType === 'text' || fieldType === 'textarea')) {
                     fieldConfig.max_length = column.maxLength;
                 }
                 
                 // Add default value
-                if (column.defaultValue !== undefined && column.defaultValue !== null) {
+                if (column.defaultValue != null) {
                     fieldConfig.defaultValue = column.defaultValue;
                 }
             }
