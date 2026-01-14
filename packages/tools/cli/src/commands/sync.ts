@@ -2,14 +2,14 @@ import * as fs from 'fs';
 import * as path from 'path';
 import chalk from 'chalk';
 import * as yaml from 'js-yaml';
-import { IntrospectedSchema, IntrospectedTable, IntrospectedColumn } from '@objectql/types';
+import { IntrospectedSchema, IntrospectedTable, IntrospectedColumn, ObjectConfig, IObjectQL } from '@objectql/types';
 
 interface SyncOptions {
     config?: string;
     output?: string;
     tables?: string[];
     force?: boolean;
-    app?: any; // Allow passing app instance directly for testing
+    app?: IObjectQL; // Allow passing app instance directly for testing
 }
 
 /**
@@ -22,7 +22,7 @@ export async function syncDatabase(options: SyncOptions) {
     console.log(chalk.blue('🔄 Syncing database schema to ObjectQL...'));
     console.log(chalk.gray(`Output directory: ${outputDir}\n`));
     
-    let app: any = options.app;
+    let app: IObjectQL | undefined = options.app;
     const shouldClose = !options.app; // Only close if we loaded it ourselves
 
     try {
@@ -32,7 +32,7 @@ export async function syncDatabase(options: SyncOptions) {
         }
         
         // Check if driver supports introspection
-        const driver = app.datasources?.default;
+        const driver = app.datasource('default');
         if (!driver || !driver.introspectSchema) {
             const errorMsg = 'The configured driver does not support schema introspection. Only SQL drivers (PostgreSQL, MySQL, SQLite) support this feature.';
             console.error(chalk.red(`❌ ${errorMsg}`));
@@ -117,12 +117,15 @@ export async function syncDatabase(options: SyncOptions) {
         throw error;
     } finally {
         // Ensure connection is closed if we opened it
-        if (shouldClose) {
-            if (app && app.close) {
-                 await app.close();
-            } else if (app && app.datasources && app.datasources.default && (app.datasources.default as any).disconnect) {
-                 // Fallback for older versions if close isn't available
-                 await (app.datasources.default as any).disconnect();
+        if (shouldClose && app) {
+            if (app.close) {
+                await app.close();
+            } else {
+                // Fallback for older versions if close isn't available
+                const driver = app.datasource('default');
+                if (driver && (driver as any).disconnect) {
+                    await (driver as any).disconnect();
+                }
             }
         }
     }
@@ -131,8 +134,8 @@ export async function syncDatabase(options: SyncOptions) {
 /**
  * Generate ObjectQL object definition from introspected table
  */
-function generateObjectDefinition(table: IntrospectedTable, schema: IntrospectedSchema): any {
-    const obj: any = {
+function generateObjectDefinition(table: IntrospectedTable, schema: IntrospectedSchema): ObjectConfig {
+    const obj: ObjectConfig = {
         name: table.name,
         label: formatLabel(table.name),
         fields: {}
@@ -266,7 +269,7 @@ function formatLabel(name: string): string {
 /**
  * Load ObjectQL instance from config file
  */
-async function loadObjectQLInstance(configPath?: string): Promise<any> {
+async function loadObjectQLInstance(configPath?: string): Promise<IObjectQL> {
     const cwd = process.cwd();
     
     // Try to load from config file
