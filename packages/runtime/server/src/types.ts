@@ -98,7 +98,7 @@ export interface ObjectQLResponse {
  */
 export interface AttachmentData {
     /** Unique identifier for this file */
-    id?: string;
+    id: string;
     /** File name (e.g., "invoice.pdf") */
     name: string;
     /** Publicly accessible URL to the file */

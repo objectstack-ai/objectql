@@ -40,8 +40,8 @@ export class LocalFileStorage implements IFileStorage {
         
         const filePath = path.join(folderPath, storedFilename);
         
-        // Write file to disk
-        fs.writeFileSync(filePath, file);
+        // Write file to disk (async for better performance)
+        await fs.promises.writeFile(filePath, file);
         
         // Generate public URL
         const url = this.getPublicUrl(path.join(folder, storedFilename));
@@ -67,7 +67,8 @@ export class LocalFileStorage implements IFileStorage {
             if (!found) {
                 return null;
             }
-            return fs.readFileSync(found);
+            // Use async read for better performance
+            return await fs.promises.readFile(found);
         } catch (error) {
             console.error('Error reading file:', error);
             return null;
@@ -80,7 +81,8 @@ export class LocalFileStorage implements IFileStorage {
             if (!found) {
                 return false;
             }
-            fs.unlinkSync(found);
+            // Use async unlink for better performance
+            await fs.promises.unlink(found);
             return true;
         } catch (error) {
             console.error('Error deleting file:', error);

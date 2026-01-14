@@ -224,6 +224,21 @@ export function sendSuccess(res: ServerResponse, data: any) {
 }
 
 /**
+ * Extract user ID from authorization header
+ * @internal This is a placeholder implementation. In production, integrate with actual auth middleware.
+ */
+function extractUserId(authHeader: string | undefined): string | undefined {
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return undefined;
+    }
+    
+    // TODO: In production, decode JWT or validate token properly
+    // This is a placeholder implementation
+    console.warn('[Security] File upload authentication is using placeholder implementation. Integrate with actual auth system.');
+    return 'user_from_token';
+}
+
+/**
  * Create file upload handler
  */
 export function createFileUploadHandler(storage: IFileStorage, app: IObjectQL) {
@@ -272,14 +287,8 @@ export function createFileUploadHandler(storage: IFileStorage, app: IObjectQL) {
                 return;
             }
             
-            // Extract user ID from authorization header (simplified)
-            // In production, this would integrate with actual auth middleware
-            let userId: string | undefined;
-            const authHeader = req.headers.authorization;
-            if (authHeader && authHeader.startsWith('Bearer ')) {
-                // This is a placeholder - in production, decode JWT or validate token
-                userId = 'user_from_token';
-            }
+            // Extract user ID from authorization header
+            const userId = extractUserId(req.headers.authorization);
             
             // Save file
             const attachmentData = await storage.save(
@@ -341,12 +350,8 @@ export function createBatchFileUploadHandler(storage: IFileStorage, app: IObject
                 }
             }
             
-            // Extract user ID
-            let userId: string | undefined;
-            const authHeader = req.headers.authorization;
-            if (authHeader && authHeader.startsWith('Bearer ')) {
-                userId = 'user_from_token';
-            }
+            // Extract user ID from authorization header
+            const userId = extractUserId(req.headers.authorization);
             
             // Upload all files
             const uploadedFiles: AttachmentData[] = [];
