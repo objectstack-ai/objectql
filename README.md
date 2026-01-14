@@ -156,6 +156,18 @@ This validation logic runs:
 
 ---
 
+## 📊 Implementation Progress
+
+For a complete status report on ObjectQL's implementation against the documented standard protocol, see **[PROGRESS.md](./PROGRESS.md)**.
+
+**Current Status:** 70% Complete (v1.8.3)
+- ✅ Core Protocol & Runtime: 85%
+- ✅ Data Drivers (SQL/Mongo): 75%
+- ⚠️ UI Metadata Layer: 40%
+- ⚠️ Workflow Engine: 35%
+
+---
+
 ## ⚖️ License
 
 ObjectQL is open-source software licensed under the [MIT License](https://www.google.com/search?q=LICENSE).
