@@ -1,6 +1,6 @@
 {
   "name": "@example/tutorial-task-manager",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "private": true,
   "scripts": {
     "start": "tsx index.ts"

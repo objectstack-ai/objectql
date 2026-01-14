@@ -1,6 +1,6 @@
 {
   "name": "@objectql/server",
-  "version": "1.7.3",
+  "version": "1.8.0",
   "license": "MIT",
   "description": "HTTP Server Adapter for ObjectQL",
   "main": "dist/index.js",

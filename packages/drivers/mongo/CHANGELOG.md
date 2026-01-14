@@ -1,5 +1,16 @@
 # @objectql/driver-mongo
 
+## 1.8.0
+
+### Minor Changes
+
+- Release minor version 1.8.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @objectql/types@1.8.0
+
 ## 1.7.3
 
 ### Patch Changes

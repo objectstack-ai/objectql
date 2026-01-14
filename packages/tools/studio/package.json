@@ -1,6 +1,6 @@
 {
   "name": "@objectql/studio",
-  "version": "1.7.3",
+  "version": "1.8.0",
   "license": "MIT",
   "description": "Web-based admin studio for ObjectQL database management",
   "type": "module",

@@ -1,5 +1,20 @@
 # @example/express-server
 
+## 1.8.0
+
+### Minor Changes
+
+- Release minor version 1.8.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @objectql/core@1.8.0
+  - @objectql/driver-sql@2.0.0
+  - @objectql/server@2.0.0
+  - @objectql/types@1.8.0
+  - @objectql/platform-node@2.0.0
+
 ## 1.7.3
 
 ### Patch Changes
