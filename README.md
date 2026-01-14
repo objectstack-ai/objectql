@@ -46,57 +46,54 @@ ObjectQL is organized as a Monorepo to ensure modularity and universal compatibi
 ### 1. Installation
 
 ```bash
-# Install core and a driver (e.g., Postgres)
-npm install @objectql/core @objectql/driver-sql pg
-
+# Install core and a driver (e.g., Postgres or SQLite)
+npm install @objectql/core @objectql/driver-sql sqlite3
 ```
 
-### 2. Define Schema (The "Object")
+### 2. The Universal Script
 
-Create a simple definition object (or load it from a `.yml` file).
-
-```typescript
-const UserObject = {
-  name: "users",
-  fields: {
-    name: { type: "text", required: true },
-    email: { type: "email", unique: true },
-    role: { 
-      type: "select", 
-      options: ["admin", "user"], 
-      default: "user" 
-    }
-  }
-};
-
-```
-
-### 3. Initialize & Query
-
-ObjectQL provides a unified API regardless of the underlying database.
+ObjectQL can run in a single file without complex configuration.
 
 ```typescript
 import { ObjectQL } from '@objectql/core';
 import { SqlDriver } from '@objectql/driver-sql';
 
 async function main() {
-  // 1. Initialize Engine
-  const objectql = new ObjectQL();
-  
-  // 2. Register Driver
+  // 1. Initialize Driver (In-Memory SQLite)
   const driver = new SqlDriver({
-    connection: process.env.DATABASE_URL
+    client: 'sqlite3',
+    connection: { filename: ':memory:' }, 
+    useNullAsDefault: true
   });
-  objectql.registerDriver(driver);
 
-  // 3. Register Object
-  objectql.register(UserObject);
+  // 2. Initialize Engine
+  const app = new ObjectQL({
+    datasources: { default: driver }
+  });
+
+  // 3. Define Schema (The "Object")
+  // In a real app, this would be loaded from a .yml file
+  app.registerObject({
+    name: "users",
+    fields: {
+      name: { type: "text", required: true },
+      email: { type: "email", unique: true },
+      role: { 
+        type: "select", 
+        options: ["admin", "user"], 
+        defaultValue: "user" 
+      }
+    }
+  });
+
+  await app.init();
 
   // 4. Enjoy Type-Safe(ish) CRUD
-  const repo = objectql.getRepository('users');
+  const ctx = app.createContext({ isSystem: true });
+  const repo = ctx.object('users');
 
   // Create
-  await repo.insert({ name: 'Alice', email: 'alice@example.com' });
+  await repo.create({ name: 'Alice', email: 'alice@example.com' });
 
   // Find
   const users = await repo.find({
@@ -107,7 +104,6 @@ async function main() {
 }
 
 main();
-
 ```
 
 ---
@@ -176,5 +172,3 @@ You can use it freely in personal, commercial, or open-source projects.
 
 <sub><b>ObjectQL (Data)</b> • <a href="https://github.com/objectql/objectos">ObjectOS (System)</a> • <a href="https://github.com/objectql/objectui">Object UI (View)</a></sub>
 </div>
-
-```

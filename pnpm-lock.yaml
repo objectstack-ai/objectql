@@ -80,6 +80,28 @@ importers:
         specifier: ^5.3.0
         version: 5.9.3
 
+  examples/starters/hello-world:
+    dependencies:
+      '@objectql/core':
+        specifier: workspace:*
+        version: link:../../../packages/foundation/core
+      '@objectql/driver-sql':
+        specifier: workspace:*
+        version: link:../../../packages/drivers/sql
+      sqlite3:
+        specifier: ^5.1.7
+        version: 5.1.7
+    devDependencies:
+      '@types/node':
+        specifier: ^20.11.24
+        version: 20.19.28
+      tsx:
+        specifier: ^4.7.1
+        version: 4.21.0
+      typescript:
+        specifier: ^5.3.3
+        version: 5.9.3
+
   examples/tutorials/tutorial-ai-agent:
     dependencies:
       '@objectql/core':

@@ -20,33 +20,67 @@ npm install @objectql/core @objectql/driver-mongo mongodb
 
 ## Quick Start: The "Hello World"
 
-Let's build a simple **To-Do List** backend.
+You can experience ObjectQL with a single file. No YAML, no complex config.
 
-### 1. Define Your Object
+### 1. Minimal Setup
 
-In ObjectQL, everything is an "Object" (like a Table or Collection).
+Install the core and SQLite driver (for zero-config database).
 
-**ObjectQL uses filename-based identification** - the object name is automatically inferred from the filename, making your metadata files cleaner.
-
-```yaml
-# File: todo.object.yml
-# Object name "todo" is automatically inferred from filename!
-
-label: To-Do Item
-fields:
-  title:
-    type: text
-    label: Task Name
-  completed:
-    type: boolean
-    default: false
+```bash
+npm install @objectql/core @objectql/driver-sql sqlite3
+# or
+pnpm add @objectql/core @objectql/driver-sql sqlite3
 ```
 
-**Note:** You no longer need to specify `name: todo` - it's inferred from the filename `todo.object.yml`!
+### 2. The Universal Script
 
-### 2. Configure the Engine
+Create `index.ts`. This script defines the schema, boots the engine, and runs queries in one go.
 
-Updated in v0.2: You can now use a simple connection string.
+```typescript
+import { ObjectQL } from '@objectql/core';
+import { SqlDriver } from '@objectql/driver-sql';
+
+async function main() {
+  // 1. Initialize Driver (In-Memory SQLite)
+  const driver = new SqlDriver({
+    client: 'sqlite3',
+    connection: { filename: ':memory:' }, 
+    useNullAsDefault: true
+  });
+
+  // 2. Initialize Engine
+  const app = new ObjectQL({
+    datasources: { default: driver }
+  });
+
+  // 3. Define Metadata Inline (Code as Configuration)
+  app.registerObject({
+    name: 'todo',
+    fields: {
+      title: { type: 'text', required: true },
+      completed: { type: 'boolean', defaultValue: false }
+    }
+  });
+
+  await app.init();
+
+  // 4. Run Business Logic
+  // We use a system context here for simplicity
+  const ctx = app.createContext({ isSystem: true });
+  const repo = ctx.object('todo');
+
+  await repo.create({ title: 'Build the Future' });
+  
+  const results = await repo.find();
+  console.log('Todos:', results);
+}
+
+main();
+```
+
+## Scaling Up: The Metadata Approach
+
+Once you are comfortable with the core, you should move your definitions to YAML files.
 
 ```typescript
 import { ObjectQL } from '@objectql/core';

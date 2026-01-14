@@ -5,6 +5,7 @@ packages:
   - packages/tools/*
   - packages/starters/*
   - examples/scenarios/*
+  - examples/starters/*
   - examples/plugins/*
   - examples/tutorials/*
 
