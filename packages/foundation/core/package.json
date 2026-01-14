@@ -1,6 +1,19 @@
 {
   "name": "@objectql/core",
   "version": "1.8.1",
+  "description": "Universal runtime engine for ObjectQL - AI-native metadata-driven ORM with validation, repository pattern, and driver orchestration",
+  "keywords": [
+    "objectql",
+    "orm",
+    "database",
+    "ai-native",
+    "metadata",
+    "validation",
+    "repository",
+    "universal",
+    "typescript",
+    "query-builder"
+  ],
   "license": "MIT",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
