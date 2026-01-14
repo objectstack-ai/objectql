@@ -16,12 +16,15 @@ export default defineConfig({
     nav: [
       { text: 'Tutorials', link: '/tutorials/' },
       { text: 'Guide', link: '/guide/' },
-      { text: 'AI Agents', link: '/ai/' },
+      { text: 'AI-Native', link: '/ai/' },
+      { text: 'API Reference', link: '/api/' },
+      { text: 'Specification', link: '/spec/' },
       { 
-        text: 'Reference', 
+        text: 'Ecosystem', 
         items: [
-          { text: 'Protocol Spec (YAML)', link: '/spec/' },
-          { text: 'Node.js SDK', link: '/api/' },
+          { text: 'ObjectStack AI', link: 'https://objectstack.ai' },
+          { text: 'ObjectOS (Runtime)', link: 'https://www.objectos.org' },
+          { text: 'ObjectUI (Frontend)', link: 'https://www.objectui.org' },
         ]
       },
     ],
@@ -48,9 +51,21 @@ export default defineConfig({
           text: 'API Reference',
           items: [
             { text: 'Overview', link: '/api/' },
+            { text: 'Protocol Styles', items: [
+                { text: 'JSON-RPC', link: '/api/json-rpc' },
+                { text: 'REST API', link: '/api/rest' },
+                { text: 'GraphQL', link: '/api/graphql' },
+                { text: 'Metadata API', link: '/api/metadata' },
+                { text: 'WebSocket', link: '/api/websocket' },
+            ]},
+            { text: 'Capabilities', items: [
+                { text: 'Files & Attachments', link: '/api/attachments' },
+                { text: 'Authentication', link: '/api/authentication' },
+                { text: 'Error Handling', link: '/api/error-handling' },
+                { text: 'Rate Limiting', link: '/api/rate-limiting' },
+            ]},
+            { text: 'Examples', link: '/api/examples' },
             { text: 'Quick Reference', link: '/api/quick-reference' },
-            { text: 'Authentication', link: '/api/authentication' },
-            { text: 'Full Specification', link: '/api/README' },
           ]
         }
       ],

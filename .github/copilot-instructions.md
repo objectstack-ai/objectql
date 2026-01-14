@@ -1,6 +1,6 @@
 Project Context: ObjectQL Architect
 
-## 1. Project Context & Branding
+0. Project Context & Branding
 * **Project Name:** ObjectStack AI Link: `objectstack.ai`
 * **Slogan:** "The Standard Protocol for AI Software Generation."
 * **Core Value:** We provide the infrastructure (Protocol + Runtime + View) that empowers LLMs to generate enterprise apps without hallucinations.
