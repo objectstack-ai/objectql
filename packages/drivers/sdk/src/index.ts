@@ -1,3 +1,30 @@
+/**
+ * @objectql/sdk - Universal HTTP Client for ObjectQL
+ * 
+ * This package provides type-safe HTTP clients for ObjectQL servers.
+ * It works seamlessly in browsers, Node.js, Deno, and edge runtimes.
+ * 
+ * ## Browser Compatibility
+ * 
+ * The SDK uses modern JavaScript APIs:
+ * - fetch API (universal)
+ * - AbortSignal.timeout() (Chrome 103+, Firefox 100+, Safari 16.4+)
+ * 
+ * For older browsers, polyfill AbortSignal.timeout:
+ * 
+ * ```typescript
+ * if (!AbortSignal.timeout) {
+ *     AbortSignal.timeout = function(ms) {
+ *         const controller = new AbortController();
+ *         setTimeout(() => controller.abort(), ms);
+ *         return controller.signal;
+ *     };
+ * }
+ * ```
+ * 
+ * @packageDocumentation
+ */
+
 import { 
     Driver,
     IDataApiClient,

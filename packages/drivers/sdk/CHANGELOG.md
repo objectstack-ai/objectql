@@ -1,4 +1,27 @@
-# @objectql/driver-remote
+# @objectql/sdk
+
+## 1.8.2 (Unreleased)
+
+### Patch Changes
+
+- **Enhanced Browser Compatibility:**
+  - Added comprehensive README with browser usage examples
+  - Added `browser` field to package.json for better bundler support
+  - Added `sideEffects: false` for tree-shaking optimization
+  - Added repository, bugs, and homepage metadata
+  - Expanded keywords for better discoverability (frontend, react, vue, angular, esm)
+  
+- **Documentation Improvements:**
+  - Added detailed browser compatibility notes
+  - Added polyfill guidance for `AbortSignal.timeout()` for older browsers
+  - Added React and Vue.js hook examples
+  - Added browser example HTML file with interactive demo
+  - Added package-level documentation comments
+
+- **Examples:**
+  - Added `examples/browser/` with standalone HTML example
+  - Demonstrates browser usage without build tools
+  - Includes polyfill implementation for older browsers
 
 ## 1.8.1
 

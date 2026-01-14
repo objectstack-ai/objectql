@@ -10,13 +10,22 @@
     "http",
     "client",
     "browser",
+    "frontend",
     "universal",
     "api",
-    "rest"
+    "rest",
+    "fetch",
+    "typescript",
+    "esm",
+    "react",
+    "vue",
+    "angular"
   ],
   "license": "MIT",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "browser": "dist/index.js",
+  "sideEffects": false,
   "scripts": {
     "build": "tsc",
     "test": "jest"
@@ -26,5 +35,14 @@
   },
   "devDependencies": {
     "typescript": "^5.3.0"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/objectstack-ai/objectql.git",
+    "directory": "packages/drivers/sdk"
+  },
+  "bugs": {
+    "url": "https://github.com/objectstack-ai/objectql/issues"
+  },
+  "homepage": "https://objectql.org"
 }
