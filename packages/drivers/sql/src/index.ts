@@ -471,6 +471,8 @@ export class SqlDriver implements Driver {
     }
 
     private formatOutput(objectName: string, data: any) {
+        if (!data) return data;
+
         const isSqlite = this.config.client === 'sqlite3';
         if (!isSqlite) return data;
 

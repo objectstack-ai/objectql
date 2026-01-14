@@ -8,8 +8,8 @@
  */
 
 import { ObjectQL } from '@objectql/core';
-import hooks from '../src/projects.hook';
-import * as actions from '../src/projects.action';
+import hooks from '../src/modules/projects/projects.hook';
+import * as actions from '../src/modules/projects/projects.action';
 
 describe('Project Hooks - Comprehensive Examples', () => {
     let app: ObjectQL;

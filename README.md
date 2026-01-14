@@ -1,359 +1,181 @@
-
 # ObjectQL
 
-**One Protocol, Any Database, AI-Ready.**
+  **The Universal Data Protocol & Metadata-Driven ORM.**
+  
+  Define your data in JSON/YAML. Run anywhere: Node.js, Browser, Edge.
 
-A universal data query engine for the modern stack.
+  [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+  [![TypeScript](https://img.shields.io/badge/written%20in-TypeScript-3178C6.svg)](https://www.typescriptlang.org/)
+  [![NPM](https://img.shields.io/npm/v/@objectql/core.svg)](https://www.npmjs.com/package/@objectql/core)
 
-Write your logic once in JSON-DSL, run it seamlessly on MongoDB (Schema-less) or PostgreSQL (Schema-strict).
 
 ---
 
-## 📖 Introduction
+## 🌐 Introduction
 
-**ObjectQL** is a standalone, open-source query engine designed to bridge the gap between flexible design and structured storage.
+**ObjectQL** is a universal data protocol and ORM engine designed for the modern full-stack era. 
 
-In modern application development, developers often face a dilemma:
+Unlike traditional ORMs (TypeORM, Prisma) that compile schema to static code, ObjectQL works dynamically at runtime based on **JSON/YAML Metadata**. This makes it perfect for Low-Code platforms, CMSs, and dynamic applications where the data model might change on the fly.
 
-1. **Design Phase:** You want the flexibility of **NoSQL (MongoDB)** to iterate fast, change schemas on the fly, and handle dynamic fields.
-2. **Production Phase:** You need the reliability, transactions, and reporting capabilities of **SQL (PostgreSQL)**.
+**Why ObjectQL?**
+* **Universal Runtime:** The core engine has **zero dependencies** on Node.js native modules. It runs in Browsers, Cloudflare Workers, and Deno.
+* **Declarative Schema:** Define fields, validations, and relationships in simple YAML. No complex Model classes.
+* **Driver Agnostic:** Switch between PostgreSQL, MongoDB, SQLite, or even a Remote API without changing your business logic.
+* **Hybrid Storage:** Seamlessly combines structured SQL columns with JSONB dynamic fields.
 
-ObjectQL solves this by providing a unified **JSON-DSL (Domain Specific Language)**. It acts as a transpiler that compiles your abstract query logic into optimized native queries for whichever database you are running on.
+---
 
-It is **not** an ORM, but a high-level data protocol designed for AI agents, low-code engines, and dynamic API layers.
+## 📦 Architecture
 
-## ✨ Key Features
+ObjectQL is organized as a Monorepo to ensure modularity and universal compatibility.
 
-* **🚀 Dual-Stack Engine:**
-* **Mongo Driver:** Native performance for schema-less data and rapid prototyping.
-* **Knex SQL Driver:** First-class support for PostgreSQL, MySQL, and SQLite. It uniquely employs a "Core Columns + JSONB" strategy to handle dynamic fields within a relational structure.
+| Package | Environment | Description |
+| :--- | :--- | :--- |
+| **`@objectql/types`** | Universal | **The Contract.** Pure TypeScript interfaces defining the protocol. |
+| **`@objectql/core`** | Universal | **The Engine.** The runtime logic, validation, and repository pattern. |
+| **`@objectql/driver-sql`** | Node.js | Adapter for SQL databases (Postgres, MySQL, SQLite) via Knex. |
+| **`@objectql/driver-mongo`** | Node.js | Adapter for MongoDB. |
+| **`@objectql/sdk`** | Universal | **Remote Driver.** Connects to an ObjectQL server via HTTP. |
+| **`@objectql/platform-node`**| Node.js | Utilities for loading YAML files from the filesystem. |
 
-
-* **🤖 AI-Native Protocol:**
-* Queries are defined as standardized **JSON ASTs** (Abstract Syntax Trees), not string concatenation.
-* This structure is optimized for LLMs (like ChatGPT/Claude) to understand schema and generate accurate, safe business logic without hallucinating SQL syntax.
-
-
-* **✅ Metadata-Driven Validation:**
-* Define validation rules declaratively in YAML/JSON metadata.
-* Support for field-level, cross-field, and state machine validation.
-* Configurable severity levels (error, warning, info) and triggers (create, update, delete).
-* Template messages with internationalization support.
-
-
-* **📝 Clean, Minimal Syntax:**
-* **Filename-based identification** - No redundant `name` properties needed
-* Object name automatically inferred from `project.object.yml` → `project`
-* 10-15% less boilerplate compared to traditional metadata formats
-* Crystal-clear file organization and conventions
-
-
-* **⚡ Modern & Lightweight:**
-* Written in 100% **TypeScript**.
-* **Zero heavy legacy dependencies.** No runtime environment requirements beyond Node.js.
-* Promise-based asynchronous API.
-
-
-* **🔌 Pluggable Architecture:**
-* The core logic is completely decoupled from storage drivers.
-* Easily extensible to support other data sources (e.g., REST APIs, GraphQL, SQLite).
-
-* **🌐 Universal Server:**
-* Built-in HTTP adapter (`@objectql/server`) to run anywhere (Node, Express, Next.js).
-* Standardized JSON API for CRUD and Actions.
-
-* **🎨 Web Console:**
-* Beautiful web-based admin interface for database management.
-* Browse objects, view data grids, perform CRUD operations.
-* Schema inspector to view object definitions and field metadata.
-* Modern, responsive design with intuitive navigation.
-
-## 📦 Installation
-
-```bash
-# Install the core engine
-npm install @objectql/core
-
-# Install drivers as needed
-npm install @objectql/driver-mongo
-npm install @objectql/driver-sql
-
-```
+---
 
 ## ⚡ Quick Start
 
-### 1. Initialize ObjectQL
+### 1. Installation
+
+```bash
+# Install core and a driver (e.g., Postgres)
+npm install @objectql/core @objectql/driver-sql pg
+
+```
+
+### 2. Define Schema (The "Object")
+
+Create a simple definition object (or load it from a `.yml` file).
+
+```typescript
+const UserObject = {
+  name: "users",
+  fields: {
+    name: { type: "text", required: true },
+    email: { type: "email", unique: true },
+    role: { 
+      type: "select", 
+      options: ["admin", "user"], 
+      default: "user" 
+    }
+  }
+};
+
+```
+
+### 3. Initialize & Query
+
+ObjectQL provides a unified API regardless of the underlying database.
 
 ```typescript
 import { ObjectQL } from '@objectql/core';
-import { MongoDriver } from '@objectql/driver-mongo';
 import { SqlDriver } from '@objectql/driver-sql';
 
-const app = new ObjectQL({
-  datasources: {
-    // Environment A: Cloud / Prototype (MongoDB)
-    design: new MongoDriver({ url: process.env.MONGO_URL }),
-    
-    // Environment B: On-Premise / Production (PostgreSQL)
-    runtime: new SqlDriver({ client: 'pg', connection: process.env.PG_URL })
-  }
-});
+async function main() {
+  // 1. Initialize Engine
+  const objectql = new ObjectQL();
+  
+  // 2. Register Driver
+  const driver = new SqlDriver({
+    connection: process.env.DATABASE_URL
+  });
+  objectql.registerDriver(driver);
 
-```
+  // 3. Register Object
+  objectql.register(UserObject);
 
-### 2. The Unified Query (JSON-DSL)
+  // 4. Enjoy Type-Safe(ish) CRUD
+  const repo = objectql.getRepository('users');
 
-This syntax is consistent regardless of the underlying database. It is designed to be easily generated by frontend UI builders or AI agents.
+  // Create
+  await repo.insert({ name: 'Alice', email: 'alice@example.com' });
 
-```typescript
-// Example: Find orders with amount > 1000 and expand customer details
-const query = {
-  entity: 'orders',
-  fields: ['id', 'order_no', 'amount', 'created_at'],
-  filters: [
-    ['status', '=', 'paid'],
-    'and',
-    ['amount', '>', 1000]
-  ],
-  sort: [['created_at', 'desc']],
-  expand: {
-    customer: {
-      fields: ['name', 'email']
-    }
-  }
-};
-
-// Option A: Execute on MongoDB
-// ObjectQL compiles this to an Aggregation Pipeline
-const resultsMongo = await app.datasource('design').find(query);
-
-// Option B: Execute on PostgreSQL
-// ObjectQL compiles this to a SQL query with JSONB operators and JOINs
-const resultsSql = await app.datasource('runtime').find(query);
-
-```
-
-Both queries return the same results, but the underlying native query is optimized for MongoDB or PostgreSQL.
-
-### 3. Formulas & Validation
-
-ObjectQL supports powerful formulas and validation rules. Define calculated fields and business rules declaratively:
-
-```typescript
-import { ObjectConfig, Validator } from '@objectql/core';
-import { ValidationContext } from '@objectql/types';
-
-// Define object with formulas and validation rules
-const projectObject: ObjectConfig = {
-    name: 'project',
-    fields: {
-        // Regular field
-        name: { 
-            type: 'text', 
-            required: true,
-            validation: {
-                min_length: 3,
-                max_length: 100,
-                pattern: '^[a-zA-Z0-9\\s]+$'
-            }
-        },
-        // Calculated field (formula)
-        profit: {
-            type: 'formula',
-            expression: 'revenue - cost',
-            data_type: 'currency'
-        },
-        email: {
-            type: 'email',
-            validation: {
-                format: 'email',
-                message: 'Please enter a valid email address'
-            }
-        },
-        start_date: { type: 'date' },
-        end_date: { type: 'date' },
-        status: { 
-            type: 'select', 
-            options: [
-                { label: 'Planning', value: 'planning' },
-                { label: 'Active', value: 'active' },
-                { label: 'Completed', value: 'completed' }
-            ]
-        }
-    },
-    validation: {
-        rules: [
-            // Cross-field validation
-            {
-                name: 'valid_date_range',
-                type: 'cross_field',
-                rule: {
-                    field: 'end_date',
-                    operator: '>=',
-                    compare_to: 'start_date'
-                },
-                message: 'End date must be on or after start date',
-                error_code: 'INVALID_DATE_RANGE'
-            },
-            // State machine validation
-            {
-                name: 'status_transition',
-                type: 'state_machine',
-                field: 'status',
-                transitions: {
-                    planning: { allowed_next: ['active', 'cancelled'] },
-                    active: { allowed_next: ['completed', 'cancelled'] },
-                    completed: { allowed_next: [], is_terminal: true }
-                },
-                message: 'Invalid status transition'
-            }
-        ]
-    }
-};
-
-// Execute validation programmatically
-const validator = new Validator({ language: 'en' });
-
-const result = await validator.validate(
-    projectObject.validation.rules,
-    {
-        record: { start_date: '2024-01-01', end_date: '2023-12-31' },
-        operation: 'create'
-    }
-);
-
-if (!result.valid) {
-    console.log('Validation errors:', result.errors);
+  // Find
+  const users = await repo.find({
+    filters: [['role', '=', 'user']]
+  });
+  
+  console.log(users);
 }
-```
 
-**Supported validation types:**
-- **Field-level**: required, email, URL, min/max, length, pattern
-- **Cross-field**: compare fields with operators (=, !=, >, >=, <, <=, in, contains, etc.)
-- **State machine**: enforce valid state transitions
-- **Formulas**: JavaScript-style expressions for calculated fields
-- **Severity levels**: error, warning, info
-- **I18n**: multi-language error messages with fallback
-
-**Learn more:** [Formulas & Rules Syntax Guide](./docs/guide/formulas-and-rules.md)
-
-## 🎨 Web Console
-
-ObjectQL includes a beautiful web-based admin console for database management.
-
-![ObjectQL Console - Home](https://github.com/user-attachments/assets/c3613831-c73b-413e-bd0a-996841c072fb)
-
-### Features
-
-* **Object Browser**: View all registered objects/tables in your database
-* **Data Grid**: Browse and search records with pagination
-* **CRUD Operations**: Create, read, update, and delete records through an intuitive UI
-* **Schema Inspector**: View object definitions and field metadata
-
-![ObjectQL Console - Data Grid](https://github.com/user-attachments/assets/45812de8-4476-4ff1-90cd-bf41515157a5)
-
-### Usage
-
-```typescript
-import express from 'express';
-import { ObjectQL } from '@objectql/core';
-import { createNodeHandler, createMetadataHandler, createConsoleHandler } from '@objectql/server';
-
-const app = new ObjectQL({ /* ... */ });
-const server = express();
-
-// API endpoints
-server.all('/api/objectql', createNodeHandler(app));
-server.all('/api/metadata*', createMetadataHandler(app));
-
-// Serve console UI
-server.get('/console*', createConsoleHandler());
-
-server.listen(3004);
-// Visit http://localhost:3004/console
-```
-
-![ObjectQL Console - Schema Inspector](https://github.com/user-attachments/assets/ee5b9e77-f8c8-4a01-a933-d20d82a424cd)
-
-## 🏗 Architecture
-
-ObjectQL follows a strict separation of concerns, acting as a compiler between your intent (DSL) and the execution (Driver).
-
-```mermaid
-graph TD
-    Client[Frontend / AI Agent] -->|JSON DSL| Core[ObjectQL Core]
-    Core -->|AST Analysis| Adapter
-    
-    subgraph Drivers
-    Adapter -->|Compiler| Mongo[Mongo Driver]
-    Adapter -->|Compiler| SQL[Knex SQL Driver]
-    end
-    
-    Mongo -->|Aggregation| DB_NoSQL[(MongoDB)]
-    SQL -->|SQL Query| DB_SQL[(PostgreSQL)]
+main();
 
 ```
 
-## 📊 Visual Reporting
+---
 
-ObjectQL includes a comprehensive **visual reporting system** similar to Salesforce Reports:
+## 🔌 The Driver Ecosystem
 
-* **Multi-Table Joins**: Create reports spanning multiple related objects using dot notation (`project.owner.name`)
-* **Three Report Types**: Tabular (lists), Summary (grouped), and Matrix (pivot tables)
-* **Visual Builder**: React components for building reports without code
-* **Grouping & Aggregations**: Count, sum, average, min, max across grouped data
-* **Chart Integration**: Built-in visualization support
+ObjectQL isolates the "What" (Query) from the "How" (Execution).
 
-**Example Report Definition:**
+### SQL Driver (`@objectql/driver-sql`)
+
+* Supports PostgreSQL, MySQL, SQLite, SQL Server.
+* **Smart Hybrid Mode:** Automatically maps defined fields to SQL columns and undefined fields to a `_jsonb` column. This gives you the speed of SQL with the flexibility of NoSQL.
+
+### Mongo Driver (`@objectql/driver-mongo`)
+
+* Native translation to Aggregation Pipelines.
+* High performance for massive datasets.
+
+### SDK / Remote Driver (`@objectql/sdk`)
+
+* **The Magic:** You can run ObjectQL in the **Browser**.
+* Instead of connecting to a DB, it connects to an ObjectQL Server API.
+* The API usage remains exactly the same (`repo.find(...)`), but it runs over HTTP.
+
+---
+
+## 🛠️ Validation & Logic
+
+ObjectQL includes a powerful validation engine that runs universally.
+
 ```yaml
-# File: tasks_by_project.report.yml
-# Report name is inferred from filename!
+# user.validation.yml
+fields:
+  age:
+    min: 18
+    message: "Must be an adult"
+  
+  # Cross-field validation supported!
+  end_date:
+    operator: ">"
+    compare_to: "start_date"
 
-label: Tasks by Project and Priority
-type: summary
-object: tasks
-
-columns:
-  - field: project.name
-    label: Project
-  - field: priority
-    label: Priority
-
-groupings:
-  - field: project.name
-  - field: priority
-
-aggregations:
-  - field: id
-    function: count
-    label: Task Count
 ```
 
-See [Visual Reporting Guide](./docs/guide/visual-reporting.md) for complete documentation.
+This validation logic runs:
 
-## 📡 API Reference
+1. **On the Client (Browser):** For immediate UI feedback (via Object UI).
+2. **On the Server:** For data integrity security.
+*Write once, validate everywhere.*
 
-ObjectQL provides **multiple API styles** to suit different use cases:
+---
 
-* **[Complete API Reference](./docs/api/README.md)** - Comprehensive guide to all API endpoints
-* **[JSON-RPC API](./docs/api/README.md#json-rpc-style-api)** - Universal protocol for all operations
-* **[REST API](./docs/api/README.md#rest-style-api)** - Traditional REST endpoints
-* **[Metadata API](./docs/api/README.md#metadata-api)** - Runtime schema discovery and introspection
-* **[Authentication Guide](./docs/api/authentication.md)** - Securing your APIs with JWT, API keys, and more
+## ⚖️ License
 
-**Quick Example:**
-```bash
-# Create a record via JSON-RPC
-curl -X POST http://localhost:3000/api/objectql \
-  -H "Content-Type: application/json" \
-  -d '{
-    "op": "create",
-    "object": "tasks",
-    "args": {
-      "name": "Complete API documentation",
-      "priority": "high"
-    }
-  }'
+ObjectQL is open-source software licensed under the [MIT License](https://www.google.com/search?q=LICENSE).
+
+You can use it freely in personal, commercial, or open-source projects.
+
+---
+
+<div align="center">
+<sub><b>The Foundation of the Object Ecosystem</b></sub>
+
+
+
+
+<sub><b>ObjectQL (Data)</b> • <a href="https://github.com/objectql/objectos">ObjectOS (System)</a> • <a href="https://github.com/objectql/objectui">Object UI (View)</a></sub>
+</div>
+
 ```
 
 See the [API Reference](./docs/api/README.md) for complete documentation with examples.

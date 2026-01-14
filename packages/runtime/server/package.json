@@ -12,6 +12,8 @@
   "dependencies": {
     "@objectql/core": "workspace:*",
     "@objectql/types": "workspace:*",
+    "graphql": "^16.8.1",
+    "@graphql-tools/schema": "^10.0.2",
     "js-yaml": "^4.1.1"
   },
   "devDependencies": {

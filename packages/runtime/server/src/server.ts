@@ -107,6 +107,48 @@ export class ObjectQLServer {
                         return { ...result, '@type': req.object };
                     }
                     return result;
+                case 'createMany':
+                    // Bulk create operation
+                    if (!Array.isArray(req.args)) {
+                        return this.errorResponse(
+                            ErrorCode.INVALID_REQUEST,
+                            'createMany expects args to be an array of records'
+                        );
+                    }
+                    result = await repo.createMany(req.args);
+                    return { 
+                        items: result,
+                        count: Array.isArray(result) ? result.length : 0,
+                        '@type': req.object
+                    };
+                case 'updateMany':
+                    // Bulk update operation
+                    // args should be { filters, data }
+                    if (!req.args || typeof req.args !== 'object' || !req.args.data) {
+                        return this.errorResponse(
+                            ErrorCode.INVALID_REQUEST,
+                            'updateMany expects args to be an object with { filters, data }'
+                        );
+                    }
+                    result = await repo.updateMany(req.args.filters || {}, req.args.data);
+                    return { 
+                        count: result,
+                        '@type': req.object
+                    };
+                case 'deleteMany':
+                    // Bulk delete operation
+                    // args should be { filters }
+                    if (!req.args || typeof req.args !== 'object') {
+                        return this.errorResponse(
+                            ErrorCode.INVALID_REQUEST,
+                            'deleteMany expects args to be an object with { filters }'
+                        );
+                    }
+                    result = await repo.deleteMany(req.args.filters || {});
+                    return { 
+                        count: result,
+                        '@type': req.object
+                    };
                 default:
                     return this.errorResponse(
                         ErrorCode.INVALID_REQUEST,
