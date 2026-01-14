@@ -387,6 +387,12 @@ export class SqlDriver implements Driver {
             case 'file':
             case 'avatar':
             case 'location': col = table.json(name); break;
+            case 'lookup': 
+                col = table.string(name);
+                if (field.reference_to) {
+                    table.foreign(name).references('id').inTable(field.reference_to);
+                }
+                break;
             case 'summary': col = table.float(name); break; // Stored calculation result
             case 'auto_number': col = table.string(name); break; // Generated string
             case 'formula': return; // Virtual field, do not create column
@@ -532,6 +538,17 @@ export class SqlDriver implements Driver {
             const columns = await this.introspectColumns(tableName);
             const foreignKeys = await this.introspectForeignKeys(tableName);
             const primaryKeys = await this.introspectPrimaryKeys(tableName);
+            const uniqueConstraints = await this.introspectUniqueConstraints(tableName);
+            
+            // Update columns with primary key and unique information
+            for (const col of columns) {
+                if (primaryKeys.includes(col.name)) {
+                    col.isPrimary = true;
+                }
+                if (uniqueConstraints.includes(col.name)) {
+                    col.isUnique = true;
+                }
+            }
             
             tables[tableName] = {
                 name: tableName,
@@ -728,6 +745,72 @@ export class SqlDriver implements Driver {
         }
         
         return primaryKeys;
+    }
+
+    /**
+     * Get unique constraint information for a specific table.
+     */
+    private async introspectUniqueConstraints(tableName: string): Promise<string[]> {
+        const uniqueColumns: string[] = [];
+        
+        try {
+            if (this.config.client === 'pg' || this.config.client === 'postgresql') {
+                const result = await this.knex.raw(`
+                    SELECT c.column_name
+                    FROM information_schema.table_constraints tc
+                    JOIN information_schema.constraint_column_usage AS ccu 
+                        ON tc.constraint_schema = ccu.constraint_schema
+                        AND tc.constraint_name = ccu.constraint_name
+                    WHERE tc.constraint_type = 'UNIQUE' 
+                        AND tc.table_name = ?
+                `, [tableName]);
+                
+                for (const row of result.rows) {
+                    uniqueColumns.push(row.column_name);
+                }
+            } else if (this.config.client === 'mysql' || this.config.client === 'mysql2') {
+                const result = await this.knex.raw(`
+                    SELECT COLUMN_NAME
+                    FROM information_schema.TABLE_CONSTRAINTS tc
+                    JOIN information_schema.KEY_COLUMN_USAGE kcu
+                        USING (CONSTRAINT_NAME, TABLE_SCHEMA, TABLE_NAME)
+                    WHERE CONSTRAINT_TYPE = 'UNIQUE'
+                        AND TABLE_SCHEMA = DATABASE()
+                        AND TABLE_NAME = ?
+                `, [tableName]);
+                
+                for (const row of result[0]) {
+                    uniqueColumns.push(row.COLUMN_NAME);
+                }
+            } else if (this.config.client === 'sqlite3') {
+                const safeTableName = tableName.replace(/[^a-zA-Z0-9_]/g, '');
+                
+                // Validate table exists
+                const tablesResult = await this.knex.raw("SELECT name FROM sqlite_master WHERE type = 'table'");
+                const tableNames = Array.isArray(tablesResult) ? tablesResult.map((row: any) => row.name) : [];
+                
+                if (!tableNames.includes(safeTableName)) {
+                    return uniqueColumns;
+                }
+
+                const indexes = await this.knex.raw(`PRAGMA index_list(${safeTableName})`);
+                
+                for (const idx of indexes) {
+                     // Check if unique
+                    if (idx.unique === 1) {
+                         const info = await this.knex.raw(`PRAGMA index_info(${idx.name})`);
+                         // Only handle single column unique constraints for now
+                         if (info.length === 1) {
+                             uniqueColumns.push(info[0].name);
+                         }
+                    }
+                }
+            }
+        } catch (error) {
+            console.warn('Could not introspect unique constraints for a table:', error);
+        }
+        
+        return uniqueColumns;
     }
 
     async disconnect() {

@@ -177,7 +177,7 @@ describe('CLI Commands', () => {
                 name: 'users',
                 label: 'Users',
                 fields: {
-                    username: { type: 'text', required: true, unique: true },
+                    username: { type: 'string', required: true, unique: true },
                     email: { type: 'email', required: true },
                     is_active: { type: 'boolean', defaultValue: true }
                 }

@@ -70,6 +70,11 @@ const TEMPLATES: Record<string, any> = {
         type: 'record',
         handler: 'action_{{name}}'
     },
+    hook: {
+        label: '{{label}} Hook',
+        object: '{{objectName}}',
+        triggers: ['before_insert', 'after_insert']
+    },
     permission: {
         label: '{{label}} Permissions',
         object: '{{objectName}}',
