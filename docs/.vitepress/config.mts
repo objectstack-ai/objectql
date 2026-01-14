@@ -98,6 +98,7 @@ export default defineConfig({
           text: 'Data & Logic Layers',
           items: [
             { text: 'Data Modeling', link: '/guide/data-modeling' },
+            { text: 'Unified ID Migration', link: '/guide/migration-id-field' },
             { text: 'Querying Data', link: '/guide/querying' },
             { text: 'Formulas & Rules Syntax', link: '/guide/formulas-and-rules' },
             { text: '↳ Quick Reference', link: '/guide/formulas-and-rules-quick-ref' },
@@ -108,6 +109,7 @@ export default defineConfig({
         {
           text: 'System Architecture',
           items: [
+            { text: 'Architecture Overview', link: '/guide/architecture/overview' },
             { text: 'File Organization', link: '/guide/metadata-organization' },
             { text: 'Microservices & Federation', link: '/guide/microservices' },
             { text: 'Plugin System', link: '/guide/plugins' },
