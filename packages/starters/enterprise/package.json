@@ -1,6 +1,18 @@
 {
   "name": "@objectql/starter-enterprise",
   "version": "1.8.1",
+  "description": "Enterprise-scale starter template for ObjectQL - Advanced metadata organization with modular architecture",
+  "keywords": [
+    "objectql",
+    "starter",
+    "enterprise",
+    "template",
+    "boilerplate",
+    "advanced",
+    "modular",
+    "scalable",
+    "example"
+  ],
   "license": "MIT",
   "author": "ObjectQL Contributors",
   "repository": {
@@ -9,7 +21,6 @@
     "directory": "packages/starters/enterprise"
   },
   "private": false,
-  "description": "Enterprise-scale metadata organization example for ObjectQL",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [

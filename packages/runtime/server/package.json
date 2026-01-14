@@ -1,8 +1,20 @@
 {
   "name": "@objectql/server",
   "version": "1.8.1",
+  "description": "HTTP server adapter for ObjectQL - Express/NestJS compatible with GraphQL and REST API support",
+  "keywords": [
+    "objectql",
+    "server",
+    "http",
+    "api",
+    "rest",
+    "graphql",
+    "express",
+    "nestjs",
+    "adapter",
+    "backend"
+  ],
   "license": "MIT",
-  "description": "HTTP Server Adapter for ObjectQL",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {

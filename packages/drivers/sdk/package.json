@@ -1,8 +1,20 @@
 {
   "name": "@objectql/sdk",
   "version": "1.8.1",
+  "description": "Remote HTTP driver for ObjectQL - Universal client for browser, Node.js, and edge runtimes",
+  "keywords": [
+    "objectql",
+    "sdk",
+    "driver",
+    "remote",
+    "http",
+    "client",
+    "browser",
+    "universal",
+    "api",
+    "rest"
+  ],
   "license": "MIT",
-  "description": "Remote/HTTP Driver for ObjectQL",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {

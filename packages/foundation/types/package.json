@@ -1,6 +1,19 @@
 {
   "name": "@objectql/types",
   "version": "1.8.1",
+  "description": "Pure TypeScript type definitions and interfaces for the ObjectQL protocol - The Contract",
+  "keywords": [
+    "objectql",
+    "types",
+    "typescript",
+    "interfaces",
+    "protocol",
+    "schema",
+    "metadata",
+    "ai-native",
+    "orm",
+    "database"
+  ],
   "license": "MIT",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

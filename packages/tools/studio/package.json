@@ -1,8 +1,20 @@
 {
   "name": "@objectql/studio",
   "version": "1.8.1",
+  "description": "Web-based admin studio for ObjectQL - Visual database management, schema editor, and data browser",
+  "keywords": [
+    "objectql",
+    "studio",
+    "admin",
+    "gui",
+    "database",
+    "management",
+    "react",
+    "vite",
+    "ag-grid",
+    "visual-editor"
+  ],
   "license": "MIT",
-  "description": "Web-based admin studio for ObjectQL database management",
   "type": "module",
   "scripts": {
     "dev": "vite",
