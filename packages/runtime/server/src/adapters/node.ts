@@ -1,14 +1,35 @@
 import { IObjectQL } from '@objectql/types';
 import { ObjectQLServer } from '../server';
-import { ObjectQLRequest, ErrorCode } from '../types';
+import { ObjectQLRequest, ErrorCode, IFileStorage } from '../types';
 import { IncomingMessage, ServerResponse } from 'http';
 import { generateOpenAPI } from '../openapi';
+import { createFileUploadHandler, createBatchFileUploadHandler, createFileDownloadHandler } from '../file-handler';
+import { LocalFileStorage } from '../storage';
+
+/**
+ * Options for createNodeHandler
+ */
+export interface NodeHandlerOptions {
+    /** File storage provider (defaults to LocalFileStorage) */
+    fileStorage?: IFileStorage;
+}
 
 /**
  * Creates a standard Node.js HTTP request handler.
  */
-export function createNodeHandler(app: IObjectQL) {
+export function createNodeHandler(app: IObjectQL, options?: NodeHandlerOptions) {
     const server = new ObjectQLServer(app);
+    
+    // Initialize file storage
+    const fileStorage = options?.fileStorage || new LocalFileStorage({
+        baseDir: process.env.OBJECTQL_UPLOAD_DIR || './uploads',
+        baseUrl: process.env.OBJECTQL_BASE_URL || 'http://localhost:3000/api/files'
+    });
+    
+    // Create file handlers
+    const uploadHandler = createFileUploadHandler(fileStorage, app);
+    const batchUploadHandler = createBatchFileUploadHandler(fileStorage, app);
+    const downloadHandler = createFileDownloadHandler(fileStorage);
 
 
     return async (req: IncomingMessage & { body?: any }, res: ServerResponse) => {
@@ -163,6 +184,27 @@ export function createNodeHandler(app: IObjectQL) {
                 });
                 return;
             }
+        }
+        
+        // File Upload Endpoints
+        // POST /api/files/upload - Single file upload
+        if (pathName === '/api/files/upload' && method === 'POST') {
+            await uploadHandler(req, res);
+            return;
+        }
+        
+        // POST /api/files/upload/batch - Batch file upload
+        if (pathName === '/api/files/upload/batch' && method === 'POST') {
+            await batchUploadHandler(req, res);
+            return;
+        }
+        
+        // GET /api/files/:fileId - Download file
+        const fileMatch = pathName.match(/^\/api\/files\/([^/]+)$/);
+        if (fileMatch && method === 'GET') {
+            const fileId = fileMatch[1];
+            await downloadHandler(req, res, fileId);
+            return;
         }
         
         // Fallback or 404
