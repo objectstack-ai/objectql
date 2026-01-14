@@ -109,6 +109,12 @@ export class ObjectQLServer {
                     return result;
                 case 'createMany':
                     // Bulk create operation
+                    if (!Array.isArray(req.args)) {
+                        return this.errorResponse(
+                            ErrorCode.INVALID_REQUEST,
+                            'createMany expects args to be an array of records'
+                        );
+                    }
                     result = await repo.createMany(req.args);
                     return { 
                         items: result,
@@ -118,7 +124,13 @@ export class ObjectQLServer {
                 case 'updateMany':
                     // Bulk update operation
                     // args should be { filters, data }
-                    result = await repo.updateMany(req.args.filters, req.args.data);
+                    if (!req.args || typeof req.args !== 'object' || !req.args.data) {
+                        return this.errorResponse(
+                            ErrorCode.INVALID_REQUEST,
+                            'updateMany expects args to be an object with { filters, data }'
+                        );
+                    }
+                    result = await repo.updateMany(req.args.filters || {}, req.args.data);
                     return { 
                         count: result,
                         '@type': req.object
@@ -126,7 +138,13 @@ export class ObjectQLServer {
                 case 'deleteMany':
                     // Bulk delete operation
                     // args should be { filters }
-                    result = await repo.deleteMany(req.args.filters || req.args);
+                    if (!req.args || typeof req.args !== 'object') {
+                        return this.errorResponse(
+                            ErrorCode.INVALID_REQUEST,
+                            'deleteMany expects args to be an object with { filters }'
+                        );
+                    }
+                    result = await repo.deleteMany(req.args.filters || {});
                     return { 
                         count: result,
                         '@type': req.object

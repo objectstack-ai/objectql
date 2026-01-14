@@ -182,7 +182,7 @@ export function createRESTHandler(app: IObjectQL) {
                             op: 'deleteMany',
                             object: objectName,
                             args: {
-                                filters: createBody.filters || createBody
+                                filters: createBody.filters || {}
                             }
                         };
                     } else if (Array.isArray(createBody)) {

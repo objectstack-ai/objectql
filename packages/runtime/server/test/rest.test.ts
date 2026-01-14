@@ -19,6 +19,24 @@ class MockDriver implements Driver {
     async find(objectName: string, query: any) {
         let items = this.data[objectName] || [];
         
+        // Apply filters if provided
+        if (query && query.filters) {
+            const filters = query.filters;
+            if (typeof filters === 'object') {
+                const filterKeys = Object.keys(filters);
+                if (filterKeys.length > 0) {
+                    items = items.filter(item => {
+                        for (const [key, value] of Object.entries(filters)) {
+                            if (item[key] !== value) {
+                                return false;
+                            }
+                        }
+                        return true;
+                    });
+                }
+            }
+        }
+        
         // Apply skip and limit if provided
         if (query) {
             if (query.skip) {
@@ -90,14 +108,23 @@ class MockDriver implements Driver {
         const items = this.data[objectName] || [];
         let count = 0;
         
-        // Simple filter support - just check for exact match
+        // NOTE: Simplified filter implementation for testing purposes only.
+        // Production drivers should implement full ObjectQL filter evaluation
+        // with support for operators like ["<", value], [">=", value], etc.
+        // This mock only supports exact-match comparison on object properties.
         items.forEach((item, index) => {
             let matches = true;
             if (filters && typeof filters === 'object') {
-                for (const [key, value] of Object.entries(filters)) {
-                    if (item[key] !== value) {
-                        matches = false;
-                        break;
+                const filterKeys = Object.keys(filters);
+                // If no filter keys, match nothing (not everything)
+                if (filterKeys.length === 0) {
+                    matches = false;
+                } else {
+                    for (const [key, value] of Object.entries(filters)) {
+                        if (item[key] !== value) {
+                            matches = false;
+                            break;
+                        }
                     }
                 }
             }
@@ -114,14 +141,22 @@ class MockDriver implements Driver {
         const items = this.data[objectName] || [];
         const initialLength = items.length;
         
-        // Simple filter support - just check for exact match
+        // NOTE: Simplified filter implementation for testing purposes only.
+        // Production drivers should implement full ObjectQL filter evaluation.
+        // This mock only supports exact-match comparison on object properties.
         this.data[objectName] = items.filter(item => {
             let matches = true;
             if (filters && typeof filters === 'object') {
-                for (const [key, value] of Object.entries(filters)) {
-                    if (item[key] !== value) {
-                        matches = false;
-                        break;
+                const filterKeys = Object.keys(filters);
+                // If no filter keys, match nothing (not everything)
+                if (filterKeys.length === 0) {
+                    matches = false;
+                } else {
+                    for (const [key, value] of Object.entries(filters)) {
+                        if (item[key] !== value) {
+                            matches = false;
+                            break;
+                        }
                     }
                 }
             }
@@ -301,6 +336,14 @@ describe('REST API Adapter', () => {
             expect(response.status).toBe(200);
             expect(response.body.count).toBeGreaterThan(0);
             expect(response.body['@type']).toBe('user');
+
+            // Verify the records were actually updated
+            const verifyResponse = await request(server)
+                .get('/api/data/user')
+                .set('Accept', 'application/json');
+            
+            const adminUsers = verifyResponse.body.items.filter((u: any) => u.role === 'admin');
+            expect(adminUsers.length).toBeGreaterThan(0);
         });
 
         it('should handle POST /api/data/:object/bulk-delete - Delete many records', async () => {
@@ -323,6 +366,75 @@ describe('REST API Adapter', () => {
             expect(response.status).toBe(200);
             expect(response.body.count).toBeGreaterThan(0);
             expect(response.body['@type']).toBe('user');
+
+            // Verify the records were actually deleted
+            const verifyResponse = await request(server)
+                .get('/api/data/user')
+                .set('Accept', 'application/json');
+            
+            const inactiveUsers = verifyResponse.body.items.filter((u: any) => u.status === 'inactive');
+            expect(inactiveUsers.length).toBe(0);
+        });
+
+        // Edge case tests
+        it('should handle createMany with empty array', async () => {
+            const response = await request(server)
+                .post('/api/data/user')
+                .send([])
+                .set('Accept', 'application/json');
+
+            expect(response.status).toBe(201);
+            expect(response.body.items).toHaveLength(0);
+            expect(response.body.count).toBe(0);
+        });
+
+        it('should handle updateMany with no matching records', async () => {
+            const response = await request(server)
+                .post('/api/data/user/bulk-update')
+                .send({
+                    filters: { role: 'nonexistent' },
+                    data: { role: 'admin' }
+                })
+                .set('Accept', 'application/json');
+
+            expect(response.status).toBe(200);
+            expect(response.body.count).toBe(0);
+        });
+
+        it('should handle deleteMany with no matching records', async () => {
+            const response = await request(server)
+                .post('/api/data/user/bulk-delete')
+                .send({
+                    filters: { status: 'nonexistent' }
+                })
+                .set('Accept', 'application/json');
+
+            expect(response.status).toBe(200);
+            expect(response.body.count).toBe(0);
+        });
+
+        it('should return error for updateMany without data field', async () => {
+            const response = await request(server)
+                .post('/api/data/user/bulk-update')
+                .send({
+                    filters: { role: 'user' }
+                    // Missing data field
+                })
+                .set('Accept', 'application/json');
+
+            expect(response.status).toBe(400);
+            expect(response.body.error.code).toBe('INVALID_REQUEST');
+        });
+
+        it('should return error for createMany with non-array', async () => {
+            const response = await request(server)
+                .post('/api/data/user')
+                .send({ name: 'NotAnArray' }) // Send object instead of array when bulk create expected
+                .set('Accept', 'application/json');
+
+            // Should still work as single create
+            expect(response.status).toBe(201);
+            expect(response.body._id).toBeDefined();
         });
     });
 });

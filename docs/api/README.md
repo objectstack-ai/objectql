@@ -384,6 +384,12 @@ Execute a custom server-side action (RPC-style operation).
 
 ObjectQL supports efficient bulk operations for creating, updating, and deleting multiple records in a single request.
 
+**Important Notes:**
+- **Validation & Hooks**: Bulk operations process each record individually to ensure validation rules and hooks (beforeCreate, afterCreate, etc.) are properly executed, maintaining data integrity
+- **Atomicity**: Operations are not atomic by default - if one record fails, others may have already been processed
+- **Performance**: While bulk operations are more efficient than separate API calls, they may be slower than driver-level bulk operations due to individual validation/hook execution
+- **Use Cases**: Use bulk operations when you need consistent validation and business logic enforcement. For high-performance batch imports where validation is already handled, consider using driver-level operations directly
+
 #### 8. `createMany` - Create Multiple Records
 
 Insert multiple records in a single operation.
@@ -497,6 +503,22 @@ Delete all records matching a filter.
 {
   "count": 42,
   "@type": "tasks"
+}
+```
+
+**Error Handling Example:**
+```json
+// If a record fails validation during bulk operation
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Validation failed",
+    "details": {
+      "fields": {
+        "priority": "Invalid priority value"
+      }
+    }
+  }
 }
 ```
 
