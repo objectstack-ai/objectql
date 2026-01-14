@@ -2,15 +2,15 @@
 
 The Metadata API provides runtime access to schema information, object definitions, and configuration.
 
-### Base Endpoint
+## Base Endpoint
 
 ```
 /api/metadata
 ```
 
-### Endpoints
+## Endpoints
 
-#### 1. List All Objects
+## 1. List All Objects
 
 Get a list of all registered objects/tables.
 
@@ -40,7 +40,7 @@ GET /api/metadata/objects
 }
 ```
 
-#### 2. Get Object Schema
+## 2. Get Object Schema
 
 Get detailed schema for a specific object.
 
@@ -87,7 +87,7 @@ GET /api/metadata/objects/users
 }
 ```
 
-#### 3. Update Metadata (Admin)
+## 3. Update Metadata (Admin)
 
 Dynamically update object configuration at runtime.
 
@@ -109,7 +109,7 @@ Authorization: Bearer <admin_token>
 }
 ```
 
-#### 4. Get Field Metadata
+## 4. Get Field Metadata
 
 Get detailed information about a specific field.
 
@@ -134,7 +134,7 @@ GET /api/metadata/objects/users/fields/email
 }
 ```
 
-#### 5. List Actions
+## 5. List Actions
 
 Get all custom actions for an object.
 

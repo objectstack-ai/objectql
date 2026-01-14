@@ -11,7 +11,7 @@ The GraphQL API provides:
 - **Real-time introspection** for developer tools
 - **Standards-compliant** GraphQL implementation
 
-### Endpoint
+## Endpoint
 
 ```
 POST /api/graphql
@@ -26,7 +26,7 @@ Both GET and POST methods are supported:
 
 ## Getting Started
 
-### Installation
+## Installation
 
 The GraphQL adapter is included in `@objectql/server`:
 
@@ -52,7 +52,7 @@ server.on('request', (req, res) => {
 });
 ```
 
-### Basic Query Example
+## Basic Query Example
 
 ```graphql
 query {
@@ -88,7 +88,7 @@ The GraphQL schema is **automatically generated** from your ObjectQL metadata. E
 3. **Query Fields**: For fetching data (e.g., `user(id)`, `userList()`)
 4. **Mutation Fields**: For creating/updating/deleting data
 
-### Example Object Definition
+## Example Object Definition
 
 ```yaml
 # user.object.yml
@@ -131,7 +131,7 @@ input UserInput {
 
 ## Queries
 
-### Fetch Single Record
+## Fetch Single Record
 
 Query a single record by ID:
 
@@ -146,7 +146,7 @@ query {
 }
 ```
 
-### Fetch Multiple Records
+## Fetch Multiple Records
 
 Query multiple records with optional filtering and pagination:
 
@@ -167,7 +167,7 @@ query {
 - `fields` (List): Specific fields to include
 - `sort` (String): JSON-encoded sort specification
 
-### Advanced Filtering
+## Advanced Filtering
 
 Use the `filters` argument with JSON-encoded filter expressions:
 
@@ -185,7 +185,7 @@ query {
 }
 ```
 
-### Sorting
+## Sorting
 
 Use the `sort` argument with JSON-encoded sort specification:
 
@@ -201,7 +201,7 @@ query {
 }
 ```
 
-### Field Selection
+## Field Selection
 
 GraphQL's field selection naturally limits the data returned:
 
@@ -219,7 +219,7 @@ query {
 
 ## Mutations
 
-### Create Record
+## Create Record
 
 ```graphql
 mutation {
@@ -248,7 +248,7 @@ mutation {
 }
 ```
 
-### Update Record
+## Update Record
 
 ```graphql
 mutation {
@@ -264,7 +264,7 @@ mutation {
 }
 ```
 
-### Delete Record
+## Delete Record
 
 ```graphql
 mutation {
@@ -293,7 +293,7 @@ mutation {
 
 GraphQL variables provide a cleaner way to pass dynamic values:
 
-### Query with Variables
+## Query with Variables
 
 ```graphql
 query GetUser($userId: String!) {
@@ -322,7 +322,7 @@ query GetUser($userId: String!) {
 }
 ```
 
-### Mutation with Variables
+## Mutation with Variables
 
 ```graphql
 mutation CreateUser($input: UserInput!) {
@@ -372,7 +372,7 @@ For complex queries or mutations, use POST requests.
 
 ## Error Handling
 
-### GraphQL Errors
+## GraphQL Errors
 
 Errors follow the GraphQL specification:
 
@@ -389,7 +389,7 @@ Errors follow the GraphQL specification:
 }
 ```
 
-### Validation Errors
+## Validation Errors
 
 ```json
 {
@@ -404,7 +404,7 @@ Errors follow the GraphQL specification:
 }
 ```
 
-### Not Found
+## Not Found
 
 ```json
 {
@@ -432,7 +432,7 @@ ObjectQL field types are mapped to GraphQL types:
 | `file`, `image` | `String` | File metadata as JSON |
 | `object`, `json` | `String` | JSON as string |
 
-### Required Fields
+## Required Fields
 
 Fields marked as `required: true` in ObjectQL become non-nullable (`!`) in GraphQL:
 
@@ -457,7 +457,7 @@ type User {
 
 GraphQL provides built-in introspection for schema discovery:
 
-### Get All Types
+## Get All Types
 
 ```graphql
 {
@@ -471,7 +471,7 @@ GraphQL provides built-in introspection for schema discovery:
 }
 ```
 
-### Get Type Details
+## Get Type Details
 
 ```graphql
 {
@@ -489,7 +489,7 @@ GraphQL provides built-in introspection for schema discovery:
 }
 ```
 
-### Available Operations
+## Available Operations
 
 ```graphql
 {
@@ -514,7 +514,7 @@ GraphQL provides built-in introspection for schema discovery:
 
 ## Client Integration
 
-### JavaScript/TypeScript
+## JavaScript/TypeScript
 
 ```typescript
 const query = `
@@ -540,7 +540,7 @@ const result = await response.json();
 console.log(result.data.userList);
 ```
 
-### Apollo Client
+## Apollo Client
 
 ```typescript
 import { ApolloClient, InMemoryCache, gql } from '@apollo/client';
@@ -563,7 +563,7 @@ const { data } = await client.query({
 });
 ```
 
-### React with Apollo
+## React with Apollo
 
 ```tsx
 import { useQuery, gql } from '@apollo/client';
@@ -598,7 +598,7 @@ function UserList() {
 
 ## Development Tools
 
-### GraphQL Playground
+## GraphQL Playground
 
 ObjectQL doesn't include GraphQL Playground by default, but you can easily add it:
 
@@ -616,7 +616,7 @@ app.use('/api/graphql', graphqlHTTP({
 }));
 ```
 
-### Postman
+## Postman
 
 Import the GraphQL schema into Postman for testing:
 1. Create a new GraphQL request
@@ -627,7 +627,7 @@ Import the GraphQL schema into Postman for testing:
 
 ## Best Practices
 
-### 1. Request Only What You Need
+## 1. Request Only What You Need
 
 ❌ **Don't** request all fields:
 ```graphql
@@ -656,7 +656,7 @@ query {
 }
 ```
 
-### 2. Use Variables for Dynamic Values
+## 2. Use Variables for Dynamic Values
 
 ❌ **Don't** embed values in queries:
 ```graphql
@@ -676,7 +676,7 @@ query GetUser($id: String!) {
 }
 ```
 
-### 3. Use Fragments for Reusability
+## 3. Use Fragments for Reusability
 
 ```graphql
 fragment UserBasic on User {
@@ -697,7 +697,7 @@ query {
 }
 ```
 
-### 4. Implement Pagination
+## 4. Implement Pagination
 
 ```graphql
 query GetUsersPaginated($limit: Int!, $skip: Int!) {
@@ -709,7 +709,7 @@ query GetUsersPaginated($limit: Int!, $skip: Int!) {
 }
 ```
 
-### 5. Handle Errors Gracefully
+## 5. Handle Errors Gracefully
 
 ```typescript
 const result = await fetch('/api/graphql', {
@@ -733,7 +733,7 @@ if (json.data) {
 
 ## Comparison with Other APIs
 
-### GraphQL vs REST
+## GraphQL vs REST
 
 | Feature | GraphQL | REST |
 |---------|---------|------|
@@ -745,7 +745,7 @@ if (json.data) {
 | **Versioning** | Schema evolution | URL versioning |
 | **Caching** | More complex | Simple (HTTP) |
 
-### GraphQL vs JSON-RPC
+## GraphQL vs JSON-RPC
 
 | Feature | GraphQL | JSON-RPC |
 |---------|---------|----------|
@@ -756,7 +756,7 @@ if (json.data) {
 | **Learning Curve** | Moderate | Low |
 | **Flexibility** | High | Very High |
 
-### When to Use GraphQL
+## When to Use GraphQL
 
 **Use GraphQL when:**
 - Building complex UIs with nested data requirements
@@ -781,7 +781,7 @@ if (json.data) {
 
 ## Limitations
 
-### Current Limitations
+## Current Limitations
 
 1. **No Subscriptions**: Real-time subscriptions are not yet supported
 2. **No Nested Mutations**: Cannot create related records in a single mutation
@@ -789,7 +789,7 @@ if (json.data) {
 4. **No Custom Scalars**: Uses built-in GraphQL scalars only
 5. **No Directives**: Custom directives not supported
 
-### Planned Features
+## Planned Features
 
 - **Nested Relationships**: Query related objects without separate requests
 - **Subscriptions**: Real-time updates via WebSocket
@@ -802,7 +802,7 @@ if (json.data) {
 
 ## Performance Considerations
 
-### Query Complexity
+## Query Complexity
 
 ObjectQL GraphQL doesn't currently limit query complexity. For production:
 
@@ -811,7 +811,7 @@ ObjectQL GraphQL doesn't currently limit query complexity. For production:
 3. **Monitor Performance**: Track slow queries
 4. **Add Caching**: Use Redis or similar for frequently accessed data
 
-### Database Optimization
+## Database Optimization
 
 1. **Add Indexes**: Index fields used in filters and sorts
 2. **Use Pagination**: Always limit result sets
@@ -821,7 +821,7 @@ ObjectQL GraphQL doesn't currently limit query complexity. For production:
 
 ## Security
 
-### Authentication
+## Authentication
 
 GraphQL uses the same authentication as other ObjectQL APIs:
 
@@ -834,14 +834,14 @@ fetch('/api/graphql', {
 })
 ```
 
-### Authorization
+## Authorization
 
 ObjectQL's permission system works with GraphQL:
 - Object-level permissions
 - Field-level permissions  
 - Record-level permissions
 
-### Best Practices
+## Best Practices
 
 1. **Always Authenticate**: Require authentication for mutations
 2. **Validate Input**: ObjectQL validates based on schema
@@ -853,7 +853,7 @@ ObjectQL's permission system works with GraphQL:
 
 ## Troubleshooting
 
-### Common Issues
+## Common Issues
 
 **Query Returns Null**
 
@@ -882,7 +882,7 @@ Solutions:
 
 ## Examples
 
-### Complete CRUD Example
+## Complete CRUD Example
 
 ```graphql
 # Create

@@ -2,7 +2,7 @@
 
 ObjectQL supports configurable rate limiting to prevent abuse.
 
-### Default Limits
+## Default Limits
 
 | Tier | Requests/Minute | Requests/Hour |
 |------|-----------------|---------------|
@@ -10,7 +10,7 @@ ObjectQL supports configurable rate limiting to prevent abuse.
 | Authenticated | 100 | 1000 |
 | Premium | 500 | 10000 |
 
-### Rate Limit Headers
+## Rate Limit Headers
 
 All responses include rate limit information:
 
@@ -20,7 +20,7 @@ X-RateLimit-Remaining: 95
 X-RateLimit-Reset: 1642258800
 ```
 
-### Rate Limit Exceeded
+## Rate Limit Exceeded
 
 When rate limit is exceeded:
 

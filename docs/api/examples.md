@@ -1,6 +1,6 @@
 # Examples
 
-### Example 1: User Registration Flow
+## Example 1: User Registration Flow
 
 ```javascript
 // 1. Create user
@@ -40,7 +40,7 @@ await fetch('/api/objectql', {
 });
 ```
 
-### Example 2: Dashboard Analytics
+## Example 2: Dashboard Analytics
 
 ```javascript
 // Get sales metrics for dashboard
@@ -82,7 +82,7 @@ const { items } = await response.json();
 // ]
 ```
 
-### Example 3: Complex Search with Relations
+## Example 3: Complex Search with Relations
 
 ```javascript
 // Find customers with high-value recent orders
@@ -121,7 +121,7 @@ const response = await fetch('/api/objectql', {
 });
 ```
 
-### Example 4: Bulk Operations
+## Example 4: Bulk Operations
 
 ```javascript
 // Create multiple records in one request

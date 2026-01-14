@@ -28,7 +28,7 @@ All attachment fields store metadata as JSON in the database, while the actual f
 
 **Note:** User profile pictures (avatars) should use the `image` type with appropriate constraints (e.g., `multiple: false`, size limits, aspect ratio requirements). UI frameworks can identify avatar fields by naming conventions (e.g., `profile_picture`, `avatar`) to apply specific rendering (circular cropping, etc.).
 
-### Design Principles
+## Design Principles
 
 1. **Metadata-Driven**: File metadata (URL, size, type) is stored in the database
 2. **Storage-Agnostic**: Actual files can be stored anywhere (local, S3, CDN)
@@ -40,7 +40,7 @@ All attachment fields store metadata as JSON in the database, while the actual f
 
 ## Field Types
 
-### `file` Field Type
+## `file` Field Type
 
 General-purpose file attachment field.
 
@@ -76,7 +76,7 @@ fields:
     max_size: 10485760  # 10MB
 ```
 
-### `image` Field Type
+## `image` Field Type
 
 Image-specific attachment field with additional metadata support.
 
@@ -132,7 +132,7 @@ fields:
 
 Attachment fields store structured JSON data containing file metadata. The actual file content is stored separately.
 
-### Single File Format
+## Single File Format
 
 For non-multiple file/image fields, the data is stored as a single object:
 
@@ -179,7 +179,7 @@ interface AttachmentData {
 }
 ```
 
-### Multiple Files Format
+## Multiple Files Format
 
 For `multiple: true` fields, the data is an array of attachment objects:
 
@@ -210,7 +210,7 @@ type MultipleAttachmentData = AttachmentData[];
 ]
 ```
 
-### Image-Specific Metadata
+## Image-Specific Metadata
 
 Image fields can include additional metadata:
 
@@ -260,7 +260,7 @@ interface ImageAttachmentData extends AttachmentData {
 
 ObjectQL provides dedicated endpoints for file uploads using multipart/form-data.
 
-### Upload Endpoint
+## Upload Endpoint
 
 ```
 POST /api/files/upload
@@ -268,7 +268,7 @@ Content-Type: multipart/form-data
 Authorization: Bearer <token>
 ```
 
-### Request Format
+## Request Format
 
 Use standard multipart form data with the following fields:
 
@@ -279,7 +279,7 @@ Use standard multipart form data with the following fields:
 | `field` | string | No | Field name (for validation against field config) |
 | `folder` | string | No | Logical folder/path for organization |
 
-### Response Format
+## Response Format
 
 **Success Response (200 OK):**
 
@@ -312,7 +312,7 @@ Use standard multipart form data with the following fields:
 }
 ```
 
-### Upload Examples
+## Upload Examples
 
 **Using cURL:**
 
@@ -368,7 +368,7 @@ const response = await axios.post('/api/files/upload', formData, {
 const uploadedFile = response.data.data;
 ```
 
-### Batch Upload
+## Batch Upload
 
 For uploading multiple files at once:
 
@@ -423,7 +423,7 @@ curl -X POST https://api.example.com/api/files/upload/batch \
 
 ## CRUD Operations with Attachments
 
-### Creating Records with Attachments
+## Creating Records with Attachments
 
 **Step 1: Upload the file(s)**
 
@@ -485,7 +485,7 @@ const expense = (await createResponse.json()).data;
 }
 ```
 
-### Creating with Multiple Attachments
+## Creating with Multiple Attachments
 
 ```json
 {
@@ -519,7 +519,7 @@ const expense = (await createResponse.json()).data;
 }
 ```
 
-### Updating Attachments
+## Updating Attachments
 
 **Replace entire attachment:**
 
@@ -591,7 +591,7 @@ await fetch('/api/objectql', {
 }
 ```
 
-### Querying Records with Attachments
+## Querying Records with Attachments
 
 Attachments are returned as part of the record data:
 
@@ -633,7 +633,7 @@ Attachments are returned as part of the record data:
 }
 ```
 
-### Filtering by Attachment Presence
+## Filtering by Attachment Presence
 
 Check if a file is attached:
 
@@ -663,7 +663,7 @@ Check if no file is attached:
 
 ## Download & Access
 
-### Direct URL Access
+## Direct URL Access
 
 Files are accessed directly via their `url` property:
 
@@ -678,7 +678,7 @@ window.open(receiptUrl, '_blank');
 document.getElementById('receipt-img').src = receiptUrl;
 ```
 
-### Secure Download Endpoint
+## Secure Download Endpoint
 
 For files requiring authentication:
 
@@ -695,7 +695,7 @@ curl -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   --output receipt.pdf
 ```
 
-### Thumbnail/Preview Endpoint
+## Thumbnail/Preview Endpoint
 
 For images, request specific sizes:
 
@@ -718,7 +718,7 @@ GET /api/files/:fileId/preview?width=200&height=200
 
 ## Best Practices
 
-### Security
+## Security
 
 1. **Validate File Types**: Always specify `accept` to restrict file types
 2. **Enforce Size Limits**: Set appropriate `max_size` to prevent abuse
@@ -726,7 +726,7 @@ GET /api/files/:fileId/preview?width=200&height=200
 4. **Use Signed URLs**: For sensitive files, use time-limited signed URLs
 5. **Authenticate Downloads**: Require authentication for private files
 
-### Performance
+## Performance
 
 1. **Use CDN**: Store files on CDN for fast global access
 2. **Generate Thumbnails**: Pre-generate image thumbnails for galleries
@@ -734,7 +734,7 @@ GET /api/files/:fileId/preview?width=200&height=200
 4. **Compress Images**: Automatically compress uploaded images
 5. **Cache Metadata**: Cache file metadata to reduce database queries
 
-### Storage
+## Storage
 
 1. **Organize by Object**: Store files in folders by object type
 2. **Use Object Storage**: Use S3, GCS, or Azure Blob for scalability
@@ -742,7 +742,7 @@ GET /api/files/:fileId/preview?width=200&height=200
 4. **Version Files**: Keep file versions for audit trails
 5. **Backup Regularly**: Include files in backup strategy
 
-### User Experience
+## User Experience
 
 1. **Show Upload Progress**: Display progress bars for large files
 2. **Preview Before Upload**: Show image previews before submission
@@ -754,7 +754,7 @@ GET /api/files/:fileId/preview?width=200&height=200
 
 ## Examples
 
-### Complete Upload & Create Flow
+## Complete Upload & Create Flow
 
 ```javascript
 /**
@@ -817,7 +817,7 @@ const expense = await createExpenseWithReceipt({
 console.log('Created expense:', expense);
 ```
 
-### Product Gallery Management
+## Product Gallery Management
 
 ```javascript
 /**
@@ -871,7 +871,7 @@ const product = await createProductWithGallery({
 }, files);
 ```
 
-### Update User Avatar
+## Update User Avatar
 
 ```javascript
 /**
@@ -919,7 +919,7 @@ const avatarFile = document.getElementById('avatar-input').files[0];
 const updatedUser = await updateUserAvatar('user_123', avatarFile);
 ```
 
-### React Component Example
+## React Component Example
 
 ```typescript
 import React, { useState } from 'react';

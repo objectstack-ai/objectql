@@ -1,6 +1,6 @@
 # Error Handling
 
-### Error Response Format
+## Error Response Format
 
 All errors follow a consistent format:
 
@@ -17,7 +17,7 @@ All errors follow a consistent format:
 }
 ```
 
-### Error Codes
+## Error Codes
 
 | Code | HTTP Status | Description |
 |------|-------------|-------------|
@@ -30,7 +30,7 @@ All errors follow a consistent format:
 | `INTERNAL_ERROR` | 500 | Server error |
 | `DATABASE_ERROR` | 500 | Database operation failed |
 
-### Example Error Responses
+## Example Error Responses
 
 **Validation Error:**
 ```json

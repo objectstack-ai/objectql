@@ -4,7 +4,7 @@
 
 For real-time updates and live data synchronization.
 
-### Connection
+## Connection
 
 ```javascript
 const ws = new WebSocket('ws://localhost:3000/api/realtime');

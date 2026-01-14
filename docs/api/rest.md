@@ -2,7 +2,7 @@
 
 For traditional REST clients, ObjectQL can expose a REST-style interface.
 
-### Endpoints
+## Endpoints
 
 | Method | Path | Description |
 |--------|------|-------------|
@@ -14,7 +14,7 @@ For traditional REST clients, ObjectQL can expose a REST-style interface.
 | `PUT` | `/api/data/:object/:id` | Update record |
 | `DELETE` | `/api/data/:object/:id` | Delete record |
 
-### List Records
+## List Records
 
 ```bash
 GET /api/data/users?filter={"status":"active"}&sort=created_at&limit=20
@@ -34,7 +34,7 @@ GET /api/data/users?filter={"status":"active"}&sort=created_at&limit=20
 }
 ```
 
-### Get Single Record
+## Get Single Record
 
 ```bash
 GET /api/data/users/user_123
@@ -50,7 +50,7 @@ GET /api/data/users/user_123
 }
 ```
 
-### Create Record
+## Create Record
 
 ```bash
 POST /api/data/users
@@ -75,7 +75,7 @@ Content-Type: application/json
 }
 ```
 
-### Update Record
+## Update Record
 
 ```bash
 PUT /api/data/users/user_456
@@ -96,7 +96,7 @@ Content-Type: application/json
 }
 ```
 
-### Delete Record
+## Delete Record
 
 ```bash
 DELETE /api/data/users/user_456
@@ -111,9 +111,9 @@ DELETE /api/data/users/user_456
 }
 ```
 
-### Bulk Operations (REST)
+## Bulk Operations (REST)
 
-#### Create Many Records
+## Create Many Records
 
 Send an array in the POST body to create multiple records at once.
 
@@ -171,7 +171,7 @@ Content-Type: application/json
 }
 ```
 
-#### Update Many Records
+## Update Many Records
 
 Update all records matching the provided filters.
 
@@ -199,7 +199,7 @@ Content-Type: application/json
 }
 ```
 
-#### Delete Many Records
+## Delete Many Records
 
 Delete all records matching the provided filters.
 

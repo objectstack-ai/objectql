@@ -2,14 +2,14 @@
 
 The **primary ObjectQL API** is a JSON-RPC style protocol where all operations are sent to a single endpoint.
 
-### Base Endpoint
+## Base Endpoint
 
 ```
 POST /api/objectql
 Content-Type: application/json
 ```
 
-### Request Format
+## Request Format
 
 ```typescript
 interface ObjectQLRequest {
@@ -31,7 +31,7 @@ interface ObjectQLRequest {
 }
 ```
 
-### Response Format
+## Response Format
 
 ```typescript
 interface ObjectQLResponse {
@@ -63,9 +63,9 @@ interface ObjectQLResponse {
 }
 ```
 
-### Operations
+## Operations
 
-#### 1. `find` - Query Records
+## 1. `find` - Query Records
 
 Retrieve multiple records with filtering, sorting, pagination, and joins.
 
@@ -118,7 +118,7 @@ Retrieve multiple records with filtering, sorting, pagination, and joins.
 }
 ```
 
-#### 2. `findOne` - Get Single Record
+## 2. `findOne` - Get Single Record
 
 Retrieve a single record by ID or query.
 
@@ -152,7 +152,7 @@ Retrieve a single record by ID or query.
 }
 ```
 
-#### 3. `create` - Create Record
+## 3. `create` - Create Record
 
 Insert a new record.
 
@@ -183,7 +183,7 @@ Insert a new record.
 }
 ```
 
-#### 4. `update` - Update Record
+## 4. `update` - Update Record
 
 Modify an existing record.
 
@@ -212,7 +212,7 @@ Modify an existing record.
 }
 ```
 
-#### 5. `delete` - Delete Record
+## 5. `delete` - Delete Record
 
 Remove a record by ID.
 
@@ -236,7 +236,7 @@ Remove a record by ID.
 }
 ```
 
-#### 6. `count` - Count Records
+## 6. `count` - Count Records
 
 Get the count of records matching a filter.
 
@@ -261,7 +261,7 @@ Get the count of records matching a filter.
 }
 ```
 
-#### 7. `action` - Execute Custom Action
+## 7. `action` - Execute Custom Action
 
 Execute a custom server-side action (RPC-style operation).
 
@@ -295,7 +295,7 @@ Execute a custom server-side action (RPC-style operation).
 }
 ```
 
-### Bulk Operations
+## Bulk Operations
 
 ObjectQL supports efficient bulk operations for creating, updating, and deleting multiple records in a single request.
 
@@ -305,7 +305,7 @@ ObjectQL supports efficient bulk operations for creating, updating, and deleting
 - **Performance**: While bulk operations are more efficient than separate API calls, they may be slower than driver-level bulk operations due to individual validation/hook execution
 - **Use Cases**: Use bulk operations when you need consistent validation and business logic enforcement. For high-performance batch imports where validation is already handled, consider using driver-level operations directly
 
-#### 8. `createMany` - Create Multiple Records
+## 8. `createMany` - Create Multiple Records
 
 Insert multiple records in a single operation.
 
@@ -365,7 +365,7 @@ Insert multiple records in a single operation.
 }
 ```
 
-#### 9. `updateMany` - Update Multiple Records
+## 9. `updateMany` - Update Multiple Records
 
 Update all records matching a filter.
 
@@ -395,7 +395,7 @@ Update all records matching a filter.
 }
 ```
 
-#### 10. `deleteMany` - Delete Multiple Records
+## 10. `deleteMany` - Delete Multiple Records
 
 Delete all records matching a filter.
 
@@ -437,9 +437,9 @@ Delete all records matching a filter.
 }
 ```
 
-### Advanced Query Features
+## Advanced Query Features
 
-#### AI Context (Optional)
+## AI Context (Optional)
 
 Add semantic information to queries for better logging, debugging, and AI processing:
 
@@ -466,7 +466,7 @@ Add semantic information to queries for better logging, debugging, and AI proces
 }
 ```
 
-#### Aggregation Queries
+## Aggregation Queries
 
 Perform GROUP BY operations:
 

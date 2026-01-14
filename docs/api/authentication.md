@@ -1,10 +1,10 @@
 # Authentication & Authorization
 
-### Authentication Methods
+## Authentication Methods
 
 ObjectQL supports multiple authentication strategies:
 
-#### 1. JWT Tokens (Recommended)
+## 1. JWT Tokens (Recommended)
 
 ```bash
 POST /api/objectql
@@ -12,7 +12,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 Content-Type: application/json
 ```
 
-#### 2. API Keys
+## 2. API Keys
 
 ```bash
 POST /api/objectql
@@ -20,7 +20,7 @@ X-API-Key: your_api_key_here
 Content-Type: application/json
 ```
 
-#### 3. Session Cookies
+## 3. Session Cookies
 
 ```bash
 POST /api/objectql
@@ -28,7 +28,7 @@ Cookie: session_id=abc123...
 Content-Type: application/json
 ```
 
-#### 4. User Context in Request (Development Only)
+## 4. User Context in Request (Development Only)
 
 For testing and development, you can pass user context directly in the request:
 
@@ -46,7 +46,7 @@ For testing and development, you can pass user context directly in the request:
 
 ⚠️ **Warning**: In production, always authenticate via headers, not request body.
 
-### Permission System
+## Permission System
 
 ObjectQL enforces permissions at multiple levels:
 
