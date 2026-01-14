@@ -124,7 +124,6 @@ export function convertIntrospectedSchemaToObjects(
                 }
                 
                 // Add max length for text fields
-                // Add max length for text fields
                 if (column.maxLength && (fieldType === 'text' || fieldType === 'textarea')) {
                     fieldConfig.max_length = column.maxLength;
                 }

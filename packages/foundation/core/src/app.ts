@@ -181,13 +181,13 @@ export class ObjectQL implements IObjectQL {
             throw new Error(`Driver for datasource '${datasourceName}' does not support schema introspection`);
         }
         
-        console.log(`Introspecting database schema from datasource '${datasourceName}'...`);
+        console.log(`Introspecting datasource '${datasourceName}'...`);
         const introspectedSchema = await driver.introspectSchema();
         
         // Convert introspected schema to ObjectQL objects
         const objects = convertIntrospectedSchemaToObjects(introspectedSchema, options);
         
-        console.log(`Discovered ${objects.length} tables. Registering as objects...`);
+        console.log(`Discovered ${objects.length} table(s), registering as objects...`);
         
         // Register each discovered object
         for (const obj of objects) {

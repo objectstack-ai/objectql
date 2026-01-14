@@ -638,7 +638,18 @@ export class SqlDriver implements Driver {
                     });
                 }
             } else if (this.config.client === 'sqlite3') {
-                // SQLite PRAGMA doesn't support parameter binding, so we need to ensure safe identifier
+                // SQLite PRAGMA doesn't support parameter binding, so we need to ensure safe identifier.
+                // First, verify that the requested table actually exists using a parameterized query.
+                const tableExistsResult = await this.knex.raw(
+                    "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?",
+                    [tableName]
+                );
+                
+                if (!tableExistsResult || tableExistsResult.length === 0) {
+                    // If the table does not exist, there are no foreign keys to introspect.
+                    return foreignKeys;
+                }
+                
                 // Table names in ObjectQL are validated and should be safe, but we add extra protection
                 const safeTableName = tableName.replace(/[^a-zA-Z0-9_]/g, '');
                 const result = await this.knex.raw(`PRAGMA foreign_key_list(${safeTableName})`);
@@ -653,7 +664,7 @@ export class SqlDriver implements Driver {
                 }
             }
         } catch (error) {
-            console.warn(`Could not introspect foreign keys for table ${tableName}:`, error);
+            console.warn('Could not introspect foreign keys for requested table:', error);
         }
         
         return foreignKeys;
@@ -693,8 +704,17 @@ export class SqlDriver implements Driver {
                 }
             } else if (this.config.client === 'sqlite3') {
                 // SQLite PRAGMA doesn't support parameter binding, so we need to ensure safe identifier
-                // Table names in ObjectQL are validated and should be safe, but we add extra protection
                 const safeTableName = tableName.replace(/[^a-zA-Z0-9_]/g, '');
+                
+                // Validate that the sanitized table name exists in the database before using it in PRAGMA
+                const tablesResult = await this.knex.raw("SELECT name FROM sqlite_master WHERE type = 'table'");
+                const tableNames = tablesResult.map((row: any) => row.name);
+                
+                if (!tableNames.includes(safeTableName)) {
+                    console.warn('Could not introspect primary keys for SQLite table: table does not exist after sanitization.');
+                    return primaryKeys;
+                }
+                
                 const result = await this.knex.raw(`PRAGMA table_info(${safeTableName})`);
                 
                 for (const row of result) {
@@ -704,7 +724,7 @@ export class SqlDriver implements Driver {
                 }
             }
         } catch (error) {
-            console.warn(`Could not introspect primary keys for table ${tableName}:`, error);
+            console.warn('Could not introspect primary keys for a table:', error);
         }
         
         return primaryKeys;
