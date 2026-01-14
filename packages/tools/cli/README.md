@@ -356,6 +356,79 @@ objectql migrate status --config ./config/objectql.config.ts
 - `-c, --config <path>` - Path to objectql.config.ts/js
 - `-d, --dir <path>` - Migrations directory [default: "./migrations"]
 
+#### `sync`
+
+Introspect an existing SQL database and generate ObjectQL `.object.yml` files from the database schema. This is useful for:
+- Connecting to an existing/legacy database
+- Reverse-engineering database schema to ObjectQL metadata
+- Bootstrapping a new ObjectQL project from an existing database
+
+```bash
+# Sync all tables from the database
+objectql sync
+
+# Sync specific tables only
+objectql sync --tables users posts comments
+
+# Custom output directory
+objectql sync --output ./src/metadata/objects
+
+# Overwrite existing files
+objectql sync --force
+
+# With custom config file
+objectql sync --config ./config/objectql.config.ts
+```
+
+**Options:**
+- `-c, --config <path>` - Path to objectql.config.ts/js
+- `-o, --output <path>` - Output directory for .object.yml files [default: "./src/objects"]
+- `-t, --tables <tables...>` - Specific tables to sync (default: all tables)
+- `-f, --force` - Overwrite existing .object.yml files
+
+**Features:**
+- Automatically detects table structure (columns, data types, constraints)
+- Maps SQL types to appropriate ObjectQL field types
+- Identifies foreign keys and converts them to `lookup` relationships
+- Generates human-readable labels from table/column names
+- Preserves field constraints (required, unique, maxLength)
+- Skips system fields (id, created_at, updated_at) as they're automatic in ObjectQL
+
+**Example:**
+
+Given a database with this table structure:
+```sql
+CREATE TABLE users (
+    id VARCHAR PRIMARY KEY,
+    username VARCHAR UNIQUE NOT NULL,
+    email VARCHAR NOT NULL,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP
+);
+```
+
+Running `objectql sync` generates:
+```yaml
+# users.object.yml
+name: users
+label: Users
+fields:
+  username:
+    type: text
+    label: Username
+    required: true
+    unique: true
+  email:
+    type: text
+    label: Email
+    required: true
+  is_active:
+    type: boolean
+    label: Is Active
+    defaultValue: true
+```
+
 ---
 
 ### Development Tools

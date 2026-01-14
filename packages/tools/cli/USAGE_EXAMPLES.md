@@ -517,6 +517,152 @@ export async function up(app: ObjectQL) {
 }
 ```
 
+### Syncing from Existing Database
+
+The `sync` command introspects an existing SQL database and generates ObjectQL `.object.yml` files.
+
+#### Basic Sync
+
+```bash
+# Sync all tables from the database
+objectql sync
+
+# Output: src/objects/users.object.yml, src/objects/posts.object.yml, etc.
+```
+
+#### Selective Table Sync
+
+```bash
+# Sync only specific tables
+objectql sync --tables users posts comments
+
+# Custom output directory
+objectql sync --output ./src/metadata/objects
+```
+
+#### Overwriting Existing Files
+
+```bash
+# Force overwrite of existing .object.yml files
+objectql sync --force
+```
+
+#### Example Workflow: Connecting to Legacy Database
+
+```bash
+# 1. Create config file pointing to existing database
+cat > objectql.config.ts << 'EOF'
+import { ObjectQL } from '@objectql/core';
+import { SqlDriver } from '@objectql/driver-sql';
+
+const driver = new SqlDriver({
+    client: 'postgresql',
+    connection: {
+        host: 'localhost',
+        database: 'legacy_db',
+        user: 'postgres',
+        password: 'password'
+    }
+});
+
+export default new ObjectQL({
+    datasources: { default: driver }
+});
+EOF
+
+# 2. Introspect and generate object definitions
+objectql sync --output ./src/objects
+
+# 3. Review generated files
+ls -la ./src/objects/
+
+# Output:
+# users.object.yml
+# products.object.yml
+# orders.object.yml
+# order_items.object.yml
+
+# 4. Inspect a generated file
+cat ./src/objects/users.object.yml
+```
+
+**Generated Output Example:**
+
+```yaml
+# users.object.yml
+name: users
+label: Users
+fields:
+  username:
+    type: text
+    label: Username
+    required: true
+    unique: true
+  email:
+    type: text
+    label: Email
+    required: true
+  first_name:
+    type: text
+    label: First Name
+  last_name:
+    type: text
+    label: Last Name
+  is_active:
+    type: boolean
+    label: Is Active
+    defaultValue: true
+  role_id:
+    type: lookup
+    label: Role Id
+    reference_to: roles
+```
+
+**Type Mapping:**
+
+The sync command automatically maps SQL types to ObjectQL field types:
+
+| SQL Type | ObjectQL Type |
+|----------|---------------|
+| INT, INTEGER, BIGINT | integer |
+| FLOAT, DOUBLE, DECIMAL, NUMERIC | number |
+| BOOLEAN, BIT | boolean |
+| VARCHAR, CHAR, TEXT | text |
+| TEXT, CLOB | textarea |
+| TIMESTAMP, DATETIME | datetime |
+| DATE | date |
+| TIME | time |
+| JSON, JSONB | json |
+
+**Foreign Key Detection:**
+
+Foreign keys are automatically detected and converted to `lookup` fields:
+
+```sql
+-- Database Schema
+CREATE TABLE posts (
+    id VARCHAR PRIMARY KEY,
+    title VARCHAR NOT NULL,
+    author_id VARCHAR REFERENCES users(id),
+    ...
+);
+```
+
+```yaml
+# Generated posts.object.yml
+name: posts
+label: Posts
+fields:
+  title:
+    type: text
+    label: Title
+    required: true
+  author_id:
+    type: lookup
+    label: Author Id
+    reference_to: users
+```
+
 ---
 
 ## Development Tools
