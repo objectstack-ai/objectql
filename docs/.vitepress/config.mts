@@ -1,11 +1,78 @@
 import { defineConfig } from 'vitepress'
 
+const guideSidebar = [
+  {
+    text: 'Getting Started',
+    items: [
+      { text: 'Introduction', link: '/guide/' },
+      { text: 'Why ObjectQL?', link: '/guide/architecture/why-objectql' },
+      { text: 'Quick Start', link: '/guide/getting-started' },
+      { text: 'IDE Setup', link: '/guide/ide-setup' },
+    ]
+  },
+  {
+    text: 'Tutorials',
+    items: [
+      { text: 'Overview', link: '/tutorials/' },
+      { text: '1. Task Manager (Beginner)', link: '/tutorials/task-manager' },
+      { text: '2. Micro-CRM (Intermediate)', link: '/tutorials/crm-system' },
+      { text: '3. Federated Data (Advanced)', link: '/tutorials/federation' },
+      { text: '4. AI Data Agent (AI-Native)', link: '/tutorials/ai-agent' },
+    ]
+  },
+  {
+    text: 'Data & Logic Layers',
+    items: [
+      { text: 'Data Modeling', link: '/guide/data-modeling' },
+      { text: 'Unified ID Migration', link: '/guide/migration-id-field' },
+      { text: 'Querying Data', link: '/guide/querying' },
+      { text: 'Formulas & Rules Syntax', link: '/guide/formulas-and-rules' },
+      { text: '↳ Quick Reference', link: '/guide/formulas-and-rules-quick-ref' },
+      { text: 'Business Logic (Hooks)', link: '/guide/logic-hooks' },
+      { text: 'Custom Actions (RPC)', link: '/guide/logic-actions' },
+    ]
+  },
+  {
+    text: 'System Architecture',
+    items: [
+      { text: 'Architecture Overview', link: '/guide/architecture/overview' },
+      { text: 'File Organization', link: '/guide/metadata-organization' },
+      { text: 'Microservices & Federation', link: '/guide/microservices' },
+      { text: 'Plugin System', link: '/guide/plugins' },
+    ]
+  },
+  {
+    text: 'Low-Code UI',
+    items: [
+      { text: 'Page & Layouts', link: '/guide/page-metadata' },
+    ]
+  },
+  {
+    text: 'Operations & Deployment',
+    items: [
+      { text: 'Server Integration', link: '/guide/server-integration' },
+      { text: 'Database Drivers', link: '/guide/drivers/' },
+      { text: 'CLI Tools', link: '/guide/cli' },
+      { text: 'Configuration', link: '/guide/configuration' },
+    ]
+  },
+  {
+    text: 'Legal',
+    items: [
+      { text: 'License', link: '/guide/license' },
+    ]
+  }
+];
+
 export default defineConfig({
   title: "ObjectQL",
   description: "A Unified Data Management Framework",
   
   // Scans the docs directory
   srcDir: '.',
+
+  // Enable Clean URLs (e.g. /guide/getting-started instead of /guide/getting-started.html)
+  cleanUrls: true,
 
   // Ignore dead links from merged documentation
   ignoreDeadLinks: true,
@@ -31,27 +98,7 @@ export default defineConfig({
     // Sidebar Configuration
     sidebar: {
       // Sidebar for Tutorials
-      '/tutorials/': [
-        {
-          text: 'Getting Started',
-          items: [
-            { text: 'Introduction', link: '/guide/' },
-            { text: 'Why ObjectQL?', link: '/guide/architecture/why-objectql' },
-            { text: 'Quick Start', link: '/guide/getting-started' },
-            { text: 'IDE Setup', link: '/guide/ide-setup' },
-          ]
-        },
-        {
-          text: 'Tutorials',
-          items: [
-            { text: 'Overview', link: '/tutorials/' },
-            { text: '1. Task Manager (Beginner)', link: '/tutorials/task-manager' },
-            { text: '2. Micro-CRM (Intermediate)', link: '/tutorials/crm-system' },
-            { text: '3. Federated Data (Advanced)', link: '/tutorials/federation' },
-            { text: '4. AI Data Agent (AI-Native)', link: '/tutorials/ai-agent' },
-          ]
-        }
-      ],
+      '/tutorials/': guideSidebar,
       
       // Sidebar for API section
       '/api/': [
@@ -109,69 +156,7 @@ export default defineConfig({
       ],
 
       // Sidebar for Guide section
-      '/guide/': [
-        {
-          text: 'Getting Started',
-          items: [
-            { text: 'Introduction', link: '/guide/' },
-            { text: 'Why ObjectQL?', link: '/guide/architecture/why-objectql' },
-            { text: 'Quick Start', link: '/guide/getting-started' },
-            { text: 'IDE Setup', link: '/guide/ide-setup' },
-          ]
-        },
-        {
-          text: 'Tutorials',
-          items: [
-            { text: 'Overview', link: '/tutorials/' },
-            { text: '1. Task Manager (Beginner)', link: '/tutorials/task-manager' },
-            { text: '2. Micro-CRM (Intermediate)', link: '/tutorials/crm-system' },
-            { text: '3. Federated Data (Advanced)', link: '/tutorials/federation' },
-            { text: '4. AI Data Agent (AI-Native)', link: '/tutorials/ai-agent' },
-          ]
-        },
-        {
-          text: 'Data & Logic Layers',
-          items: [
-            { text: 'Data Modeling', link: '/guide/data-modeling' },
-            { text: 'Unified ID Migration', link: '/guide/migration-id-field' },
-            { text: 'Querying Data', link: '/guide/querying' },
-            { text: 'Formulas & Rules Syntax', link: '/guide/formulas-and-rules' },
-            { text: '↳ Quick Reference', link: '/guide/formulas-and-rules-quick-ref' },
-            { text: 'Business Logic (Hooks)', link: '/guide/logic-hooks' },
-            { text: 'Custom Actions (RPC)', link: '/guide/logic-actions' },
-          ]
-        },
-        {
-          text: 'System Architecture',
-          items: [
-            { text: 'Architecture Overview', link: '/guide/architecture/overview' },
-            { text: 'File Organization', link: '/guide/metadata-organization' },
-            { text: 'Microservices & Federation', link: '/guide/microservices' },
-            { text: 'Plugin System', link: '/guide/plugins' },
-          ]
-        },
-        {
-          text: 'Low-Code UI',
-          items: [
-            { text: 'Page & Layouts', link: '/guide/page-metadata' },
-          ]
-        },
-        {
-          text: 'Operations & Deployment',
-          items: [
-            { text: 'Server Integration', link: '/guide/server-integration' },
-            { text: 'Database Drivers', link: '/guide/drivers/' },
-            { text: 'CLI Tools', link: '/guide/cli' },
-            { text: 'Configuration', link: '/guide/configuration' },
-          ]
-        },
-        {
-          text: 'Legal',
-          items: [
-            { text: 'License', link: '/guide/license' },
-          ]
-        }
-      ],
+      '/guide/': guideSidebar,
 
       // Sidebar for Spec section
       '/spec/': [
@@ -188,6 +173,7 @@ export default defineConfig({
             { text: 'Objects & Fields', link: '/spec/object' },
             { text: 'Query Language', link: '/spec/query-language' },
             { text: 'Validation Rules', link: '/spec/validation' },
+            { text: 'Data Seeding', link: '/spec/data' },
           ]
         },
         {
@@ -201,6 +187,7 @@ export default defineConfig({
         {
           text: 'Presentation Layer',
           items: [
+            { text: 'Applications', link: '/spec/app' },
             { text: 'Pages', link: '/spec/page' },
             { text: 'Views & Layouts', link: '/spec/view' },
             { text: 'Forms', link: '/spec/form' },

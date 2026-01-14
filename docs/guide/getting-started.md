@@ -8,16 +8,6 @@
 2.  **Universal Protocol**: The query language is a JSON AST, making it easy for frontends or AI agents to generate queries.
 3.  **Action & Hook System**: Built-in support for "Button Actions" (RPC) and "Triggers" (Hooks), allowing you to model **Behavior** alongside **Data**.
 
-## Installation
-
-Install the core package and a driver (e.g., PostgreSQL or MongoDB).
-
-```bash
-npm install @objectql/core @objectql/driver-sql knex pg
-# or
-npm install @objectql/core @objectql/driver-mongo mongodb
-```
-
 ## Quick Start: The "Hello World"
 
 You can experience ObjectQL with a single file. No YAML, no complex config.
@@ -162,6 +152,7 @@ await ctx.object('todo').execute('mark_done', 'id_123', {});
 
 ## Next Steps
 
+*   **[Database Drivers](./drivers/index.md)**: Connect to PostgreSQL, MongoDB, etc.
 *   **[Data Modeling](./data-modeling.md)**: Learn about all field types (Select, Lookup, Date, etc.)
 *   **[SDK Reference](./sdk-reference.md)**: Explore the full API.
 *   **[Hooks](./logic-hooks.md)**: Deep dive into the event system.
