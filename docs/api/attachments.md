@@ -1174,6 +1174,10 @@ const fileStorage = new S3FileStorage();
 const handler = createNodeHandler(app, { fileStorage });
 ```
 
+**For detailed S3 integration guide with complete implementation code, see:**
+- [S3 Integration Guide (中文)](../examples/s3-integration-guide-cn.md) - Comprehensive Chinese guide
+- [S3 Storage Implementation](../examples/s3-storage-implementation.ts) - Production-ready TypeScript code
+
 ### API Endpoints
 
 The file upload/download functionality is automatically available when using `createNodeHandler`:

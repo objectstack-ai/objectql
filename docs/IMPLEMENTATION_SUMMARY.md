@@ -261,17 +261,17 @@ The following features are planned but not yet implemented:
    - Image resizing (`/api/files/:fileId/preview?width=300&height=300`)
    - Format conversion
 
-2. **Cloud Storage**
-   - AWS S3 adapter
+2. **Cloud Storage** (✅ Implementation guide available)
+   - ✅ **AWS S3 adapter** - [Full implementation guide](./examples/s3-integration-guide-cn.md) and [production code](./examples/s3-storage-implementation.ts)
    - Azure Blob Storage adapter
    - Google Cloud Storage adapter
    - Alibaba OSS adapter
 
 3. **Advanced Features**
-   - Signed URLs for temporary access
+   - ✅ **Signed URLs** - Implemented in S3 adapter example
    - File access permissions/ACL
    - Virus scanning integration
-   - CDN integration
+   - ✅ **CDN integration** - CloudFront support in S3 adapter
    - Automatic image optimization
 
 4. **Monitoring**
