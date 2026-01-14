@@ -63,6 +63,11 @@ export class ObjectQLError extends Error {
         this.name = 'ObjectQLError';
         this.code = error.code;
         this.details = error.details;
+        
+        // Preserve proper stack traces in Node.js environments
+        if (typeof (Error as any).captureStackTrace === 'function') {
+            (Error as any).captureStackTrace(this, ObjectQLError);
+        }
     }
 }
 
