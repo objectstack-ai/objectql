@@ -1,4 +1,4 @@
-# @example/project-management
+# @objectql/starter-basic
 
 ## 1.8.2
 

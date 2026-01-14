@@ -1,4 +1,4 @@
-# @example/enterprise-structure
+# @objectql/starter-enterprise
 
 ## 1.8.2
 

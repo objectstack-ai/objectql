@@ -1,4 +1,4 @@
-# @example/express-server
+# @objectql/starter-express-api
 
 ## 1.8.2
 
