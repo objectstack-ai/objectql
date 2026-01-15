@@ -559,6 +559,23 @@
           "$ref": "#/definitions/ValidationAiContext",
           "description": "AI context for the field. Provides semantic information for AI tools."
         },
+        "blank_as_zero": {
+          "description": "Treat blank/null as zero in formula calculations.",
+          "type": "boolean"
+        },
+        "data_type": {
+          "description": "Expected return data type for formula fields.",
+          "enum": [
+            "number",
+            "text",
+            "date",
+            "datetime",
+            "boolean",
+            "currency",
+            "percent"
+          ],
+          "type": "string"
+        },
         "defaultValue": {
           "description": "The default value if not provided during creation."
         },
@@ -574,8 +591,12 @@
           "items": {},
           "type": "array"
         },
+        "format": {
+          "description": "Display format for formula results (e.g., \"0.00\", \"YYYY-MM-DD\").",
+          "type": "string"
+        },
         "formula": {
-          "description": "Formula expression.",
+          "description": "Formula expression (for 'formula' type fields).",
           "type": "string"
         },
         "help_text": {
@@ -649,6 +670,10 @@
           },
           "type": "array"
         },
+        "precision": {
+          "description": "Decimal precision for numeric formula results.",
+          "type": "number"
+        },
         "readonly": {
           "description": "Whether the field is read-only in UI.",
           "type": "boolean"
@@ -676,6 +701,27 @@
         "summary_type": {
           "description": "Type of summary (count, sum, min, max, avg).",
           "type": "string"
+        },
+        "treat_blank_as": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Default value for null/undefined referenced fields in formulas."
         },
         "type": {
           "$ref": "#/definitions/FieldType",
