@@ -1,6 +1,6 @@
 {
   "name": "@objectql/starter-basic",
-  "version": "1.8.3",
+  "version": "2.0.0",
   "description": "Basic starter template for ObjectQL - Simple project structure with essential metadata files",
   "keywords": [
     "objectql",

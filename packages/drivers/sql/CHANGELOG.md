@@ -1,5 +1,43 @@
 # @objectql/driver-sql
 
+## 2.0.0
+
+### Minor Changes
+
+- Release version 1.9.0
+
+  This release represents the latest stable version of the ObjectQL framework with comprehensive improvements across the entire ecosystem:
+
+  **Core Framework:**
+  - Enhanced type definitions and protocol specifications
+  - Improved metadata validation and error handling
+  - Optimized performance across all drivers
+  - Better AI integration and context support
+
+  **Documentation:**
+  - Complete API documentation for REST, attachments, and error handling
+  - Comprehensive specification documents for all metadata types
+  - Updated examples and tutorials
+  - Improved getting started guides
+
+  **Infrastructure:**
+  - Enhanced build and test configurations
+  - Improved CI/CD workflows
+  - Better developer tooling and VS Code integration
+
+  **Progress Update:**
+  - Overall framework implementation: 70% complete (version 1.8.3 baseline)
+  - Core Protocol & Runtime: 85% complete
+  - Data Drivers (SQL/Mongo): 75% complete
+  - Production-ready for core use cases
+
+  This is the recommended version for production use of the ObjectQL protocol.
+
+### Patch Changes
+
+- Updated dependencies
+  - @objectql/types@2.0.0
+
 ## 1.8.3
 
 ### Patch Changes
