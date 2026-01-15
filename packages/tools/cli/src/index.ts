@@ -1,4 +1,5 @@
 import { Command } from 'commander';
+import chalk from 'chalk';
 import { generateTypes } from './commands/generate';
 import { startRepl } from './commands/repl';
 import { serve } from './commands/serve';
@@ -14,18 +15,23 @@ import { i18nExtract, i18nInit, i18nValidate } from './commands/i18n';
 import { migrate, migrateCreate, migrateStatus } from './commands/migrate';
 import { aiGenerate, aiValidate, aiChat, aiConversational } from './commands/ai';
 import { syncDatabase } from './commands/sync';
+import { doctorCommand, validateCommand } from './commands/doctor';
+import { dbPushCommand } from './commands/database-push';
 
 const program = new Command();
 
 program
   .name('objectql')
-  .description('ObjectQL CLI tool')
+  .description('ObjectQL CLI tool - The ObjectStack AI Protocol Interface')
   .version('1.5.0');
 
-// Init command - Create new project
+// ==========================================
+// 1. Lifecycle Commands
+// ==========================================
+
 program
     .command('init')
-    .description('Create a new ObjectQL project from template')
+    .description('Create a new ObjectQL project')
     .option('-t, --template <template>', 'Template to use (basic, express-api, enterprise)', 'basic')
     .option('-n, --name <name>', 'Project name')
     .option('-d, --dir <path>', 'Target directory')
@@ -40,27 +46,78 @@ program
         }
     });
 
-// New command - Generate metadata files
 program
-    .command('new <type> <name>')
-    .description('Generate a new metadata file (object, view, form, etc.)')
+    .command('dev')
+    .description('Start development server with hot reload and type generation')
+    .option('-p, --port <number>', 'Port to listen on', '3000')
+    .option('-d, --dir <path>', 'Directory containing schema', '.')
+    .option('-c, --config <path>', 'Path to objectql.config.ts/js')
+    .option('--modules <items>', 'Comma-separated list of modules to load')
+    .option('--no-watch', 'Disable file watching')
+    .action(async (options) => {
+        await dev({ 
+            port: parseInt(options.port), 
+            dir: options.dir,
+            config: options.config,
+            modules: options.modules,
+            watch: options.watch
+        });
+    });
+
+program
+    .command('build')
+    .description('Build project for production')
+    .option('-d, --dir <path>', 'Source directory', '.')
+    .option('-o, --output <path>', 'Output directory', './dist')
+    .option('--no-types', 'Skip TypeScript type generation')
+    .option('--no-validate', 'Skip metadata validation')
+    .action(async (options) => {
+        await build({
+            dir: options.dir,
+            output: options.output,
+            types: options.types,
+            validate: options.validate
+        });
+    });
+
+program
+    .command('start')
+    .description('Start production server')
+    .option('-p, --port <number>', 'Port to listen on', '3000')
+    .option('-d, --dir <path>', 'Directory containing schema', '.')
+    .option('-c, --config <path>', 'Path to objectql.config.ts/js')
+    .action(async (options) => {
+        await start({ 
+            port: parseInt(options.port), 
+            dir: options.dir,
+            config: options.config
+        });
+    });
+
+// ==========================================
+// 2. Scaffolding & Generators
+// ==========================================
+
+program
+    .command('generate <schematic> <name>')
+    .alias('g')
+    .description('Generate a new metadata element (object, action, etc.)')
     .option('-d, --dir <path>', 'Output directory', '.')
-    .action(async (type, name, options) => {
+    .action(async (schematic, name, options) => {
         try {
-            await newMetadata({ type, name, dir: options.dir });
+            // Maps to existing newMetadata which accepts (type, name, dir)
+            await newMetadata({ type: schematic, name, dir: options.dir });
         } catch (error) {
             console.error(error);
             process.exit(1);
         }
     });
 
-// Generate command - Generate TypeScript types
 program
-    .command('generate')
-    .alias('g')
-    .description('Generate TypeScript interfaces from ObjectQL schema files')
-    .option('-s, --source <path>', 'Source directory containing *.object.yml', '.')
-    .option('-o, --output <path>', 'Output directory for generated types', './src/generated')
+    .command('types')
+    .description('Force regenerate TypeScript definitions')
+    .option('-s, --source <path>', 'Source directory', '.')
+    .option('-o, --output <path>', 'Output directory', './src/generated')
     .action(async (options) => {
         try {
             await generateTypes(options.source, options.output);
@@ -70,7 +127,156 @@ program
         }
     });
 
-// I18n commands
+// ==========================================
+// 3. Database Operations
+// ==========================================
+
+const dbCmd = program.command('db').description('Database operations');
+
+dbCmd
+    .command('push')
+    .description('Push metadata schema changes to the database')
+    .option('--force', 'Bypass safety checks')
+    .action(async (options) => {
+        try {
+            await dbPushCommand(options);
+        } catch (error) {
+            console.error(error);
+            process.exit(1);
+        }
+    });
+
+dbCmd
+    .command('pull')
+    .description('Introspect database and generate metadata (Reverse Engineering)')
+    .option('-c, --config <path>', 'Path to objectql.config.ts/js')
+    .option('-o, --output <path>', 'Output directory', './src/objects')
+    .option('-t, --tables <tables...>', 'Specific tables to sync')
+    .option('-f, --force', 'Overwrite existing files')
+    .action(async (options) => {
+        try {
+            // Maps to existing syncDatabase
+            await syncDatabase(options);
+        } catch (error) {
+            console.error(error);
+            process.exit(1);
+        }
+    });
+
+// Migration commands - kept as top level or move to db:migrate?
+// Staying top level or db:migrate is fine. Let's keep `migrate` top level for familiarity with typeorm/prisma users or move to db?
+// User request: "Declarative > Imperative".
+// Let's alias db:migrate to migrate for now, or just keep migrate. 
+// Standard in many tools is `migrate` or `db migrate`.
+// Let's keep `migrate` as top level group for explicit control.
+
+const migrateCmd = program
+    .command('migrate')
+    .description('Manage database migrations');
+
+migrateCmd
+    .command('up') // Changed from default action to explicit 'up'
+    .description('Run pending migrations')
+    .option('-c, --config <path>', 'Path to objectql.config.ts/js')
+    .option('-d, --dir <path>', 'Migrations directory', './migrations')
+    .action(async (options) => {
+        await migrate(options);
+    });
+
+migrateCmd
+    .command('create <name>')
+    .description('Create a new migration file')
+    .option('-d, --dir <path>', 'Migrations directory', './migrations')
+    .action(async (name, options) => {
+        await migrateCreate({ name, dir: options.dir });
+    });
+
+migrateCmd
+    .command('status')
+    .description('Show migration status')
+    .action(async (options) => {
+        await migrateStatus(options);
+    });
+
+
+// ==========================================
+// 4. AI Architect
+// ==========================================
+
+const aiCmd = program
+    .command('ai')
+    .description('AI Architect capabilities');
+
+aiCmd
+    .command('chat')
+    .description('Interactive architecture chat')
+    .option('-p, --prompt <text>', 'Initial prompt')
+    .action(async (options) => {
+        await aiChat({ initialPrompt: options.prompt });
+    });
+
+aiCmd
+    .command('run <prompt>') // Changed from generate to run/exec for simple "Do this"
+    .description('Execute an AI modification on the project (e.g. "Add a blog module")')
+    .option('-o, --output <path>', 'Output directory', './src')
+    .action(async (prompt, options) => {
+        // Maps to simple conversational or generate
+        // Let's map to aiGenerate but pass description
+        await aiGenerate({ description: prompt, output: options.output, type: 'custom' });
+    });
+
+// ==========================================
+// 5. Diagnostics & Tools
+// ==========================================
+
+program
+    .command('doctor')
+    .description('Check environment and configuration health')
+    .action(async () => {
+        await doctorCommand();
+    });
+
+program
+    .command('validate')
+    .description('Validate all metadata files')
+    .option('-d, --dir <path>', 'Directory to validate', '.')
+    .action(async (options) => {
+        await validateCommand(options);
+    });
+
+program
+    .command('repl')
+    .description('Start interactive REPL')
+    .option('-c, --config <path>', 'Path to objectql.config.ts')
+    .action(async (options) => {
+        await startRepl(options.config);
+    });
+
+program
+    .command('test')
+    .description('Run tests')
+    .action(async (options) => {
+        await test(options);
+    });
+
+program
+    .command('lint')
+    .description('Lint metadata files')
+    .action(async (options) => {
+        await lint(options);
+    });
+
+program
+    .command('format')
+    .description('Format metadata files')
+    .action(async (options) => {
+        await format(options);
+    });
+
+// ==========================================
+// 6. I18n
+// ==========================================
+
 const i18nCmd = program
     .command('i18n')
     .description('Internationalization commands');
@@ -117,246 +323,12 @@ i18nCmd
         }
     });
 
-// Migration commands
-const migrateCmd = program
-    .command('migrate')
-    .description('Run pending database migrations')
-    .option('-c, --config <path>', 'Path to objectql.config.ts/js')
-    .option('-d, --dir <path>', 'Migrations directory', './migrations')
-    .action(async (options) => {
-        try {
-            await migrate(options);
-        } catch (error) {
-            console.error(error);
-            process.exit(1);
-        }
-    });
-
-migrateCmd
-    .command('create <name>')
-    .description('Create a new migration file')
-    .option('-d, --dir <path>', 'Migrations directory', './migrations')
-    .action(async (name, options) => {
-        try {
-            await migrateCreate({ name, dir: options.dir });
-        } catch (error) {
-            console.error(error);
-            process.exit(1);
-        }
-    });
-
-migrateCmd
-    .command('status')
-    .description('Show migration status')
-    .option('-c, --config <path>', 'Path to objectql.config.ts/js')
-    .option('-d, --dir <path>', 'Migrations directory', './migrations')
-    .action(async (options) => {
-        try {
-            await migrateStatus(options);
-        } catch (error) {
-            console.error(error);
-            process.exit(1);
-        }
-    });
-
-// Sync command - Introspect database and generate .object.yml files
+// Backward compatibility (Hidden or Deprecated)
 program
-    .command('sync')
-    .description('Sync database schema to ObjectQL object definitions')
-    .option('-c, --config <path>', 'Path to objectql.config.ts/js')
-    .option('-o, --output <path>', 'Output directory for .object.yml files', './src/objects')
-    .option('-t, --tables <tables...>', 'Specific tables to sync (default: all)')
-    .option('-f, --force', 'Overwrite existing files')
-    .action(async (options) => {
-        try {
-            await syncDatabase(options);
-        } catch (error) {
-            console.error(error);
-            process.exit(1);
-        }
+    .command('new <type> <name>', { hidden: true })
+    .action(async (type, name, options) => {
+         console.warn(chalk.yellow('Deprecated: Use "objectql generate" instead.'));
+         await newMetadata({ type, name, dir: options.dir });
     });
 
-// REPL command
-program
-    .command('repl')
-    .alias('r')
-    .description('Start an interactive shell (REPL) to query the database')
-    .option('-c, --config <path>', 'Path to objectql.config.ts/js')
-    .action(async (options) => {
-        await startRepl(options.config);
-    });
-
-// Dev command - Start development server
-program
-    .command('dev')
-    .alias('d')
-    .description('Start development server with hot reload')
-    .option('-p, --port <number>', 'Port to listen on', '3000')
-    .option('-d, --dir <path>', 'Directory containing schema', '.')
-    .option('-c, --config <path>', 'Path to objectql.config.ts/js')
-    .option('--modules <items>', 'Comma-separated list of modules to load (overrides config)')
-    .option('--no-watch', 'Disable file watching')
-    .action(async (options) => {
-        await dev({ 
-            port: parseInt(options.port), 
-            dir: options.dir,
-            config: options.config,
-            modules: options.modules,
-            watch: options.watch
-        });
-    });
-
-// Start command - Production server
-program
-    .command('start')
-    .description('Start production server')
-    .option('-p, --port <number>', 'Port to listen on', '3000')
-    .option('-d, --dir <path>', 'Directory containing schema', '.')
-    .option('-c, --config <path>', 'Path to objectql.config.ts/js')
-    .option('--modules <items>', 'Comma-separated list of modules to load (overrides config)')
-    .action(async (options) => {
-        await start({ 
-            port: parseInt(options.port), 
-            dir: options.dir,
-            config: options.config,
-            modules: options.modules
-        });
-    });
-
-// Build command - Build project for production
-program
-    .command('build')
-    .alias('b')
-    .description('Build project and generate types')
-    .option('-d, --dir <path>', 'Source directory', '.')
-    .option('-o, --output <path>', 'Output directory', './dist')
-    .option('--no-types', 'Skip TypeScript type generation')
-    .option('--no-validate', 'Skip metadata validation')
-    .action(async (options) => {
-        await build({
-            dir: options.dir,
-            output: options.output,
-            types: options.types,
-            validate: options.validate
-        });
-    });
-
-// Test command - Run tests
-program
-    .command('test')
-    .alias('t')
-    .description('Run tests')
-    .option('-d, --dir <path>', 'Project directory', '.')
-    .option('-w, --watch', 'Watch mode')
-    .option('--coverage', 'Generate coverage report')
-    .action(async (options) => {
-        await test({
-            dir: options.dir,
-            watch: options.watch,
-            coverage: options.coverage
-        });
-    });
-
-// Lint command - Validate metadata
-program
-    .command('lint')
-    .alias('l')
-    .description('Validate metadata files')
-    .option('-d, --dir <path>', 'Directory to lint', '.')
-    .option('--fix', 'Automatically fix issues')
-    .action(async (options) => {
-        await lint({
-            dir: options.dir,
-            fix: options.fix
-        });
-    });
-
-// Format command - Format metadata files
-program
-    .command('format')
-    .alias('fmt')
-    .description('Format metadata files with Prettier')
-    .option('-d, --dir <path>', 'Directory to format', '.')
-    .option('--check', 'Check if files are formatted without modifying')
-    .action(async (options) => {
-        await format({
-            dir: options.dir,
-            check: options.check
-        });
-    });
-
-// Serve command (kept for backwards compatibility)
-program
-    .command('serve')
-    .alias('s')
-    .description('Start a development server (alias for dev)')
-    .option('-p, --port <number>', 'Port to listen on', '3000')
-    .option('-d, --dir <path>', 'Directory containing schema', '.')
-    .action(async (options) => {
-        await serve({ port: parseInt(options.port), dir: options.dir });
-    });
-
-// AI command - Interactive by default, with specific subcommands for other modes
-const aiCmd = program
-    .command('ai')
-    .description('AI-powered interactive application builder (starts conversational mode by default)');
-
-// Default action: Interactive conversational mode
-aiCmd
-    .argument('[output-dir]', 'Output directory for generated files', './src')
-    .action(async (outputDir) => {
-        try {
-            await aiConversational({ output: outputDir });
-        } catch (error) {
-            console.error(error);
-            process.exit(1);
-        }
-    });
-
-// Subcommand: Generate (one-shot generation)
-aiCmd
-    .command('generate')
-    .description('Generate application from description (one-shot, non-interactive)')
-    .requiredOption('-d, --description <text>', 'Application description')
-    .option('-o, --output <path>', 'Output directory', './src')
-    .option('-t, --type <type>', 'Generation type: basic, complete, or custom', 'custom')
-    .action(async (options) => {
-        try {
-            await aiGenerate(options);
-        } catch (error) {
-            console.error(error);
-            process.exit(1);
-        }
-    });
-
-// Subcommand: Validate
-aiCmd
-    .command('validate')
-    .description('Validate metadata files with AI analysis')
-    .argument('<path>', 'Path to metadata files directory')
-    .option('--fix', 'Automatically fix issues')
-    .option('-v, --verbose', 'Detailed output')
-    .action(async (pathArg, options) => {
-        try {
-            await aiValidate({ path: pathArg, ...options });
-        } catch (error) {
-            console.error(error);
-            process.exit(1);
-        }
-    });
-
-// Subcommand: Chat
-aiCmd
-    .command('chat')
-    .description('AI assistant for questions and guidance')
-    .option('-p, --prompt <text>', 'Initial prompt')
-    .action(async (options) => {
-        try {
-            await aiChat({ initialPrompt: options.prompt });
-        } catch (error) {
-            console.error(error);
-            process.exit(1);
-        }
-    });
-
-program.parse();
+program.parse(process.argv);
