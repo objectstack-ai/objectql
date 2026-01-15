@@ -65,7 +65,7 @@ export interface ViewFilter {
     /** Field to filter on */
     field: string;
     /** Comparison operator */
-    operator: ValidationOperator | '=' | '!=' | '>' | '>=' | '<' | '<=' | 'in' | 'not_in' | 'contains' | 'starts_with' | 'ends_with' | 'is_null' | 'is_not_null';
+    operator: ValidationOperator | 'is_null' | 'is_not_null';
     /** Value to compare against */
     value?: any;
     /** Multiple values (for 'in' operator) */
