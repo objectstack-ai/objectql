@@ -2,7 +2,6 @@ import * as path from 'path';
 import * as fs from 'fs';
 import chalk from 'chalk';
 import * as yaml from 'js-yaml';
-import * as prettier from 'prettier';
 
 interface FormatOptions {
     dir?: string;
@@ -38,8 +37,9 @@ export async function format(options: FormatOptions) {
                 // Parse to validate YAML
                 yaml.load(content);
                 
-                // Format with Prettier
-                const formatted = await prettier.format(content, {
+                // Format with Prettier (using require instead of import for better compatibility)
+                const prettierFormat = require('prettier').format;
+                const formatted = await prettierFormat(content, {
                     parser: 'yaml',
                     printWidth: 80,
                     tabWidth: 2,

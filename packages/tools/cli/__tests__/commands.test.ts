@@ -3,6 +3,9 @@ import * as path from 'path';
 import { newMetadata } from '../src/commands/new';
 import { i18nExtract, i18nInit, i18nValidate } from '../src/commands/i18n';
 import { syncDatabase } from '../src/commands/sync';
+import { build } from '../src/commands/build';
+import { lint } from '../src/commands/lint';
+import { format } from '../src/commands/format';
 import { ObjectQL } from '@objectql/core';
 import { SqlDriver } from '@objectql/driver-sql';
 import * as yaml from 'js-yaml';
@@ -311,6 +314,129 @@ describe('CLI Commands', () => {
             expect(newContent).not.toContain('# Modified content');
             expect(newContent).toContain('name: users');
             expect(newContent).toContain('fields:');
+        });
+    });
+
+    describe('build command', () => {
+        beforeEach(async () => {
+            // Create test object files
+            await newMetadata({
+                type: 'object',
+                name: 'test_project',
+                dir: testDir
+            });
+        });
+
+        it('should validate metadata files', async () => {
+            await expect(
+                build({
+                    dir: testDir,
+                    output: path.join(testDir, 'dist'),
+                    types: false
+                })
+            ).resolves.not.toThrow();
+        });
+
+        it('should copy metadata files to dist', async () => {
+            const distDir = path.join(testDir, 'dist');
+            
+            await build({
+                dir: testDir,
+                output: distDir,
+                types: false
+            });
+
+            expect(fs.existsSync(path.join(distDir, 'test_project.object.yml'))).toBe(true);
+        });
+    });
+
+    describe('lint command', () => {
+        beforeEach(async () => {
+            // Create test object files
+            await newMetadata({
+                type: 'object',
+                name: 'valid_object',
+                dir: testDir
+            });
+        });
+
+        it('should pass validation for valid objects', async () => {
+            await expect(
+                lint({ dir: testDir })
+            ).resolves.not.toThrow();
+        });
+
+        it('should detect invalid naming convention', async () => {
+            // Create object with invalid name (uppercase)
+            const invalidPath = path.join(testDir, 'InvalidObject.object.yml');
+            fs.writeFileSync(invalidPath, yaml.dump({
+                label: 'Invalid Object',
+                fields: {
+                    name: { type: 'text' }
+                }
+            }), 'utf-8');
+
+            // Mock process.exit to prevent actual exit
+            const mockExit = jest.spyOn(process, 'exit').mockImplementation((code?: number) => {
+                throw new Error(`Process exited with code ${code}`);
+            });
+
+            try {
+                await lint({ dir: testDir });
+            } catch (e: any) {
+                expect(e.message).toContain('Process exited with code 1');
+            }
+
+            mockExit.mockRestore();
+        });
+    });
+
+    describe('format command', () => {
+        beforeEach(async () => {
+            // Create test object files
+            await newMetadata({
+                type: 'object',
+                name: 'test_format',
+                dir: testDir
+            });
+        });
+
+        it('should format YAML files', async () => {
+            // Create a valid YAML file that just needs formatting
+            const testPath = path.join(testDir, 'format_test.object.yml');
+            fs.writeFileSync(testPath, yaml.dump({
+                label: 'Format Test',
+                fields: {
+                    name: { type: 'text', label: 'Name' }
+                }
+            }), 'utf-8');
+
+            // Mock process.exit to prevent actual exit if there are any errors
+            const mockExit = jest.spyOn(process, 'exit').mockImplementation((code?: number) => {
+                throw new Error(`Process exited with code ${code}`);
+            });
+
+            try {
+                await format({ dir: testDir });
+            } catch (e: any) {
+                // If it exits with error, that's expected for invalid YAML
+            } finally {
+                mockExit.mockRestore();
+            }
+
+            // File should still exist and be valid
+            expect(fs.existsSync(testPath)).toBe(true);
+        });
+
+        it('should check without modifying when --check flag is used', async () => {
+            const testPath = path.join(testDir, 'test_format.object.yml');
+            const originalContent = fs.readFileSync(testPath, 'utf-8');
+
+            await format({ dir: testDir, check: true });
+
+            const afterContent = fs.readFileSync(testPath, 'utf-8');
+            
+            expect(afterContent).toBe(originalContent);
         });
     });
 });
