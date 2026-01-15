@@ -1,0 +1,36 @@
+{
+  "name": "@objectql/driver-localstorage",
+  "version": "0.1.0",
+  "description": "LocalStorage driver for ObjectQL - Browser-based persistent storage",
+  "keywords": [
+    "objectql",
+    "driver",
+    "localstorage",
+    "browser",
+    "client-side",
+    "persistence",
+    "storage",
+    "adapter"
+  ],
+  "license": "MIT",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@objectql/types": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.0.0",
+    "jest": "^29.0.0",
+    "jest-environment-jsdom": "^29.0.0",
+    "typescript": "^5.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/objectstack-ai/objectql.git",
+    "directory": "packages/drivers/localstorage"
+  }
+}
