@@ -193,11 +193,15 @@ program
     .description('Start development server with hot reload')
     .option('-p, --port <number>', 'Port to listen on', '3000')
     .option('-d, --dir <path>', 'Directory containing schema', '.')
+    .option('-c, --config <path>', 'Path to objectql.config.ts/js')
+    .option('--modules <items>', 'Comma-separated list of modules to load (overrides config)')
     .option('--no-watch', 'Disable file watching')
     .action(async (options) => {
         await dev({ 
             port: parseInt(options.port), 
             dir: options.dir,
+            config: options.config,
+            modules: options.modules,
             watch: options.watch
         });
     });
@@ -209,11 +213,13 @@ program
     .option('-p, --port <number>', 'Port to listen on', '3000')
     .option('-d, --dir <path>', 'Directory containing schema', '.')
     .option('-c, --config <path>', 'Path to objectql.config.ts/js')
+    .option('--modules <items>', 'Comma-separated list of modules to load (overrides config)')
     .action(async (options) => {
         await start({ 
             port: parseInt(options.port), 
             dir: options.dir,
-            config: options.config
+            config: options.config,
+            modules: options.modules
         });
     });
 

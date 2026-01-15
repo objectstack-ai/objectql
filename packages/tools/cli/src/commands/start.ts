@@ -1,6 +1,6 @@
 import { ObjectQL } from '@objectql/core';
 import { SqlDriver } from '@objectql/driver-sql';
-import { ObjectLoader } from '@objectql/platform-node';
+import { ObjectLoader, loadModules } from '@objectql/platform-node';
 import { createNodeHandler } from '@objectql/server';
 import { createServer } from 'http';
 import * as path from 'path';
@@ -11,6 +11,7 @@ interface StartOptions {
     port: number;
     dir: string;
     config?: string;
+    modules?: string;
 }
 
 // Flexible config type that handles both ObjectQLConfig and custom config formats
@@ -49,6 +50,14 @@ export async function start(options: StartOptions) {
         }
     }
 
+    // Process modules override
+    if (options.modules) {
+        const moduleList = options.modules.split(',').map(p => p.trim());
+        if (!config) config = {};
+        config.modules = moduleList;
+        console.log(chalk.yellow(`⚠️ Overriding modules: ${moduleList.join(', ')}`));
+    }
+
     // Initialize datasource from config or use default SQLite
     // Note: Config files may use 'datasource' (singular) while ObjectQLConfig uses 'datasources' (plural)
     const datasourceConfig = config?.datasources?.default || config?.datasource?.default || {
@@ -67,7 +76,17 @@ export async function start(options: StartOptions) {
     // Load Schema
     try {
         const loader = new ObjectLoader(app.metadata);
+        
+        // Load modules first (if any)
+        // Backwards compatibility for presets
+        const modulesToLoad = config?.modules || config?.presets;
+        if (modulesToLoad) {
+            await loadModules(loader, modulesToLoad);
+        }
+
+        // Load project source
         loader.load(rootDir);
+        
         await app.init();
         console.log(chalk.green('✅ Schema loaded successfully.'));
     } catch (e: any) {

@@ -1,9 +1,10 @@
 import { ObjectQL } from '@objectql/core';
 import { SqlDriver } from '@objectql/driver-sql';
-import { ObjectLoader } from '@objectql/platform-node';
+import { ObjectLoader, loadModules } from '@objectql/platform-node';
 import { createNodeHandler } from '@objectql/server';
 import { createServer } from 'http';
 import * as path from 'path';
+import * as fs from 'fs';
 import chalk from 'chalk';
 
 const CONSOLE_HTML = `
@@ -33,29 +34,89 @@ const CONSOLE_HTML = `
 </html>
 `;
 
-export async function serve(options: { port: number; dir: string }) {
+export async function serve(options: { 
+    port: number; 
+    dir: string;
+    config?: string;
+    modules?: string;
+}) {
     console.log(chalk.blue('Starting ObjectQL Dev Server...'));
     
     const rootDir = path.resolve(process.cwd(), options.dir);
     console.log(chalk.gray(`Loading schema from: ${rootDir}`));
 
-    // 1. Init ObjectQL with in-memory SQLite for Dev
+    // Try to load configuration
+    let config: any = null;
+    const configPath = options.config || path.join(process.cwd(), 'objectql.config.ts');
+    
+    if (fs.existsSync(configPath)) {
+        try {
+            console.log(chalk.gray(`Loading config from: ${configPath}`));
+            if (configPath.endsWith('.ts')) {
+                require('ts-node/register');
+            }
+            const loaded = require(configPath);
+            config = loaded.default || loaded;
+        } catch (e: any) {
+            console.warn(chalk.yellow(`⚠️ Failed to load config: ${e.message}`));
+        }
+    } else if (options.config) {
+        console.error(chalk.red(`❌ Config file not found: ${options.config}`));
+        process.exit(1);
+    }
+
+    // Process modules override
+    if (options.modules) {
+        const moduleList = options.modules.split(',').map(p => p.trim());
+        if (!config) config = {};
+        config.modules = moduleList;
+        console.log(chalk.yellow(`⚠️ Overriding modules: ${moduleList.join(', ')}`));
+    }
+
+    const loadedConfig = config?.datasource?.default || config?.datasources?.default;
+    let datasourceValue = loadedConfig;
+    
+    // Normalize config if it uses simplified format (type: 'sqlite')
+    if (loadedConfig && !loadedConfig.client && loadedConfig.type === 'sqlite') {
+        datasourceValue = {
+            client: 'sqlite3',
+            connection: {
+                filename: loadedConfig.filename || ':memory:'
+            },
+            useNullAsDefault: true
+        };
+    }
+
+    const datasource = datasourceValue || {
+        client: 'sqlite3',
+        connection: {
+            filename: ':memory:'
+        },
+        useNullAsDefault: true
+    };
+
+    // 1. Init ObjectQL
     const app = new ObjectQL({
         datasources: {
-            default: new SqlDriver({
-                client: 'sqlite3',
-                connection: {
-                    filename: ':memory:' // Or local file './dev.db'
-                },
-                useNullAsDefault: true
-            })
-        }
+            default: new SqlDriver(datasource)
+        },
+        ...config
     });
 
     // 2. Load Schema
     try {
         const loader = new ObjectLoader(app.metadata);
+        
+        // Load modules first (if any)
+        // Backwards compatibility for presets
+        const modulesToLoad = config?.modules || config?.presets;
+        if (modulesToLoad) {
+            await loadModules(loader, modulesToLoad);
+        }
+
+        // Load project source
         loader.load(rootDir);
+        
         await app.init();
         console.log(chalk.green('✅ Schema loaded successfully.'));
     } catch (e: any) {

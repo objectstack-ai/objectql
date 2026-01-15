@@ -5,7 +5,7 @@ export default {
             filename: 'objectos.db'
         }
     },
-    presets: [
+    modules: [
         '@objectql/starter-basic',
         '@objectql/starter-enterprise'
     ]
