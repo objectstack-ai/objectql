@@ -82,13 +82,12 @@ async function main() {
         // Detects 'sqlite', 'postgres', 'mongodb' automatically
         connection: 'sqlite://data.db', 
         
-        // 2. Schema Source
-        // Where your *.object.yml files are located
-        source: ['src/objects'],
-
-        // 3. Load Presets (Optional)
-        // Load standard objects from npm packages
-        presets: ['@objectql/preset-auth']
+        // 2. Load Modules
+        // Load schema from local directories OR npm packages
+        modules: [
+            'src/objects',           // Local Module
+            '@objectql/starter-auth' // External Module (NPM)
+        ]
     });
 
     await db.init();

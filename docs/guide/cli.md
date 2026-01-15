@@ -86,13 +86,13 @@ npx objectql new object customer
 
 ## 3. Development Tools
 
-### 3.1 `serve` (Dev Server)
+### 3.1 `dev` (Development Server)
 
-Start a standalone development server.
-**Alias**: `s`
+Start the development server with hot-reload support.
+**Alias**: `d`
 
 ```bash
-npx objectql serve [options]
+npx objectql dev [options]
 ```
 
 **Options:**
@@ -100,9 +100,29 @@ npx objectql serve [options]
 | Option | Alias | Default | Description |
 | :--- | :--- | :--- | :--- |
 | `--port <number>` | `-p` | `3000` | Port to listen on. |
-| `--dir <path>` | `-d` | `.` | Directory containing schema. |
+| `--dir <path>` | `-d` | `.` | Root module directory (context). |
+| `--config <path>` | `-c` | - | Path to `objectql.config.ts`. |
+| `--modules <items>` | | - | Comma-separated list of modules to load (overrides config). Supports NPM packages (`@org/pkg`) or local paths (`./src/mod`). |
+| `--no-watch` | | `false` | Disable file watching. |
 
-### 3.2 `studio` (Admin UI)
+### 3.2 `start` (Production Server)
+
+good Start the server in production mode.
+
+```bash
+npx objectql start [options]
+```
+
+**Options:**
+
+| Option | Alias | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `--port <number>` | `-p` | `3000` | Port to listen on. |
+| `--dir <path>` | `-d` | `.` | Root module directory (context). |
+| `--config <path>` | `-c` | - | Path to `objectql.config.ts`. |
+| `--modules <items>` | | - | Comma-separated list of modules to load (overrides config). |
+
+### 3.3 `studio` (Admin UI)
 
 Starts the web-based admin studio to browse data and view schema.
 **Alias**: `ui`

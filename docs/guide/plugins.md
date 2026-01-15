@@ -228,16 +228,16 @@ setup(app) {
 }
 ```
 
-### E. Manage Packages (Presets)
-Plugins can dynamically load or unload other packages. This is useful for plugins that act as "features" which bring in a set of dependencies.
+### E. Manage Modules
+Plugins can dynamically load or unload other modules. This is useful for plugins that act as "features" which bring in a set of dependencies.
 
 ```typescript
 setup(app) {
-    // Dynamically load another package
-    app.addPackage('@objectos/standard-objects');
+    // Dynamically load another module
+    app.addModule('@objectos/standard-objects');
 
-    // Or remove a package if it conflicts with this plugin
-    app.removePackage('@objectos/legacy-objects');
+    // Or remove a module if it conflicts with this plugin
+    app.removeModule('@objectos/legacy-objects');
 }
 ```
 
