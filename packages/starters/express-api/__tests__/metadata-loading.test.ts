@@ -133,15 +133,4 @@ describe('Metadata Loading', () => {
             expect(userMetadata.name).toBe('user');
         });
     });
-
-    describe('View Metadata', () => {
-        it('should load view metadata if present', () => {
-            const views = app.metadata.list('view');
-            
-            // The express-api starter has test.view.yml
-            if (views && views.length > 0) {
-                expect(views.length).toBeGreaterThanOrEqual(1);
-            }
-        });
-    });
 });

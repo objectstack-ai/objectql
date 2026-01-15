@@ -38,11 +38,9 @@ is_active: true
 | `sort_no` | number | No | Integer for sorting applications in the launcher. |
 | `is_active` | boolean | No | Whether the app is visible to users. Defaults to `true`. |
 
-## 4. Relationship with Menus
+## 4. Application Usage
 
-Menus are defined separately in `*.menu.yml` files and can be linked to an application. This separation allows for:
-- Reusing menus across applications.
-- Keeping the application definition lightweight.
-- Frontend plugins to dynamically inject or modify menus without touching the app definition.
-
-See [Menu Metadata](./menu.md) for details on defining structure and items.
+Application metadata serves as a container for grouping related functionality. The application definition is intentionally kept simple and lightweight to allow for:
+- Organizing related objects, workflows, and actions
+- Defining application-level configuration
+- Frontend plugins to dynamically integrate with the application without modifying core definitions

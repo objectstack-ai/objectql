@@ -52,29 +52,13 @@ src/
   workflows/           # Business processes
     *.workflow.yml     # Workflow definitions
   
-  pages/              # UI pages
-    *.page.yml         # Page definitions
-  
-  views/              # UI presentation
-    *.view.yml         # View configurations
-    *.form.yml         # Form layouts
-  
-  reports/            # Analytics
-    *.report.yml       # Report definitions
-    *.dashboard.yml    # Dashboard configurations
-
   data/               # Initial Seeding
     *.data.yml         # Seed data
-  
-  navigation/         # App structure
-    *.menu.yml         # Menu definitions
 ```
 
 ## Getting Started
 
 1. **Start with Objects**: Define your data model using [Objects & Fields](./object.md)
 2. **Add Business Logic**: Implement validation, hooks, and actions
-3. **Design UI**: Create views, forms, and navigation
-4. **Secure Your App**: Configure permissions and access rules
-5. **Build Workflows**: Automate processes and approvals
-6. **Create Reports**: Add analytics and dashboards
+3. **Secure Your App**: Configure permissions and access rules
+4. **Build Workflows**: Automate processes and approvals
