@@ -1,0 +1,22 @@
+{
+  "name": "@objectql/tutorial-formulas",
+  "version": "1.8.4",
+  "private": true,
+  "description": "Tutorial demonstrating Formula Engine in ObjectQL",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "ts-node src/index.ts",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@objectql/core": "workspace:*",
+    "@objectql/types": "workspace:*",
+    "@objectql/driver-sql": "workspace:*",
+    "sqlite3": "^5.1.7"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.28",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  }
+}
