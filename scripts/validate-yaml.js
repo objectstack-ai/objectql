@@ -60,7 +60,7 @@ let errorCount = 0;
 
 console.log('🔍 Validating ObjectQL metadata YAML files...\n');
 
-// Find and validate all metadata files
+// Find all metadata files
 const files = findFiles(process.cwd());
 
 if (files.length === 0) {
@@ -68,32 +68,50 @@ if (files.length === 0) {
   process.exit(0);
 }
 
-files.forEach(file => {
-  try {
-    const content = fs.readFileSync(file, 'utf8');
-    yaml.load(content);
-    console.log(`✓ ${path.relative(process.cwd(), file)}`);
-    validCount++;
-  } catch (error) {
-    console.error(`✗ ${path.relative(process.cwd(), file)}`);
-    console.error(`  Error: ${error.message}`);
-    if (error.mark) {
-      console.error(`  Line ${error.mark.line + 1}, Column ${error.mark.column + 1}`);
-    }
-    console.error('');
-    hasErrors = true;
-    errorCount++;
-  }
-});
+// Validate all files concurrently
+async function validateFiles() {
+  const results = await Promise.allSettled(
+    files.map(async (file) => {
+      const content = await fs.promises.readFile(file, 'utf8');
+      yaml.load(content);
+      return file;
+    })
+  );
 
-// Print summary
-console.log('\n' + '='.repeat(60));
-if (hasErrors) {
-  console.error(`❌ Validation failed: ${errorCount} error(s) found`);
-  console.log(`✓ Valid files: ${validCount}`);
-  console.error(`✗ Invalid files: ${errorCount}`);
-  process.exit(1);
-} else {
-  console.log(`✅ All ${validCount} YAML metadata file(s) are valid!`);
-  process.exit(0);
+  results.forEach((result, index) => {
+    const file = files[index];
+    const relativePath = path.relative(process.cwd(), file);
+    
+    if (result.status === 'fulfilled') {
+      console.log(`✓ ${relativePath}`);
+      validCount++;
+    } else {
+      const error = result.reason;
+      console.error(`✗ ${relativePath}`);
+      console.error(`  Error: ${error.message}`);
+      if (error.mark) {
+        console.error(`  Line ${error.mark.line + 1}, Column ${error.mark.column + 1}`);
+      }
+      console.error('');
+      hasErrors = true;
+      errorCount++;
+    }
+  });
+
+  // Print summary
+  console.log('\n' + '='.repeat(60));
+  if (hasErrors) {
+    console.error(`❌ Validation failed: ${errorCount} error(s) found`);
+    console.log(`✓ Valid files: ${validCount}`);
+    console.error(`✗ Invalid files: ${errorCount}`);
+    process.exit(1);
+  } else {
+    console.log(`✅ All ${validCount} YAML metadata file(s) are valid!`);
+    process.exit(0);
+  }
 }
+
+validateFiles().catch((error) => {
+  console.error('Unexpected error during validation:', error);
+  process.exit(1);
+});
