@@ -238,7 +238,7 @@ export interface FieldConfig {
     /** Treat blank/null as zero in formula calculations. */
     blank_as_zero?: boolean;
     /** Default value for null/undefined referenced fields in formulas. */
-    treat_blank_as?: any;
+    treat_blank_as?: string | number | boolean | Date | null;
     
     // Summary properties
     /** Object to summarize. */
@@ -247,5 +247,5 @@ export interface FieldConfig {
     summary_field?: string;
     /** Type of summary (count, sum, min, max, avg). */
     summary_type?: string;
-    filters?: any[];
+    filters?: unknown[];
 }

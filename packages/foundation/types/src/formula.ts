@@ -8,6 +8,8 @@
  * @see docs/spec/formula.md for complete specification
  */
 
+import { ObjectQLError, ApiErrorCode } from './api';
+
 /**
  * Data types that formula expressions can return
  */
@@ -19,6 +21,30 @@ export type FormulaDataType =
     | 'boolean'     // True/false
     | 'currency'    // Monetary value
     | 'percent';    // Percentage (0-100)
+
+/**
+ * Valid formula return values based on data type
+ */
+export type FormulaValue = 
+    | number 
+    | string 
+    | boolean 
+    | Date 
+    | null 
+    | undefined;
+
+/**
+ * Valid field values that can be used in formula expressions
+ */
+export type FormulaFieldValue = 
+    | string 
+    | number 
+    | boolean 
+    | Date 
+    | null 
+    | undefined 
+    | FormulaFieldValue[] 
+    | { [key: string]: FormulaFieldValue };
 
 /**
  * Configuration for a formula field
@@ -52,7 +78,7 @@ export interface FormulaFieldConfig {
     blank_as_zero?: boolean;
     
     /** Default value to use when referenced fields are null/undefined */
-    treat_blank_as?: any;
+    treat_blank_as?: FormulaValue;
     
     /** AI-friendly context for understanding business intent */
     ai_context?: FormulaAiContext;
@@ -95,10 +121,10 @@ export interface FormulaExample {
     description: string;
     
     /** Input field values */
-    inputs: Record<string, any>;
+    inputs: Record<string, FormulaFieldValue>;
     
     /** Expected result */
-    result: any;
+    result: FormulaValue;
     
     /** Optional explanation of the calculation */
     explanation?: string;
@@ -112,10 +138,10 @@ export interface FormulaTestCase {
     description?: string;
     
     /** Input values for the test */
-    input: Record<string, any>;
+    input: Record<string, FormulaFieldValue>;
     
     /** Expected output value */
-    expected: any;
+    expected: FormulaValue;
     
     /** Whether this test should pass or fail */
     should_pass?: boolean;
@@ -129,7 +155,7 @@ export interface FormulaTestCase {
  */
 export interface FormulaContext {
     /** Current record data with all field values */
-    record: Record<string, any>;
+    record: Record<string, FormulaFieldValue>;
     
     /** System date/time variables */
     system: FormulaSystemVariables;
@@ -190,7 +216,7 @@ export interface FormulaUserContext {
     role?: string;
     
     /** Additional user properties */
-    [key: string]: any;
+    [key: string]: unknown;
 }
 
 /**
@@ -198,7 +224,7 @@ export interface FormulaUserContext {
  */
 export interface FormulaEvaluationResult {
     /** Computed value */
-    value: any;
+    value: FormulaValue;
     
     /** Data type of the result */
     type: FormulaDataType;
@@ -246,17 +272,50 @@ export enum FormulaErrorType {
 }
 
 /**
- * Custom error for formula evaluation failures
+ * Context information for formula errors
  */
-export class FormulaError extends Error {
+export interface FormulaErrorContext {
+    /** The formula expression that caused the error */
+    expression?: string;
+    
+    /** Field name if applicable */
+    field?: string;
+    
+    /** Record data at time of error */
+    record?: Record<string, FormulaFieldValue>;
+    
+    /** Additional context information */
+    [key: string]: unknown;
+}
+
+/**
+ * Custom error for formula evaluation failures
+ * Extends ObjectQLError to maintain consistency with ObjectQL error handling
+ */
+export class FormulaError extends ObjectQLError {
+    public readonly errorType: FormulaErrorType;
+    public readonly expression?: string;
+    public readonly errorContext?: FormulaErrorContext;
+
     constructor(
-        public type: FormulaErrorType,
-        public message: string,
-        public expression?: string,
-        public context?: any
+        type: FormulaErrorType,
+        message: string,
+        expression?: string,
+        context?: FormulaErrorContext
     ) {
-        super(message);
+        super({
+            code: type as string,
+            message,
+            details: {
+                formula_error_type: type,
+                expression,
+                ...context
+            }
+        });
         this.name = 'FormulaError';
+        this.errorType = type;
+        this.expression = expression;
+        this.errorContext = context;
     }
 }
 
@@ -348,6 +407,12 @@ export interface FormulaExecutionStats {
 }
 
 /**
+ * Type for custom formula functions
+ * These functions can be registered in the formula engine for use in expressions
+ */
+export type FormulaCustomFunction = (...args: FormulaFieldValue[]) => FormulaValue;
+
+/**
  * Configuration for formula engine
  */
 export interface FormulaEngineConfig {
@@ -364,7 +429,7 @@ export interface FormulaEngineConfig {
     enable_monitoring?: boolean;
     
     /** Custom function library */
-    custom_functions?: Record<string, Function>;
+    custom_functions?: Record<string, FormulaCustomFunction>;
     
     /** Sandbox configuration */
     sandbox?: {
