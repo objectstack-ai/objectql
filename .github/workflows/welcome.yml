@@ -1,0 +1,45 @@
+name: "Welcome First-Time Contributors"
+
+on:
+  issues:
+    types: [opened]
+  pull_request_target:
+    types: [opened]
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  welcome:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Welcome First-Time Contributors
+        uses: actions/first-interaction@v1
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          issue-message: |
+            👋 Welcome to ObjectQL! 
+            
+            Thank you for opening your first issue. We appreciate your contribution to the project!
+            
+            Our team will review your issue and get back to you as soon as possible. In the meantime:
+            - Make sure you've provided all relevant details
+            - Check our [documentation](https://github.com/objectstack-ai/objectql/tree/main/docs) if you haven't already
+            - Feel free to ask questions if you need clarification
+            
+            Happy coding! 🚀
+          pr-message: |
+            👋 Welcome to ObjectQL! 
+            
+            Thank you for submitting your first pull request! We're excited to review your contribution.
+            
+            Before we proceed, please ensure:
+            - [ ] Your code follows our coding standards
+            - [ ] All tests pass (`pnpm test`)
+            - [ ] TypeScript compilation succeeds (`pnpm tsc -b`)
+            - [ ] You've added tests for new functionality (if applicable)
+            - [ ] You've updated documentation (if applicable)
+            
+            Our maintainers will review your PR soon. Thank you for contributing to ObjectQL! 🎉
