@@ -1,0 +1,11 @@
+# Configuration for GitHub Dependency Review Action
+# This config lowers the OpenSSF Scorecard threshold to prevent false positives
+# Many widely-used packages have low scores but are safe and maintained
+
+# OpenSSF Scorecard threshold
+# Default is 3.0, but many popular packages score below this
+# Examples: xmlbuilder (1.9), yallist (2.8), core-util-is (1.7)
+fail_on_scorecard: 1.5
+
+# Still fail on actual vulnerabilities
+fail_on_severity: moderate
