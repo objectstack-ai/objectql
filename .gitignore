@@ -16,3 +16,5 @@ docs/.vitepress/dist
 
 # Example tutorials CHANGELOG (auto-generated, not tracked)
 examples/tutorials/*/CHANGELOG.md
+# Generated Types
+generated/

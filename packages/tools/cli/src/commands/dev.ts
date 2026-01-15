@@ -18,8 +18,8 @@ export async function dev(options: {
     console.log(chalk.cyan('🚀 Starting ObjectQL Development Server...'));
 
     const sourceDir = path.resolve(process.cwd(), options.dir || '.');
-    // Default output for types in dev mode
-    const typeOutputDir = path.resolve(process.cwd(), 'src/generated'); 
+    // Output types to the source directory under 'generated' folder
+    const typeOutputDir = path.join(sourceDir, 'generated'); 
 
     // 1. Initial Type Generation
     try {
@@ -35,6 +35,7 @@ export async function dev(options: {
     }
 
     console.log(chalk.blue(`\n🌐 Server context: ${sourceDir}`));
+    console.log(chalk.blue(`📁 Type output: ${typeOutputDir}`));
     
     // 3. Start Server
     await serve({ 
@@ -51,11 +52,15 @@ function startWatcher(sourceDir: string, outputDir: string) {
     console.log(chalk.yellow('👀 Watching for metadata changes...'));
     
     try {
-        // Recursive watch if supported (macOS/Windows support strict recursive)
-        // Linux might need fallback or libraries like chokidar, but we use fs.watch for zero-dep strictness
+        // Recursive watch 
         const watcher = fs.watch(sourceDir, { recursive: true }, (eventType, filename) => {
             if (!filename) return;
             
+            // Ignore generated directory to prevent loops if output is inside source
+            if (filename.includes('generated') || filename.includes('node_modules') || filename.includes('.git')) {
+                return;
+            }
+
             // Only care about YAML
             if (filename.endsWith('.yml') || filename.endsWith('.yaml')) {
                 // Debounce
@@ -69,7 +74,7 @@ function startWatcher(sourceDir: string, outputDir: string) {
                     } catch (e) {
                         console.error(chalk.red('Type generation failed:'), e);
                     }
-                }, 500); // 500ms debounce
+                }, 500); 
             }
         });
         
@@ -77,6 +82,5 @@ function startWatcher(sourceDir: string, outputDir: string) {
         
     } catch (e) {
         console.warn(chalk.yellow('Native recursive watch not supported or failed. Watching root only.'));
-        // Fallback logic could go here
     }
 }

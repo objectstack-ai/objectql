@@ -1,17 +1,17 @@
 import { ObjectQL } from '@objectql/core';
 import { SqlDriver } from '@objectql/driver-sql';
 import { ObjectLoader, loadModules } from '@objectql/platform-node';
-import { createNodeHandler } from '@objectql/server';
+import { createNodeHandler, createGraphQLHandler } from '@objectql/server';
 import { createServer } from 'http';
 import * as path from 'path';
 import * as fs from 'fs';
 import chalk from 'chalk';
 
-const CONSOLE_HTML = `
+const SCALAR_HTML = `
 <!DOCTYPE html>
 <html>
   <head>
-    <title>ObjectQL API Reference (Scalar)</title>
+    <title>ObjectQL API Reference</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <style>
@@ -122,20 +122,26 @@ export async function serve(options: {
 
     // 3. Create Handler
     const internalHandler = createNodeHandler(app);
+    const graphqlHandler = createGraphQLHandler(app);
 
     // 4. Start Server
     const server = createServer(async (req, res) => {
-        // Serve Swagger UI
-        if (req.method === 'GET' && (req.url === '/swagger' || req.url === '/swagger/')) {
+        // Serve API Docs at Root (Default)
+        if (req.method === 'GET' && (req.url === '/' || req.url === '/docs' || req.url === '/docs/')) {
             res.writeHead(200, { 'Content-Type': 'text/html' });
-            res.end(CONSOLE_HTML);
+            res.end(SCALAR_HTML);
             return;
         }
 
-        // Redirect / to /swagger for better DX
-        if (req.method === 'GET' && req.url === '/') {
-            res.writeHead(302, { 'Location': '/swagger' });
-            res.end();
+        // GraphQL Endpoint & Playground (Keep for compatibility)
+        if (req.url === '/graphql' || req.url === '/graphql/') {
+            await graphqlHandler(req, res);
+            return;
+        }
+
+        // Keep /api/graphql as alias for compatibility
+        if (req.url?.startsWith('/api/graphql')) {
+            await graphqlHandler(req, res);
             return;
         }
 
@@ -169,10 +175,10 @@ export async function serve(options: {
         server.listen(port, () => {
             server.removeListener('error', onError);
             console.log(chalk.green(`\n🚀 Server ready at http://localhost:${port}`));
-            console.log(chalk.green(`📚 Swagger UI:   http://localhost:${port}/swagger`));
-            console.log(chalk.blue(`📖 OpenAPI Spec:  http://localhost:${port}/openapi.json`));
+            console.log(chalk.blue(`📖 API Docs (Scalar):   http://localhost:${port}/`));
+            
             console.log(chalk.gray('\nTry a curl command:'));
-            console.log(`curl -X POST http://localhost:${port} -H "Content-Type: application/json" -d '{"op": "find", "object": "YourObject", "args": {}}'`);
+            console.log(`curl -X POST http://localhost:${port} -H "Content-Type: application/json" -d '{"op": "find", "object": "tasks", "args": {}}'`);
         });
     };
 
