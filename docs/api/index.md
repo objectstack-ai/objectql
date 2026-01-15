@@ -32,6 +32,7 @@ ObjectQL uses a **unified `id` field** as the primary key across all database dr
 ## Quick Links
 
 ### Core Concepts
+- [Custom API Routes](./custom-routes.md) ⭐ **NEW**
 - [Authentication & Security](./authentication.md)
 - [Error Handling](./error-handling.md)
 - [Rate Limiting](./rate-limiting.md)
