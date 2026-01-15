@@ -4,7 +4,7 @@ This section contains the complete metadata specifications for the ObjectQL plat
 
 📖 **[Read the Complete Metadata Standard Guide](./metadata-standard.md)** - A comprehensive overview of the entire metadata system and how all pieces fit together.
 
-📊 **[Implementation Progress Report](../../PROGRESS.md)** - Current implementation status of all specifications (v1.8.3 - 70% complete)
+📊 **[Implementation Progress Report](../../PROGRESS.md)** - Current implementation status of all specifications (v1.8.4 - 70% complete)
 
 ## Core Data Layer
 

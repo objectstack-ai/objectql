@@ -454,4 +454,4 @@ The type system is designed to be extensible. Potential additions:
 
 **Implementation Date**: January 14-15, 2026  
 **Author**: ObjectQL Lead Architect  
-**Package**: `@objectql/types@1.8.3`
+**Package**: `@objectql/types@1.8.4`
