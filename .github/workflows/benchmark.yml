@@ -49,20 +49,27 @@ jobs:
       timeout-minutes: 3
 
     - name: Run benchmarks
+      id: run-benchmarks
       run: |
         echo "Checking for benchmark scripts..."
         if pnpm -r list | grep -q "benchmark"; then
           echo "Running benchmarks..."
           pnpm -r run benchmark --if-present
+          if [ -f "benchmark-results.json" ]; then
+            echo "benchmark_file_exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "benchmark_file_exists=false" >> $GITHUB_OUTPUT
+          fi
         else
           echo "No benchmark scripts found. Skipping benchmarks."
           echo "To add benchmarks, add a 'benchmark' script to package.json files."
+          echo "benchmark_file_exists=false" >> $GITHUB_OUTPUT
         fi
       timeout-minutes: 5
       continue-on-error: true
 
     - name: Store benchmark result
-      if: github.ref == 'refs/heads/main' && hashFiles('benchmark-results.json') != ''
+      if: github.ref == 'refs/heads/main' && steps.run-benchmarks.outputs.benchmark_file_exists == 'true'
       uses: benchmark-action/github-action-benchmark@v1
       with:
         name: ObjectQL Benchmarks
