@@ -1,6 +1,13 @@
-# Changelog - @objectql/driver-redis
+# @objectql/driver-redis
 
-All notable changes to the Redis driver will be documented in this file.
+## 1.8.4
+
+### Patch Changes
+
+- Release version 1.8.4 with latest improvements and bug fixes
+- **Note**: Version synchronized with other ObjectQL packages per fixed versioning policy
+- Updated dependencies
+  - @objectql/types@1.8.4
 
 ## [0.1.0] - 2026-01-15
 

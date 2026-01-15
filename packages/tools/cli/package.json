@@ -1,6 +1,6 @@
 {
   "name": "@objectql/cli",
-  "version": "1.8.3",
+  "version": "1.8.4",
   "description": "Command-line interface for ObjectQL - Code generation, migrations, REPL, and AI-powered development tools",
   "keywords": [
     "objectql",
