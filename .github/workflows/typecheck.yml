@@ -31,6 +31,6 @@ jobs:
       
     - name: Run TypeScript type check
       run: |
-        echo "Running TypeScript compiler in type-check mode..."
-        pnpm tsc -b --noEmit
+        echo "Running TypeScript compiler in build mode for type checking..."
+        pnpm tsc -b
       timeout-minutes: 5
