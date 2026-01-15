@@ -26,7 +26,7 @@ jobs:
   validate:
     name: Validate YAML Metadata
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 5
     
     steps:
     - uses: actions/checkout@v4
@@ -43,10 +43,10 @@ jobs:
 
     - name: Install dependencies
       run: pnpm install --frozen-lockfile
-      timeout-minutes: 5
+      timeout-minutes: 3
       
     - name: Validate YAML syntax
       run: |
         echo "Checking YAML syntax for metadata files..."
         pnpm exec node scripts/validate-yaml.js
-      timeout-minutes: 5
+      timeout-minutes: 2

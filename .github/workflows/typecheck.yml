@@ -10,7 +10,7 @@ jobs:
   typecheck:
     name: TypeScript Type Check
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 5
     
     steps:
     - uses: actions/checkout@v4
@@ -27,10 +27,10 @@ jobs:
 
     - name: Install dependencies
       run: pnpm install --frozen-lockfile
-      timeout-minutes: 5
+      timeout-minutes: 3
       
     - name: Run TypeScript type check
       run: |
         echo "Running TypeScript compiler in build mode for type checking..."
         pnpm tsc -b
-      timeout-minutes: 5
+      timeout-minutes: 3
