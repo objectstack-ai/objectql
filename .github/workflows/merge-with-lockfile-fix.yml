@@ -69,8 +69,7 @@ jobs:
           # --- Step 3: Merge as usual ---
           # If lock file conflicts, Git auto-resolves without errors
           git fetch origin ${{ github.event.inputs.source_branch }}
-          git merge origin/${{ github.event.inputs.source_branch }} \
-            --no-edit
+          git merge origin/${{ github.event.inputs.source_branch }} --no-edit
 
           # Push the merged changes
           git push origin ${{ github.event.inputs.target_branch }}

@@ -1,5 +1,10 @@
 name: Auto-merge Dependabot PRs
 
+# This workflow demonstrates enabling auto-merge for Dependabot PRs.
+# GitHub's auto-merge will handle the actual merge, and if configured
+# with the CI script approach in the release/CI workflows, lockfile
+# conflicts will be automatically resolved.
+
 'on':
   pull_request:
     types: [opened, synchronize, reopened]
@@ -15,58 +20,7 @@ jobs:
     if: github.actor == 'dependabot[bot]'
 
     steps:
-      - name: Checkout PR
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.ref }}
-          fetch-depth: 0
-
-      - uses: pnpm/action-setup@v3
-        with:
-          version: 10
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'pnpm'
-
-      - name: Auto Merge with Lockfile Fix
-        run: |
-          # --- Step 1: Configure temporary merge driver ---
-          # Define a merge driver that runs pnpm install
-          git config merge.pnpm-merge.name "pnpm-lock.yaml merge driver"
-          git config merge.pnpm-merge.driver \
-            "pnpm install --no-frozen-lockfile"
-
-          # --- Step 2: Bind the strategy (key step) ---
-          # Tell Git: for pnpm-lock.yaml, use the pnpm-merge driver
-          # .git/info/attributes only affects CI, doesn't dirty codebase
-          echo "pnpm-lock.yaml merge=pnpm-merge" >> .git/info/attributes
-
-          # --- Step 3: Fetch and merge as usual ---
-          # If lock file conflicts, Git auto-resolves without errors
-          git fetch origin main
-          git merge origin/main --no-edit || {
-            echo "Merge failed, checking if it's a lockfile conflict..."
-            # If merge failed, check if pnpm-lock.yaml is in conflict
-            if git status | grep -q "pnpm-lock.yaml"; then
-              echo "Detected pnpm-lock.yaml conflict, regenerating..."
-              # The merge driver should have already run pnpm install
-              # Add the regenerated lockfile
-              git add pnpm-lock.yaml
-              git commit -m "chore: regenerate pnpm-lock.yaml"
-            else
-              echo "Merge conflict is not related to lockfile"
-              exit 1
-            fi
-          }
-
-          # Push the merged changes
-          git push origin ${{ github.event.pull_request.head.ref }}
-
       - name: Enable auto-merge
-        if: success()
         run: |
           gh pr merge --auto --squash \
             "${{ github.event.pull_request.number }}"
