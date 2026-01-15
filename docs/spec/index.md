@@ -11,6 +11,7 @@ This section contains the complete metadata specifications for the ObjectQL plat
 *   [**Objects & Fields**](./object.md) - Data model definitions, field types, relationships, and validation rules ✅
 *   [**Query Language (JSON-DSL)**](./query-language.md) - Unified query protocol for database-agnostic data access ✅
 *   [**Validation Rules**](./validation.md) - Data quality and business rule enforcement ✅
+*   [**Formula Fields**](./formula.md) - Read-only calculated fields with JavaScript expressions ✅
 
 ## Business Logic Layer
 

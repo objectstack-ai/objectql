@@ -226,14 +226,26 @@ export interface FieldConfig {
     /** Dimension of the vector for 'vector' type fields. */
     dimension?: number;
 
-    // Formula & Summary
-    /** Formula expression. */
+    // Formula properties
+    /** Formula expression (for 'formula' type fields). */
     formula?: string;
+    /** Expected return data type for formula fields. */
+    data_type?: 'number' | 'text' | 'date' | 'datetime' | 'boolean' | 'currency' | 'percent';
+    /** Display format for formula results (e.g., "0.00", "YYYY-MM-DD"). */
+    format?: string;
+    /** Decimal precision for numeric formula results. */
+    precision?: number;
+    /** Treat blank/null as zero in formula calculations. */
+    blank_as_zero?: boolean;
+    /** Default value for null/undefined referenced fields in formulas. */
+    treat_blank_as?: string | number | boolean | Date | null;
+    
+    // Summary properties
     /** Object to summarize. */
     summary_object?: string;
     /** Field on the summary object. */
     summary_field?: string;
     /** Type of summary (count, sum, min, max, avg). */
     summary_type?: string;
-    filters?: any[];
+    filters?: unknown[];
 }
