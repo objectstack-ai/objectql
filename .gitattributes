@@ -1,2 +1,4 @@
-# Auto-resolve pnpm lockfile conflicts using a custom merge driver
-pnpm-lock.yaml merge=pnpm-merge-driver
+# Auto-resolve pnpm lockfile conflicts
+# Use 'union' merge strategy which combines both sides
+# Then run 'pnpm install' to regenerate the lockfile correctly
+pnpm-lock.yaml merge=union
