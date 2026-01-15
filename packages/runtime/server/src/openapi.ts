@@ -1,4 +1,4 @@
-import { IObjectQL, ObjectConfig, FieldType, FieldConfig } from '@objectql/types';
+import { IObjectQL, ObjectConfig, FieldType, FieldConfig, ApiRouteConfig, resolveApiRoutes } from '@objectql/types';
 
 interface OpenAPISchema {
     openapi: string;
@@ -12,16 +12,17 @@ interface OpenAPISchema {
     };
 }
 
-export function generateOpenAPI(app: IObjectQL): OpenAPISchema {
+export function generateOpenAPI(app: IObjectQL, routeConfig?: ApiRouteConfig): OpenAPISchema {
     const registry = (app as any).metadata; // Direct access or via interface
     const objects = registry.list('object') as ObjectConfig[];
+    const routes = resolveApiRoutes(routeConfig);
 
     const paths: Record<string, any> = {};
     const schemas: Record<string, any> = {};
 
     
     // 1. JSON-RPC Endpoint
-    paths['/api/objectql'] = {
+    paths[routes.rpc] = {
         post: {
             summary: 'JSON-RPC Entry Point',
             description: 'Execute any ObjectQL operation via a JSON body.',
@@ -72,9 +73,9 @@ export function generateOpenAPI(app: IObjectQL): OpenAPISchema {
     // 3. REST API Paths
     for (const obj of objects) {
         const name = obj.name;
-        const basePath = `/api/data/${name}`; // Standard REST Path
+        const basePath = `${routes.data}/${name}`; // Standard REST Path
         
-        // GET /api/data/:name (List)
+        // GET {dataPath}/:name (List)
         paths[basePath] = {
             get: {
                 summary: `List ${name}`,

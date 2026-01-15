@@ -1,4 +1,4 @@
-import { IObjectQL } from '@objectql/types';
+import { IObjectQL, ApiRouteConfig, resolveApiRoutes } from '@objectql/types';
 import { ObjectQLServer } from '../server';
 import { ObjectQLRequest, ErrorCode, IFileStorage } from '../types';
 import { IncomingMessage, ServerResponse } from 'http';
@@ -12,6 +12,8 @@ import { LocalFileStorage } from '../storage';
 export interface NodeHandlerOptions {
     /** File storage provider (defaults to LocalFileStorage) */
     fileStorage?: IFileStorage;
+    /** Custom API route configuration */
+    routes?: ApiRouteConfig;
 }
 
 /**
@@ -19,11 +21,12 @@ export interface NodeHandlerOptions {
  */
 export function createNodeHandler(app: IObjectQL, options?: NodeHandlerOptions) {
     const server = new ObjectQLServer(app);
+    const routes = resolveApiRoutes(options?.routes);
     
     // Initialize file storage
     const fileStorage = options?.fileStorage || new LocalFileStorage({
         baseDir: process.env.OBJECTQL_UPLOAD_DIR || './uploads',
-        baseUrl: process.env.OBJECTQL_BASE_URL || 'http://localhost:3000/api/files'
+        baseUrl: process.env.OBJECTQL_BASE_URL || `http://localhost:3000${routes.files}`
     });
     
     // Create file handlers
@@ -103,17 +106,18 @@ export function createNodeHandler(app: IObjectQL, options?: NodeHandlerOptions) 
         const pathName = urlObj.pathname;
         const method = req.method;
 
-        // 1. JSON-RPC: POST /api/objectql
-        if (pathName === '/api/objectql' && method === 'POST') {
+        // 1. JSON-RPC: POST {rpcPath}
+        if (pathName === routes.rpc && method === 'POST') {
              await processBody(req, async (json) => {
                  await handleRequest(json);
              }, res);
              return;
         }
 
-        // 2. REST API: /api/data/:object and /api/data/:object/:id
-        // Regex to match /api/data/objectName(/id)?
-        const restMatch = pathName.match(/^\/api\/data\/([^/]+)(?:\/(.+))?$/);
+        // 2. REST API: {dataPath}/:object and {dataPath}/:object/:id
+        // Regex to match {dataPath}/objectName(/id)?
+        const escapedDataPath = routes.data.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const restMatch = pathName.match(new RegExp(`^${escapedDataPath}/([^/]+)(?:/(.+))?$`));
         
         if (restMatch) {
             const objectName = restMatch[1];
@@ -121,7 +125,7 @@ export function createNodeHandler(app: IObjectQL, options?: NodeHandlerOptions) 
             const query = Object.fromEntries(urlObj.searchParams.entries());
 
             if (method === 'GET') {
-                // GET /api/data/:object/:id -> findOne
+                // GET {dataPath}/:object/:id -> findOne
                 if (id) {
                     await handleRequest({
                         op: 'findOne',
@@ -129,7 +133,7 @@ export function createNodeHandler(app: IObjectQL, options?: NodeHandlerOptions) 
                         args: id
                     });
                 } 
-                // GET /api/data/:object -> find (List)
+                // GET {dataPath}/:object -> find (List)
                 else {
                     // Parse standard params
                     const args: any = {};
@@ -149,7 +153,7 @@ export function createNodeHandler(app: IObjectQL, options?: NodeHandlerOptions) 
             }
 
             if (method === 'POST' && !id) {
-                // POST /api/data/:object -> create
+                // POST {dataPath}/:object -> create
                 await processBody(req, async (body) => {
                     await handleRequest({
                         op: 'create',
@@ -161,7 +165,7 @@ export function createNodeHandler(app: IObjectQL, options?: NodeHandlerOptions) 
             }
 
             if (method === 'PATCH' && id) {
-                // PATCH /api/data/:object/:id -> update
+                // PATCH {dataPath}/:object/:id -> update
                 await processBody(req, async (body) => {
                     await handleRequest({
                         op: 'update',
@@ -176,7 +180,7 @@ export function createNodeHandler(app: IObjectQL, options?: NodeHandlerOptions) 
             }
 
             if (method === 'DELETE' && id) {
-                // DELETE /api/data/:object/:id -> delete
+                // DELETE {dataPath}/:object/:id -> delete
                 await handleRequest({
                     op: 'delete',
                     object: objectName,
@@ -187,20 +191,21 @@ export function createNodeHandler(app: IObjectQL, options?: NodeHandlerOptions) 
         }
         
         // File Upload Endpoints
-        // POST /api/files/upload - Single file upload
-        if (pathName === '/api/files/upload' && method === 'POST') {
+        // POST {filesPath}/upload - Single file upload
+        if (pathName === `${routes.files}/upload` && method === 'POST') {
             await uploadHandler(req, res);
             return;
         }
         
-        // POST /api/files/upload/batch - Batch file upload
-        if (pathName === '/api/files/upload/batch' && method === 'POST') {
+        // POST {filesPath}/upload/batch - Batch file upload
+        if (pathName === `${routes.files}/upload/batch` && method === 'POST') {
             await batchUploadHandler(req, res);
             return;
         }
         
-        // GET /api/files/:fileId - Download file
-        const fileMatch = pathName.match(/^\/api\/files\/([^/]+)$/);
+        // GET {filesPath}/:fileId - Download file
+        const escapedFilesPath = routes.files.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const fileMatch = pathName.match(new RegExp(`^${escapedFilesPath}/([^/]+)$`));
         if (fileMatch && method === 'GET') {
             const fileId = fileMatch[1];
             await downloadHandler(req, res, fileId);
@@ -209,7 +214,7 @@ export function createNodeHandler(app: IObjectQL, options?: NodeHandlerOptions) 
         
         // Fallback or 404
         if (req.method === 'POST') {
-             // Fallback for root POSTs if people forget /api/objectql but send to /api something
+             // Fallback for root POSTs if people forget {rpcPath} but send to /api something
              await processBody(req, handleRequest, res);
              return;
         }

@@ -493,3 +493,76 @@ export interface IMetadataApiClient {
      */
     getMetadata<T = unknown>(metadataType: string, id: string): Promise<MetadataApiResponse<T>>;
 }
+
+// ============================================================================
+// Route Configuration Types
+// ============================================================================
+
+/**
+ * Configuration for API route paths
+ * Allows customization of all API endpoints during initialization
+ */
+export interface ApiRouteConfig {
+    /**
+     * Base path for JSON-RPC endpoint
+     * @default '/api/objectql'
+     */
+    rpc?: string;
+    
+    /**
+     * Base path for REST data API
+     * @default '/api/data'
+     */
+    data?: string;
+    
+    /**
+     * Base path for metadata API
+     * @default '/api/metadata'
+     */
+    metadata?: string;
+    
+    /**
+     * Base path for file operations
+     * @default '/api/files'
+     */
+    files?: string;
+}
+
+/**
+ * Complete API route configuration with defaults applied
+ */
+export interface ResolvedApiRouteConfig {
+    /** JSON-RPC endpoint path */
+    rpc: string;
+    
+    /** REST data API base path */
+    data: string;
+    
+    /** Metadata API base path */
+    metadata: string;
+    
+    /** File operations base path */
+    files: string;
+}
+
+/**
+ * Default API route configuration
+ */
+export const DEFAULT_API_ROUTES: ResolvedApiRouteConfig = {
+    rpc: '/api/objectql',
+    data: '/api/data',
+    metadata: '/api/metadata',
+    files: '/api/files'
+};
+
+/**
+ * Resolve API route configuration by merging user config with defaults
+ */
+export function resolveApiRoutes(config?: ApiRouteConfig): ResolvedApiRouteConfig {
+    return {
+        rpc: config?.rpc ?? DEFAULT_API_ROUTES.rpc,
+        data: config?.data ?? DEFAULT_API_ROUTES.data,
+        metadata: config?.metadata ?? DEFAULT_API_ROUTES.metadata,
+        files: config?.files ?? DEFAULT_API_ROUTES.files
+    };
+}

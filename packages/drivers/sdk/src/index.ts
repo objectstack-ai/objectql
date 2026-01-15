@@ -72,12 +72,16 @@ function createTimeoutSignal(ms: number): AbortSignal {
  * Legacy Driver implementation that uses JSON-RPC style API
  */
 export class RemoteDriver implements Driver {
-    constructor(private baseUrl: string) {}
+    private rpcPath: string;
+    
+    constructor(private baseUrl: string, rpcPath: string = '/api/objectql') {
+        this.rpcPath = rpcPath;
+    }
 
     private async request(op: string, objectName: string, args: any) {
-        // Implementation detail: we assume there is a standard endpoint '/api/objectql' 
+        // Implementation detail: we assume there is a standard endpoint at rpcPath
         // that accepts the ObjectQLRequest format.
-        const endpoint = `${this.baseUrl.replace(/\/$/, '')}/api/objectql`;
+        const endpoint = `${this.baseUrl.replace(/\/$/, '')}${this.rpcPath}`;
         
         const res = await fetch(endpoint, {
             method: 'POST',
@@ -146,7 +150,10 @@ export class RemoteDriver implements Driver {
  * 
  * @example
  * ```typescript
- * const client = new DataApiClient({ baseUrl: 'http://localhost:3000' });
+ * const client = new DataApiClient({ 
+ *   baseUrl: 'http://localhost:3000',
+ *   dataPath: '/api/data' // optional, defaults to /api/data
+ * });
  * 
  * // List users
  * const response = await client.list('users', {
@@ -170,12 +177,14 @@ export class DataApiClient implements IDataApiClient {
     private token?: string;
     private headers: Record<string, string>;
     private timeout: number;
+    private dataPath: string;
 
-    constructor(config: DataApiClientConfig) {
+    constructor(config: DataApiClientConfig & { dataPath?: string }) {
         this.baseUrl = config.baseUrl.replace(/\/$/, '');
         this.token = config.token;
         this.headers = config.headers || {};
         this.timeout = config.timeout || 30000;
+        this.dataPath = config.dataPath || '/api/data';
     }
 
     private async request<T>(
@@ -227,7 +236,7 @@ export class DataApiClient implements IDataApiClient {
     async list<T = unknown>(objectName: string, params?: DataApiListParams): Promise<DataApiListResponse<T>> {
         return this.request<DataApiListResponse<T>>(
             'GET',
-            `/api/data/${objectName}`,
+            `${this.dataPath}/${objectName}`,
             undefined,
             params as Record<string, unknown>
         );
@@ -236,14 +245,14 @@ export class DataApiClient implements IDataApiClient {
     async get<T = unknown>(objectName: string, id: string | number): Promise<DataApiItemResponse<T>> {
         return this.request<DataApiItemResponse<T>>(
             'GET',
-            `/api/data/${objectName}/${id}`
+            `${this.dataPath}/${objectName}/${id}`
         );
     }
 
     async create<T = unknown>(objectName: string, data: DataApiCreateRequest): Promise<DataApiItemResponse<T>> {
         return this.request<DataApiItemResponse<T>>(
             'POST',
-            `/api/data/${objectName}`,
+            `${this.dataPath}/${objectName}`,
             data
         );
     }
@@ -251,7 +260,7 @@ export class DataApiClient implements IDataApiClient {
     async createMany<T = unknown>(objectName: string, data: DataApiCreateManyRequest): Promise<DataApiListResponse<T>> {
         return this.request<DataApiListResponse<T>>(
             'POST',
-            `/api/data/${objectName}`,
+            `${this.dataPath}/${objectName}`,
             data
         );
     }
@@ -259,7 +268,7 @@ export class DataApiClient implements IDataApiClient {
     async update<T = unknown>(objectName: string, id: string | number, data: DataApiUpdateRequest): Promise<DataApiItemResponse<T>> {
         return this.request<DataApiItemResponse<T>>(
             'PUT',
-            `/api/data/${objectName}/${id}`,
+            `${this.dataPath}/${objectName}/${id}`,
             data
         );
     }
@@ -267,7 +276,7 @@ export class DataApiClient implements IDataApiClient {
     async updateMany(objectName: string, request: DataApiBulkUpdateRequest): Promise<DataApiResponse> {
         return this.request<DataApiResponse>(
             'POST',
-            `/api/data/${objectName}/bulk-update`,
+            `${this.dataPath}/${objectName}/bulk-update`,
             request
         );
     }
@@ -275,14 +284,14 @@ export class DataApiClient implements IDataApiClient {
     async delete(objectName: string, id: string | number): Promise<DataApiDeleteResponse> {
         return this.request<DataApiDeleteResponse>(
             'DELETE',
-            `/api/data/${objectName}/${id}`
+            `${this.dataPath}/${objectName}/${id}`
         );
     }
 
     async deleteMany(objectName: string, request: DataApiBulkDeleteRequest): Promise<DataApiDeleteResponse> {
         return this.request<DataApiDeleteResponse>(
             'POST',
-            `/api/data/${objectName}/bulk-delete`,
+            `${this.dataPath}/${objectName}/bulk-delete`,
             request
         );
     }
@@ -290,7 +299,7 @@ export class DataApiClient implements IDataApiClient {
     async count(objectName: string, filters?: FilterExpression): Promise<DataApiCountResponse> {
         return this.request<DataApiCountResponse>(
             'GET',
-            `/api/data/${objectName}`,
+            `${this.dataPath}/${objectName}`,
             undefined,
             { filter: filters, limit: 0 }
         );
@@ -305,7 +314,10 @@ export class DataApiClient implements IDataApiClient {
  * 
  * @example
  * ```typescript
- * const client = new MetadataApiClient({ baseUrl: 'http://localhost:3000' });
+ * const client = new MetadataApiClient({ 
+ *   baseUrl: 'http://localhost:3000',
+ *   metadataPath: '/api/metadata' // optional, defaults to /api/metadata
+ * });
  * 
  * // List all objects
  * const objects = await client.listObjects();
@@ -326,12 +338,14 @@ export class MetadataApiClient implements IMetadataApiClient {
     private token?: string;
     private headers: Record<string, string>;
     private timeout: number;
+    private metadataPath: string;
 
-    constructor(config: MetadataApiClientConfig) {
+    constructor(config: MetadataApiClientConfig & { metadataPath?: string }) {
         this.baseUrl = config.baseUrl.replace(/\/$/, '');
         this.token = config.token;
         this.headers = config.headers || {};
         this.timeout = config.timeout || 30000;
+        this.metadataPath = config.metadataPath || '/api/metadata';
     }
 
     private async request<T>(method: string, path: string, body?: unknown): Promise<T> {
@@ -367,42 +381,42 @@ export class MetadataApiClient implements IMetadataApiClient {
     async listObjects(): Promise<MetadataApiObjectListResponse> {
         return this.request<MetadataApiObjectListResponse>(
             'GET',
-            '/api/metadata/objects'
+            `${this.metadataPath}/objects`
         );
     }
 
     async getObject(objectName: string): Promise<MetadataApiObjectDetailResponse> {
         return this.request<MetadataApiObjectDetailResponse>(
             'GET',
-            `/api/metadata/object/${objectName}`
+            `${this.metadataPath}/object/${objectName}`
         );
     }
 
     async getField(objectName: string, fieldName: string): Promise<FieldMetadataResponse> {
         return this.request<FieldMetadataResponse>(
             'GET',
-            `/api/metadata/object/${objectName}/fields/${fieldName}`
+            `${this.metadataPath}/object/${objectName}/fields/${fieldName}`
         );
     }
 
     async listActions(objectName: string): Promise<MetadataApiActionsResponse> {
         return this.request<MetadataApiActionsResponse>(
             'GET',
-            `/api/metadata/object/${objectName}/actions`
+            `${this.metadataPath}/object/${objectName}/actions`
         );
     }
 
     async listByType<T = unknown>(metadataType: string): Promise<MetadataApiListResponse<T>> {
         return this.request<MetadataApiListResponse<T>>(
             'GET',
-            `/api/metadata/${metadataType}`
+            `${this.metadataPath}/${metadataType}`
         );
     }
 
     async getMetadata<T = unknown>(metadataType: string, id: string): Promise<MetadataApiResponse<T>> {
         return this.request<MetadataApiResponse<T>>(
             'GET',
-            `/api/metadata/${metadataType}/${id}`
+            `${this.metadataPath}/${metadataType}/${id}`
         );
     }
 }

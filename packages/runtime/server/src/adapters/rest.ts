@@ -1,4 +1,4 @@
-import { IObjectQL } from '@objectql/types';
+import { IObjectQL, ApiRouteConfig, resolveApiRoutes } from '@objectql/types';
 import { ObjectQLServer } from '../server';
 import { ObjectQLRequest, ErrorCode } from '../types';
 import { IncomingMessage, ServerResponse } from 'http';
@@ -61,19 +61,32 @@ function sendJSON(res: ServerResponse, statusCode: number, data: any) {
 }
 
 /**
+ * Options for createRESTHandler
+ */
+export interface RESTHandlerOptions {
+    /** Custom API route configuration */
+    routes?: ApiRouteConfig;
+}
+
+/**
  * Creates a REST-style HTTP request handler for ObjectQL
  * 
- * Endpoints:
- * - GET    /api/data/:object               - List records
- * - GET    /api/data/:object/:id           - Get single record
- * - POST   /api/data/:object               - Create record (or create many if array)
- * - POST   /api/data/:object/bulk-update   - Update many records
- * - POST   /api/data/:object/bulk-delete   - Delete many records
- * - PUT    /api/data/:object/:id           - Update record
- * - DELETE /api/data/:object/:id           - Delete record
+ * Default Endpoints (configurable via routes option):
+ * - GET    {dataPath}/:object               - List records
+ * - GET    {dataPath}/:object/:id           - Get single record
+ * - POST   {dataPath}/:object               - Create record (or create many if array)
+ * - POST   {dataPath}/:object/bulk-update   - Update many records
+ * - POST   {dataPath}/:object/bulk-delete   - Delete many records
+ * - PUT    {dataPath}/:object/:id           - Update record
+ * - DELETE {dataPath}/:object/:id           - Delete record
+ * 
+ * @param app - ObjectQL application instance
+ * @param options - Optional configuration including custom routes
  */
-export function createRESTHandler(app: IObjectQL) {
+export function createRESTHandler(app: IObjectQL, options?: RESTHandlerOptions) {
     const server = new ObjectQLServer(app);
+    const routes = resolveApiRoutes(options?.routes);
+    const dataPath = routes.data;
 
     return async (req: IncomingMessage & { body?: any }, res: ServerResponse) => {
         try {
@@ -101,8 +114,9 @@ export function createRESTHandler(app: IObjectQL) {
             const url = req.url || '';
             const method = req.method || 'GET';
 
-            // Parse URL: /api/data/:object or /api/data/:object/:id or /api/data/:object/bulk-*
-            const match = url.match(/^\/api\/data\/([^\/\?]+)(?:\/([^\/\?]+))?(\?.*)?$/);
+            // Parse URL: {dataPath}/:object or {dataPath}/:object/:id or {dataPath}/:object/bulk-*
+            const escapedPath = dataPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const match = url.match(new RegExp(`^${escapedPath}/([^/\\?]+)(?:/([^/\\?]+))?(\\?.*)?$`));
 
             if (!match) {
                 sendJSON(res, 404, {
@@ -129,7 +143,7 @@ export function createRESTHandler(app: IObjectQL) {
                             args: id
                         };
                     } else {
-                        // GET /api/data/:object - List records
+                        // GET {dataPath}/:object - List records
                         const args: any = {};
 
                         // Parse query parameters
@@ -167,7 +181,7 @@ export function createRESTHandler(app: IObjectQL) {
                     
                     // Check for bulk operations
                     if (id === 'bulk-update') {
-                        // POST /api/data/:object/bulk-update - Update many records
+                        // POST {dataPath}/:object/bulk-update - Update many records
                         qlRequest = {
                             op: 'updateMany',
                             object: objectName,
@@ -177,7 +191,7 @@ export function createRESTHandler(app: IObjectQL) {
                             }
                         };
                     } else if (id === 'bulk-delete') {
-                        // POST /api/data/:object/bulk-delete - Delete many records
+                        // POST {dataPath}/:object/bulk-delete - Delete many records
                         qlRequest = {
                             op: 'deleteMany',
                             object: objectName,
@@ -186,14 +200,14 @@ export function createRESTHandler(app: IObjectQL) {
                             }
                         };
                     } else if (Array.isArray(createBody)) {
-                        // POST /api/data/:object with array - Create many records
+                        // POST {dataPath}/:object with array - Create many records
                         qlRequest = {
                             op: 'createMany',
                             object: objectName,
                             args: createBody
                         };
                     } else {
-                        // POST /api/data/:object - Create single record
+                        // POST {dataPath}/:object - Create single record
                         qlRequest = {
                             op: 'create',
                             object: objectName,
@@ -204,7 +218,7 @@ export function createRESTHandler(app: IObjectQL) {
 
                 case 'PUT':
                 case 'PATCH':
-                    // PUT /api/data/:object/:id - Update record
+                    // PUT {dataPath}/:object/:id - Update record
                     if (!id) {
                         sendJSON(res, 400, {
                             error: {
@@ -227,7 +241,7 @@ export function createRESTHandler(app: IObjectQL) {
                     break;
 
                 case 'DELETE':
-                    // DELETE /api/data/:object/:id - Delete record
+                    // DELETE {dataPath}/:object/:id - Delete record
                     if (!id) {
                         sendJSON(res, 400, {
                             error: {

@@ -1,4 +1,4 @@
-import { IObjectQL } from '@objectql/types';
+import { IObjectQL, ApiRouteConfig, resolveApiRoutes } from '@objectql/types';
 import { IncomingMessage, ServerResponse } from 'http';
 import { ErrorCode } from './types';
 
@@ -19,10 +19,23 @@ function readBody(req: IncomingMessage): Promise<any> {
 }
 
 /**
+ * Options for createMetadataHandler
+ */
+export interface MetadataHandlerOptions {
+    /** Custom API route configuration */
+    routes?: ApiRouteConfig;
+}
+
+/**
  * Creates a handler for metadata endpoints.
  * These endpoints expose information about registered objects and other metadata.
+ * 
+ * @param app - ObjectQL application instance
+ * @param options - Optional configuration including custom routes
  */
-export function createMetadataHandler(app: IObjectQL) {
+export function createMetadataHandler(app: IObjectQL, options?: MetadataHandlerOptions) {
+    const routes = resolveApiRoutes(options?.routes);
+    const metadataPath = routes.metadata;
     return async (req: IncomingMessage, res: ServerResponse) => {
         // Parse the URL
         const url = req.url || '';
@@ -52,13 +65,14 @@ export function createMetadataHandler(app: IObjectQL) {
             };
 
             // ---------------------------------------------------------
-            // 1. List Entries (GET /api/metadata/:type)
+            // 1. List Entries (GET {metadataPath}/:type)
             // ---------------------------------------------------------
             
-            // Generic List: /api/metadata/:type
-            // Also handles legacy /api/metadata (defaults to objects)
-            const listMatch = url.match(/^\/api\/metadata\/([^\/]+)$/);
-            const isRootMetadata = url === '/api/metadata';
+            // Generic List: {metadataPath}/:type
+            // Also handles legacy {metadataPath} (defaults to objects)
+            const escapedPath = metadataPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const listMatch = url.match(new RegExp(`^${escapedPath}/([^/]+)$`));
+            const isRootMetadata = url === metadataPath;
             
             if (method === 'GET' && (listMatch || isRootMetadata)) {
                 let type = isRootMetadata ? 'object' : listMatch![1];
@@ -85,10 +99,10 @@ export function createMetadataHandler(app: IObjectQL) {
             }
 
             // ---------------------------------------------------------
-            // 2. Get Single Entry (GET /api/metadata/:type/:id)
+            // 2. Get Single Entry (GET {metadataPath}/:type/:id)
             // ---------------------------------------------------------
             
-            const detailMatch = url.match(/^\/api\/metadata\/([^\/]+)\/([^\/\?]+)$/);
+            const detailMatch = url.match(new RegExp(`^${escapedPath}/([^/]+)/([^/\\?]+)$`));
             
             if (method === 'GET' && detailMatch) {
                 let [, type, id] = detailMatch;
@@ -127,7 +141,7 @@ export function createMetadataHandler(app: IObjectQL) {
             }
 
             // ---------------------------------------------------------
-            // 3. Update Entry (POST/PUT /api/metadata/:type/:id)
+            // 3. Update Entry (POST/PUT {metadataPath}/:type/:id)
             // ---------------------------------------------------------
             if ((method === 'POST' || method === 'PUT') && detailMatch) {
                 let [, type, id] = detailMatch;
@@ -152,9 +166,9 @@ export function createMetadataHandler(app: IObjectQL) {
             // 4. Object Sub-resources (Fields, Actions)
             // ---------------------------------------------------------
             
-            // GET /api/metadata/object/:name/fields/:field
+            // GET {metadataPath}/object/:name/fields/:field
             // Legacy path support.
-            const fieldMatch = url.match(/^\/api\/metadata\/(?:objects|object)\/([^\/]+)\/fields\/([^\/\?]+)$/);
+            const fieldMatch = url.match(new RegExp(`^${escapedPath}/(?:objects|object)/([^/]+)/fields/([^/\\?]+)$`));
             if (method === 'GET' && fieldMatch) {
                 const [, objectName, fieldName] = fieldMatch;
                 const metadata = app.getObject(objectName);
@@ -180,8 +194,8 @@ export function createMetadataHandler(app: IObjectQL) {
                 });
             }
 
-            // GET /api/metadata/object/:name/actions
-            const actionsMatch = url.match(/^\/api\/metadata\/(?:objects|object)\/([^\/]+)\/actions$/);
+            // GET {metadataPath}/object/:name/actions
+            const actionsMatch = url.match(new RegExp(`^${escapedPath}/(?:objects|object)/([^/]+)/actions$`));
             if (method === 'GET' && actionsMatch) {
                 const [, objectName] = actionsMatch;
                 const metadata = app.getObject(objectName);
