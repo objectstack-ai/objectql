@@ -5,10 +5,10 @@
   "fixed": [
     [
       "@objectql/cli",
-      "@objectql/studio",
       "@objectql/core",
       "@objectql/driver-sql",
       "@objectql/driver-mongo",
+      "@objectql/driver-redis",
       "@objectql/sdk",
       "@objectql/server",
       "@objectql/types",

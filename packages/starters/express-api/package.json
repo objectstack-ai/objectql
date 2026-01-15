@@ -1,6 +1,6 @@
 {
   "name": "@objectql/starter-express-api",
-  "version": "1.8.3",
+  "version": "1.8.4",
   "description": "Express API starter template for ObjectQL - REST and GraphQL server implementation example",
   "keywords": [
     "objectql",

@@ -1,5 +1,11 @@
 # @objectql/types
 
+## 1.8.4
+
+### Patch Changes
+
+- Release version 1.8.4 with latest improvements and bug fixes
+
 ## 1.8.3
 
 ### Patch Changes
