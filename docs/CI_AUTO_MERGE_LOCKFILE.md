@@ -87,6 +87,12 @@ Add this step before any `git merge` operation in your existing workflows:
 
 The `--no-frozen-lockfile` flag allows pnpm to regenerate the lockfile if needed. This is essential for the merge driver to resolve conflicts by creating a new, consistent lockfile.
 
+**Note:** The existing `scripts/setup-merge-driver.sh` uses just `pnpm install` without this flag. Both approaches work:
+- `pnpm install` - Simpler, relies on pnpm's default behavior
+- `pnpm install --no-frozen-lockfile` - Explicit, ensures lockfile can be updated
+
+For CI environments, `--no-frozen-lockfile` is recommended to be explicit about the intent.
+
 ### Error Handling
 
 If the merge fails for reasons other than lockfile conflicts, the workflow will:

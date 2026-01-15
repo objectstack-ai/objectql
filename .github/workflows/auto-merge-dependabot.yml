@@ -1,9 +1,16 @@
 name: Auto-merge Dependabot PRs
 
-# This workflow demonstrates enabling auto-merge for Dependabot PRs.
-# GitHub's auto-merge will handle the actual merge, and if configured
-# with the CI script approach in the release/CI workflows, lockfile
-# conflicts will be automatically resolved.
+# This workflow enables auto-merge for Dependabot PRs.
+# It relies on GitHub's merge queue and branch protection rules to handle
+# the actual merge. For automatic lockfile conflict resolution, see
+# merge-with-lockfile-fix.yml or add the CI script approach to your CI workflow.
+#
+# To use the CI script approach in another workflow that runs on Dependabot PRs,
+# add the following before any git merge operation:
+#
+#   git config merge.pnpm-merge.name "pnpm-lock.yaml merge driver"
+#   git config merge.pnpm-merge.driver "pnpm install --no-frozen-lockfile"
+#   echo "pnpm-lock.yaml merge=pnpm-merge" >> .git/info/attributes
 
 'on':
   pull_request:

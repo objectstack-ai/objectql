@@ -6,20 +6,23 @@ This directory contains automated workflows for the ObjectQL project.
 
 ### 🔄 auto-merge-dependabot.yml
 
-Automatically merges Dependabot pull requests with lockfile conflict resolution.
+Enables GitHub's auto-merge feature for Dependabot pull requests.
 
 **Features:**
 - Runs only for PRs created by `dependabot[bot]`
-- Automatically resolves `pnpm-lock.yaml` conflicts using a temporary merge driver
-- Enables GitHub's auto-merge feature after successful merge
-- No permanent changes to repository configuration
+- Enables auto-merge (squash) on the PR
+- Relies on GitHub's merge queue and branch protection rules
+- Delegtes merge conflict handling to GitHub or other workflows
+
+**Note:** This workflow doesn't implement the lockfile fix itself. For automatic lockfile conflict resolution, you can:
+1. Use the CI script approach in your CI workflow (see merge-with-lockfile-fix.yml)
+2. Configure branch protection rules that require CI to pass
+3. Use GitHub's merge queue feature
 
 **How it works:**
-1. Configures a temporary merge driver in the CI environment
-2. Uses `.git/info/attributes` (not tracked by Git) to apply the driver
-3. Merges the base branch into the PR branch
-4. Regenerates lockfile if conflicts are detected
-5. Enables auto-merge for the PR
+1. Detects Dependabot PRs
+2. Enables auto-merge with squash strategy
+3. GitHub will merge the PR once all checks pass
 
 ### 🔧 merge-with-lockfile-fix.yml
 
