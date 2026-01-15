@@ -241,7 +241,7 @@ export class ObjectRepository {
             const result = await this.getDriver().findOne(this.objectName, idOrQuery, hookCtx.query, this.getOptions());
 
             // Evaluate formulas if result exists
-            const resultWithFormulas = result ? this.evaluateFormulas(result) : null;
+            const resultWithFormulas = result ? this.evaluateFormulas(result) : result;
 
             hookCtx.result = resultWithFormulas;
             await this.app.triggerHook('afterFind', this.objectName, hookCtx);
