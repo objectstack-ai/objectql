@@ -30,6 +30,10 @@ async function copyTemplates() {
     {
       src: path.join(examplesDir, 'showcase/project-tracker'),
       dest: path.join(templatesDir, 'starter')
+    },
+    {
+      src: path.join(examplesDir, 'showcase/enterprise-erp'),
+      dest: path.join(templatesDir, 'enterprise')
     }
   ];
 

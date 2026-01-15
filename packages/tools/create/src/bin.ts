@@ -13,7 +13,7 @@ program
   .name('create-objectql')
   .description('Scaffold a new ObjectQL project')
   .argument('[directory]', 'Directory to create the project in')
-  .option('-t, --template <name>', 'Template to use (hello-world, starter)')
+  .option('-t, --template <name>', 'Template to use (hello-world, starter, enterprise)')
   .action(async (directory, options) => {
     console.log(chalk.bold.blue('⚡ ObjectStack AI - Project Scaffolder'));
 
@@ -42,6 +42,7 @@ program
         message: 'Select a starter template:',
         choices: [
           { message: 'Standard Project (Recommended)', name: 'starter' },
+          { message: 'Enterprise ERP System', name: 'enterprise' },
           { message: 'Minimal (Hello World)', name: 'hello-world' }
         ]
       });
