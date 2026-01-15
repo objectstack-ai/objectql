@@ -7,8 +7,6 @@
 import { FormulaEngine } from '../src/formula-engine';
 import {
   FormulaContext,
-  FormulaErrorType,
-  FormulaDataType,
 } from '@objectql/types';
 
 describe('FormulaEngine', () => {

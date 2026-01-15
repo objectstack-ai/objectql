@@ -178,9 +178,22 @@ export class ObjectRepository {
                 if (result.success) {
                     record[fieldName] = result.value;
                 } else {
-                    // In case of error, set to null and optionally log
+                    // In case of error, set to null and log for diagnostics
                     record[fieldName] = null;
-                    // Could add logging here if needed
+                    // Formula evaluation should not throw here, but we need observability
+                    // This logging is intentionally minimal and side-effect free
+                    // eslint-disable-next-line no-console
+                    console.error(
+                        '[ObjectQL][FormulaEngine] Formula evaluation failed',
+                        {
+                            objectName: this.objectName,
+                            fieldName,
+                            recordId: formulaContext.record_id,
+                            formula: fieldConfig.formula,
+                            error: result.error,
+                            stack: result.stack,
+                        }
+                    );
                 }
             }
         }

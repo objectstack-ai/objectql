@@ -14,7 +14,6 @@ import {
   FormulaEvaluationOptions,
   FormulaError,
   FormulaErrorType,
-  FormulaFieldValue,
   FormulaValue,
   FormulaDataType,
   FormulaMetadata,
@@ -70,7 +69,6 @@ export class FormulaEngine {
   ): FormulaEvaluationResult {
     const startTime = Date.now();
     const timeout = options.timeout ?? this.config.max_execution_time ?? 1000;
-    const strict = options.strict ?? true;
 
     try {
       // Validate expression
@@ -177,6 +175,10 @@ export class FormulaEngine {
     options: FormulaEvaluationOptions
   ): FormulaValue {
     // Check for blocked operations
+    // NOTE: This is a basic check using string matching. It will have false positives
+    // (e.g., a field named 'evaluation' contains 'eval') and can be bypassed 
+    // (e.g., using this['eval'] or globalThis['eval']).
+    // For production security with untrusted formulas, use AST parsing or vm2.
     if (this.config.sandbox?.enabled) {
       const blockedOps = this.config.sandbox.blocked_operations || [];
       for (const op of blockedOps) {
@@ -273,25 +275,29 @@ export class FormulaEngine {
   /**
    * Execute function with timeout protection
    * 
-   * NOTE: This implements post-execution timeout validation, not pre-emptive interruption.
-   * The function will run to completion and then check if it exceeded the timeout.
-   * For true interruption, platform-specific mechanisms (Worker threads) would be needed.
+   * NOTE: This synchronous implementation **cannot** pre-emptively interrupt execution.
+   * The timeout check occurs AFTER the formula completes. Long-running formulas will
+   * still block execution. This is a limitation of synchronous JavaScript.
+   * 
+   * For true interruption, use platform-specific mechanisms like Worker threads or
+   * migrate to an async/isolated runtime. Formulas should be written to be fast.
    */
   private executeWithTimeout(
     func: Function,
     args: any[],
     timeout: number
   ): unknown {
-    // Simple synchronous execution (timeout would require async or worker threads)
-    // For now, we execute directly. Advanced timeout requires platform-specific code.
+    // Execute the formula synchronously
     const startTime = Date.now();
     const result = func(...args);
     const elapsed = Date.now() - startTime;
 
+    // Check timeout AFTER execution (cannot interrupt synchronous code)
     if (elapsed > timeout) {
       throw new FormulaError(
         FormulaErrorType.TIMEOUT,
-        `Formula execution exceeded timeout of ${timeout}ms`,
+        `Formula execution exceeded timeout of ${timeout}ms (actual: ${elapsed}ms). ` +
+        `Note: Synchronous formulas cannot be interrupted. Write fast formulas or use async runtime.`,
         '',
         { elapsed, timeout }
       );
