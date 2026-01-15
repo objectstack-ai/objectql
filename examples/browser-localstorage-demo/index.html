@@ -314,7 +314,11 @@
                     <div>
                         <strong>${note.content}</strong>
                         <div style="font-size: 0.85em; color: #666; margin-top: 5px;">
-                            Created: ${new Date(note.created_at).toLocaleString()}
+                            Created: ${
+                                note.created_at && !isNaN(new Date(note.created_at).getTime())
+                                    ? new Date(note.created_at).toLocaleString()
+                                    : 'Unknown'
+                            }
                         </div>
                     </div>
                     <button class="danger" onclick="deleteNote('${note.id}')">🗑</button>

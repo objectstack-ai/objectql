@@ -475,7 +475,11 @@
                             ${task.title}
                         </div>
                         <div class="task-meta">
-                            ID: ${task.id} | Created: ${new Date(task.created_at).toLocaleString()}
+                            ID: ${task.id} | Created: ${
+                                task.created_at && !isNaN(new Date(task.created_at).getTime())
+                                    ? new Date(task.created_at).toLocaleString()
+                                    : 'Unknown'
+                            }
                         </div>
                     </div>
                     <div class="task-actions">
