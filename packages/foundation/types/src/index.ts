@@ -18,3 +18,7 @@ export * from './application';
 export * from './menu';
 export * from './migration';
 export * from './api';
+export * from './view';
+export * from './workflow';
+export * from './report';
+export * from './form';
