@@ -164,6 +164,11 @@ export class FormulaEngine {
 
   /**
    * Execute the expression in a sandboxed environment
+   * 
+   * SECURITY NOTE: Uses Function constructor for dynamic evaluation.
+   * While we check for blocked operations, this is not a complete security sandbox.
+   * For production use with untrusted formulas, consider using a proper sandboxing library
+   * like vm2 or implementing an AST-based evaluator.
    */
   private executeExpression(
     expression: string,
@@ -267,6 +272,10 @@ export class FormulaEngine {
 
   /**
    * Execute function with timeout protection
+   * 
+   * NOTE: This implements post-execution timeout validation, not pre-emptive interruption.
+   * The function will run to completion and then check if it exceeded the timeout.
+   * For true interruption, platform-specific mechanisms (Worker threads) would be needed.
    */
   private executeWithTimeout(
     func: Function,
@@ -515,6 +524,10 @@ export class FormulaEngine {
 
   /**
    * Validate a formula expression without executing it
+   * 
+   * SECURITY NOTE: Uses Function constructor for syntax validation.
+   * This doesn't execute the code but creates a function object.
+   * For stricter validation, consider using a parser library like @babel/parser.
    */
   validate(expression: string): { valid: boolean; errors: string[] } {
     const errors: string[] = [];

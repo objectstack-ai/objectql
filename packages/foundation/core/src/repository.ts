@@ -156,7 +156,8 @@ export class ObjectRepository {
             },
             current_user: {
                 id: this.context.userId || '',
-                name: this.context.userId,
+                // TODO: Retrieve actual user name from user object if available
+                name: undefined,
                 email: undefined,
                 role: this.context.roles?.[0],
             },

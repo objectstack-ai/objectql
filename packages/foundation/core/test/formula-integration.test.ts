@@ -186,9 +186,9 @@ describe('Formula Integration', () => {
       mockDriver.setMockData('order', [
         {
           _id: '1',
-          subtotal: 5000,  // Changed to 5000 to be in "Medium" range (> 1000, < 10000)
-          discount_rate: 10, // 10%
-          tax_rate: 8, // 8%
+          subtotal: 5000,
+          discount_rate: 10,
+          tax_rate: 8,
           status: 'confirmed',
           created_at: new Date('2026-01-01'),
         },
@@ -198,7 +198,6 @@ describe('Formula Integration', () => {
       const result = await ctx.object('order').findOne('1');
 
       expect(result).toBeDefined();
-      // 5000 * 0.9 * 1.08 = 4860
       expect(result.final_price).toBeCloseTo(4860, 1);
       expect(result.risk_level).toBe('Medium');
     });
