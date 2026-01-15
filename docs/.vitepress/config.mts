@@ -26,6 +26,7 @@ const guideSidebar = [
       { text: 'Data Modeling', link: '/guide/data-modeling' },
       { text: 'Unified ID Migration', link: '/guide/migration-id-field' },
       { text: 'Querying Data', link: '/guide/querying' },
+      { text: 'Query Syntax Alternatives', link: '/guide/query-syntax-alternatives' },
       { text: 'Formulas & Rules Syntax', link: '/guide/formulas-and-rules' },
       { text: '↳ Quick Reference', link: '/guide/formulas-and-rules-quick-ref' },
       { text: 'Business Logic (Hooks)', link: '/guide/logic-hooks' },

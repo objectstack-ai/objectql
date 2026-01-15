@@ -4,6 +4,9 @@ ObjectQL uses a **JSON-based Protocol** for all data operations. Unlike SQL (str
 
 This design makes it strictly typed, easy to serialise/transport over HTTP, and safe from injection—perfect for both human developers and AI Agents.
 
+> **📖 Looking for query alternatives and optimization strategies?**  
+> Check out the [Query Syntax Alternatives & Optimization Guide](./query-syntax-alternatives.md) for a comprehensive comparison of JSON-DSL, REST, and GraphQL approaches, including performance best practices.
+
 ## The `find()` Operation
 
 The `find` method recovers a list of records matching specific criteria.

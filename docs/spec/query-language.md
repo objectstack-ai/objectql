@@ -14,6 +14,9 @@ It is designed to be:
 3. **AI-Friendly:** The rigid structure prevents hallucination when generating queries via LLMs.
 4. **Intent-Driven:** Queries can include natural language intent for explainability.
 
+> **💡 Need help choosing between JSON-DSL, REST, or GraphQL?**  
+> See the [Query Syntax Alternatives & Optimization Guide](../guide/query-syntax-alternatives.md) for recommendations, performance tips, and decision frameworks.
+
 ### 1.1 AI-Enhanced Queries (Optional)
 
 Queries can include an `ai_context` block to make them more understandable and maintainable:
