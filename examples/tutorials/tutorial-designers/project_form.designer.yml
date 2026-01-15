@@ -1,0 +1,318 @@
+# Form Designer Configuration Example
+# Demonstrates how to design a user-friendly form for creating/editing projects
+
+name: project_form_designer
+label: Project Form Designer
+description: Design-time configuration for the project creation/edit form
+object: project
+form_type: edit
+
+# Design intent - what should this form accomplish?
+intent: Allow project managers to quickly create and manage project details with clear organization and validation
+
+# Target user persona
+persona: project_manager
+
+# Grouping strategy for fields
+grouping_strategy: by_section
+
+# Available fields with design metadata
+available_fields:
+  - name: name
+    label: Project Name
+    required: true
+    category: basic_info
+    weight: 100
+    placement_hints:
+      preferred_column: 1
+      prominent: true
+    ai_hints:
+      importance: 1.0
+      common_tasks:
+        - "Create new project"
+        - "Rename project"
+
+  - name: description
+    label: Project Description
+    category: basic_info
+    weight: 90
+    span: 2
+    placement_hints:
+      separate_section: false
+    ai_hints:
+      importance: 0.8
+      common_tasks:
+        - "Define project scope"
+        - "Update project details"
+
+  - name: status
+    label: Status
+    required: true
+    category: tracking
+    weight: 85
+    placement_hints:
+      preferred_column: 1
+      prominent: true
+    ai_hints:
+      importance: 0.9
+      related_fields:
+        - start_date
+        - end_date
+      common_tasks:
+        - "Update project status"
+        - "Track progress"
+
+  - name: priority
+    label: Priority
+    category: tracking
+    weight: 80
+    placement_hints:
+      preferred_column: 2
+    ai_hints:
+      importance: 0.7
+      related_fields:
+        - status
+
+  - name: owner
+    label: Project Owner
+    required: true
+    category: team
+    weight: 75
+    placement_hints:
+      preferred_column: 1
+    ai_hints:
+      importance: 0.85
+      common_tasks:
+        - "Assign project owner"
+        - "Change ownership"
+
+  - name: team_members
+    label: Team Members
+    category: team
+    weight: 70
+    span: 2
+    ai_hints:
+      importance: 0.75
+      related_fields:
+        - owner
+
+  - name: start_date
+    label: Start Date
+    category: schedule
+    weight: 65
+    placement_hints:
+      preferred_column: 1
+    ai_hints:
+      importance: 0.8
+      related_fields:
+        - end_date
+        - status
+
+  - name: end_date
+    label: End Date
+    category: schedule
+    weight: 60
+    placement_hints:
+      preferred_column: 2
+    ai_hints:
+      importance: 0.8
+      related_fields:
+        - start_date
+        - status
+
+  - name: budget
+    label: Budget
+    category: financial
+    weight: 50
+    placement_hints:
+      preferred_column: 1
+    ai_hints:
+      importance: 0.6
+
+  - name: actual_cost
+    label: Actual Cost
+    readonly: true
+    category: financial
+    weight: 45
+    placement_hints:
+      preferred_column: 2
+    ai_hints:
+      importance: 0.5
+
+# Designed sections
+sections:
+  - id: basic_info
+    label: Basic Information
+    description: Core project details
+    priority: 100
+    columns: 2
+    icon: info
+    emphasized: true
+    fields:
+      - name
+      - description
+
+  - id: tracking
+    label: Status & Priority
+    description: Track project progress
+    priority: 90
+    columns: 2
+    icon: chart
+    fields:
+      - status
+      - priority
+
+  - id: team
+    label: Team Assignment
+    description: Assign team members
+    priority: 80
+    columns: 1
+    icon: users
+    fields:
+      - owner
+      - team_members
+
+  - id: schedule
+    label: Schedule
+    description: Project timeline
+    priority: 70
+    columns: 2
+    icon: calendar
+    collapsible: true
+    fields:
+      - start_date
+      - end_date
+
+  - id: financial
+    label: Financial Information
+    description: Budget and costs
+    priority: 60
+    columns: 2
+    icon: dollar
+    collapsible: true
+    collapsed: true
+    fields:
+      - budget
+      - actual_cost
+
+# Design system
+design_system:
+  palette:
+    primary: "#3b82f6"
+    secondary: "#8b5cf6"
+    accent: "#06b6d4"
+    success: "#10b981"
+    warning: "#f59e0b"
+    error: "#ef4444"
+
+  spacing:
+    xs: "4px"
+    sm: "8px"
+    md: "16px"
+    lg: "24px"
+    xl: "32px"
+
+  typography:
+    font_family: "Inter, system-ui, sans-serif"
+    base_size: "16px"
+
+  border_radius:
+    sm: "4px"
+    md: "8px"
+    lg: "12px"
+
+# Layout preferences
+suggested_columns: 2
+
+width_constraints:
+  min: "600px"
+  max: "1200px"
+  default: "900px"
+
+# Accessibility requirements
+accessibility:
+  aria_labels: auto
+  keyboard_nav: true
+  screen_reader: true
+  high_contrast: true
+
+# Validation UX
+validation_ux:
+  show_errors: on_blur
+  error_style: inline
+  show_success: true
+
+# Auto-save configuration
+auto_save:
+  enabled: true
+  interval: 30
+  strategy: debounce
+
+# Progressive disclosure
+progressive_disclosure:
+  enabled: true
+  show_advanced: false
+  complexity_threshold: 0.7
+
+# Mobile optimization
+mobile_optimization:
+  enabled: true
+  stack_fields: true
+  large_targets: true
+
+# Form actions
+actions:
+  - name: save
+    label: Save Project
+    type: submit
+    variant: primary
+    position: footer
+
+  - name: save_and_new
+    label: Save & Create Another
+    type: save_new
+    variant: secondary
+    position: footer
+
+  - name: cancel
+    label: Cancel
+    type: cancel
+    variant: ghost
+    position: footer
+
+# AI generation context
+ai_context:
+  user_tasks:
+    - "Quickly create a new project"
+    - "Update project status and timeline"
+    - "Assign team members"
+    - "Track budget vs actual costs"
+
+  data_patterns:
+    - "Required fields: name, status, owner"
+    - "Date range validation: end_date must be after start_date"
+    - "Budget tracking: actual_cost updates automatically"
+
+  dependencies:
+    - field: end_date
+      depends_on:
+        - start_date
+      condition:
+        operator: ">"
+        compare_to: start_date
+
+    - field: actual_cost
+      depends_on:
+        - status
+      condition:
+        field: status
+        operator: "in"
+        values:
+          - in_progress
+          - completed
+
+  suggested_validations:
+    - "Project name must be unique"
+    - "End date must be after start date"
+    - "Budget must be a positive number"
+    - "At least one team member must be assigned"

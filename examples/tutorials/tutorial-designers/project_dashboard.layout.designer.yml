@@ -1,0 +1,407 @@
+# Page Layout Designer Configuration Example
+# Demonstrates how to design a dashboard page layout with drag-and-drop components
+
+name: project_dashboard_designer
+label: Project Dashboard Layout Designer
+description: Design-time configuration for the project dashboard page layout
+page: project_dashboard
+
+# Design intent
+intent: Create an intuitive dashboard for project managers to monitor project status, team activity, and key metrics
+
+# Target user persona
+persona: project_manager
+
+# Layout grid configuration
+grid:
+  columns: 12
+  rows: 0  # Infinite rows
+  cell_width: 80
+  cell_height: 80
+  gap: "16px"
+  snap_to_grid: true
+  margin: "24px"
+
+# Available component palette
+component_palette:
+  categories:
+    - id: data_display
+      label: Data Display
+      components:
+        - id: projects_grid
+          type: data_grid
+          label: Projects Table
+          category: data
+          weight: 100
+          config:
+            object: project
+            columns:
+              - field: name
+              - field: status
+              - field: owner
+              - field: progress
+          constraints:
+            min_width: 4
+            min_height: 4
+            resizable: true
+            movable: true
+          data_binding:
+            source: projects
+            refresh: auto
+
+        - id: tasks_kanban
+          type: kanban
+          label: Tasks Kanban Board
+          category: data
+          weight: 90
+          config:
+            object: task
+            column_field: status
+            title_field: name
+          constraints:
+            min_width: 6
+            min_height: 4
+            resizable: true
+            movable: true
+
+    - id: visualization
+      label: Charts & Metrics
+      components:
+        - id: project_status_chart
+          type: chart
+          label: Project Status Chart
+          category: visualization
+          weight: 95
+          config:
+            chart_type: pie
+            data_source:
+              object: project
+              group_by: status
+          constraints:
+            min_width: 3
+            min_height: 3
+            resizable: true
+            movable: true
+
+        - id: active_projects_metric
+          type: metric
+          label: Active Projects Count
+          category: visualization
+          weight: 85
+          config:
+            metric_type: count
+            data_source:
+              object: project
+              filters:
+                - field: status
+                  operator: "="
+                  value: active
+          constraints:
+            min_width: 2
+            min_height: 2
+            resizable: true
+            movable: true
+
+        - id: budget_overview
+          type: chart
+          label: Budget Overview
+          category: visualization
+          weight: 80
+          config:
+            chart_type: bar
+            data_source:
+              object: project
+              fields:
+                - name
+                - budget
+                - actual_cost
+          constraints:
+            min_width: 4
+            min_height: 3
+            resizable: true
+            movable: true
+
+    - id: navigation
+      label: Navigation & Actions
+      components:
+        - id: quick_actions
+          type: button
+          label: Quick Actions Button
+          category: navigation
+          weight: 70
+          config:
+            actions:
+              - label: New Project
+                action: create_project
+              - label: View Reports
+                action: view_reports
+          constraints:
+            min_width: 2
+            min_height: 1
+            resizable: false
+            movable: true
+
+        - id: filter_panel
+          type: container
+          label: Filter Panel
+          category: navigation
+          weight: 65
+          constraints:
+            min_width: 3
+            min_height: 2
+            resizable: true
+            movable: true
+
+    - id: content
+      label: Content & Media
+      components:
+        - id: team_activity
+          type: list
+          label: Recent Team Activity
+          category: data
+          weight: 75
+          config:
+            object: activity
+            sort:
+              - field: created_at
+                direction: desc
+            limit: 10
+          constraints:
+            min_width: 3
+            min_height: 4
+            resizable: true
+            movable: true
+
+        - id: announcements
+          type: text
+          label: Announcements
+          category: content
+          weight: 60
+          config:
+            content_type: markdown
+          constraints:
+            min_width: 3
+            min_height: 2
+            resizable: true
+            movable: true
+
+# Pre-configured layout templates
+templates:
+  - id: executive_dashboard
+    name: Executive Dashboard
+    description: High-level overview with key metrics and charts
+    category: dashboard
+    preview: /templates/executive-dashboard.png
+    use_cases:
+      - "Monitor overall project portfolio"
+      - "Track key performance indicators"
+      - "Quick status overview"
+    components:
+      - id: active_projects_metric
+        grid:
+          x: 0
+          y: 0
+          w: 3
+          h: 2
+      - id: budget_metric
+        grid:
+          x: 3
+          y: 0
+          w: 3
+          h: 2
+      - id: team_size_metric
+        grid:
+          x: 6
+          y: 0
+          w: 3
+          h: 2
+      - id: overdue_metric
+        grid:
+          x: 9
+          y: 0
+          w: 3
+          h: 2
+      - id: project_status_chart
+        grid:
+          x: 0
+          y: 2
+          w: 6
+          h: 4
+      - id: budget_overview
+        grid:
+          x: 6
+          y: 2
+          w: 6
+          h: 4
+
+  - id: operational_dashboard
+    name: Operational Dashboard
+    description: Detailed view with data grids and kanban boards
+    category: dashboard
+    use_cases:
+      - "Manage day-to-day operations"
+      - "Track individual tasks"
+      - "Team collaboration"
+    components:
+      - id: filter_panel
+        grid:
+          x: 0
+          y: 0
+          w: 12
+          h: 1
+      - id: projects_grid
+        grid:
+          x: 0
+          y: 1
+          w: 8
+          h: 5
+      - id: team_activity
+        grid:
+          x: 8
+          y: 1
+          w: 4
+          h: 5
+
+  - id: team_dashboard
+    name: Team Dashboard
+    description: Focus on team collaboration and task management
+    category: dashboard
+    use_cases:
+      - "Track team tasks"
+      - "Collaborate on projects"
+      - "Monitor team activity"
+    components:
+      - id: tasks_kanban
+        grid:
+          x: 0
+          y: 0
+          w: 9
+          h: 6
+      - id: team_activity
+        grid:
+          x: 9
+          y: 0
+          w: 3
+          h: 4
+      - id: announcements
+        grid:
+          x: 9
+          y: 4
+          w: 3
+          h: 2
+
+# Design system
+design_system:
+  palette:
+    primary: "#3b82f6"
+    secondary: "#8b5cf6"
+    accent: "#06b6d4"
+    success: "#10b981"
+    warning: "#f59e0b"
+    error: "#ef4444"
+    background:
+      primary: "#ffffff"
+      secondary: "#f9fafb"
+      tertiary: "#f3f4f6"
+    text:
+      primary: "#111827"
+      secondary: "#6b7280"
+      disabled: "#9ca3af"
+    border:
+      light: "#e5e7eb"
+      medium: "#d1d5db"
+      dark: "#9ca3af"
+
+  spacing:
+    xs: "4px"
+    sm: "8px"
+    md: "16px"
+    lg: "24px"
+    xl: "32px"
+    xxl: "48px"
+
+  typography:
+    font_family: "Inter, system-ui, sans-serif"
+    base_size: "16px"
+    sizes:
+      xs: "12px"
+      sm: "14px"
+      md: "16px"
+      lg: "18px"
+      xl: "24px"
+      xxl: "32px"
+
+  border_radius:
+    sm: "4px"
+    md: "8px"
+    lg: "12px"
+    full: "9999px"
+
+  shadows:
+    sm: "0 1px 2px 0 rgba(0, 0, 0, 0.05)"
+    md: "0 4px 6px -1px rgba(0, 0, 0, 0.1)"
+    lg: "0 10px 15px -3px rgba(0, 0, 0, 0.1)"
+    xl: "0 20px 25px -5px rgba(0, 0, 0, 0.1)"
+
+# Canvas configuration
+canvas:
+  width: "100%"
+  height: "100vh"
+  background: "#f9fafb"
+  show_rulers: true
+  show_grid: true
+  show_guides: true
+
+# Responsive design settings
+responsive:
+  enabled: true
+  breakpoints:
+    - name: mobile
+      width: 375
+      height: 667
+    - name: tablet
+      width: 768
+      height: 1024
+    - name: laptop
+      width: 1280
+      height: 800
+    - name: desktop
+      width: 1920
+      height: 1080
+  default_breakpoint: desktop
+
+# Theme configuration
+theme:
+  mode: light
+  overrides:
+    card_background: "#ffffff"
+    card_border: "#e5e7eb"
+    card_shadow: "0 1px 3px 0 rgba(0, 0, 0, 0.1)"
+
+# Collaboration features
+collaboration:
+  realtime: true
+  show_cursors: true
+  comments: true
+
+# Version control
+versioning:
+  enabled: true
+  auto_save: true
+  retention_days: 90
+
+# Export options
+export:
+  formats:
+    - yaml
+    - json
+    - react
+  include_assets: true
+  minify: false
+
+# AI assistance
+ai_assistance:
+  enabled: true
+  suggest_placement: true
+  suggest_colors: true
+  suggest_breakpoints: true

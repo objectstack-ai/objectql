@@ -23,3 +23,4 @@ export * from './workflow';
 export * from './report';
 export * from './form';
 export * from './formula';
+export * from './designer';
