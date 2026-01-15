@@ -8,6 +8,21 @@ Welcome to the ObjectQL examples collection. This directory is organized to help
 | :--- | :--- |
 | **[Attachment Upload Demo](./attachment-upload-demo.md)** | Complete guide to uploading files, handling images, creating records with attachments, and implementing file upload components |
 
+## 🌐 Browser Demos
+*ObjectQL running directly in web browsers - no backend required!*
+
+| Example | Description | Proficiency |
+| :--- | :--- | :--- |
+| **[Memory Driver Demo](./browser-demo/)** | Interactive task manager running entirely in the browser with in-memory storage. Perfect for prototyping and understanding ObjectQL's client-side capabilities. | 🌱 Beginner |
+| **[LocalStorage Demo](./browser-localstorage-demo/)** | Persistent browser storage that survives page refreshes. Ideal for offline apps, PWAs, and user preferences. | ⚡️ Intermediate |
+
+**Features:**
+- 🎨 Beautiful interactive UI with live CRUD operations
+- 📊 Real-time statistics dashboard
+- 🖥️ Browser console debugging (`window.app`, `window.taskRepo`)
+- ✨ Sample data generation
+- 🔄 Filter and manage data visually
+
 ## 🚀 Starters
 *Boilerplates and minimal setups to get you coding in seconds.*
 
