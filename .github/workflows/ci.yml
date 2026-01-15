@@ -27,9 +27,26 @@ jobs:
         node-version: ${{ matrix.node-version }}
         cache: 'pnpm'
 
+    - name: Cache MongoDB Binary
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/mongodb-binaries
+        key: mongodb-binaries-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+        restore-keys: |
+          mongodb-binaries-${{ runner.os }}-
+
     - name: Install dependencies
       run: pnpm install --frozen-lockfile
       timeout-minutes: 5
+      
+    - name: Setup MongoDB Memory Server
+      run: |
+        # Pre-download MongoDB binary for mongodb-memory-server
+        # This allows integration tests to run without network access during tests
+        cd packages/drivers/mongo
+        npx mongodb-memory-server preinstall || echo "MongoDB binary download failed, tests will skip gracefully"
+      timeout-minutes: 3
+      continue-on-error: true
       
     - name: Build packages
       run: pnpm run build
