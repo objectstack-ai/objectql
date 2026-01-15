@@ -1,0 +1,82 @@
+name: Merge with Lockfile Auto-fix (Example)
+
+# This is an example workflow demonstrating the CI script approach
+# for auto-resolving pnpm-lock.yaml conflicts during git merge.
+#
+# This approach does NOT modify any tracked files in the repository.
+# Instead, it configures Git temporarily in CI using .git/info/attributes
+
+'on':
+  workflow_dispatch:
+    inputs:
+      source_branch:
+        description: 'Source branch to merge from'
+        required: true
+        default: 'main'
+      target_branch:
+        description: 'Target branch to merge into'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  merge-with-lockfile-fix:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout target branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.target_branch }}
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Auto Merge with Lockfile Fix
+        run: |
+          # ======================================================
+          # Ultimate Automation Solution (CI Script Version)
+          # ======================================================
+          # No need to modify any files in the repository.
+          # Just add two configuration lines before git merge:
+
+          # --- Step 1: Configure temporary merge driver ---
+          # Define a driver called pnpm-merge that runs pnpm install
+          git config merge.pnpm-merge.name "pnpm-lock.yaml merge driver"
+          git config merge.pnpm-merge.driver \
+            "pnpm install --no-frozen-lockfile"
+
+          # --- Step 2: Bind the strategy (key step) ---
+          # Tell Git: for pnpm-lock.yaml, use pnpm-merge driver
+          # .git/info/attributes only affects CI, doesn't dirty codebase
+          echo "pnpm-lock.yaml merge=pnpm-merge" >> .git/info/attributes
+
+          # --- Step 3: Merge as usual ---
+          # If lock file conflicts, Git auto-resolves without errors
+          git fetch origin ${{ github.event.inputs.source_branch }}
+          git merge origin/${{ github.event.inputs.source_branch }} \
+            --no-edit
+
+          # Push the merged changes
+          git push origin ${{ github.event.inputs.target_branch }}
+
+      - name: Verify merge
+        run: |
+          echo "✓ Merge completed successfully"
+          echo "Current branch: $(git branch --show-current)"
+          echo "Last commit: $(git log -1 --oneline)"
