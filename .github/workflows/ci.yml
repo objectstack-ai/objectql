@@ -9,7 +9,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 6
     services:
       redis:
         image: redis
@@ -47,7 +47,7 @@ jobs:
 
     - name: Install dependencies
       run: pnpm install --frozen-lockfile
-      timeout-minutes: 3
+      timeout-minutes: 2
       
     - name: Setup MongoDB Memory Server
       run: |
@@ -55,13 +55,13 @@ jobs:
         # This allows integration tests to run without network access during tests
         cd packages/drivers/mongo
         npx mongodb-memory-server preinstall || echo "MongoDB binary download failed, tests will skip gracefully"
-      timeout-minutes: 2
+      timeout-minutes: 1
       continue-on-error: true
       
     - name: Build packages
       run: pnpm run build
-      timeout-minutes: 5
+      timeout-minutes: 3
 
     - name: Run tests
       run: pnpm run test
-      timeout-minutes: 8
+      timeout-minutes: 5
