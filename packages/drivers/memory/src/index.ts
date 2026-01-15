@@ -452,8 +452,10 @@ export class MemoryDriver implements Driver {
                        fieldValue >= compareValue[0] && 
                        fieldValue <= compareValue[1];
             default:
-                console.warn(`[MemoryDriver] Unsupported operator: ${operator}`);
-                return false;
+                throw new ObjectQLError({
+                    code: 'UNSUPPORTED_OPERATOR',
+                    message: `[MemoryDriver] Unsupported operator: ${operator}`,
+                });
         }
     }
 
