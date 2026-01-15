@@ -6,6 +6,10 @@ export class MockDriver implements Driver {
     
     constructor() {}
 
+    setMockData(objectName: string, data: any[]) {
+        this.data[objectName] = data;
+    }
+
     private getData(objectName: string) {
         if (!this.data[objectName]) {
             this.data[objectName] = [];
