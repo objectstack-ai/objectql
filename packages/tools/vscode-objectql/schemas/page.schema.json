@@ -1,0 +1,604 @@
+{
+  "$ref": "#/definitions/PageConfig",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "ComponentAction": {
+      "additionalProperties": false,
+      "description": "Action triggered by component interaction",
+      "properties": {
+        "action": {
+          "description": "Action name to execute (for type: run_action)",
+          "type": "string"
+        },
+        "confirm": {
+          "description": "Confirmation message before executing",
+          "type": "string"
+        },
+        "handler": {
+          "description": "Custom handler function",
+          "type": "string"
+        },
+        "modal": {
+          "description": "Modal component to open (for type: open_modal)",
+          "type": "string"
+        },
+        "object": {
+          "description": "Target object for action",
+          "type": "string"
+        },
+        "on_error": {
+          "description": "Error handling",
+          "enum": [
+            "show_toast",
+            "show_modal",
+            "ignore"
+          ],
+          "type": "string"
+        },
+        "path": {
+          "description": "Navigation path (for type: navigate)",
+          "type": "string"
+        },
+        "success_message": {
+          "description": "Success message after execution",
+          "type": "string"
+        },
+        "type": {
+          "description": "Action type",
+          "enum": [
+            "navigate",
+            "open_modal",
+            "run_action",
+            "submit_form",
+            "refresh",
+            "custom"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "type": "object"
+    },
+    "ComponentDataSource": {
+      "additionalProperties": false,
+      "description": "Data source configuration for components",
+      "properties": {
+        "expand": {
+          "description": "Related objects to expand",
+          "type": "object"
+        },
+        "fields": {
+          "description": "Fields to display",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "filters": {
+          "description": "Filter conditions",
+          "items": {},
+          "type": "array"
+        },
+        "limit": {
+          "description": "Maximum records to fetch",
+          "type": "number"
+        },
+        "object": {
+          "description": "Object name to query",
+          "type": "string"
+        },
+        "paginate": {
+          "description": "Enable pagination",
+          "type": "boolean"
+        },
+        "query": {
+          "description": "Custom query override"
+        },
+        "sort": {
+          "description": "Sort configuration",
+          "items": {
+            "items": [
+              {
+                "type": "string"
+              },
+              {
+                "enum": [
+                  "asc",
+                  "desc"
+                ],
+                "type": "string"
+              }
+            ],
+            "maxItems": 2,
+            "minItems": 2,
+            "type": "array"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "ComponentStyle": {
+      "additionalProperties": false,
+      "description": "Styling configuration for components",
+      "properties": {
+        "background": {
+          "description": "Background color",
+          "type": "string"
+        },
+        "border": {
+          "description": "Border",
+          "type": "string"
+        },
+        "border_radius": {
+          "description": "Border radius",
+          "type": "string"
+        },
+        "class_name": {
+          "description": "Custom CSS classes",
+          "type": "string"
+        },
+        "color": {
+          "description": "Text color",
+          "type": "string"
+        },
+        "custom_css": {
+          "description": "Inline styles",
+          "type": "object"
+        },
+        "height": {
+          "description": "Height",
+          "type": "string"
+        },
+        "margin": {
+          "description": "Margin",
+          "type": "string"
+        },
+        "min_height": {
+          "description": "Minimum height",
+          "type": "string"
+        },
+        "min_width": {
+          "description": "Minimum width",
+          "type": "string"
+        },
+        "padding": {
+          "description": "Padding",
+          "type": "string"
+        },
+        "width": {
+          "description": "Width (e.g., '100%', '300px', 'auto')",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "PageComponent": {
+      "additionalProperties": false,
+      "description": "Base component configuration",
+      "properties": {
+        "actions": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/ComponentAction"
+              },
+              {
+                "not": {}
+              }
+            ]
+          },
+          "description": "Actions triggered by this component",
+          "properties": {
+            "on_change": {
+              "$ref": "#/definitions/ComponentAction"
+            },
+            "on_click": {
+              "$ref": "#/definitions/ComponentAction"
+            },
+            "on_load": {
+              "$ref": "#/definitions/ComponentAction"
+            },
+            "on_submit": {
+              "$ref": "#/definitions/ComponentAction"
+            }
+          },
+          "type": "object"
+        },
+        "component": {
+          "description": "Custom component reference",
+          "type": "string"
+        },
+        "components": {
+          "description": "Nested components (for containers, tabs, etc.)",
+          "items": {
+            "$ref": "#/definitions/PageComponent"
+          },
+          "type": "array"
+        },
+        "config": {
+          "description": "Component-specific configuration",
+          "type": "object"
+        },
+        "data_source": {
+          "$ref": "#/definitions/ComponentDataSource",
+          "description": "Data source configuration"
+        },
+        "description": {
+          "description": "Component description",
+          "type": "string"
+        },
+        "grid": {
+          "additionalProperties": false,
+          "description": "Grid position (for dashboard layout)",
+          "properties": {
+            "h": {
+              "type": "number"
+            },
+            "w": {
+              "type": "number"
+            },
+            "x": {
+              "type": "number"
+            },
+            "y": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "x",
+            "y",
+            "w",
+            "h"
+          ],
+          "type": "object"
+        },
+        "id": {
+          "description": "Unique component identifier within the page",
+          "type": "string"
+        },
+        "label": {
+          "description": "Display label",
+          "type": "string"
+        },
+        "permissions": {
+          "description": "Access control",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "responsive": {
+          "$ref": "#/definitions/ResponsiveConfig",
+          "description": "Responsive behavior"
+        },
+        "style": {
+          "$ref": "#/definitions/ComponentStyle",
+          "description": "Visual styling"
+        },
+        "type": {
+          "$ref": "#/definitions/PageComponentType",
+          "description": "Component type"
+        },
+        "visible_when": {
+          "description": "Visibility conditions",
+          "type": "object"
+        }
+      },
+      "required": [
+        "id",
+        "type"
+      ],
+      "type": "object"
+    },
+    "PageComponentType": {
+      "description": "Component types that can be placed on a page",
+      "enum": [
+        "data_grid",
+        "form",
+        "detail_view",
+        "chart",
+        "metric",
+        "list",
+        "calendar",
+        "kanban",
+        "timeline",
+        "text",
+        "html",
+        "iframe",
+        "button",
+        "tabs",
+        "container",
+        "divider",
+        "image",
+        "custom"
+      ],
+      "type": "string"
+    },
+    "PageConfig": {
+      "additionalProperties": false,
+      "description": "Page metadata configuration",
+      "properties": {
+        "actions": {
+          "additionalProperties": {
+            "$ref": "#/definitions/ComponentAction"
+          },
+          "description": "Page-level actions",
+          "type": "object"
+        },
+        "ai_context": {
+          "additionalProperties": false,
+          "description": "AI context for page generation and understanding",
+          "properties": {
+            "intent": {
+              "description": "Purpose of the page",
+              "type": "string"
+            },
+            "persona": {
+              "description": "Target user persona",
+              "type": "string"
+            },
+            "tasks": {
+              "description": "Key user tasks",
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          },
+          "type": "object"
+        },
+        "components": {
+          "description": "Components (alternative to sections for simple layouts)",
+          "items": {
+            "$ref": "#/definitions/PageComponent"
+          },
+          "type": "array"
+        },
+        "data_sources": {
+          "additionalProperties": {
+            "$ref": "#/definitions/ComponentDataSource"
+          },
+          "description": "Page-level data sources",
+          "type": "object"
+        },
+        "description": {
+          "description": "Page description",
+          "type": "string"
+        },
+        "handler": {
+          "description": "Custom page handler/controller",
+          "type": "string"
+        },
+        "icon": {
+          "description": "Icon for navigation",
+          "type": "string"
+        },
+        "label": {
+          "description": "Display label",
+          "type": "string"
+        },
+        "layout": {
+          "$ref": "#/definitions/PageLayoutType",
+          "description": "Layout type"
+        },
+        "meta": {
+          "additionalProperties": false,
+          "description": "SEO and metadata",
+          "properties": {
+            "description": {
+              "type": "string"
+            },
+            "keywords": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "title": {
+              "type": "string"
+            }
+          },
+          "type": "object"
+        },
+        "name": {
+          "description": "Unique page identifier",
+          "type": "string"
+        },
+        "permissions": {
+          "additionalProperties": false,
+          "description": "Access control",
+          "properties": {
+            "edit": {
+              "description": "Roles allowed to edit this page",
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "view": {
+              "description": "Roles allowed to view this page",
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          },
+          "type": "object"
+        },
+        "realtime": {
+          "description": "Enable real-time updates",
+          "type": "boolean"
+        },
+        "refresh_interval": {
+          "description": "Refresh interval in seconds",
+          "type": "number"
+        },
+        "responsive": {
+          "$ref": "#/definitions/ResponsiveConfig",
+          "description": "Responsive configuration"
+        },
+        "sections": {
+          "description": "Page sections",
+          "items": {
+            "$ref": "#/definitions/PageSection"
+          },
+          "type": "array"
+        },
+        "state": {
+          "additionalProperties": false,
+          "description": "Page state management",
+          "properties": {
+            "initial": {
+              "description": "Initial state values",
+              "type": "object"
+            },
+            "persist": {
+              "description": "State persistence",
+              "type": "boolean"
+            },
+            "storage_key": {
+              "description": "Storage key for persistence",
+              "type": "string"
+            }
+          },
+          "type": "object"
+        },
+        "style": {
+          "$ref": "#/definitions/ComponentStyle",
+          "description": "Page styling"
+        }
+      },
+      "required": [
+        "name",
+        "label",
+        "layout"
+      ],
+      "type": "object"
+    },
+    "PageLayoutType": {
+      "description": "Layout types for page arrangement",
+      "enum": [
+        "single_column",
+        "two_column",
+        "three_column",
+        "dashboard",
+        "canvas",
+        "tabs",
+        "wizard",
+        "custom"
+      ],
+      "type": "string"
+    },
+    "PageSection": {
+      "additionalProperties": false,
+      "description": "Page section/region configuration",
+      "properties": {
+        "collapsed": {
+          "description": "Default collapsed state",
+          "type": "boolean"
+        },
+        "collapsible": {
+          "description": "Collapsible section",
+          "type": "boolean"
+        },
+        "components": {
+          "description": "Components in this section",
+          "items": {
+            "$ref": "#/definitions/PageComponent"
+          },
+          "type": "array"
+        },
+        "id": {
+          "description": "Section identifier",
+          "type": "string"
+        },
+        "label": {
+          "description": "Section label",
+          "type": "string"
+        },
+        "style": {
+          "$ref": "#/definitions/ComponentStyle",
+          "description": "Section styling"
+        },
+        "type": {
+          "description": "Section type",
+          "enum": [
+            "header",
+            "sidebar",
+            "content",
+            "footer",
+            "custom"
+          ],
+          "type": "string"
+        },
+        "visible_when": {
+          "description": "Visibility conditions",
+          "type": "object"
+        }
+      },
+      "required": [
+        "id",
+        "components"
+      ],
+      "type": "object"
+    },
+    "ResponsiveConfig": {
+      "additionalProperties": false,
+      "description": "Responsive breakpoint configuration",
+      "properties": {
+        "desktop": {
+          "additionalProperties": false,
+          "description": "Desktop viewport (> 1024px)",
+          "properties": {
+            "columns": {
+              "type": "number"
+            },
+            "order": {
+              "type": "number"
+            },
+            "visible": {
+              "type": "boolean"
+            }
+          },
+          "type": "object"
+        },
+        "mobile": {
+          "additionalProperties": false,
+          "description": "Mobile viewport (< 640px)",
+          "properties": {
+            "columns": {
+              "type": "number"
+            },
+            "order": {
+              "type": "number"
+            },
+            "visible": {
+              "type": "boolean"
+            }
+          },
+          "type": "object"
+        },
+        "tablet": {
+          "additionalProperties": false,
+          "description": "Tablet viewport (640px - 1024px)",
+          "properties": {
+            "columns": {
+              "type": "number"
+            },
+            "order": {
+              "type": "number"
+            },
+            "visible": {
+              "type": "boolean"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
+    }
+  }
+}

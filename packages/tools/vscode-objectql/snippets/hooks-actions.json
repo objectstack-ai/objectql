@@ -1,0 +1,248 @@
+{
+  "ObjectQL Hook - Before Create": {
+    "prefix": "oql-hook-beforeCreate",
+    "body": [
+      "import { HookContext, ObjectQLError } from '@objectql/types';",
+      "",
+      "/**",
+      " * Hook executed before creating a new record",
+      " * @param ctx Hook execution context",
+      " */",
+      "export async function beforeCreate(ctx: HookContext): Promise<void> {",
+      "  const { doc, object } = ctx;",
+      "  ",
+      "  // Add logic here",
+      "  // Example: Set default values",
+      "  if (!doc.${1:created_at}) {",
+      "    doc.${1:created_at} = new Date();",
+      "  }",
+      "  ",
+      "  $0",
+      "}"
+    ],
+    "description": "Create beforeCreate hook"
+  },
+  "ObjectQL Hook - After Create": {
+    "prefix": "oql-hook-afterCreate",
+    "body": [
+      "import { HookContext, ObjectQLError } from '@objectql/types';",
+      "",
+      "/**",
+      " * Hook executed after creating a new record",
+      " * @param ctx Hook execution context",
+      " */",
+      "export async function afterCreate(ctx: HookContext): Promise<void> {",
+      "  const { doc, object, context } = ctx;",
+      "  ",
+      "  // Add post-creation logic here",
+      "  // Example: Send notification",
+      "  console.log('New record created:', doc._id);",
+      "  ",
+      "  $0",
+      "}"
+    ],
+    "description": "Create afterCreate hook"
+  },
+  "ObjectQL Hook - Before Update": {
+    "prefix": "oql-hook-beforeUpdate",
+    "body": [
+      "import { HookContext, ObjectQLError } from '@objectql/types';",
+      "",
+      "/**",
+      " * Hook executed before updating a record",
+      " * @param ctx Hook execution context",
+      " */",
+      "export async function beforeUpdate(ctx: HookContext): Promise<void> {",
+      "  const { doc, previousDoc, object } = ctx;",
+      "  ",
+      "  // Add validation or modification logic",
+      "  // Example: Track modifications",
+      "  doc.${1:modified_at} = new Date();",
+      "  ",
+      "  // Prevent certain updates",
+      "  if (previousDoc.${2:status} === 'locked') {",
+      "    throw new ObjectQLError({",
+      "      code: 'FORBIDDEN',",
+      "      message: 'Cannot update locked records'",
+      "    });",
+      "  }",
+      "  ",
+      "  $0",
+      "}"
+    ],
+    "description": "Create beforeUpdate hook"
+  },
+  "ObjectQL Hook - After Update": {
+    "prefix": "oql-hook-afterUpdate",
+    "body": [
+      "import { HookContext } from '@objectql/types';",
+      "",
+      "/**",
+      " * Hook executed after updating a record",
+      " * @param ctx Hook execution context",
+      " */",
+      "export async function afterUpdate(ctx: HookContext): Promise<void> {",
+      "  const { doc, previousDoc, object } = ctx;",
+      "  ",
+      "  // Check what changed",
+      "  if (doc.${1:status} !== previousDoc.${1:status}) {",
+      "    console.log(`Status changed from \\${previousDoc.${1:status}} to \\${doc.${1:status}}`);",
+      "    // Trigger workflow or notification",
+      "  }",
+      "  ",
+      "  $0",
+      "}"
+    ],
+    "description": "Create afterUpdate hook"
+  },
+  "ObjectQL Hook - Before Delete": {
+    "prefix": "oql-hook-beforeDelete",
+    "body": [
+      "import { HookContext, ObjectQLError } from '@objectql/types';",
+      "",
+      "/**",
+      " * Hook executed before deleting a record",
+      " * @param ctx Hook execution context",
+      " */",
+      "export async function beforeDelete(ctx: HookContext): Promise<void> {",
+      "  const { doc, object, context } = ctx;",
+      "  ",
+      "  // Prevent deletion under certain conditions",
+      "  if (doc.${1:has_dependencies}) {",
+      "    throw new ObjectQLError({",
+      "      code: 'VALIDATION_ERROR',",
+      "      message: 'Cannot delete record with active dependencies'",
+      "    });",
+      "  }",
+      "  ",
+      "  $0",
+      "}"
+    ],
+    "description": "Create beforeDelete hook"
+  },
+  "ObjectQL Hook - After Delete": {
+    "prefix": "oql-hook-afterDelete",
+    "body": [
+      "import { HookContext } from '@objectql/types';",
+      "",
+      "/**",
+      " * Hook executed after deleting a record",
+      " * @param ctx Hook execution context",
+      " */",
+      "export async function afterDelete(ctx: HookContext): Promise<void> {",
+      "  const { doc, object } = ctx;",
+      "  ",
+      "  // Cleanup related data",
+      "  console.log('Record deleted:', doc._id);",
+      "  ",
+      "  $0",
+      "}"
+    ],
+    "description": "Create afterDelete hook"
+  },
+  "ObjectQL Action - Record Action": {
+    "prefix": "oql-action-record",
+    "body": [
+      "import { ActionContext, ObjectQLError } from '@objectql/types';",
+      "",
+      "/**",
+      " * ${1:Action Name} - Record-level action",
+      " * @param ctx Action execution context",
+      " */",
+      "export async function ${2:actionName}(ctx: ActionContext): Promise<${3:void}> {",
+      "  const { recordId, object, context, params } = ctx;",
+      "  ",
+      "  // Fetch the record",
+      "  const repo = context.object(object);",
+      "  const record = await repo.findById(recordId);",
+      "  ",
+      "  if (!record) {",
+      "    throw new ObjectQLError({",
+      "      code: 'NOT_FOUND',",
+      "      message: 'Record not found'",
+      "    });",
+      "  }",
+      "  ",
+      "  // Perform action logic",
+      "  ${4:// Your action logic here}",
+      "  ",
+      "  $0",
+      "}"
+    ],
+    "description": "Create record-level action"
+  },
+  "ObjectQL Action - Global Action": {
+    "prefix": "oql-action-global",
+    "body": [
+      "import { ActionContext } from '@objectql/types';",
+      "",
+      "/**",
+      " * ${1:Action Name} - Global action",
+      " * @param ctx Action execution context",
+      " */",
+      "export async function ${2:actionName}(ctx: ActionContext): Promise<${3:any}> {",
+      "  const { object, context, params } = ctx;",
+      "  ",
+      "  // Access parameters",
+      "  const { ${4:param1, param2} } = params;",
+      "  ",
+      "  // Perform action logic",
+      "  ${5:// Your action logic here}",
+      "  ",
+      "  // Return result",
+      "  return {",
+      "    success: true,",
+      "    message: '${6:Action completed successfully}'",
+      "  };",
+      "  ",
+      "  $0",
+      "}"
+    ],
+    "description": "Create global action"
+  },
+  "ObjectQL Error Handling": {
+    "prefix": "oql-error",
+    "body": [
+      "throw new ObjectQLError({",
+      "  code: '${1|VALIDATION_ERROR,NOT_FOUND,FORBIDDEN,UNAUTHORIZED,INTERNAL_ERROR|}',",
+      "  message: '${2:Error message}'",
+      "});",
+      "$0"
+    ],
+    "description": "Throw ObjectQL error"
+  },
+  "ObjectQL Repository Query": {
+    "prefix": "oql-query",
+    "body": [
+      "const ${1:results} = await ${2:repo}.find({",
+      "  filters: [",
+      "    ['${3:field}', '${4|=,!=,>,>=,<,<=,in,contains|}', ${5:value}]",
+      "  ],",
+      "  sort: '${6:field}',",
+      "  limit: ${7:10}",
+      "});",
+      "$0"
+    ],
+    "description": "Query repository with filters"
+  },
+  "ObjectQL Repository Create": {
+    "prefix": "oql-create",
+    "body": [
+      "const ${1:newRecord} = await ${2:repo}.create({",
+      "  ${3:field}: ${4:value}",
+      "});",
+      "$0"
+    ],
+    "description": "Create a new record"
+  },
+  "ObjectQL Repository Update": {
+    "prefix": "oql-update",
+    "body": [
+      "const ${1:updated} = await ${2:repo}.update(${3:recordId}, {",
+      "  ${4:field}: ${5:value}",
+      "});",
+      "$0"
+    ],
+    "description": "Update a record"
+  }
+}

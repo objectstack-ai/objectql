@@ -1,0 +1,253 @@
+{
+  "ObjectQL Object Definition": {
+    "prefix": "oql-object",
+    "body": [
+      "name: ${1:object_name}",
+      "label: ${2:Object Label}",
+      "description: \"${3:Description of the object}\"",
+      "",
+      "fields:",
+      "  ${4:field_name}:",
+      "    type: ${5|text,number,select,lookup,datetime,boolean|}",
+      "    label: ${6:Field Label}",
+      "    required: ${7|true,false|}",
+      "    $0"
+    ],
+    "description": "Create a new ObjectQL object definition"
+  },
+  "Text Field": {
+    "prefix": "oql-field-text",
+    "body": [
+      "${1:field_name}:",
+      "  type: text",
+      "  label: ${2:Field Label}",
+      "  required: ${3|false,true|}",
+      "  max_length: ${4:255}",
+      "  searchable: ${5|true,false|}",
+      "  $0"
+    ],
+    "description": "Add a text field"
+  },
+  "Number Field": {
+    "prefix": "oql-field-number",
+    "body": [
+      "${1:field_name}:",
+      "  type: number",
+      "  label: ${2:Field Label}",
+      "  min: ${3:0}",
+      "  max: ${4:100}",
+      "  $0"
+    ],
+    "description": "Add a number field"
+  },
+  "Select Field": {
+    "prefix": "oql-field-select",
+    "body": [
+      "${1:field_name}:",
+      "  type: select",
+      "  label: ${2:Field Label}",
+      "  options:",
+      "    - label: ${3:Option 1}",
+      "      value: ${4:option1}",
+      "    - label: ${5:Option 2}",
+      "      value: ${6:option2}",
+      "  defaultValue: ${7:option1}",
+      "  $0"
+    ],
+    "description": "Add a select field with options"
+  },
+  "Lookup Field": {
+    "prefix": "oql-field-lookup",
+    "body": [
+      "${1:field_name}:",
+      "  type: lookup",
+      "  label: ${2:Field Label}",
+      "  reference_to: ${3:target_object}",
+      "  required: ${4|false,true|}",
+      "  $0"
+    ],
+    "description": "Add a lookup field (relationship)"
+  },
+  "DateTime Field": {
+    "prefix": "oql-field-datetime",
+    "body": [
+      "${1:field_name}:",
+      "  type: datetime",
+      "  label: ${2:Field Label}",
+      "  readonly: ${3|false,true|}",
+      "  $0"
+    ],
+    "description": "Add a datetime field"
+  },
+  "Boolean Field": {
+    "prefix": "oql-field-boolean",
+    "body": [
+      "${1:field_name}:",
+      "  type: boolean",
+      "  label: ${2:Field Label}",
+      "  defaultValue: ${3|false,true|}",
+      "  $0"
+    ],
+    "description": "Add a boolean field"
+  },
+  "Email Field": {
+    "prefix": "oql-field-email",
+    "body": [
+      "${1:email}:",
+      "  type: email",
+      "  label: ${2:Email}",
+      "  required: ${3|true,false|}",
+      "  unique: ${4|true,false|}",
+      "  $0"
+    ],
+    "description": "Add an email field"
+  },
+  "Currency Field": {
+    "prefix": "oql-field-currency",
+    "body": [
+      "${1:amount}:",
+      "  type: currency",
+      "  label: ${2:Amount}",
+      "  min: ${3:0}",
+      "  $0"
+    ],
+    "description": "Add a currency field"
+  },
+  "File Field": {
+    "prefix": "oql-field-file",
+    "body": [
+      "${1:attachment}:",
+      "  type: file",
+      "  label: ${2:Attachment}",
+      "  accept: [${3:'.pdf', '.doc', '.docx'}]",
+      "  max_size: ${4:5242880}  # 5MB in bytes",
+      "  multiple: ${5|false,true|}",
+      "  $0"
+    ],
+    "description": "Add a file attachment field"
+  },
+  "Image Field": {
+    "prefix": "oql-field-image",
+    "body": [
+      "${1:photo}:",
+      "  type: image",
+      "  label: ${2:Photo}",
+      "  accept: [${3:'.jpg', '.png', '.gif'}]",
+      "  max_size: ${4:2097152}  # 2MB in bytes",
+      "  max_width: ${5:1920}",
+      "  max_height: ${6:1080}",
+      "  $0"
+    ],
+    "description": "Add an image field"
+  },
+  "Index Definition": {
+    "prefix": "oql-index",
+    "body": [
+      "indexes:",
+      "  ${1:index_name}:",
+      "    fields: [${2:field1, field2}]",
+      "    unique: ${3|false,true|}",
+      "    $0"
+    ],
+    "description": "Add database index"
+  },
+  "Validation Rule - Cross Field": {
+    "prefix": "oql-validation-cross-field",
+    "body": [
+      "- name: ${1:rule_name}",
+      "  type: cross_field",
+      "  message: \"${2:Validation error message}\"",
+      "  rule:",
+      "    field: ${3:field1}",
+      "    operator: ${4|>,>=,<,<=,=,!=|}",
+      "    compare_to: ${5:field2}",
+      "  trigger: [${6|create,update|}]",
+      "  severity: ${7|error,warning|}",
+      "  $0"
+    ],
+    "description": "Add cross-field validation rule"
+  },
+  "Validation Rule - Unique": {
+    "prefix": "oql-validation-unique",
+    "body": [
+      "- name: ${1:unique_rule}",
+      "  type: unique",
+      "  message: \"${2:This value must be unique}\"",
+      "  field: ${3:field_name}",
+      "  case_sensitive: ${4|false,true|}",
+      "  trigger: [${5|create,update|}]",
+      "  $0"
+    ],
+    "description": "Add uniqueness validation"
+  },
+  "Validation Rule - Business Rule": {
+    "prefix": "oql-validation-business",
+    "body": [
+      "- name: ${1:business_rule}",
+      "  type: business_rule",
+      "  message: \"${2:Business rule violation}\"",
+      "  constraint:",
+      "    expression: \"${3:field1 > 0 && field2 !== null}\"",
+      "  trigger: [${4|create,update|}]",
+      "  severity: ${5|error,warning|}",
+      "  $0"
+    ],
+    "description": "Add business rule validation"
+  },
+  "Validation Rule - State Machine": {
+    "prefix": "oql-validation-state",
+    "body": [
+      "- name: ${1:state_machine}",
+      "  type: state_machine",
+      "  field: ${2:status}",
+      "  message: \"${3:Invalid state transition}\"",
+      "  transitions:",
+      "    ${4:draft}: [${5:pending, cancelled}]",
+      "    ${5:pending}: [${6:approved, rejected}]",
+      "    ${6:approved}: []",
+      "    ${7:rejected}: []",
+      "  initial_states: [${4:draft}]",
+      "  $0"
+    ],
+    "description": "Add state machine validation"
+  },
+  "AI Search Config": {
+    "prefix": "oql-ai-search",
+    "body": [
+      "ai:",
+      "  search:",
+      "    enabled: true",
+      "    fields: [${1:name, description}]",
+      "    model: ${2:openai/text-embedding-3-small}",
+      "    $0"
+    ],
+    "description": "Enable AI semantic search"
+  },
+  "Action - Record Action": {
+    "prefix": "oql-action-record",
+    "body": [
+      "actions:",
+      "  ${1:action_name}:",
+      "    type: record",
+      "    label: ${2:Action Label}",
+      "    description: \"${3:Action description}\"",
+      "    icon: ${4:check}",
+      "    confirm_text: \"${5:Are you sure?}\"",
+      "    $0"
+    ],
+    "description": "Add record-level action"
+  },
+  "Action - Global Action": {
+    "prefix": "oql-action-global",
+    "body": [
+      "actions:",
+      "  ${1:action_name}:",
+      "    type: global",
+      "    label: ${2:Action Label}",
+      "    description: \"${3:Action description}\"",
+      "    icon: ${4:upload}",
+      "    $0"
+    ],
+    "description": "Add global action"
+  }
+}
