@@ -1,0 +1,52 @@
+name: Validate Metadata Files
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - '**/*.object.yml'
+      - '**/*.validation.yml'
+      - '**/*.permission.yml'
+      - '**/*.app.yml'
+      - '**/*.page.yml'
+      - '**/*.menu.yml'
+      - 'scripts/validate-yaml.js'
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - '**/*.object.yml'
+      - '**/*.validation.yml'
+      - '**/*.permission.yml'
+      - '**/*.app.yml'
+      - '**/*.page.yml'
+      - '**/*.menu.yml'
+      - 'scripts/validate-yaml.js'
+
+jobs:
+  validate:
+    name: Validate YAML Metadata
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - uses: pnpm/action-setup@v3
+      with:
+        version: 10
+
+    - name: Use Node.js 20.x
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20.x
+        cache: 'pnpm'
+
+    - name: Install dependencies
+      run: pnpm install --frozen-lockfile
+      timeout-minutes: 5
+      
+    - name: Validate YAML syntax
+      run: |
+        echo "Checking YAML syntax for metadata files..."
+        pnpm exec node scripts/validate-yaml.js
+      timeout-minutes: 5

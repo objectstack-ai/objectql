@@ -1,0 +1,46 @@
+# Configuration for PR auto-labeling
+# Labels are applied based on file path patterns
+
+'📦 dependencies':
+  - changed-files:
+    - any-glob-to-any-file: ['package.json', 'pnpm-lock.yaml', '**/package.json']
+
+'📚 documentation':
+  - changed-files:
+    - any-glob-to-any-file: ['docs/**/*', '**/*.md', 'README.md']
+
+'🔧 tooling':
+  - changed-files:
+    - any-glob-to-any-file: ['packages/tools/**/*', '.github/**/*', 'scripts/**/*']
+
+'🏗️ foundation':
+  - changed-files:
+    - any-glob-to-any-file: ['packages/foundation/**/*']
+
+'🔌 drivers':
+  - changed-files:
+    - any-glob-to-any-file: ['packages/drivers/**/*']
+
+'🚀 runtime':
+  - changed-files:
+    - any-glob-to-any-file: ['packages/runtime/**/*']
+
+'📝 examples':
+  - changed-files:
+    - any-glob-to-any-file: ['examples/**/*']
+
+'⚡ starters':
+  - changed-files:
+    - any-glob-to-any-file: ['packages/starters/**/*']
+
+'🧪 tests':
+  - changed-files:
+    - any-glob-to-any-file: ['**/*.test.ts', '**/*.spec.ts', '**/jest.config.js']
+
+'🔒 security':
+  - changed-files:
+    - any-glob-to-any-file: ['**/*.permission.yml', '**/security/**/*']
+
+'⚙️ configuration':
+  - changed-files:
+    - any-glob-to-any-file: ['tsconfig*.json', '.gitignore', '.npmrc', 'pnpm-workspace.yaml']
