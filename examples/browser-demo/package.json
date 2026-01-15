@@ -1,0 +1,21 @@
+{
+  "name": "@objectql/example-browser-demo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Browser demo for ObjectQL with Memory Driver - No backend required!",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "serve": "vite preview"
+  },
+  "dependencies": {
+    "@objectql/core": "workspace:*",
+    "@objectql/driver-memory": "workspace:*",
+    "@objectql/types": "workspace:*"
+  },
+  "devDependencies": {
+    "vite": "^5.0.0"
+  }
+}
