@@ -1,0 +1,37 @@
+{
+  "name": "@objectql/driver-excel",
+  "version": "0.2.0",
+  "description": "Excel file driver for ObjectQL - Read/write data from Excel files (.xlsx) with flexible storage modes",
+  "keywords": [
+    "objectql",
+    "driver",
+    "excel",
+    "xlsx",
+    "spreadsheet",
+    "database",
+    "adapter",
+    "exceljs"
+  ],
+  "license": "MIT",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@objectql/types": "workspace:*",
+    "exceljs": "^4.4.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.0.0",
+    "@types/node": "^20.10.0",
+    "jest": "^29.0.0",
+    "typescript": "^5.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/objectstack-ai/objectql.git",
+    "directory": "packages/drivers/excel"
+  }
+}

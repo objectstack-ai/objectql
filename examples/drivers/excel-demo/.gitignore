@@ -1,0 +1,10 @@
+# Generated Excel files
+data/**/*.xlsx
+data/**/*.xls
+data/
+
+# Build output
+dist/
+
+# Dependencies
+node_modules/
