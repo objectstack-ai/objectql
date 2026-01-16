@@ -1,0 +1,353 @@
+# @objectql/driver-excel
+
+Excel file driver for ObjectQL - Read and write data from Excel spreadsheets (.xlsx).
+
+## Features
+
+✅ **Full CRUD Operations** - Create, read, update, and delete records  
+✅ **Excel File Storage** - Use Excel files as a data source  
+✅ **Multiple Worksheets** - Each object type gets its own worksheet  
+✅ **Query Support** - Filters, sorting, pagination, and field projection  
+✅ **Auto-persistence** - Changes automatically saved to file  
+✅ **Type-safe** - Built with strict TypeScript  
+✅ **Zero Config** - Works out of the box with minimal setup  
+
+## Installation
+
+```bash
+pnpm add @objectql/driver-excel
+```
+
+## Quick Start
+
+```typescript
+import { ExcelDriver } from '@objectql/driver-excel';
+
+// Create driver instance
+const driver = new ExcelDriver({
+  filePath: './data/mydata.xlsx',
+  createIfMissing: true,
+  autoSave: true
+});
+
+// Create records
+const user = await driver.create('users', {
+  name: 'Alice',
+  email: 'alice@example.com',
+  role: 'admin'
+});
+
+// Query records
+const users = await driver.find('users', {
+  filters: [['role', '=', 'admin']],
+  sort: [['name', 'asc']],
+  limit: 10
+});
+
+// Update records
+await driver.update('users', user.id, {
+  email: 'alice.new@example.com'
+});
+
+// Delete records
+await driver.delete('users', user.id);
+```
+
+## Configuration
+
+### ExcelDriverConfig
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `filePath` | `string` | *required* | Path to the Excel file |
+| `autoSave` | `boolean` | `true` | Automatically save changes to file |
+| `createIfMissing` | `boolean` | `true` | Create file if it doesn't exist |
+| `strictMode` | `boolean` | `false` | Throw errors on missing records |
+
+### Example Configuration
+
+```typescript
+const driver = new ExcelDriver({
+  filePath: './data/database.xlsx',
+  autoSave: true,        // Save on every change
+  createIfMissing: true, // Create file if not exists
+  strictMode: false      // Don't throw on missing records
+});
+```
+
+## How It Works
+
+### Data Storage
+
+- **Each worksheet = One object type** (e.g., `users`, `products`)
+- **First row = Column headers** (field names)
+- **Subsequent rows = Data records**
+
+Example Excel structure:
+
+**Sheet: users**
+| id | name | email | role | created_at |
+|----|------|-------|------|------------|
+| user-1 | Alice | alice@example.com | admin | 2024-01-01T00:00:00Z |
+| user-2 | Bob | bob@example.com | user | 2024-01-02T00:00:00Z |
+
+### Workflow
+
+1. **Load**: Reads Excel file into memory on initialization
+2. **Query**: Performs operations in-memory (fast!)
+3. **Persist**: Writes changes back to Excel file
+4. **Auto-save**: Enabled by default for data safety
+
+## API Reference
+
+### CRUD Operations
+
+#### `create(objectName, data, options?)`
+Create a new record.
+
+```typescript
+const user = await driver.create('users', {
+  name: 'Alice',
+  email: 'alice@example.com'
+});
+```
+
+#### `findOne(objectName, id, query?, options?)`
+Find a single record by ID.
+
+```typescript
+const user = await driver.findOne('users', 'user-123');
+```
+
+#### `find(objectName, query?, options?)`
+Find multiple records with optional filtering, sorting, and pagination.
+
+```typescript
+const users = await driver.find('users', {
+  filters: [['role', '=', 'admin']],
+  sort: [['name', 'asc']],
+  skip: 0,
+  limit: 10,
+  fields: ['id', 'name', 'email']
+});
+```
+
+#### `update(objectName, id, data, options?)`
+Update an existing record.
+
+```typescript
+await driver.update('users', 'user-123', {
+  email: 'newemail@example.com'
+});
+```
+
+#### `delete(objectName, id, options?)`
+Delete a record.
+
+```typescript
+await driver.delete('users', 'user-123');
+```
+
+### Query Operations
+
+#### `count(objectName, filters, options?)`
+Count records matching filters.
+
+```typescript
+const count = await driver.count('users', {
+  filters: [['role', '=', 'admin']]
+});
+```
+
+#### `distinct(objectName, field, filters?, options?)`
+Get unique values for a field.
+
+```typescript
+const roles = await driver.distinct('users', 'role');
+// Returns: ['admin', 'user', 'guest']
+```
+
+### Bulk Operations
+
+#### `createMany(objectName, data[], options?)`
+Create multiple records at once.
+
+```typescript
+await driver.createMany('users', [
+  { name: 'Alice', email: 'alice@example.com' },
+  { name: 'Bob', email: 'bob@example.com' }
+]);
+```
+
+#### `updateMany(objectName, filters, data, options?)`
+Update multiple records matching filters.
+
+```typescript
+await driver.updateMany(
+  'users',
+  [['role', '=', 'user']],
+  { role: 'member' }
+);
+```
+
+#### `deleteMany(objectName, filters, options?)`
+Delete multiple records matching filters.
+
+```typescript
+await driver.deleteMany(
+  'users',
+  [['status', '=', 'inactive']]
+);
+```
+
+### Utility Methods
+
+#### `save()`
+Manually save the workbook to file.
+
+```typescript
+await driver.save();
+```
+
+#### `disconnect()`
+Flush any pending writes and close the driver.
+
+```typescript
+await driver.disconnect();
+```
+
+## Filter Operators
+
+| Operator | Description | Example |
+|----------|-------------|---------|
+| `=`, `==` | Equals | `['age', '=', 25]` |
+| `!=`, `<>` | Not equals | `['status', '!=', 'inactive']` |
+| `>` | Greater than | `['age', '>', 18]` |
+| `>=` | Greater or equal | `['age', '>=', 18]` |
+| `<` | Less than | `['age', '<', 65]` |
+| `<=` | Less or equal | `['age', '<=', 65]` |
+| `in` | In array | `['role', 'in', ['admin', 'user']]` |
+| `nin` | Not in array | `['status', 'nin', ['banned', 'deleted']]` |
+| `contains` | String contains | `['name', 'contains', 'ali']` |
+| `startswith` | String starts with | `['email', 'startswith', 'admin']` |
+| `endswith` | String ends with | `['email', 'endswith', '@example.com']` |
+| `between` | Between values | `['age', 'between', [18, 65]]` |
+
+### Complex Filters
+
+```typescript
+// AND conditions (default)
+const admins = await driver.find('users', {
+  filters: [
+    ['role', '=', 'admin'],
+    ['status', '=', 'active']
+  ]
+});
+
+// OR conditions
+const results = await driver.find('users', {
+  filters: [
+    ['role', '=', 'admin'],
+    'or',
+    ['role', '=', 'moderator']
+  ]
+});
+```
+
+## Use Cases
+
+### 1. Data Import/Export
+
+```typescript
+// Import from existing Excel file
+const driver = new ExcelDriver({
+  filePath: './imports/customers.xlsx'
+});
+
+const customers = await driver.find('customers');
+console.log(`Imported ${customers.length} customers`);
+```
+
+### 2. Simple Database for Prototyping
+
+```typescript
+// Use Excel as a quick database during development
+const db = new ExcelDriver({
+  filePath: './dev-data.xlsx',
+  createIfMissing: true
+});
+
+await db.create('tasks', {
+  title: 'Build prototype',
+  status: 'in-progress'
+});
+```
+
+### 3. Report Generation
+
+```typescript
+// Generate Excel reports from application data
+const driver = new ExcelDriver({
+  filePath: './reports/monthly-report.xlsx'
+});
+
+await driver.createMany('sales', salesData);
+await driver.createMany('analytics', analyticsData);
+```
+
+### 4. Data Migration
+
+```typescript
+// Migrate data from Excel to another database
+const excelDriver = new ExcelDriver({
+  filePath: './legacy-data.xlsx'
+});
+
+const sqlDriver = new SqlDriver(config);
+
+const records = await excelDriver.find('users');
+for (const record of records) {
+  await sqlDriver.create('users', record);
+}
+```
+
+## Limitations
+
+- **In-memory operations**: Large files (10,000+ rows) may consume significant memory
+- **File locking**: Not suitable for concurrent multi-process writes
+- **Performance**: Slower than dedicated databases for large datasets
+- **Query optimization**: No indexes or query optimization
+
+## Best Practices
+
+1. **Use for appropriate scale**: Best for < 10,000 records per sheet
+2. **Enable autoSave**: Prevents data loss on crashes
+3. **Backup files**: Keep backups of important Excel files
+4. **Validate data**: Excel doesn't enforce schemas - validate in your app
+5. **Batch operations**: Use `createMany`/`updateMany` for better performance
+
+## TypeScript Support
+
+Fully typed with TypeScript:
+
+```typescript
+import { ExcelDriver, ExcelDriverConfig } from '@objectql/driver-excel';
+
+const config: ExcelDriverConfig = {
+  filePath: './data.xlsx',
+  autoSave: true
+};
+
+const driver: ExcelDriver = new ExcelDriver(config);
+```
+
+## License
+
+MIT
+
+## Related
+
+- [@objectql/types](../foundation/types) - Core ObjectQL types
+- [@objectql/driver-memory](../memory) - In-memory driver
+- [@objectql/driver-sql](../sql) - SQL database driver
+- [@objectql/driver-mongo](../mongo) - MongoDB driver
