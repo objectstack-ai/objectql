@@ -26,22 +26,51 @@ npm create @objectql@latest my-app -- --template hello-world
 
 This will create a new project with all necessary dependencies.
 
-### 2. Standard Setup (Project Tracker)
+### 2. Install VS Code Extension (Recommended) 🚨
 
-For building real applications, use the `showcase` template. This sets up a proper folder structure with YAML metadata, TypeScript logic hooks, and relationship management.
+To treat your metadata like code (with validation and autocomplete), install the **Standard ObjectStack AI Extension**.
 
-```bash
-npm create @objectql@latest project-tracker -- --template showcase
+1.  Open Visual Studio Code.
+2.  Go to the **Extensions** view (`Cmd+Shift+X`).
+3.  Search for `ObjectQL` and install.
+4.  Alternatively, when you open the created project, VS Code will prompt you to install recommended extensions.
+
+> **Why?** The extension understands your `*.object.yml` files, validating field types and relationships in real-time, just like TypeScript.
+
+### 3. Define the Protocol (Your Meta-Schema)
+
+Instead of passing objects to a constructor, we define them in YAML. This is the "AI-Native" way—separate the **Instruction** (YAML) from the **Execution** (Runtime).
+
+Create a file `src/objects/todo.object.yml`:
+
+```yaml
+name: todo
+label: Task
+fields:
+  title: 
+    type: text
+    required: true
+    searchable: true
+  completed: 
+    type: boolean
+    default: false
+  priority:
+    type: select
+    options: [low, medium, high]
+    default: medium
 ```
 
-This structure follows our **Best Practices**:
-*   **`src/objects/*.object.yml`**: Data definitions.
-*   **`src/hooks/*.hook.ts`**: Business logic.
-*   **`src/index.ts`**: Application entry point.
+### 4. Run the Project
 
-## Manual Setup (The Hard Way)
+```bash
+npm run dev
+```
 
-If you prefer to set up manually or add ObjectQL to an existing project:
+ObjectQL will detect the new file, generate the necessary database tables (in SQLite by default), and start the server.
+
+### 5. Manual Setup (Programmatic API)
+
+If you are integrating ObjectQL into an existing specialized backend (like a Lambda function or a custom script), you can use the Programmatic API.
 
 ```typescript
 import { ObjectQL } from '@objectql/core';
@@ -61,6 +90,7 @@ async function main() {
   });
 
   // 3. Define Metadata Inline (Code as Configuration)
+  // Note: We recommend YAML for scalability, but this works for scripts.
   app.registerObject({
     name: 'todo',
     fields: {
@@ -87,7 +117,7 @@ main();
 
 ## Scaling Up: The Metadata Approach
 
-Once you are comfortable with the core, you should move your definitions to YAML files.
+Once you are comfortable with the basics, notice that standard projects use file-based modules configuration.
 
 ```typescript
 import { ObjectQL } from '@objectql/core';

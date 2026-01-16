@@ -45,81 +45,53 @@ ObjectQL is organized as a Monorepo to ensure modularity and universal compatibi
 
 ## ⚡ Quick Start
 
-### 0. Use the Generator (Recommended)
+### 1. Create a New Project
 
 The fastest way to start is using the CLI to scaffold a new project.
 
 ```bash
-# Create a new project
+# Generate a new project
 npm create @objectql@latest my-app
 
-# Choose a template when prompted (hello-world or starter)
+# Choose 'starter' for a complete example or 'hello-world' for minimal setup
 ```
 
-### 1. Manual Installation
+### 2. Install VS Code Extension (Critical 🚨)
 
-If you prefer to install manually:
+For the best experience, install the official extension. It provides **Intelligent IntelliSense** and **Real-time Validation** for your YAML models.
+
+*   Search for **"ObjectQL"** in the VS Code Marketplace.
+*   Or open your new project, and VS Code will recommend it automatically via `.vscode/extensions.json`.
+
+### 3. Define Metadata (The "Object")
+
+ObjectQL uses **YAML** as the source of truth. Create a file `src/objects/story.object.yml`:
+
+```yaml
+name: story
+label: User Story
+fields:
+  title:
+    type: text
+    required: true
+  status:
+    type: select
+    options: [draft, active, done]
+    default: draft
+  points:
+    type: number
+    scale: 0
+    default: 1
+```
+
+### 4. Run & Play
+
+Start the development server. ObjectQL will automatically load your YAML files and generate the database schema.
 
 ```bash
-# Install core and a driver (e.g., Postgres or SQLite)
-npm install @objectql/core @objectql/driver-sql sqlite3
+npm run dev
 ```
 
-### 2. The Universal Script
-
-ObjectQL can run in a single file without complex configuration.
-
-```typescript
-import { ObjectQL } from '@objectql/core';
-import { SqlDriver } from '@objectql/driver-sql';
-
-async function main() {
-  // 1. Initialize Driver (In-Memory SQLite)
-  const driver = new SqlDriver({
-    client: 'sqlite3',
-    connection: { filename: ':memory:' }, 
-    useNullAsDefault: true
-  });
-
-  // 2. Initialize Engine
-  const app = new ObjectQL({
-    datasources: { default: driver }
-  });
-
-  // 3. Define Schema (The "Object")
-  // In a real app, this would be loaded from a .yml file
-  app.registerObject({
-    name: "users",
-    fields: {
-      name: { type: "text", required: true },
-      email: { type: "email", unique: true },
-      role: { 
-        type: "select", 
-        options: ["admin", "user"], 
-        defaultValue: "user" 
-      }
-    }
-  });
-
-  await app.init();
-
-  // 4. Enjoy Type-Safe(ish) CRUD
-  const ctx = app.createContext({ isSystem: true });
-  const repo = ctx.object('users');
-
-  // Create
-  await repo.create({ name: 'Alice', email: 'alice@example.com' });
-
-  // Find
-  const users = await repo.find({
-    filters: [['role', '=', 'user']]
-  });
-  
-  console.log(users);
-}
-
-main();
-```
 
 ---
 

@@ -17,27 +17,25 @@ npm install @objectql/core @objectql/server @objectql/driver-sql sqlite3 tsx
 
 ## 2. Define Your Schema
 
-Create a file named `project.object.yml`:
+Create a file named `src/objects/task.object.yml`:
 
 ```yaml
-name: project
-objects:
-  task:
-    label: Task
-    fields:
-      title:
-        type: text
-        required: true
-      completed:
-        type: boolean
-        default: false
-      priority:
-        type: select
-        options:
-          - label: Low
-            value: low
-          - label: High
-            value: high
+name: task
+label: Task
+fields:
+  title:
+    type: text
+    required: true
+  completed:
+    type: boolean
+    default: false
+  priority:
+    type: select
+    options:
+      - label: Low
+        value: low
+      - label: High
+        value: high
 ```
 
 ## 3. Start the Server

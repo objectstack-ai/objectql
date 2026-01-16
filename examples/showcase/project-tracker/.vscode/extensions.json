@@ -1,0 +1,7 @@
+{
+  "recommendations": [
+    "objectstack-ai.vscode-objectql",
+    "redhat.vscode-yaml",
+    "dbaeumer.vscode-eslint"
+  ]
+}
