@@ -1,36 +1,84 @@
 # IDE Setup
 
-To get the best experience developing with ObjectQL, we recommend Visual Studio Code with the following configuration.
+To get the best experience developing with ObjectQL, we recommend **Visual Studio Code** equipped with the official toolset. This setup provides you with an "AI-like" development experience with intelligent auto-completion, real-time validation, and instant code generation.
 
-## Visual Studio Code
+## Visual Studio Code Extension
 
-We recommend using [VS Code](https://code.visualstudio.com/) as your primary editor.
+The **Standard ObjectStack AI Extension** transforms VS Code into a dedicated IDE for ObjectQL.
 
-### Recommended Extensions
+### Core Features
 
-**1. ObjectQL Extension** ⭐  
-The official ObjectQL extension provides intelligent IntelliSense, schema validation, and code snippets for all ObjectQL metadata files.
+1.  **Metadata Generators** ⚡
+    *   Instantly scaffold new files using the Command Palette.
+    *   Supported templates: Object Definitions, Validation Rules, Permission Policies, App Configurations.
+    *   *Usage:* `Cmd+Shift+P` -> Type `ObjectQL: New...`
 
-Features:
-- Auto-completion for `.object.yml`, `.validation.yml`, `.permission.yml`, `.app.yml` files
-- Real-time JSON Schema validation
-- 30+ code snippets for common patterns
-- Quick commands to create new ObjectQL files
-- File icons and syntax highlighting
-- TypeScript snippets for hooks and actions
+2.  **Intelligent IntelliSense** 🧠
+    *   **Schema-Aware:** The extension understands the full ObjectQL protocol (`@objectql/types`).
+    *   **Auto-Completion:** Get suggestions for valid field types (`text`, `select`, `lookup`...), column options, and relationship targets.
+    *   **Validation:** Real-time red-line error reporting for missing required fields or invalid types according to the strict schema.
 
-**Installation:**
-- From source: See `packages/tools/vscode-objectql/INSTALL.md`
-- Will be available on VS Code Marketplace soon
+3.  **Smart Snippets** 📝
+    *   Type `oql-` to trigger a rich library of snippets.
+    *   **Objects:** `oql-field-lookup`, `oql-field-select`, `oql-index`
+    *   **Logic:** `oql-hook-beforeCreate`, `oql-action-record`
+    *   **Validation:** `oql-validation-business`
 
-**2. YAML (Red Hat)**  
-Essential for editing `*.object.yml` files. Provides syntax highlighting and validation.  
-[Install Extension](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-yaml)
+### Installation
 
-**Note:** The ObjectQL extension depends on the Red Hat YAML extension and will prompt you to install it automatically.
+#### Option 1: VS Code Marketplace (Recommended)
+Search for **"ObjectQL"** in the Extensions view (`Cmd+Shift+X`) and install.
 
-**3. JSON (Official)**  
-For editing configuration files.
+#### Option 2: Install from VSIX (For Enterprise/Offline)
+If you are building from source or using a private build:
+1.  Run `pnpm run package` in `packages/tools/vscode-objectql`.
+2.  In VS Code, run command: **"Extensions: Install from VSIX..."**
+3.  Select the generated `.vsix` file.
+
+### Recommended Usage
+
+To maximize productivity, we recommend the following workflow:
+
+1.  **Create an Object:**
+    Run **"ObjectQL: New Object Definition"**. Enter a name (e.g., `invoice`).
+    *Result:* `src/objects/invoice.object.yml` is created with standard fields definitions.
+
+2.  **Add Fields:**
+    Open the file and use Snippets.
+    *   Type `oql-field-lookup` -> tab -> auto-fills a relationship field structure.
+    *   Type `oql-index` -> tab -> adds a database index.
+
+3.  **Validate:**
+    The extension runs silently in the background. If you see red squiggles, hover over them to see exactly which protocol rule was violated (e.g., "Field 'required' must be a boolean").
+
+---
+
+## Other Essential Extensions
+
+The ObjectQL extension automatically configures these for you, but they are worth noting:
+
+*   **[YAML (Red Hat)](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-yaml):**
+    *   *Why:* The engine behind our schema validation.
+    *   *Config:* Our extension automatically injects ObjectQL schemas into this plugin's settings.
+
+*   **[ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint) & [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode):**
+    *   *Why:* For formatting your TypeScript Logic Hooks (`*.hook.ts`).
+
+---
+
+## Workspace Settings
+
+For teams working on ObjectQL projects, we recommend committing a `.vscode/extensions.json` file to suggest these tools to all developers:
+
+```json
+{
+  "recommendations": [
+    "objectstack-ai.vscode-objectql",
+    "redhat.vscode-yaml",
+    "dbaeumer.vscode-eslint"
+  ]
+}
+```
 
 ## Git Configuration
 
@@ -43,11 +91,6 @@ bash scripts/setup-merge-driver.sh
 ```
 
 This configures Git to automatically regenerate the lock file when conflicts occur by running `pnpm install`.
-
-**What it does:**
-- Configures a custom merge driver named "pnpm-merge"
-- When `pnpm-lock.yaml` has merge conflicts, Git will automatically run `pnpm install` to regenerate it
-- This eliminates the need to manually resolve lock file conflicts
 
 **Manual Configuration:**
 

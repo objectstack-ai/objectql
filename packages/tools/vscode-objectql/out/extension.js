@@ -46,8 +46,6 @@ function activate(context) {
     console.log('ObjectQL extension is now active!');
     // Register commands
     context.subscriptions.push(vscode.commands.registerCommand('objectql.newObject', () => createNewFile(context, 'object')), vscode.commands.registerCommand('objectql.newValidation', () => createNewFile(context, 'validation')), vscode.commands.registerCommand('objectql.newPermission', () => createNewFile(context, 'permission')), vscode.commands.registerCommand('objectql.newApp', () => createNewFile(context, 'app')), vscode.commands.registerCommand('objectql.validateSchema', validateCurrentFile));
-    // Configure YAML language server for ObjectQL files
-    configureYamlLanguageServer();
     // Show welcome message on first activation
     const hasShownWelcome = context.globalState.get('objectql.hasShownWelcome', false);
     if (!hasShownWelcome) {
@@ -87,10 +85,18 @@ async function createNewFile(context, fileType) {
         return;
     }
     // Determine file path
+    // Guess the location based on standard folder structure
+    let folder = 'src';
+    if (fileType === 'object') {
+        folder = 'src/objects';
+    }
+    else if (fileType === 'app') {
+        folder = 'src';
+    }
     const fullFileName = `${fileName}.${fileType}.yml`;
-    const defaultPath = path.join(workspaceFolder.uri.fsPath, 'src', 'objects', fullFileName);
+    const defaultPath = path.join(workspaceFolder.uri.fsPath, folder, fullFileName);
     // Get template content
-    const template = getTemplate(fileType, fileName);
+    const template = getTemplate(context, fileType, fileName);
     try {
         // Ensure directory exists
         const dir = path.dirname(defaultPath);
@@ -116,193 +122,38 @@ async function createNewFile(context, fileType) {
     }
 }
 /**
- * Get template content for file type
+ * Get template content for file type from template files
  */
-function getTemplate(fileType, name) {
-    switch (fileType) {
-        case 'object':
-            return `# ObjectQL Object Definition
-# Documentation: https://github.com/objectstack-ai/objectql
-
-name: ${name}
-label: ${capitalizeWords(name)}
-description: "${capitalizeWords(name)} object"
-
-fields:
-  name:
-    type: text
-    label: Name
-    required: true
-    searchable: true
-    help_text: "The name of the ${name}"
-  
-  description:
-    type: textarea
-    label: Description
-    help_text: "Detailed description"
-  
-  status:
-    type: select
-    label: Status
-    options:
-      - label: Active
-        value: active
-      - label: Inactive
-        value: inactive
-    defaultValue: active
-  
-  created_by:
-    type: lookup
-    label: Created By
-    reference_to: users
-    readonly: true
-  
-  created_at:
-    type: datetime
-    label: Created At
-    readonly: true
-
-# Indexes for performance
-indexes:
-  name_idx:
-    fields: [name]
-  status_idx:
-    fields: [status]
-
-# Validation rules (optional)
-validation:
-  rules:
-    - name: name_required
-      type: cross_field
-      message: "Name is required"
-      rule:
-        field: name
-        operator: "!="
-        value: null
-`;
-        case 'validation':
-            return `# ObjectQL Validation Rules
-# Documentation: https://github.com/objectstack-ai/objectql/docs/spec/validation.md
-
-# Object-level validation rules
-rules:
-  # Cross-field validation example
-  - name: end_after_start
-    type: cross_field
-    message: "End date must be after start date"
-    fields: [start_date, end_date]
-    rule:
-      field: end_date
-      operator: ">"
-      compare_to: start_date
-    trigger: [create, update]
-    severity: error
-
-  # Business rule example
-  - name: status_approval_required
-    type: business_rule
-    message: "Approval required before activation"
-    constraint:
-      expression: "status === 'active' && approved === true"
-    trigger: [create, update]
-    severity: error
-
-  # Uniqueness validation
-  - name: unique_email
-    type: unique
-    message: "Email must be unique"
-    field: email
-    case_sensitive: false
-    trigger: [create, update]
-`;
-        case 'permission':
-            return `# ObjectQL Permission Rules
-# Documentation: https://github.com/objectstack-ai/objectql/docs/spec/permission.md
-
-# Role-based permissions
-roles:
-  admin:
-    permissions:
-      create: true
-      read: true
-      update: true
-      delete: true
-  
-  user:
-    permissions:
-      create: true
-      read: true
-      update: 
-        condition: "owner === $userId"
-      delete: false
-  
-  guest:
-    permissions:
-      create: false
-      read: true
-      update: false
-      delete: false
-
-# Field-level permissions
-field_permissions:
-  sensitive_data:
-    roles: [admin]
-    mask: true
-  
-  internal_notes:
-    roles: [admin, user]
-
-# Record-level security (Row-Level Security)
-record_permissions:
-  owner_only:
-    condition: "owner === $userId"
-    roles: [user]
-`;
-        case 'app':
-            return `# ObjectQL Application Configuration
-# Documentation: https://github.com/objectstack-ai/objectql/docs/spec/app.md
-
-name: ${name}
-label: ${capitalizeWords(name)}
-description: "${capitalizeWords(name)} application"
-version: "1.0.0"
-
-# Application metadata
-metadata:
-  author: "Your Name"
-  license: "MIT"
-
-# Navigation and menu structure
-navigation:
-  - label: Home
-    path: /
-    icon: home
-  
-  - label: ${capitalizeWords(name)}
-    icon: database
-    children:
-      - label: List
-        path: /${name}
-        object: ${name}
-      - label: Create New
-        path: /${name}/new
-        object: ${name}
-
-# Objects included in this app
-objects:
-  - ${name}
-
-# Themes and branding
-theme:
-  primary_color: "#0066cc"
-  secondary_color: "#6c757d"
-`;
-        default:
-            return '';
+function getTemplate(context, fileType, name) {
+    try {
+        // Check if we are running from 'out' or 'src'
+        // Usually extension path is the root of the package.
+        let templatePath = path.join(context.extensionPath, 'src', 'templates', `${fileType}.template.yml`);
+        // Fallback if not found (maybe flattened or in out)
+        if (!fs.existsSync(templatePath)) {
+            templatePath = path.join(context.extensionPath, 'out', 'templates', `${fileType}.template.yml`);
+        }
+        if (fs.existsSync(templatePath)) {
+            let content = fs.readFileSync(templatePath, 'utf8');
+            content = content.replace(/{{name}}/g, name);
+            content = content.replace(/{{label}}/g, capitalizeWords(name));
+            return content;
+        }
+        // Fallback to hardcoded string if file read fails (Safety net)
+        console.warn(`Template file not found at ${templatePath}, utilizing fallback.`);
+        return getFallbackTemplate(fileType, name);
+    }
+    catch (e) {
+        console.error('Error reading template:', e);
+        return getFallbackTemplate(fileType, name);
     }
 }
+function getFallbackTemplate(fileType, name) {
+    // Minimal fallback
+    return `# ${capitalizeWords(name)} ${fileType}\nname: ${name}\n`;
+}
 /**
- * Validate current file against schema
+ * Validate current file by saving (triggers schema validation)
  */
 async function validateCurrentFile() {
     const editor = vscode.window.activeTextEditor;
@@ -321,23 +172,6 @@ async function validateCurrentFile() {
     // Trigger validation by saving
     await document.save();
     vscode.window.showInformationMessage('Validation complete. Check Problems panel for issues.');
-}
-/**
- * Configure YAML language server settings for ObjectQL
- */
-function configureYamlLanguageServer() {
-    const config = vscode.workspace.getConfiguration('yaml');
-    const schemas = config.get('schemas', {});
-    // Check if ObjectQL schemas are already configured
-    const hasObjectSchema = Object.values(schemas).some(val => (Array.isArray(val) && val.some(v => v.includes('*.object.yml'))) ||
-        (typeof val === 'string' && val.includes('*.object.yml')));
-    if (!hasObjectSchema) {
-        vscode.window.showInformationMessage('ObjectQL extension works best with YAML language support. Please install "Red Hat YAML" extension if not already installed.', 'Install').then((selection) => {
-            if (selection === 'Install') {
-                vscode.commands.executeCommand('workbench.extensions.search', 'redhat.vscode-yaml');
-            }
-        });
-    }
 }
 /**
  * Show welcome message

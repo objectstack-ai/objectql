@@ -208,6 +208,7 @@
   },
   "scripts": {
     "vscode:prepublish": "pnpm run compile",
+    "build": "pnpm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "pretest": "pnpm run compile",
