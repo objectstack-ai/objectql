@@ -1,0 +1,231 @@
+{
+  "name": "vscode-objectql",
+  "displayName": "ObjectQL",
+  "description": "Language support for ObjectQL - The Standard Protocol for AI Software Generation",
+  "version": "0.1.0",
+  "publisher": "objectstack-ai",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/objectstack-ai/objectql"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Snippets",
+    "Formatters",
+    "Linters"
+  ],
+  "keywords": [
+    "objectql",
+    "yaml",
+    "schema",
+    "orm",
+    "ai",
+    "metadata"
+  ],
+  "activationEvents": [
+    "workspaceContains:**/*.object.yml",
+    "workspaceContains:**/*.validation.yml",
+    "workspaceContains:**/*.permission.yml",
+    "workspaceContains:**/*.app.yml",
+    "workspaceContains:**/*.action.ts",
+    "workspaceContains:**/*.hook.ts"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "objectql-object",
+        "aliases": [
+          "ObjectQL Object",
+          "objectql-object"
+        ],
+        "extensions": [
+          ".object.yml"
+        ],
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./images/file-icons/object-light.svg",
+          "dark": "./images/file-icons/object-dark.svg"
+        }
+      },
+      {
+        "id": "objectql-validation",
+        "aliases": [
+          "ObjectQL Validation"
+        ],
+        "extensions": [
+          ".validation.yml"
+        ],
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./images/file-icons/validation-light.svg",
+          "dark": "./images/file-icons/validation-dark.svg"
+        }
+      },
+      {
+        "id": "objectql-permission",
+        "aliases": [
+          "ObjectQL Permission"
+        ],
+        "extensions": [
+          ".permission.yml"
+        ],
+        "configuration": "./language-configuration.json"
+      },
+      {
+        "id": "objectql-app",
+        "aliases": [
+          "ObjectQL Application"
+        ],
+        "extensions": [
+          ".app.yml"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "yamlValidation": [
+      {
+        "fileMatch": "*.object.yml",
+        "url": "./schemas/object.schema.json"
+      },
+      {
+        "fileMatch": "*.app.yml",
+        "url": "./schemas/app.schema.json"
+      }
+    ],
+    "jsonValidation": [
+      {
+        "fileMatch": "*.object.json",
+        "url": "./schemas/object.schema.json"
+      },
+      {
+        "fileMatch": "*.app.json",
+        "url": "./schemas/app.schema.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "yaml",
+        "path": "./snippets/objectql.json"
+      },
+      {
+        "language": "typescript",
+        "path": "./snippets/hooks-actions.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "objectql.newObject",
+        "title": "ObjectQL: New Object Definition",
+        "category": "ObjectQL"
+      },
+      {
+        "command": "objectql.newValidation",
+        "title": "ObjectQL: New Validation Rules",
+        "category": "ObjectQL"
+      },
+      {
+        "command": "objectql.newPermission",
+        "title": "ObjectQL: New Permission Rules",
+        "category": "ObjectQL"
+      },
+      {
+        "command": "objectql.newApp",
+        "title": "ObjectQL: New Application Config",
+        "category": "ObjectQL"
+      },
+      {
+        "command": "objectql.validateSchema",
+        "title": "ObjectQL: Validate Current File",
+        "category": "ObjectQL"
+      }
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "submenu": "objectql.new",
+          "group": "navigation@10"
+        }
+      ],
+      "objectql.new": [
+        {
+          "command": "objectql.newObject",
+          "group": "objectql@1"
+        },
+        {
+          "command": "objectql.newValidation",
+          "group": "objectql@2"
+        },
+        {
+          "command": "objectql.newPermission",
+          "group": "objectql@3"
+        },
+        {
+          "command": "objectql.newApp",
+          "group": "objectql@4"
+        }
+      ]
+    },
+    "submenus": [
+      {
+        "id": "objectql.new",
+        "label": "New ObjectQL File"
+      }
+    ],
+    "configuration": {
+      "title": "ObjectQL",
+      "properties": {
+        "objectql.validation.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable schema validation for ObjectQL files"
+        },
+        "objectql.completion.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable auto-completion for ObjectQL files"
+        },
+        "objectql.diagnostics.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable diagnostics for ObjectQL files"
+        },
+        "objectql.trace.server": {
+          "type": "string",
+          "enum": [
+            "off",
+            "messages",
+            "verbose"
+          ],
+          "default": "off",
+          "description": "Traces the communication between VS Code and the language server"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile",
+    "test": "echo 'No tests defined for vscode-objectql extension yet'",
+    "package": "vsce package",
+    "publish": "vsce publish"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/vscode": "^1.85.0",
+    "@vscode/test-electron": "^2.3.0",
+    "typescript": "^5.3.0",
+    "@vscode/vsce": "^2.22.0"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1"
+  },
+  "extensionDependencies": [
+    "redhat.vscode-yaml"
+  ]
+}

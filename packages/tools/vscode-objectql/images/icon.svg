@@ -1,0 +1,19 @@
+<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="128" height="128" fill="#0066cc" rx="16"/>
+  
+  <!-- Grid/Database icon representing structured data -->
+  <g transform="translate(24, 24)">
+    <!-- Top layer -->
+    <ellipse cx="40" cy="15" rx="35" ry="10" fill="none" stroke="white" stroke-width="3"/>
+    <!-- Middle layer -->
+    <line x1="5" y1="15" x2="5" y2="55" stroke="white" stroke-width="3"/>
+    <line x1="75" y1="15" x2="75" y2="55" stroke="white" stroke-width="3"/>
+    <!-- Bottom -->
+    <ellipse cx="40" cy="55" rx="35" ry="10" fill="none" stroke="white" stroke-width="3"/>
+    
+    <!-- AI/Smart indicator -->
+    <circle cx="65" cy="65" r="15" fill="#00d4ff"/>
+    <text x="65" y="72" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="white" text-anchor="middle">AI</text>
+  </g>
+</svg>

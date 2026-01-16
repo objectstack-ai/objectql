@@ -223,6 +223,33 @@ ObjectQL supports three distinct query interfaces, each optimized for different 
 
 ---
 
+## 🛠️ Developer Tools
+
+### VSCode Extension
+
+Enhance your ObjectQL development experience with our official VSCode extension.
+
+**Features:**
+- 🎯 Intelligent IntelliSense for `.object.yml`, `.validation.yml`, `.permission.yml`, `.app.yml`
+- ✅ Real-time JSON Schema validation with inline errors
+- 📝 30+ code snippets for objects, fields, validations, hooks, and actions
+- ⚡ Quick commands to create new ObjectQL files from templates
+- 🎨 Custom file icons and syntax highlighting
+- 🔍 Context-aware auto-completion
+
+**Installation:**
+```bash
+cd packages/tools/vscode-objectql
+npm install
+npm run compile
+npm run package
+# Then install the generated .vsix file in VS Code
+```
+
+See [`packages/tools/vscode-objectql/README.md`](./packages/tools/vscode-objectql/README.md) for detailed documentation.
+
+---
+
 ## 🛠️ Validation & Logic
 
 ObjectQL includes a powerful validation engine that runs universally.

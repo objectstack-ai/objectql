@@ -9,6 +9,7 @@
     { "path": "./packages/foundation/platform-node" },
     { "path": "./packages/runtime/server" },
     { "path": "./packages/tools/cli" },
+    { "path": "./packages/tools/vscode-objectql" },
     { "path": "./examples/integrations/express-server" },
     { "path": "./examples/showcase/project-tracker" },
     { "path": "./examples/showcase/enterprise-erp" }

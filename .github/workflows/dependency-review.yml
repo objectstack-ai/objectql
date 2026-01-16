@@ -23,5 +23,7 @@ jobs:
           fail-on-severity: moderate
           # Warn about deprecated packages
           warn-on-deprecated: true
-          # Comment on the PR with the review results
-          comment-summary-in-pr: on-failure
+          # Use config file to set OpenSSF Scorecard threshold
+          config-file: './.github/dependency-review-config.yml'
+          # Don't auto-comment on PR to avoid hitting GitHub's 64KB comment size limit
+          # Users can view the full report in the Actions tab or download the artifact

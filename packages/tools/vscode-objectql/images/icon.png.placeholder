@@ -1,0 +1,3 @@
+# This is a placeholder. The actual PNG icon should be generated from icon.svg
+# You can use an online SVG to PNG converter or ImageMagick:
+# convert -background none -resize 128x128 images/icon.svg images/icon.png

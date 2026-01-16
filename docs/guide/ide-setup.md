@@ -8,11 +8,28 @@ We recommend using [VS Code](https://code.visualstudio.com/) as your primary edi
 
 ### Recommended Extensions
 
-**1. YAML (Red Hat)**  
-Essential for editing `*.object.yml` files. It provides syntax highlighting and validation.  
+**1. ObjectQL Extension** ⭐  
+The official ObjectQL extension provides intelligent IntelliSense, schema validation, and code snippets for all ObjectQL metadata files.
+
+Features:
+- Auto-completion for `.object.yml`, `.validation.yml`, `.permission.yml`, `.app.yml` files
+- Real-time JSON Schema validation
+- 30+ code snippets for common patterns
+- Quick commands to create new ObjectQL files
+- File icons and syntax highlighting
+- TypeScript snippets for hooks and actions
+
+**Installation:**
+- From source: See `packages/tools/vscode-objectql/INSTALL.md`
+- Will be available on VS Code Marketplace soon
+
+**2. YAML (Red Hat)**  
+Essential for editing `*.object.yml` files. Provides syntax highlighting and validation.  
 [Install Extension](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-yaml)
 
-**2. JSON (Official)**  
+**Note:** The ObjectQL extension depends on the Red Hat YAML extension and will prompt you to install it automatically.
+
+**3. JSON (Official)**  
 For editing configuration files.
 
 ## Git Configuration

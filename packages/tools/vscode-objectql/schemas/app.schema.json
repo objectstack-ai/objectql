@@ -1,0 +1,50 @@
+{
+  "$ref": "#/definitions/AppConfig",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "AppConfig": {
+      "additionalProperties": {
+        "description": "Custom metadata/settings"
+      },
+      "properties": {
+        "description": {
+          "description": "Description of what this application does",
+          "type": "string"
+        },
+        "homepage": {
+          "description": "Default path to redirect when opening the app",
+          "type": "string"
+        },
+        "icon": {
+          "description": "Icon name/class for the application",
+          "type": "string"
+        },
+        "is_active": {
+          "description": "Whether the application is enabled",
+          "type": "boolean"
+        },
+        "label": {
+          "description": "Display label for the application",
+          "type": "string"
+        },
+        "logo": {
+          "description": "URL to the application logo",
+          "type": "string"
+        },
+        "name": {
+          "description": "Unique identifier for the application",
+          "type": "string"
+        },
+        "sort_no": {
+          "description": "Sort order for display",
+          "type": "number"
+        }
+      },
+      "required": [
+        "name",
+        "label"
+      ],
+      "type": "object"
+    }
+  }
+}
