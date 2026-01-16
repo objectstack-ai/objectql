@@ -1,5 +1,17 @@
 # @objectql/types
 
+## 1.9.0
+
+### Minor Changes
+
+- Major documentation update and VS Code extension improvements
+  - Completely revised getting started documentation with emphasis on YAML-based metadata approach
+  - Improved quick start instructions for better onboarding experience
+  - Added comprehensive VS Code extension recommendations to example projects
+  - Enhanced developer experience with .vscode/extensions.json files
+  - Updated README to highlight the importance of the ObjectQL VS Code extension
+  - Added detailed documentation for all core features and API endpoints
+
 ## 1.8.4
 
 ### Patch Changes

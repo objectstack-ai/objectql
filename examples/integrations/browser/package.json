@@ -1,6 +1,6 @@
 {
   "name": "@objectql/example-browser",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "description": "Browser demo for ObjectQL showing Memory and LocalStorage drivers",
   "type": "module",

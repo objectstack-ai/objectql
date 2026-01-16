@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.1
+
+### Patch Changes
+
+- Updated dependencies
+  - @objectql/types@1.9.0
+
 All notable changes to the Memory Driver for ObjectQL will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
@@ -8,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.0] - 2026-01-15
 
 ### Added
+
 - Initial release of Memory Driver
 - Full implementation of ObjectQL Driver interface
 - Zero external dependencies
@@ -29,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TypeScript type definitions
 
 ### Features
+
 - ✅ Production-ready for non-persistent use cases
 - ✅ Perfect for testing and development
 - ✅ Works in all JavaScript environments (Node.js, Browser, Edge)
@@ -37,6 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ✅ Atomic updates and deletes
 
 ### Use Cases
+
 - Unit testing without database setup
 - Development and prototyping
 - Edge/Worker environments (Cloudflare Workers, Deno Deploy)
@@ -45,6 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CI/CD pipelines
 
 ### Performance
+
 - Create: O(1)
 - Read by ID: O(1)
 - Update: O(1)
@@ -54,6 +65,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Sort: O(n log n)
 
 ### Documentation
+
 - Comprehensive README with examples
 - API reference
 - Configuration guide

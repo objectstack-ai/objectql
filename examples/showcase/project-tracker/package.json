@@ -1,6 +1,6 @@
 {
   "name": "@objectql/example-project-tracker",
-  "version": "1.8.4",
+  "version": "2.0.0",
   "description": "ObjectQL Basic Example Project",
   "private": true,
   "keywords": [
