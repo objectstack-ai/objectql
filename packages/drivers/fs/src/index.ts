@@ -421,6 +421,13 @@ export class FileSystemDriver implements Driver {
 
     /**
      * Apply filters to an array of records.
+     * 
+     * Supports ObjectQL filter format with logical operators (AND/OR):
+     * [
+     *   ['field', 'operator', value],
+     *   'or',
+     *   ['field2', 'operator', value2]
+     * ]
      */
     private applyFilters(records: any[], filters: any[]): any[] {
         if (!filters || filters.length === 0) {
@@ -463,7 +470,7 @@ export class FileSystemDriver implements Driver {
         }
 
         let result = conditions[0];
-        for (let i = 0; i < operators.length; i++) {
+        for (let i = 0; i < operators.length && i + 1 < conditions.length; i++) {
             const op = operators[i];
             const nextCondition = conditions[i + 1];
 
@@ -578,6 +585,8 @@ export class FileSystemDriver implements Driver {
 
     /**
      * Generate a unique ID for a record.
+     * Uses timestamp + counter for uniqueness.
+     * Note: For production use with high-frequency writes, consider using crypto.randomUUID().
      */
     private generateId(objectName: string): string {
         const counter = (this.idCounters.get(objectName) || 0) + 1;
