@@ -1,6 +1,6 @@
 {
   "name": "@objectql/sdk",
-  "version": "1.9.1",
+  "version": "2.0.0",
   "description": "Remote HTTP driver for ObjectQL - Universal client for browser, Node.js, and edge runtimes",
   "keywords": [
     "objectql",

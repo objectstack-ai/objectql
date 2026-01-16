@@ -6,13 +6,18 @@
     [
       "@objectql/cli",
       "@objectql/core",
-      "@objectql/driver-sql",
+      "@objectql/create",
+      "@objectql/driver-excel",
+      "@objectql/driver-fs",
+      "@objectql/driver-localstorage",
+      "@objectql/driver-memory",
       "@objectql/driver-mongo",
       "@objectql/driver-redis",
+      "@objectql/driver-sql",
+      "@objectql/platform-node",
       "@objectql/sdk",
       "@objectql/server",
-      "@objectql/types",
-      "@objectql/platform-node"
+      "@objectql/types"
     ]
   ],
   "linked": [],

@@ -1,6 +1,6 @@
 {
   "name": "@objectql/types",
-  "version": "1.9.1",
+  "version": "2.0.0",
   "description": "Pure TypeScript type definitions and interfaces for the ObjectQL protocol - The Contract",
   "keywords": [
     "objectql",

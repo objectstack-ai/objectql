@@ -1,6 +1,6 @@
 {
   "name": "@objectql/driver-sql",
-  "version": "1.9.1",
+  "version": "2.0.0",
   "description": "SQL database driver for ObjectQL - Supports PostgreSQL, MySQL, SQLite via Knex with smart hybrid mode",
   "keywords": [
     "objectql",
