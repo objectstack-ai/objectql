@@ -10,6 +10,8 @@ This guide shows how to build and install the ObjectQL VSCode extension.
 
 ## Build from Source
 
+⚠️ **Note:** This project uses `pnpm` workspaces. Ensure you are running commands from the root or using strictly `pnpm`.
+
 1. **Navigate to the extension directory:**
 ```bash
 cd packages/tools/vscode-objectql
@@ -17,20 +19,43 @@ cd packages/tools/vscode-objectql
 
 2. **Install dependencies:**
 ```bash
-npm install
+pnpm install
 ```
 
 3. **Compile TypeScript:**
 ```bash
-npm run compile
+pnpm run compile
 ```
 
 4. **Package the extension:**
 ```bash
-npm run package
+pnpm run package
 ```
 
 This creates a `.vsix` file (e.g., `vscode-objectql-0.1.0.vsix`).
+
+## Publishing (Maintainers Only)
+
+To publish a new version to the VS Code Marketplace:
+
+1. **Install vsce:**
+```bash
+pnpm add -g @vscode/vsce
+```
+
+2. **Login to Azure DevOps:**
+```bash
+vsce login <publisher_id>
+```
+
+3. **Publish:**
+```bash
+# Increment version number automatically
+pnpm version patch # or minor, major
+
+# Publish
+pnpm run publish
+```
 
 ## Install the Extension
 

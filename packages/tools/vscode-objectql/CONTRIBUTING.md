@@ -12,7 +12,7 @@ cd objectql/packages/tools/vscode-objectql
 
 2. Install dependencies:
 ```bash
-npm install
+pnpm install
 ```
 
 3. Open in VS Code:

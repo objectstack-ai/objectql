@@ -207,10 +207,10 @@
     }
   },
   "scripts": {
-    "vscode:prepublish": "npm run compile",
+    "vscode:prepublish": "pnpm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "pretest": "npm run compile",
+    "pretest": "pnpm run compile",
     "test": "echo 'No tests defined for vscode-objectql extension yet'",
     "package": "vsce package",
     "publish": "vsce publish"
