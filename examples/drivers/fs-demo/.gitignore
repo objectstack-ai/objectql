@@ -1,0 +1,11 @@
+# Data directory (generated at runtime)
+data/
+
+# Node modules
+node_modules/
+
+# Build output
+dist/
+
+# OS files
+.DS_Store
