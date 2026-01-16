@@ -12,6 +12,7 @@
  * - Full CRUD operations
  * - Query support (filters, sorting, pagination)
  * - Automatic data type handling
+ * - Secure: Uses ExcelJS (no known vulnerabilities)
  * 
  * Use Cases:
  * - Import/export data from Excel spreadsheets
@@ -21,7 +22,7 @@
  */
 
 import { Driver, ObjectQLError } from '@objectql/types';
-import * as XLSX from 'xlsx';
+import * as ExcelJS from 'exceljs';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -44,10 +45,12 @@ export interface ExcelDriverConfig {
  * 
  * Stores ObjectQL documents in Excel worksheets. Each object type is stored
  * in a separate worksheet, with the first row containing column headers.
+ * 
+ * Uses ExcelJS library for secure Excel file operations.
  */
 export class ExcelDriver implements Driver {
     private config: ExcelDriverConfig;
-    private workbook!: XLSX.WorkBook;
+    private workbook!: ExcelJS.Workbook;
     private data: Map<string, any[]>;
     private idCounters: Map<string, number>;
     private filePath: string;
@@ -63,19 +66,38 @@ export class ExcelDriver implements Driver {
         this.filePath = path.resolve(config.filePath);
         this.data = new Map<string, any[]>();
         this.idCounters = new Map<string, number>();
+        this.workbook = new ExcelJS.Workbook();
         
-        // Load existing workbook or create new one
-        this.loadWorkbook();
+        // Note: Actual file loading happens in init()
+        // Call init() after construction or use the async create() factory method
+    }
+
+    /**
+     * Initialize the driver by loading the workbook from file.
+     * This must be called after construction before using the driver.
+     */
+    async init(): Promise<void> {
+        await this.loadWorkbook();
+    }
+
+    /**
+     * Factory method to create and initialize the driver.
+     */
+    static async create(config: ExcelDriverConfig): Promise<ExcelDriver> {
+        const driver = new ExcelDriver(config);
+        await driver.init();
+        return driver;
     }
 
     /**
      * Load workbook from file or create a new one.
      */
-    private loadWorkbook(): void {
+    private async loadWorkbook(): Promise<void> {
+        this.workbook = new ExcelJS.Workbook();
+        
         if (fs.existsSync(this.filePath)) {
             try {
-                const fileBuffer = fs.readFileSync(this.filePath);
-                this.workbook = XLSX.read(fileBuffer, { type: 'buffer' });
+                await this.workbook.xlsx.readFile(this.filePath);
                 this.loadDataFromWorkbook();
             } catch (error) {
                 throw new ObjectQLError({
@@ -85,9 +107,8 @@ export class ExcelDriver implements Driver {
                 });
             }
         } else if (this.config.createIfMissing) {
-            // Create new workbook
-            this.workbook = XLSX.utils.book_new();
-            this.saveWorkbook();
+            // Create new empty workbook
+            await this.saveWorkbook();
         } else {
             throw new ObjectQLError({
                 code: 'FILE_NOT_FOUND',
@@ -101,31 +122,40 @@ export class ExcelDriver implements Driver {
      * Load data from workbook into memory.
      */
     private loadDataFromWorkbook(): void {
-        for (const sheetName of this.workbook.SheetNames) {
-            const worksheet = this.workbook.Sheets[sheetName];
-            // Convert with raw: true to preserve data types (numbers, dates, booleans)
-            // This maintains data integrity when reading from Excel
-            const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
-                defval: null,
-                raw: true // Preserve native types for better data integrity
+        this.workbook.eachSheet((worksheet) => {
+            const sheetName = worksheet.name;
+            const records: any[] = [];
+            
+            // Get headers from first row
+            const headerRow = worksheet.getRow(1);
+            const headers: string[] = [];
+            headerRow.eachCell((cell, colNumber) => {
+                headers[colNumber - 1] = String(cell.value);
             });
             
-            // Convert array of objects to proper format
-            // Create new objects to avoid mutating original jsonData
-            const records = jsonData.map((row: any) => {
-                const record = { ...row };
+            // Skip first row (headers) and read data rows
+            worksheet.eachRow((row, rowNumber) => {
+                if (rowNumber === 1) return; // Skip header row
+                
+                const record: any = {};
+                row.eachCell((cell, colNumber) => {
+                    const header = headers[colNumber - 1];
+                    if (header) {
+                        record[header] = cell.value;
+                    }
+                });
+                
                 // Ensure ID exists
                 if (!record.id) {
                     record.id = this.generateId(sheetName);
                 }
-                return record;
+                
+                records.push(record);
             });
             
             this.data.set(sheetName, records);
-            
-            // Update ID counter based on existing IDs
             this.updateIdCounter(sheetName, records);
-        }
+        });
     }
 
     /**
@@ -162,12 +192,8 @@ export class ExcelDriver implements Driver {
 
     /**
      * Save workbook to file.
-     * 
-     * Note: The xlsx library requires at least one sheet in the workbook before writing.
-     * We add a placeholder sheet for empty workbooks, which is automatically removed
-     * when the first real object/sheet is added via syncToWorkbook().
      */
-    private saveWorkbook(): void {
+    private async saveWorkbook(): Promise<void> {
         try {
             // Ensure directory exists
             const dir = path.dirname(this.filePath);
@@ -175,15 +201,8 @@ export class ExcelDriver implements Driver {
                 fs.mkdirSync(dir, { recursive: true });
             }
             
-            // xlsx library requires at least one sheet in the workbook
-            // Add a placeholder sheet for empty workbooks (will be removed when first real sheet is added)
-            if (this.workbook.SheetNames.length === 0) {
-                const placeholderSheet = XLSX.utils.aoa_to_sheet([[]]);
-                XLSX.utils.book_append_sheet(this.workbook, placeholderSheet, '_placeholder');
-            }
-            
             // Write workbook to file
-            XLSX.writeFile(this.workbook, this.filePath);
+            await this.workbook.xlsx.writeFile(this.filePath);
         } catch (error) {
             throw new ObjectQLError({
                 code: 'FILE_WRITE_ERROR',
@@ -197,32 +216,47 @@ export class ExcelDriver implements Driver {
      * Sync in-memory data to workbook.
      * 
      * Creates or updates a worksheet for the given object type.
-     * Automatically removes the placeholder sheet when first real data is added.
      */
-    private syncToWorkbook(objectName: string): void {
+    private async syncToWorkbook(objectName: string): Promise<void> {
         const records = this.data.get(objectName) || [];
         
-        // Create worksheet from JSON data
-        const worksheet = XLSX.utils.json_to_sheet(records);
-        
-        // Remove placeholder sheet if it exists (it was added for empty workbooks)
-        // This ensures we don't have orphaned placeholder sheets in the file
-        if (this.workbook.SheetNames.includes('_placeholder')) {
-            const index = this.workbook.SheetNames.indexOf('_placeholder');
-            this.workbook.SheetNames.splice(index, 1);
-            delete this.workbook.Sheets['_placeholder'];
+        // Remove existing worksheet if it exists
+        const existingSheet = this.workbook.getWorksheet(objectName);
+        if (existingSheet) {
+            this.workbook.removeWorksheet(existingSheet.id);
         }
         
-        // Add or update worksheet in workbook
-        if (this.workbook.SheetNames.includes(objectName)) {
-            this.workbook.Sheets[objectName] = worksheet;
-        } else {
-            XLSX.utils.book_append_sheet(this.workbook, worksheet, objectName);
+        // Create new worksheet
+        const worksheet = this.workbook.addWorksheet(objectName);
+        
+        if (records.length > 0) {
+            // Get all unique keys from records to create headers
+            const headers = new Set<string>();
+            records.forEach(record => {
+                Object.keys(record).forEach(key => headers.add(key));
+            });
+            const headerArray = Array.from(headers);
+            
+            // Add header row
+            worksheet.addRow(headerArray);
+            
+            // Add data rows
+            records.forEach(record => {
+                const row = headerArray.map(header => record[header]);
+                worksheet.addRow(row);
+            });
+            
+            // Auto-fit columns
+            worksheet.columns.forEach(column => {
+                if (column.header) {
+                    column.width = Math.max(10, String(column.header).length + 2);
+                }
+            });
         }
         
         // Auto-save if enabled
         if (this.config.autoSave) {
-            this.saveWorkbook();
+            await this.saveWorkbook();
         }
     }
 
@@ -319,7 +353,7 @@ export class ExcelDriver implements Driver {
         };
         
         records.push(doc);
-        this.syncToWorkbook(objectName);
+        await this.syncToWorkbook(objectName);
         
         return { ...doc };
     }
@@ -352,7 +386,7 @@ export class ExcelDriver implements Driver {
         };
         
         records[index] = doc;
-        this.syncToWorkbook(objectName);
+        await this.syncToWorkbook(objectName);
         
         return { ...doc };
     }
@@ -376,7 +410,7 @@ export class ExcelDriver implements Driver {
         }
         
         records.splice(index, 1);
-        this.syncToWorkbook(objectName);
+        await this.syncToWorkbook(objectName);
         
         return true;
     }
@@ -456,7 +490,7 @@ export class ExcelDriver implements Driver {
         }
         
         if (count > 0) {
-            this.syncToWorkbook(objectName);
+            await this.syncToWorkbook(objectName);
         }
         
         return { modifiedCount: count };
@@ -475,7 +509,7 @@ export class ExcelDriver implements Driver {
         const deletedCount = initialLength - filtered.length;
         
         if (deletedCount > 0) {
-            this.syncToWorkbook(objectName);
+            await this.syncToWorkbook(objectName);
         }
         
         return { deletedCount };
@@ -485,7 +519,7 @@ export class ExcelDriver implements Driver {
      * Manually save the workbook to file.
      */
     async save(): Promise<void> {
-        this.saveWorkbook();
+        await this.saveWorkbook();
     }
 
     /**
@@ -493,7 +527,7 @@ export class ExcelDriver implements Driver {
      */
     async disconnect(): Promise<void> {
         if (this.config.autoSave) {
-            this.saveWorkbook();
+            await this.saveWorkbook();
         }
     }
 

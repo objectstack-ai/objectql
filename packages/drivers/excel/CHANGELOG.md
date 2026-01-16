@@ -16,6 +16,13 @@
 - TypeScript support with strict typing
 - Compatible with @objectql/types Driver interface
 
+### Security
+
+- **IMPORTANT**: Uses ExcelJS (v4.4.0) instead of xlsx library to avoid known security vulnerabilities
+- ExcelJS has no known CVEs and is actively maintained
+- Secure against ReDoS (Regular Expression Denial of Service) attacks
+- Protected from Prototype Pollution vulnerabilities
+
 ### Features
 
 - ✅ Read from existing Excel files
@@ -32,8 +39,14 @@
 - ✅ Strict mode support
 - ✅ Auto-generated IDs
 - ✅ Timestamps (created_at, updated_at)
+- ✅ Async/await API with factory pattern
 
 ### Dependencies
 
-- xlsx@^0.18.5 - Excel file read/write library
+- exceljs@^4.4.0 - Secure Excel file read/write library (actively maintained, no known CVEs)
 - @objectql/types@workspace:* - Core ObjectQL types
+
+### API Changes
+
+- Constructor requires async initialization via `ExcelDriver.create()` factory method
+- All file I/O operations are properly async for better performance

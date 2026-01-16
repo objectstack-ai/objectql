@@ -21,14 +21,14 @@ describe('ExcelDriver', () => {
         }
     });
 
-    beforeEach(() => {
+    beforeEach(async () => {
         // Clean up test file
         if (fs.existsSync(TEST_FILE)) {
             fs.unlinkSync(TEST_FILE);
         }
         
-        // Create new driver
-        driver = new ExcelDriver({
+        // Create new driver using factory method
+        driver = await ExcelDriver.create({
             filePath: TEST_FILE,
             createIfMissing: true,
             autoSave: true
@@ -59,7 +59,7 @@ describe('ExcelDriver', () => {
             });
             
             // Create new driver instance with same file
-            const driver2 = new ExcelDriver({
+            const driver2 = await ExcelDriver.create({
                 filePath: TEST_FILE,
                 createIfMissing: false
             });
@@ -71,19 +71,19 @@ describe('ExcelDriver', () => {
             await driver2.disconnect();
         });
 
-        it('should throw error if file does not exist and createIfMissing is false', () => {
+        it('should throw error if file does not exist and createIfMissing is false', async () => {
             const nonExistentFile = path.join(TEST_DIR, 'non-existent.xlsx');
             
-            expect(() => {
-                new ExcelDriver({
+            await expect(
+                ExcelDriver.create({
                     filePath: nonExistentFile,
                     createIfMissing: false
-                });
-            }).toThrow('Excel file not found');
+                })
+            ).rejects.toThrow('Excel file not found');
         });
 
         it('should support strict mode', async () => {
-            const strictDriver = new ExcelDriver({
+            const strictDriver = await ExcelDriver.create({
                 filePath: path.join(TEST_DIR, 'strict-test.xlsx'),
                 strictMode: true,
                 createIfMissing: true
@@ -395,7 +395,7 @@ describe('ExcelDriver', () => {
             await driver.save();
             
             // Create new driver instance
-            const driver2 = new ExcelDriver({
+            const driver2 = await ExcelDriver.create({
                 filePath: TEST_FILE,
                 createIfMissing: false
             });
@@ -422,7 +422,7 @@ describe('ExcelDriver', () => {
         });
 
         it('should handle autoSave disabled', async () => {
-            const manualDriver = new ExcelDriver({
+            const manualDriver = await ExcelDriver.create({
                 filePath: path.join(TEST_DIR, 'manual-save.xlsx'),
                 autoSave: false,
                 createIfMissing: true
@@ -436,7 +436,7 @@ describe('ExcelDriver', () => {
             await manualDriver.save();
             
             // Verify persistence
-            const driver2 = new ExcelDriver({
+            const driver2 = await ExcelDriver.create({
                 filePath: path.join(TEST_DIR, 'manual-save.xlsx'),
                 createIfMissing: false
             });

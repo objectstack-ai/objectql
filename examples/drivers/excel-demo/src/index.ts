@@ -15,7 +15,7 @@ async function main() {
     const dataPath = path.join(__dirname, '../data/demo.xlsx');
     console.log(`📁 Using Excel file: ${dataPath}\n`);
 
-    const driver = new ExcelDriver({
+    const driver = await ExcelDriver.create({
         filePath: dataPath,
         createIfMissing: true,
         autoSave: true

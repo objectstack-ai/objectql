@@ -11,6 +11,16 @@ Excel file driver for ObjectQL - Read and write data from Excel spreadsheets (.x
 ✅ **Auto-persistence** - Changes automatically saved to file  
 ✅ **Type-safe** - Built with strict TypeScript  
 ✅ **Zero Config** - Works out of the box with minimal setup  
+✅ **Secure** - Uses ExcelJS (no known CVEs, actively maintained)  
+
+## Security
+
+**IMPORTANT**: This driver uses **ExcelJS v4.4.0** instead of the `xlsx` library to avoid critical security vulnerabilities:
+
+- ❌ **xlsx < 0.20.2**: ReDoS (Regular Expression Denial of Service)
+- ❌ **xlsx < 0.19.3**: Prototype Pollution
+
+ExcelJS is actively maintained with no known security vulnerabilities.
 
 ## Installation
 
@@ -23,8 +33,8 @@ pnpm add @objectql/driver-excel
 ```typescript
 import { ExcelDriver } from '@objectql/driver-excel';
 
-// Create driver instance
-const driver = new ExcelDriver({
+// Create driver instance (async factory method)
+const driver = await ExcelDriver.create({
   filePath: './data/mydata.xlsx',
   createIfMissing: true,
   autoSave: true
@@ -51,6 +61,18 @@ await driver.update('users', user.id, {
 
 // Delete records
 await driver.delete('users', user.id);
+```
+
+## Important: Async Initialization
+
+Due to the async nature of ExcelJS file operations, you must use the **async factory method**:
+
+```typescript
+// ✅ Correct - Use factory method
+const driver = await ExcelDriver.create(config);
+
+// ❌ Incorrect - Direct constructor doesn't load file
+const driver = new ExcelDriver(config);
 ```
 
 ## Configuration
