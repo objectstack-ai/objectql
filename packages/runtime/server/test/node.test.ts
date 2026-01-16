@@ -84,11 +84,13 @@ describe('Node Adapter', () => {
         });
     });
 
-    it('should return 405 for GET', async () => {
+    it('should return 200 with welcome page for GET root', async () => {
         const handler = createNodeHandler(app);
         server = createServer(handler);
 
         const response = await request(server).get('/');
-        expect(response.status).toBe(405);
+        expect(response.status).toBe(200);
+        expect(response.headers['content-type']).toContain('text/html');
+        expect(response.text).toContain('ObjectQL Server');
     });
 });

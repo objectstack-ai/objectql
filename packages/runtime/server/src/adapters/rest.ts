@@ -273,6 +273,16 @@ export function createRESTHandler(app: IObjectQL, options?: RESTHandlerOptions) 
             // Execute the request
             const result = await server.handle(qlRequest);
 
+            if (!result) {
+                sendJSON(res, 404, {
+                    error: {
+                        code: ErrorCode.NOT_FOUND,
+                        message: 'Resource not found'
+                    }
+                });
+                return;
+            }
+
             // Determine HTTP status code
             let statusCode = 200;
             if (result.error) {

@@ -820,6 +820,6 @@ query {
 
 **Need Help?**
 
-- 📖 [Documentation](https://objectql.org/docs)
+- 📖 [Documentation](../index.md)
 - 💬 [Community Discord](https://discord.gg/objectql)
 - 🐛 [Report Issues](https://github.com/objectstack-ai/objectql/issues)

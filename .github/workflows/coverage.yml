@@ -1,0 +1,79 @@
+name: Test Coverage
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  coverage:
+    name: Test Coverage Report
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    services:
+      redis:
+        image: redis
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - uses: pnpm/action-setup@v3
+      with:
+        version: 10
+
+    - name: Use Node.js 20.x
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20.x
+        cache: 'pnpm'
+
+    - name: Cache MongoDB Binary
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/mongodb-binaries
+        key: mongodb-binaries-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+        restore-keys: |
+          mongodb-binaries-${{ runner.os }}-
+
+    - name: Install dependencies
+      run: pnpm install --frozen-lockfile
+      timeout-minutes: 2
+      
+    - name: Setup MongoDB Memory Server
+      run: |
+        # Pre-download MongoDB binary for mongodb-memory-server
+        cd packages/drivers/mongo
+        npx mongodb-memory-server preinstall || echo "MongoDB binary download failed, tests will skip gracefully"
+      timeout-minutes: 1
+      continue-on-error: true
+      
+    - name: Build packages
+      run: pnpm run build
+      timeout-minutes: 3
+
+    - name: Run tests with coverage
+      run: pnpm -r run test -- --coverage --coverageReporters=text --coverageReporters=lcov
+      timeout-minutes: 5
+      continue-on-error: true
+
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        files: ./packages/*/coverage/lcov.info
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: false
+        verbose: true

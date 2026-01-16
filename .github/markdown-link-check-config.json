@@ -1,0 +1,66 @@
+{
+  "ignorePatterns": [
+    {
+      "pattern": "^http://localhost"
+    },
+    {
+      "pattern": "^https://localhost"
+    },
+    {
+      "pattern": "^http://127.0.0.1"
+    },
+    {
+      "pattern": "^https://example.com"
+    },
+    {
+      "pattern": "^https://www.google.com/search"
+    },
+    {
+      "pattern": "^https://objectql.org"
+    },
+    {
+      "pattern": "^https://www.objectql.org"
+    },
+    {
+      "pattern": "^https://www.npmjs.com/package/@objectql/"
+    },
+    {
+      "pattern": "^https://github.com/.*/releases/tag/.*%40"
+    },
+    {
+      "pattern": "^mailto:"
+    },
+    {
+      "pattern": "^https://img.shields.io/"
+    },
+    {
+      "pattern": "^https://www.typescriptlang.org"
+    },
+    {
+      "pattern": "^https://badge.fury.io/"
+    },
+    {
+      "pattern": "^https://unpkg.com/"
+    },
+    {
+      "pattern": "^https://cdn.jsdelivr.net/"
+    },
+    {
+      "pattern": "^https://discord.gg/"
+    }
+  ],
+  "replacementPatterns": [],
+  "httpHeaders": [
+    {
+      "urls": ["https://github.com"],
+      "headers": {
+        "Accept-Encoding": "zstd, br, gzip, deflate"
+      }
+    }
+  ],
+  "timeout": "20s",
+  "retryOn429": true,
+  "retryCount": 3,
+  "fallbackRetryDelay": "30s",
+  "aliveStatusCodes": [200, 206]
+}

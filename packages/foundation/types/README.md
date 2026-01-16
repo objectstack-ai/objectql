@@ -389,5 +389,5 @@ const deleteObject: ObjectDeleteInstruction = {
 ## See Also
 
 - [@objectql/core](../core) - Core engine with Validator class
-- [Validation Specification](../../docs/spec/validation.md) - Complete validation metadata specification
+- [Validation Specification](../../../docs/spec/validation.md) - Complete validation metadata specification
 

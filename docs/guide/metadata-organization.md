@@ -362,4 +362,4 @@ The example includes:
 - [Data Modeling Guide](./data-modeling.md)
 - [Plugin Development](./plugins.md)
 - [Logic Hooks](./logic-hooks.md)
-- [Complete Example](../../packages/starters/enterprise/)
+- See examples in the repository under `examples/` directory

@@ -38,7 +38,7 @@ This unifies the previous concepts of `source`, `dir` and `presets`.
 
 ### `plugins` ((ObjectQLPlugin | string)[])
 A list of plugin instances OR package names to extend the core functionality.
-See [Plugin System](./plugins.html) for details.
+See [Plugin System](./plugins.md) for details.
 
 ### `objects` (Record<string, ObjectConfig>)
 (Advanced) In-memory definition of objects. Useful for dynamic runtime schema generation.

@@ -1,0 +1,60 @@
+name: "Changelog Preview"
+
+on:
+  pull_request:
+    types: [opened, synchronize, labeled, unlabeled]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  changelog-preview:
+    name: Generate Changelog Preview
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 10
+
+      - name: Use Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        timeout-minutes: 2
+
+      - name: Generate Changeset Preview
+        run: |
+          echo "Checking for changeset files..."
+          if [ -d ".changeset" ] && [ "$(ls -A .changeset/*.md 2>/dev/null | grep -v README | wc -l)" -gt 0 ]; then
+            echo "### 📋 Changelog Preview" > changeset-preview.md
+            echo "" >> changeset-preview.md
+            echo "The following changes will be included in the next release:" >> changeset-preview.md
+            echo "" >> changeset-preview.md
+            pnpm changeset status --verbose >> changeset-preview.md 2>&1 || echo "Changeset status completed with warnings"
+          else
+            echo "### ⚠️ No Changeset Found" > changeset-preview.md
+            echo "" >> changeset-preview.md
+            echo "This PR does not include a changeset file." >> changeset-preview.md
+            echo "If this PR includes user-facing changes, please add a changeset by running:" >> changeset-preview.md
+            echo "\`\`\`bash" >> changeset-preview.md
+            echo "pnpm changeset" >> changeset-preview.md
+            echo "\`\`\`" >> changeset-preview.md
+          fi
+        timeout-minutes: 1
+
+      - name: Comment Changeset Preview
+        uses: thollander/actions-comment-pull-request@v2
+        with:
+          filePath: changeset-preview.md
+          comment-tag: changeset-preview

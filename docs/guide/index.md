@@ -56,14 +56,14 @@ Your application logic isn't hidden inside controller functions. It's attached t
 
 ObjectQL exposes your data through multiple API styles:
 
-*   **[Complete API Reference](../api/README.md)** - Comprehensive guide to all endpoints
-*   **[JSON-RPC API](../api/README.md#json-rpc-style-api)** - Universal protocol for all operations
-*   **[REST API](../api/README.md#rest-style-api)** - Traditional REST endpoints
-*   **[Metadata API](../api/README.md#metadata-api)** - Runtime schema discovery
+*   **[Complete API Reference](../api/index.md)** - Comprehensive guide to all endpoints
+*   **[JSON-RPC API](../api/json-rpc.md)** - Universal protocol for all operations
+*   **[REST API](../api/rest.md)** - Traditional REST endpoints
+*   **[Metadata API](../api/metadata.md)** - Runtime schema discovery
 *   **[Authentication Guide](../api/authentication.md)** - Securing your APIs
 
 ## Next Steps
 
 *   [**Getting Started**](./getting-started.md): Build your first ObjectQL app
 *   [**CLI Tool**](./cli.md): Using the command line interface for codegen
-*   [**API Reference**](../api/README.md): Complete API documentation
+*   [**API Reference**](../api/index.md): Complete API documentation

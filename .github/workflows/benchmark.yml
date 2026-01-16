@@ -1,0 +1,82 @@
+name: "Performance Benchmark"
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  benchmark:
+    name: Run Performance Benchmarks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      redis:
+        image: redis
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - uses: pnpm/action-setup@v3
+      with:
+        version: 10
+
+    - name: Use Node.js 20.x
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20.x
+        cache: 'pnpm'
+
+    - name: Install dependencies
+      run: pnpm install --frozen-lockfile
+      timeout-minutes: 2
+      
+    - name: Build packages
+      run: pnpm run build
+      timeout-minutes: 3
+
+    - name: Run benchmarks
+      id: run-benchmarks
+      run: |
+        echo "Checking for benchmark scripts..."
+        if pnpm -r list | grep -q "benchmark"; then
+          echo "Running benchmarks..."
+          pnpm -r run benchmark --if-present
+          if [ -f "benchmark-results.json" ]; then
+            echo "benchmark_file_exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "benchmark_file_exists=false" >> $GITHUB_OUTPUT
+          fi
+        else
+          echo "No benchmark scripts found. Skipping benchmarks."
+          echo "To add benchmarks, add a 'benchmark' script to package.json files."
+          echo "benchmark_file_exists=false" >> $GITHUB_OUTPUT
+        fi
+      timeout-minutes: 5
+      continue-on-error: true
+
+    - name: Store benchmark result
+      if: github.ref == 'refs/heads/main' && steps.run-benchmarks.outputs.benchmark_file_exists == 'true'
+      uses: benchmark-action/github-action-benchmark@v1
+      with:
+        name: ObjectQL Benchmarks
+        tool: 'benchmarkjs'
+        output-file-path: benchmark-results.json
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        auto-push: true
+        comment-on-alert: true
+        alert-threshold: '150%'
+        fail-on-alert: false

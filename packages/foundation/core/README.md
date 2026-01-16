@@ -284,4 +284,4 @@ new Validator(options?: ValidatorOptions)
 ## See Also
 
 - [@objectql/types](../types) - Type definitions including validation types
-- [Validation Specification](../../docs/spec/validation.md) - Complete validation metadata specification
+- [Validation Specification](../../../docs/spec/validation.md) - Complete validation metadata specification

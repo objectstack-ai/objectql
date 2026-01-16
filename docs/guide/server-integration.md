@@ -112,4 +112,4 @@ For rapid prototyping, `@objectql/cli` provides a built-in dev server.
 objectql serve
 ```
 
-See [CLI Documentation](../package/cli) for more details.
+See [CLI Documentation](./cli.md) for more details.

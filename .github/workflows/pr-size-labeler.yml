@@ -1,0 +1,37 @@
+name: "PR Size Labeler"
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  size-label:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Label PR by Size
+        uses: codelytv/pr-size-labeler@v1
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          xs_label: 'size/XS'
+          xs_max_size: 10
+          s_label: 'size/S'
+          s_max_size: 50
+          m_label: 'size/M'
+          m_max_size: 200
+          l_label: 'size/L'
+          l_max_size: 500
+          xl_label: 'size/XL'
+          fail_if_xl: false
+          message_if_xl: >
+            This PR is very large. Consider splitting it into smaller PRs for easier review.
+          files_to_ignore: |
+            pnpm-lock.yaml
+            package-lock.json
+            yarn.lock
+            *.md
+            *.txt

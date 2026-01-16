@@ -107,4 +107,4 @@ ObjectQL is designed to be "AI-Native". The most efficient way to write schema a
 
 We strongly recommend configuring your AI Coding Assistant (GitHub Copilot, Cursor, Windsurf) with our specialized System Prompts. These prompts teach the AI about ObjectQL's metadata protocol.
 
-[👉 Go to AI Coding Assistant Guide](/ai/coding-assistant)
+[👉 Go to AI Coding Assistant Guide](../ai/coding-assistant.md)

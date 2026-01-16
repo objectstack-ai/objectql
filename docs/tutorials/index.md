@@ -4,7 +4,7 @@ Welcome to the ObjectQL learning path. These tutorials are designed to take you 
 
 ## 👶 Beginner
 
-### [Build Your First App: Task Manager](./task-manager)
+### [Build Your First App: Task Manager](./task-manager.md)
 **Time**: 15 mins
 **Goal**: Create a simple schema, run the server, and manage data via the Studio.
 - Define `Task` object
@@ -13,7 +13,7 @@ Welcome to the ObjectQL learning path. These tutorials are designed to take you 
 
 ## 🧑‍💻 Intermediate
 
-### [Building a Micro-CRM](./crm-system)
+### [Building a Micro-CRM](./crm-system.md)
 **Time**: 30 mins
 **Goal**: Learn relationships, permissions, and business logic.
 - Define `Account` and `Contact` with 1:N relationships
@@ -22,7 +22,7 @@ Welcome to the ObjectQL learning path. These tutorials are designed to take you 
 
 ## 🏗 Advanced
 
-### [Federated Data Graph](./federation)
+### [Federated Data Graph](./federation.md)
 **Time**: 45 mins
 **Goal**: Connect multiple databases into one graph.
 - Setup Mongo for `Logs`
