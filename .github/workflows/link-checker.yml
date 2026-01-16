@@ -29,7 +29,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Check Links in Markdown Files
-        uses: gaurav-nelson/github-action-markdown-link-check@v3.13.1
+        uses: gaurav-nelson/github-action-markdown-link-check@v1
         with:
           use-quiet-mode: 'yes'
           use-verbose-mode: 'no'
