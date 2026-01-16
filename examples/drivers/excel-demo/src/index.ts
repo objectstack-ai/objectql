@@ -1,15 +1,65 @@
 /**
  * Excel Driver Demo
  * 
- * This example demonstrates the basic usage of the Excel Driver for ObjectQL.
- * It creates, queries, updates, and deletes records in an Excel file.
+ * This example demonstrates both storage modes of the Excel Driver for ObjectQL:
+ * 1. Single-file mode (default): All data in one Excel file
+ * 2. File-per-object mode: Each object type in its own file
  */
 
 import { ExcelDriver } from '@objectql/driver-excel';
 import * as path from 'path';
 
-async function main() {
-    console.log('🚀 Excel Driver Demo\n');
+async function demoFilePerObjectMode() {
+    console.log('=' .repeat(60));
+    console.log('📂 FILE-PER-OBJECT MODE DEMO');
+    console.log('='  .repeat(60) + '\n');
+
+    const dataDir = path.join(__dirname, '../data/file-per-object');
+    console.log(`📁 Using directory: ${dataDir}\n`);
+
+    const driver = await ExcelDriver.create({
+        filePath: dataDir,
+        fileStorageMode: 'file-per-object',
+        createIfMissing: true,
+        autoSave: true
+    });
+
+    console.log('📝 Creating data in separate files...');
+    
+    // Each object type will be stored in its own file
+    await driver.create('customers', {
+        name: 'ACME Corp',
+        email: 'contact@acme.com',
+        industry: 'Technology'
+    });
+    console.log('✓ Created customer (saved to customers.xlsx)');
+
+    await driver.create('invoices', {
+        number: 'INV-001',
+        amount: 5000.00,
+        status: 'paid'
+    });
+    console.log('✓ Created invoice (saved to invoices.xlsx)');
+
+    await driver.create('tasks', {
+        title: 'Review proposal',
+        priority: 'high',
+        status: 'in-progress'
+    });
+    console.log('✓ Created task (saved to tasks.xlsx)');
+
+    console.log('\n📊 Summary:');
+    console.log('  - Each object type has its own Excel file');
+    console.log('  - Better for large datasets or independent objects');
+    console.log('  - Files: customers.xlsx, invoices.xlsx, tasks.xlsx\n');
+
+    await driver.disconnect();
+}
+
+async function demoSingleFileMode() {
+    console.log('=' .repeat(60));
+    console.log('📄 SINGLE-FILE MODE DEMO');
+    console.log('=' .repeat(60) + '\n');
 
     // Initialize the Excel driver
     const dataPath = path.join(__dirname, '../data/demo.xlsx');
@@ -17,6 +67,7 @@ async function main() {
 
     const driver = await ExcelDriver.create({
         filePath: dataPath,
+        fileStorageMode: 'single-file',  // Default mode (can be omitted)
         createIfMissing: true,
         autoSave: true
     });
@@ -186,15 +237,41 @@ async function main() {
     const finalProducts = await driver.find('products');
     console.log(`✓ Total products in Excel: ${finalProducts.length}`);
 
+    console.log('\n📊 Summary:');
+    console.log('  - All object types in one Excel file');
+    console.log('  - Easy to manage (single file)');
+    console.log('  - Best for related data sets');
+
     // Clean up
     await driver.disconnect();
     
-    console.log('\n✅ Demo completed successfully!');
+    console.log('\n✅ Single-file mode demo completed!');
     console.log(`📁 Check the Excel file at: ${dataPath}\n`);
+}
+
+async function main() {
+    console.log('\n🚀 Excel Driver Demo - Storage Modes Comparison\n');
+    
+    try {
+        // Demo both storage modes
+        await demoFilePerObjectMode();
+        await demoSingleFileMode();
+        
+        console.log('=' .repeat(60));
+        console.log('✅ ALL DEMOS COMPLETED SUCCESSFULLY!');
+        console.log('=' .repeat(60));
+        console.log('\nYou can now:');
+        console.log('  1. Open data/demo.xlsx to see single-file mode results');
+        console.log('  2. Open data/file-per-object/*.xlsx to see file-per-object results');
+        console.log('\n');
+    } catch (error) {
+        console.error('\n❌ Error:', error);
+        process.exit(1);
+    }
 }
 
 // Run the demo
 main().catch(error => {
-    console.error('❌ Error:', error.message);
+    console.error('❌ Fatal error:', error.message);
     process.exit(1);
 });

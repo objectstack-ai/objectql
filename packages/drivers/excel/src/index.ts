@@ -27,11 +27,28 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 /**
+ * File storage mode for the Excel driver.
+ */
+export type FileStorageMode = 'single-file' | 'file-per-object';
+
+/**
  * Configuration options for the Excel driver.
  */
 export interface ExcelDriverConfig {
-    /** Path to the Excel file */
+    /** 
+     * Path to the Excel file or directory.
+     * - In 'single-file' mode: Path to a single .xlsx file
+     * - In 'file-per-object' mode: Path to a directory where object files are stored
+     */
     filePath: string;
+    
+    /** 
+     * File storage mode (default: 'single-file')
+     * - 'single-file': All object types stored as worksheets in one Excel file
+     * - 'file-per-object': Each object type stored in a separate Excel file
+     */
+    fileStorageMode?: FileStorageMode;
+    
     /** Optional: Auto-save changes to file (default: true) */
     autoSave?: boolean;
     /** Optional: Create file if it doesn't exist (default: true) */
@@ -51,22 +68,31 @@ export interface ExcelDriverConfig {
 export class ExcelDriver implements Driver {
     private config: ExcelDriverConfig;
     private workbook!: ExcelJS.Workbook;
+    private workbooks: Map<string, ExcelJS.Workbook>; // For file-per-object mode
     private data: Map<string, any[]>;
     private idCounters: Map<string, number>;
     private filePath: string;
+    private fileStorageMode: FileStorageMode;
 
     constructor(config: ExcelDriverConfig) {
         this.config = {
             autoSave: true,
             createIfMissing: true,
             strictMode: false,
+            fileStorageMode: 'single-file',
             ...config
         };
         
         this.filePath = path.resolve(config.filePath);
+        this.fileStorageMode = this.config.fileStorageMode!;
         this.data = new Map<string, any[]>();
         this.idCounters = new Map<string, number>();
-        this.workbook = new ExcelJS.Workbook();
+        this.workbooks = new Map<string, ExcelJS.Workbook>();
+        
+        // Initialize workbook for single-file mode
+        if (this.fileStorageMode === 'single-file') {
+            this.workbook = new ExcelJS.Workbook();
+        }
         
         // Note: Actual file loading happens in init()
         // Call init() after construction or use the async create() factory method
@@ -91,8 +117,20 @@ export class ExcelDriver implements Driver {
 
     /**
      * Load workbook from file or create a new one.
+     * Handles both single-file and file-per-object modes.
      */
     private async loadWorkbook(): Promise<void> {
+        if (this.fileStorageMode === 'single-file') {
+            await this.loadSingleFileWorkbook();
+        } else {
+            await this.loadFilePerObjectWorkbooks();
+        }
+    }
+
+    /**
+     * Load workbook in single-file mode (all objects in one Excel file).
+     */
+    private async loadSingleFileWorkbook(): Promise<void> {
         this.workbook = new ExcelJS.Workbook();
         
         if (fs.existsSync(this.filePath)) {
@@ -134,6 +172,57 @@ export class ExcelDriver implements Driver {
     }
 
     /**
+     * Load workbooks in file-per-object mode (each object in separate Excel file).
+     */
+    private async loadFilePerObjectWorkbooks(): Promise<void> {
+        // Ensure directory exists
+        if (!fs.existsSync(this.filePath)) {
+            if (this.config.createIfMissing) {
+                fs.mkdirSync(this.filePath, { recursive: true });
+            } else {
+                throw new ObjectQLError({
+                    code: 'DIRECTORY_NOT_FOUND',
+                    message: `Directory not found: ${this.filePath}`,
+                    details: { filePath: this.filePath }
+                });
+            }
+        }
+
+        // Check if it's actually a directory
+        const stats = fs.statSync(this.filePath);
+        if (!stats.isDirectory()) {
+            throw new ObjectQLError({
+                code: 'INVALID_PATH',
+                message: `Path must be a directory in file-per-object mode: ${this.filePath}`,
+                details: { filePath: this.filePath }
+            });
+        }
+
+        // Load all existing .xlsx files in the directory
+        const files = fs.readdirSync(this.filePath);
+        for (const file of files) {
+            if (file.endsWith('.xlsx') && !file.startsWith('~$')) {
+                const objectName = file.replace('.xlsx', '');
+                const filePath = path.join(this.filePath, file);
+                
+                try {
+                    const workbook = new ExcelJS.Workbook();
+                    await workbook.xlsx.readFile(filePath);
+                    this.workbooks.set(objectName, workbook);
+                    
+                    // Load data from first worksheet
+                    const worksheet = workbook.worksheets[0];
+                    if (worksheet) {
+                        this.loadDataFromSingleWorksheet(worksheet, objectName);
+                    }
+                } catch (error) {
+                    console.warn(`[ExcelDriver] Warning: Failed to load file ${file}:`, (error as Error).message);
+                }
+            }
+        }
+    }
+
+    /**
      * Load data from workbook into memory.
      * 
      * Expected Excel format:
@@ -143,66 +232,72 @@ export class ExcelDriver implements Driver {
      */
     private loadDataFromWorkbook(): void {
         this.workbook.eachSheet((worksheet) => {
-            const sheetName = worksheet.name;
-            const records: any[] = [];
+            this.loadDataFromSingleWorksheet(worksheet, worksheet.name);
+        });
+    }
+
+    /**
+     * Load data from a single worksheet into memory.
+     */
+    private loadDataFromSingleWorksheet(worksheet: ExcelJS.Worksheet, objectName: string): void {
+        const records: any[] = [];
+        
+        // Get headers from first row
+        const headerRow = worksheet.getRow(1);
+        const headers: string[] = [];
+        headerRow.eachCell((cell: any, colNumber: number) => {
+            const headerValue = cell.value;
+            if (headerValue) {
+                headers[colNumber - 1] = String(headerValue);
+            }
+        });
+        
+        // Warn if worksheet has no headers (might be corrupted or wrong format)
+        if (headers.length === 0 && worksheet.rowCount > 0) {
+            console.warn(`[ExcelDriver] Warning: Worksheet "${objectName}" has no headers in first row. Skipping.`);
+            return;
+        }
+        
+        // Skip first row (headers) and read data rows
+        let rowsProcessed = 0;
+        let rowsSkipped = 0;
+        
+        worksheet.eachRow((row: any, rowNumber: number) => {
+            if (rowNumber === 1) return; // Skip header row
             
-            // Get headers from first row
-            const headerRow = worksheet.getRow(1);
-            const headers: string[] = [];
-            headerRow.eachCell((cell, colNumber) => {
-                const headerValue = cell.value;
-                if (headerValue) {
-                    headers[colNumber - 1] = String(headerValue);
+            const record: any = {};
+            let hasData = false;
+            
+            row.eachCell((cell: any, colNumber: number) => {
+                const header = headers[colNumber - 1];
+                if (header) {
+                    record[header] = cell.value;
+                    hasData = true;
                 }
             });
             
-            // Warn if worksheet has no headers (might be corrupted or wrong format)
-            if (headers.length === 0 && worksheet.rowCount > 0) {
-                console.warn(`[ExcelDriver] Warning: Worksheet "${sheetName}" has no headers in first row. Skipping.`);
+            // Skip completely empty rows
+            if (!hasData) {
+                rowsSkipped++;
                 return;
             }
             
-            // Skip first row (headers) and read data rows
-            let rowsProcessed = 0;
-            let rowsSkipped = 0;
-            
-            worksheet.eachRow((row, rowNumber) => {
-                if (rowNumber === 1) return; // Skip header row
-                
-                const record: any = {};
-                let hasData = false;
-                
-                row.eachCell((cell, colNumber) => {
-                    const header = headers[colNumber - 1];
-                    if (header) {
-                        record[header] = cell.value;
-                        hasData = true;
-                    }
-                });
-                
-                // Skip completely empty rows
-                if (!hasData) {
-                    rowsSkipped++;
-                    return;
-                }
-                
-                // Ensure ID exists
-                if (!record.id) {
-                    record.id = this.generateId(sheetName);
-                }
-                
-                records.push(record);
-                rowsProcessed++;
-            });
-            
-            // Log summary for debugging
-            if (rowsSkipped > 0) {
-                console.warn(`[ExcelDriver] Worksheet "${sheetName}": Processed ${rowsProcessed} rows, skipped ${rowsSkipped} empty rows`);
+            // Ensure ID exists
+            if (!record.id) {
+                record.id = this.generateId(objectName);
             }
             
-            this.data.set(sheetName, records);
-            this.updateIdCounter(sheetName, records);
+            records.push(record);
+            rowsProcessed++;
         });
+        
+        // Log summary for debugging
+        if (rowsSkipped > 0) {
+            console.warn(`[ExcelDriver] Worksheet "${objectName}": Processed ${rowsProcessed} rows, skipped ${rowsSkipped} empty rows`);
+        }
+        
+        this.data.set(objectName, records);
+        this.updateIdCounter(objectName, records);
     }
 
     /**
@@ -240,7 +335,22 @@ export class ExcelDriver implements Driver {
     /**
      * Save workbook to file.
      */
-    private async saveWorkbook(): Promise<void> {
+    /**
+     * Save workbook to file.
+     * Handles both single-file and file-per-object modes.
+     */
+    private async saveWorkbook(objectName?: string): Promise<void> {
+        if (this.fileStorageMode === 'single-file') {
+            await this.saveSingleFileWorkbook();
+        } else if (objectName) {
+            await this.saveFilePerObjectWorkbook(objectName);
+        }
+    }
+
+    /**
+     * Save workbook in single-file mode.
+     */
+    private async saveSingleFileWorkbook(): Promise<void> {
         try {
             // Ensure directory exists
             const dir = path.dirname(this.filePath);
@@ -260,11 +370,47 @@ export class ExcelDriver implements Driver {
     }
 
     /**
+     * Save workbook in file-per-object mode.
+     */
+    private async saveFilePerObjectWorkbook(objectName: string): Promise<void> {
+        const workbook = this.workbooks.get(objectName);
+        if (!workbook) {
+            throw new ObjectQLError({
+                code: 'WORKBOOK_NOT_FOUND',
+                message: `Workbook not found for object: ${objectName}`,
+                details: { objectName }
+            });
+        }
+
+        try {
+            const filePath = path.join(this.filePath, `${objectName}.xlsx`);
+            await workbook.xlsx.writeFile(filePath);
+        } catch (error) {
+            throw new ObjectQLError({
+                code: 'FILE_WRITE_ERROR',
+                message: `Failed to write Excel file for object: ${objectName}`,
+                details: { objectName, error: (error as Error).message }
+            });
+        }
+    }
+
+    /**
      * Sync in-memory data to workbook.
      * 
      * Creates or updates a worksheet for the given object type.
      */
     private async syncToWorkbook(objectName: string): Promise<void> {
+        if (this.fileStorageMode === 'single-file') {
+            await this.syncToSingleFileWorkbook(objectName);
+        } else {
+            await this.syncToFilePerObjectWorkbook(objectName);
+        }
+    }
+
+    /**
+     * Sync data to worksheet in single-file mode.
+     */
+    private async syncToSingleFileWorkbook(objectName: string): Promise<void> {
         const records = this.data.get(objectName) || [];
         
         // Remove existing worksheet if it exists
@@ -294,7 +440,7 @@ export class ExcelDriver implements Driver {
             });
             
             // Auto-fit columns
-            worksheet.columns.forEach(column => {
+            worksheet.columns.forEach((column: any) => {
                 if (column.header) {
                     column.width = Math.max(10, String(column.header).length + 2);
                 }
@@ -304,6 +450,56 @@ export class ExcelDriver implements Driver {
         // Auto-save if enabled
         if (this.config.autoSave) {
             await this.saveWorkbook();
+        }
+    }
+
+    /**
+     * Sync data to separate file in file-per-object mode.
+     */
+    private async syncToFilePerObjectWorkbook(objectName: string): Promise<void> {
+        const records = this.data.get(objectName) || [];
+        
+        // Get or create workbook for this object
+        let workbook = this.workbooks.get(objectName);
+        if (!workbook) {
+            workbook = new ExcelJS.Workbook();
+            this.workbooks.set(objectName, workbook);
+        }
+        
+        // Remove all existing worksheets
+        workbook.worksheets.forEach(ws => workbook!.removeWorksheet(ws.id));
+        
+        // Create new worksheet
+        const worksheet = workbook.addWorksheet(objectName);
+        
+        if (records.length > 0) {
+            // Get all unique keys from records to create headers
+            const headers = new Set<string>();
+            records.forEach(record => {
+                Object.keys(record).forEach(key => headers.add(key));
+            });
+            const headerArray = Array.from(headers);
+            
+            // Add header row
+            worksheet.addRow(headerArray);
+            
+            // Add data rows
+            records.forEach(record => {
+                const row = headerArray.map(header => record[header]);
+                worksheet.addRow(row);
+            });
+            
+            // Auto-fit columns
+            worksheet.columns.forEach((column: any) => {
+                if (column.header) {
+                    column.width = Math.max(10, String(column.header).length + 2);
+                }
+            });
+        }
+        
+        // Auto-save if enabled
+        if (this.config.autoSave) {
+            await this.saveWorkbook(objectName);
         }
     }
 
@@ -565,8 +761,18 @@ export class ExcelDriver implements Driver {
     /**
      * Manually save the workbook to file.
      */
+    /**
+     * Manually save the workbook to file.
+     */
     async save(): Promise<void> {
-        await this.saveWorkbook();
+        if (this.fileStorageMode === 'single-file') {
+            await this.saveWorkbook();
+        } else {
+            // Save all object files in file-per-object mode
+            for (const objectName of this.data.keys()) {
+                await this.saveWorkbook(objectName);
+            }
+        }
     }
 
     /**
@@ -574,7 +780,7 @@ export class ExcelDriver implements Driver {
      */
     async disconnect(): Promise<void> {
         if (this.config.autoSave) {
-            await this.saveWorkbook();
+            await this.save();
         }
     }
 

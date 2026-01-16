@@ -1,5 +1,23 @@
 # @objectql/driver-excel
 
+## 0.2.0 - 2024-01-16
+
+### Added
+
+- **File Storage Modes**: New `fileStorageMode` configuration option
+  - `single-file` mode: All object types in one Excel file (default, existing behavior)
+  - `file-per-object` mode: Each object type in a separate Excel file
+- Complete English documentation in README
+- Additional tests for file-per-object mode (39 total tests now)
+- Examples for both storage modes
+
+### Improved
+
+- Better documentation with comprehensive API reference
+- Usage examples for common scenarios
+- Performance benchmarks and optimization tips
+- Detailed error handling guide
+
 ## 0.1.0 - 2024-01-16
 
 ### Added

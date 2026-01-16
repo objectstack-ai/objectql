@@ -482,4 +482,85 @@ describe('ExcelDriver', () => {
             expect(found.description).toBe('Test "quotes" & special <chars>');
         });
     });
+
+    describe('File Per Object Mode', () => {
+        const FILE_PER_OBJECT_DIR = path.join(TEST_DIR, 'file-per-object');
+        let filePerObjectDriver: ExcelDriver;
+
+        beforeEach(async () => {
+            // Clean up directory
+            if (fs.existsSync(FILE_PER_OBJECT_DIR)) {
+                fs.rmSync(FILE_PER_OBJECT_DIR, { recursive: true, force: true });
+            }
+            
+            // Create driver in file-per-object mode
+            filePerObjectDriver = await ExcelDriver.create({
+                filePath: FILE_PER_OBJECT_DIR,
+                fileStorageMode: 'file-per-object',
+                createIfMissing: true,
+                autoSave: true
+            });
+        });
+
+        afterEach(async () => {
+            if (filePerObjectDriver) {
+                await filePerObjectDriver.disconnect();
+            }
+        });
+
+        it('should create separate files for each object type', async () => {
+            await filePerObjectDriver.create('users', { name: 'Alice' });
+            await filePerObjectDriver.create('products', { name: 'Product A' });
+            
+            // Check that separate files exist
+            expect(fs.existsSync(path.join(FILE_PER_OBJECT_DIR, 'users.xlsx'))).toBe(true);
+            expect(fs.existsSync(path.join(FILE_PER_OBJECT_DIR, 'products.xlsx'))).toBe(true);
+        });
+
+        it('should load data from separate files', async () => {
+            await filePerObjectDriver.create('users', { id: 'user-1', name: 'Alice' });
+            await filePerObjectDriver.create('products', { id: 'prod-1', name: 'Product A' });
+            await filePerObjectDriver.save();
+            
+            // Create new driver instance and load from files
+            const driver2 = await ExcelDriver.create({
+                filePath: FILE_PER_OBJECT_DIR,
+                fileStorageMode: 'file-per-object',
+                createIfMissing: false
+            });
+            
+            const users = await driver2.find('users');
+            const products = await driver2.find('products');
+            
+            expect(users).toHaveLength(1);
+            expect(products).toHaveLength(1);
+            expect(users[0].name).toBe('Alice');
+            expect(products[0].name).toBe('Product A');
+            
+            await driver2.disconnect();
+        });
+
+        it('should support all CRUD operations in file-per-object mode', async () => {
+            // Create
+            const user = await filePerObjectDriver.create('users', {
+                name: 'Bob',
+                email: 'bob@example.com'
+            });
+            expect(user.name).toBe('Bob');
+            
+            // Read
+            const found = await filePerObjectDriver.findOne('users', user.id);
+            expect(found.name).toBe('Bob');
+            
+            // Update
+            await filePerObjectDriver.update('users', user.id, { email: 'bob.new@example.com' });
+            const updated = await filePerObjectDriver.findOne('users', user.id);
+            expect(updated.email).toBe('bob.new@example.com');
+            
+            // Delete
+            await filePerObjectDriver.delete('users', user.id);
+            const deleted = await filePerObjectDriver.findOne('users', user.id);
+            expect(deleted).toBeNull();
+        });
+    });
 });
