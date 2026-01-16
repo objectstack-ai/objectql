@@ -73,18 +73,19 @@ interface ObjectQLRequest {
 }
 ```
 
-## 📖 OpenAPI / Swagger Support
+## 📖 OpenAPI Support
 
 `@objectql/server` automatically generates an OpenAPI 3.0 specification from your registered schema.
+This powers the built-in **API Docs** (available at `/docs` in CLI mode).
 
-You can access the spec by appending `/openapi.json` to your handler's mount path.
+You can access the raw spec by appending `/openapi.json` to your handler's mount path.
 
 **Example URLs:**
 *   **CLI Serve:** `http://localhost:3000/openapi.json`
 *   **Express (mounted at /api/objectql):** `http://localhost:3000/api/objectql/openapi.json`
 *   **Next.js (pages/api/objectql.ts):** `http://localhost:3000/api/objectql/openapi.json`
 
-This JSON file describes your data objects as "Virtual REST" endpoints (`GET /user`, `POST /user`, etc.), allowing you to easily import them into **Swagger UI**, **Postman**, or other API tools for visualization and testing.
+This JSON file describes your data objects as "Virtual REST" endpoints (`GET /user`, `POST /user`, etc.), allowing you to easily import them into **Scalar**, **Swagger UI**, **Postman**, or other API tools for visualization and testing.
 
 ## Example Usage
 

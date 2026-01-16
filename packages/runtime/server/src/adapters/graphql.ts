@@ -4,6 +4,22 @@ import { ErrorCode } from '../types';
 import { IncomingMessage, ServerResponse } from 'http';
 import { graphql, GraphQLSchema, GraphQLObjectType, GraphQLString, GraphQLInt, GraphQLFloat, GraphQLBoolean, GraphQLList, GraphQLNonNull, GraphQLInputObjectType, GraphQLFieldConfigMap, GraphQLOutputType, GraphQLInputType } from 'graphql';
 
+const APOLLO_SANDBOX_HTML = `
+<!DOCTYPE html>
+<html lang="en">
+<body style="margin: 0; overflow-x: hidden; overflow-y: hidden">
+<div id="sandbox" style="height:100vh; width:100vw;"></div>
+<script src="https://embeddable-sandbox.cdn.apollographql.com/_latest/embeddable-sandbox.umd.production.min.js"></script>
+<script>
+ new window.EmbeddedSandbox({
+   target: "#sandbox",
+   initialEndpoint: window.location.href,
+   includeCookies: false, // Set to true if you need auth cookies
+ });
+</script>
+</body>
+</html>`;
+
 /**
  * Normalize ObjectQL response to use 'id' instead of '_id'
  */
@@ -418,6 +434,18 @@ export function createGraphQLHandler(app: IObjectQL) {
             if (req.method === 'OPTIONS') {
                 res.statusCode = 200;
                 res.end();
+                return;
+            }
+
+            // HTML Playground Support (Apollo Sandbox)
+            // If it's a browser GET request without query params, show the playground
+            const acceptHeader = req.headers.accept || '';
+            const urlObj = new URL(req.url || '', `http://${req.headers.host || 'localhost'}`);
+            const hasQueryParams = urlObj.searchParams.has('query');
+
+            if (req.method === 'GET' && acceptHeader.includes('text/html') && !hasQueryParams) {
+                res.writeHead(200, { 'Content-Type': 'text/html' });
+                res.end(APOLLO_SANDBOX_HTML);
                 return;
             }
 

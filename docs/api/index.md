@@ -86,5 +86,5 @@ curl -X POST http://localhost:3000/api/objectql \
 ### Auto-Generated Specs
 
 For automated tool ingestion, use the following endpoints:
-- **OpenAPI / Swagger**: `/api/docs/swagger.json`
+- **OpenAPI / Swagger**: `/openapi.json` (Used by `/docs` UI)
 - **GraphQL Schema**: `/api/graphql/schema`

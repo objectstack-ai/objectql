@@ -2,14 +2,12 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Run Studio: Basic Script",
+      "label": "Run Dev Server",
       "type": "shell",
-      "command": "node",
+      "command": "pnpm",
       "args": [
-        "packages/cli/dist/index.js",
-        "studio",
-        "--dir",
-        "examples/starters/basic-script"
+        "objectql",
+        "dev"
       ],
       "group": "test",
       "presentation": {

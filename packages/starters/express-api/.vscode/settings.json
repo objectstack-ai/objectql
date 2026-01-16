@@ -1,8 +1,0 @@
-{
-    "yaml.schemas": {
-        "./node_modules/@objectql/types/schemas/object.schema.json": "*.object.yml",
-        "./node_modules/@objectql/types/schemas/app.schema.json": "*.app.yml",
-        "./node_modules/@objectql/types/schemas/page.schema.json": "*.page.yml",
-        "./node_modules/@objectql/types/schemas/menu.schema.json": "*.menu.yml"
-    }
-}

@@ -38,6 +38,24 @@ export function createNodeHandler(app: IObjectQL, options?: NodeHandlerOptions) 
 
 
     return async (req: IncomingMessage & { body?: any }, res: ServerResponse) => {
+        // CORS Headers
+        const origin = req.headers.origin;
+        if (origin) {
+            res.setHeader('Access-Control-Allow-Origin', origin);
+            res.setHeader('Access-Control-Allow-Credentials', 'true');
+        } else {
+            res.setHeader('Access-Control-Allow-Origin', '*');
+        }
+        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+
+        // Handle preflight requests
+        if (req.method === 'OPTIONS') {
+            res.statusCode = 204;
+            res.end();
+            return;
+        }
+
         // Handle OpenAPI spec request
         if (req.method === 'GET' && req.url?.endsWith('/openapi.json')) {
             const spec = generateOpenAPI(app);

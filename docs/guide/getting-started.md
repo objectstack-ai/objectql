@@ -8,23 +8,40 @@
 2.  **Universal Protocol**: The query language is a JSON AST, making it easy for frontends or AI agents to generate queries.
 3.  **Action & Hook System**: Built-in support for "Button Actions" (RPC) and "Triggers" (Hooks), allowing you to model **Behavior** alongside **Data**.
 
-## Quick Start: The "Hello World"
+## Quick Start
 
-You can experience ObjectQL with a single file. No YAML, no complex config.
+The fastest way to get started is using the CLI to scaffold a project.
 
-### 1. Minimal Setup
+### 1. Create a New Project
 
-Install the core and SQLite driver (for zero-config database).
+The easiest way to start is using the generator.
 
 ```bash
-npm install @objectql/core @objectql/driver-sql sqlite3
-# or
-pnpm add @objectql/core @objectql/driver-sql sqlite3
+# Standard Setup (Recommended) - Full Project Tracker Demo
+npm create @objectql@latest my-app -- --template starter
+
+# Minimal Setup - Single File
+npm create @objectql@latest my-app -- --template hello-world
 ```
 
-### 2. The Universal Script
+This will create a new project with all necessary dependencies.
 
-Create `index.ts`. This script defines the schema, boots the engine, and runs queries in one go.
+### 2. Standard Setup (Project Tracker)
+
+For building real applications, use the `showcase` template. This sets up a proper folder structure with YAML metadata, TypeScript logic hooks, and relationship management.
+
+```bash
+npm create @objectql@latest project-tracker -- --template showcase
+```
+
+This structure follows our **Best Practices**:
+*   **`src/objects/*.object.yml`**: Data definitions.
+*   **`src/hooks/*.hook.ts`**: Business logic.
+*   **`src/index.ts`**: Application entry point.
+
+## Manual Setup (The Hard Way)
+
+If you prefer to set up manually or add ObjectQL to an existing project:
 
 ```typescript
 import { ObjectQL } from '@objectql/core';
@@ -82,13 +99,12 @@ async function main() {
         // Detects 'sqlite', 'postgres', 'mongodb' automatically
         connection: 'sqlite://data.db', 
         
-        // 2. Schema Source
-        // Where your *.object.yml files are located
-        source: ['src/objects'],
-
-        // 3. Load Presets (Optional)
-        // Load standard objects from npm packages
-        presets: ['@objectql/preset-auth']
+        // 2. Load Modules
+        // Load schema from local directories OR npm packages
+        modules: [
+            'src/objects',           // Local Module
+            '@objectql/module-auth'  // External Module (NPM)
+        ]
     });
 
     await db.init();

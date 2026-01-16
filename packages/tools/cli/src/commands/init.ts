@@ -15,15 +15,14 @@ interface InitOptions {
 }
 
 const TEMPLATES = {
-    basic: '@objectql/starter-basic',
-    'express-api': '@objectql/starter-express-api',
-    enterprise: '@objectql/starter-enterprise'
+    'hello-world': 'hello-world',
+    'starter': 'project-tracker'
 };
 
 export async function initProject(options: InitOptions) {
     const projectName = options.name || 'my-objectql-project';
     const targetDir = options.dir || path.join(process.cwd(), projectName);
-    const template = (options.template || 'basic') as keyof typeof TEMPLATES;
+    const template = (options.template || 'starter') as keyof typeof TEMPLATES;
 
     if (!TEMPLATES[template]) {
         console.error(chalk.red(`❌ Unknown template: ${template}`));
@@ -45,20 +44,20 @@ export async function initProject(options: InitOptions) {
     fs.mkdirSync(targetDir, { recursive: true });
 
     try {
-        // Copy template files from starters
-        const templatePath = path.join(__dirname, '../../../../starters', template);
-        
-        // Check if we're in the monorepo (for development)
-        if (fs.existsSync(templatePath)) {
-            console.log(chalk.gray('Copying template files...'));
-            await copyDirectory(templatePath, targetDir, ['node_modules', 'dist', '.git']);
-        } else {
-            // Try to use the published package
-            console.log(chalk.gray(`Installing template from npm: ${TEMPLATES[template]}...`));
-            await execAsync(`npm create ${TEMPLATES[template]} ${targetDir}`, { 
-                cwd: process.cwd() 
-            });
+        // Copy embedded template
+        const templateName = TEMPLATES[template];
+        // Must resolve relative to the dist/commands folder structure
+        const sourcePath = path.resolve(__dirname, '../../templates', templateName);
+
+        if (!fs.existsSync(sourcePath)) {
+            // Fallback for development (running directly from src)
+            // If running via ts-node in dev, structure might be different
+             throw new Error(`Template not found at ${sourcePath}. Please check your CLI installation.`);
         }
+
+        console.log(chalk.cyan(`⬇️ Creating project from embedded template...`));
+        await copyDirectory(sourcePath, targetDir, ['node_modules', 'dist', '.git']);
+        console.log(chalk.green('✅ Template created successfully.'));
 
         // Update package.json with project name
         const pkgPath = path.join(targetDir, 'package.json');
@@ -66,21 +65,27 @@ export async function initProject(options: InitOptions) {
             const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
             pkg.name = projectName;
             pkg.version = '0.1.0';
-            // Convert workspace dependencies to actual versions for standalone project
-            if (pkg.dependencies) {
-                for (const dep of Object.keys(pkg.dependencies)) {
-                    if (pkg.dependencies[dep] === 'workspace:*') {
-                        pkg.dependencies[dep] = '^1.0.0'; // Use latest published version
+            
+            // Note: Since we are using examples from the monorepo, 
+            // they might have "workspace:*" protocols.
+            // We should replace them with "latest" or a specific version for end users.
+            const replaceWorkspaceVersion = (deps: Record<string, string>) => {
+                for (const dep of Object.keys(deps)) {
+                    if (deps[dep] === 'workspace:*') {
+                        // For public release, this should match the current CLI version or latest
+                        deps[dep] = 'latest'; 
                     }
                 }
-            }
-            if (pkg.devDependencies) {
-                for (const dep of Object.keys(pkg.devDependencies)) {
-                    if (pkg.devDependencies[dep] === 'workspace:*') {
-                        pkg.devDependencies[dep] = '^1.0.0';
-                    }
-                }
-            }
+            };
+
+            if (pkg.dependencies) replaceWorkspaceVersion(pkg.dependencies);
+            if (pkg.devDependencies) replaceWorkspaceVersion(pkg.devDependencies); // Often peerDeps in examples
+
+            // Make public for the user's new project
+            delete pkg.private;
+            // Reset repository field as it will be a new repo
+            delete pkg.repository;
+
             fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2));
         }
 

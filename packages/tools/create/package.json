@@ -1,0 +1,27 @@
+{
+  "name": "@objectql/create",
+  "version": "1.0.0",
+  "description": "Create ObjectQL apps with one command",
+  "bin": {
+    "create-objectql": "./dist/bin.js"
+  },
+  "files": [
+    "dist",
+    "templates"
+  ],
+  "scripts": {
+    "build": "tsc && node scripts/copy-templates.js",
+    "copy-templates": "node scripts/copy-templates.js"
+  },
+  "dependencies": {
+    "chalk": "^4.1.2",
+    "commander": "^11.0.0",
+    "enquirer": "^2.4.1",
+    "fs-extra": "^11.3.3"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "^11.0.4",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  }
+}

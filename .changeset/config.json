@@ -12,10 +12,7 @@
       "@objectql/sdk",
       "@objectql/server",
       "@objectql/types",
-      "@objectql/platform-node",
-      "@objectql/starter-basic",
-      "@objectql/starter-express-api",
-      "@objectql/starter-enterprise"
+      "@objectql/platform-node"
     ]
   ],
   "linked": [],

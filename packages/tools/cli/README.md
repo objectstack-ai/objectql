@@ -449,7 +449,7 @@ objectql dev --no-watch
 ```
 
 The development server provides:
-- **Swagger UI**: `http://localhost:<port>/swagger` - Interactive API documentation
+- **API Docs (Scalar)**: `http://localhost:<port>/docs` - Interactive API documentation
 - **API Endpoint**: `http://localhost:<port>/` - Main API endpoint
 - **OpenAPI Spec**: `http://localhost:<port>/openapi.json` - Machine-readable API spec
 
@@ -602,7 +602,7 @@ objectql serve --dir ./src/schema --port 8080
 ```
 
 The server exposes:
-- **Web Console (Swagger UI)**: `http://localhost:<port>/swagger` (GET) - Interactive API explorer
+- **Web Console (API Docs)**: `http://localhost:<port>/docs` (GET) - Interactive API explorer
 - **JSON API Endpoint**: `http://localhost:<port>/` (POST)
 - **OpenAPI Spec**: `http://localhost:<port>/openapi.json` (GET)
 

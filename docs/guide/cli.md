@@ -16,26 +16,30 @@ You can then run it via `npx objectql` or add scripts to your `package.json`.
 
 ### 2.1 `init` (Create Project)
 
-Create a new ObjectQL project from a starter template.
+The recommended way to create a new ObjectQL project is using the initialization package.
 
 ```bash
-npx objectql init [options]
+npm create @objectql@latest [name] [options]
 ```
 
 **Options:**
 
 | Option | Alias | Default | Description |
 | :--- | :--- | :--- | :--- |
-| `--template <template>` | `-t` | `basic` | Template to use (`basic`, `express-api`, `enterprise`). |
-| `--name <name>` | `-n` | - | Project name. |
-| `--dir <path>` | `-d` | - | Target directory. |
+| `--template <template>` | `-t` | `starter` | Template to use (`starter`, `hello-world`). |
 | `--skip-install` | | `false` | Skip dependency installation. |
 | `--skip-git` | | `false` | Skip git initialization. |
 
 **Example:**
 
 ```bash
-npx objectql init -t express-api -n my-app
+npm create @objectql@latest my-app -- --template showcase
+```
+
+Alternatively, if you already have the CLI installed globally or in a project, you can use the legacy `init` command:
+
+```bash
+npx objectql init [options]
 ```
 
 ### 2.2 `generate` (Type Generation)
@@ -86,13 +90,13 @@ npx objectql new object customer
 
 ## 3. Development Tools
 
-### 3.1 `serve` (Dev Server)
+### 3.1 `dev` (Development Server)
 
-Start a standalone development server.
-**Alias**: `s`
+Start the development server with hot-reload support.
+**Alias**: `d`
 
 ```bash
-npx objectql serve [options]
+npx objectql dev [options]
 ```
 
 **Options:**
@@ -100,9 +104,29 @@ npx objectql serve [options]
 | Option | Alias | Default | Description |
 | :--- | :--- | :--- | :--- |
 | `--port <number>` | `-p` | `3000` | Port to listen on. |
-| `--dir <path>` | `-d` | `.` | Directory containing schema. |
+| `--dir <path>` | `-d` | `.` | Root module directory (context). |
+| `--config <path>` | `-c` | - | Path to `objectql.config.ts`. |
+| `--modules <items>` | | - | Comma-separated list of modules to load (overrides config). Supports NPM packages (`@org/pkg`) or local paths (`./src/mod`). |
+| `--no-watch` | | `false` | Disable file watching. |
 
-### 3.2 `studio` (Admin UI)
+### 3.2 `start` (Production Server)
+
+good Start the server in production mode.
+
+```bash
+npx objectql start [options]
+```
+
+**Options:**
+
+| Option | Alias | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `--port <number>` | `-p` | `3000` | Port to listen on. |
+| `--dir <path>` | `-d` | `.` | Root module directory (context). |
+| `--config <path>` | `-c` | - | Path to `objectql.config.ts`. |
+| `--modules <items>` | | - | Comma-separated list of modules to load (overrides config). |
+
+### 3.3 `studio` (Admin UI)
 
 Starts the web-based admin studio to browse data and view schema.
 **Alias**: `ui`

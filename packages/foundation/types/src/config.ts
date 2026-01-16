@@ -21,9 +21,14 @@ export interface ObjectQLConfig {
      */
     packages?: string[];
     /**
-     * List of npm packages or presets to load.
+     * @deprecated Use 'modules' instead.
      */
     presets?: string[];
+    /**
+     * List of modules to load.
+     * Can be npm packages or local directories.
+     */
+    modules?: string[];
     /**
      * List of plugins to load. 
      * Can be an instance of ObjectQLPlugin or a package name string.

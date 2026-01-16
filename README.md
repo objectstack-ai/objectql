@@ -45,7 +45,20 @@ ObjectQL is organized as a Monorepo to ensure modularity and universal compatibi
 
 ## ⚡ Quick Start
 
-### 1. Installation
+### 0. Use the Generator (Recommended)
+
+The fastest way to start is using the CLI to scaffold a new project.
+
+```bash
+# Create a new project
+npm create @objectql@latest my-app
+
+# Choose a template when prompted (hello-world or starter)
+```
+
+### 1. Manual Installation
+
+If you prefer to install manually:
 
 ```bash
 # Install core and a driver (e.g., Postgres or SQLite)
@@ -271,6 +284,44 @@ For a complete status report on ObjectQL's implementation against the documented
 - ✅ Core Protocol & Runtime: 85%
 - ✅ Data Drivers (SQL/Mongo): 75%
 - ⚠️ Workflow Engine: 35%
+
+---
+
+## 🛠️ Development & Contributing
+
+If you fork or clone the repository to contribute or run examples from source:
+
+1. **Setup Workspace**
+   ```bash
+   git clone https://github.com/objectql/objectql.git
+   cd objectql
+   npm install -g pnpm
+   pnpm install
+   ```
+
+2. **Build Packages**
+   You must build the core libraries before running examples, as they rely on local workspace builds.
+   ```bash
+   pnpm build
+   ```
+
+3. **Run Examples**
+   
+   These examples run as **scripts** to demonstrate the ObjectQL Core Engine capabilities (Validation, CRUD, Logic Hooks). They use an in-memory SQLite database.
+
+   **Starter (Project Tracker):**
+   ```bash
+   # Starts the API Server (http://localhost:3000)
+   pnpm --filter @objectql/example-project-tracker start
+   
+   # Note: Sample data (projects.data.yml) is automatically loaded on startup
+   ```
+
+   **Enterprise ERP:**
+   ```bash
+   pnpm --filter @objectql/example-enterprise-erp start
+   # Output: Plugin initialization, Employee creation logs, Audit trails
+   ```
 
 ---
 

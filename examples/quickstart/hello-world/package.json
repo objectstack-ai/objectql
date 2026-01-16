@@ -1,0 +1,24 @@
+{
+  "name": "@objectql/example-hello-world",
+  "version": "1.0.4",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/objectql/objectql.git",
+    "directory": "examples/quickstart/hello-world"
+  },
+  "description": "Zero-config ObjectQL starter",
+  "scripts": {
+    "start": "ts-node src/index.ts"
+  },
+  "dependencies": {
+    "@objectql/core": "workspace:*",
+    "@objectql/driver-sql": "workspace:*",
+    "sqlite3": "^5.1.7"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3",
+    "@types/node": "^20.11.24"
+  }
+}

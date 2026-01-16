@@ -16,11 +16,17 @@
   ],
   "license": "MIT",
   "main": "dist/index.js",
+  "files": [
+    "dist",
+    "bin",
+    "templates"
+  ],
   "bin": {
     "objectql": "./bin/objectql"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && pnpm run copy-templates",
+    "copy-templates": "rm -rf templates && mkdir -p templates && cp -r ../../../examples/quickstart/hello-world templates/ && cp -r ../../../examples/showcase/project-tracker templates/starter && rm -rf templates/*/node_modules templates/*/dist",
     "watch": "tsc -w",
     "test": "jest"
   },

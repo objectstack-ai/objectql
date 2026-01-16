@@ -5,8 +5,8 @@ export default {
             filename: 'objectos.db'
         }
     },
-    presets: [
-        '@objectql/starter-basic',
-        '@objectql/starter-enterprise'
+    modules: [
+        // '@objectql/example-project-tracker',
+        // '@objectql/example-enterprise-erp'
     ]
 };
