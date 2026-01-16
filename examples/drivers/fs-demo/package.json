@@ -1,0 +1,19 @@
+{
+  "name": "fs-demo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Example demonstrating @objectql/driver-fs",
+  "scripts": {
+    "start": "ts-node src/index.ts",
+    "dev": "ts-node src/index.ts"
+  },
+  "dependencies": {
+    "@objectql/core": "workspace:*",
+    "@objectql/driver-fs": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.0.0"
+  }
+}
