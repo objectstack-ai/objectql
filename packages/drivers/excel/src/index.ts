@@ -103,9 +103,11 @@ export class ExcelDriver implements Driver {
     private loadDataFromWorkbook(): void {
         for (const sheetName of this.workbook.SheetNames) {
             const worksheet = this.workbook.Sheets[sheetName];
+            // Convert with raw: true to preserve data types (numbers, dates, booleans)
+            // This maintains data integrity when reading from Excel
             const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
                 defval: null,
-                raw: false // Convert dates and numbers to strings for consistency
+                raw: true // Preserve native types for better data integrity
             });
             
             // Convert array of objects to proper format
@@ -126,14 +128,20 @@ export class ExcelDriver implements Driver {
 
     /**
      * Update ID counter based on existing records.
+     * 
+     * Attempts to extract counter from auto-generated IDs (format: objectName-timestamp-counter).
+     * If IDs don't follow this format, counter starts from existing record count.
      */
     private updateIdCounter(objectName: string, records: any[]): void {
         let maxCounter = 0;
         for (const record of records) {
             if (record.id) {
-                // Extract counter from generated IDs (format: objectName-timestamp-counter)
-                const parts = String(record.id).split('-');
-                if (parts.length === 3 && !isNaN(Number(parts[2]))) {
+                // Try to extract counter from generated IDs (format: objectName-timestamp-counter)
+                const idStr = String(record.id);
+                const parts = idStr.split('-');
+                
+                // Only parse if it matches the expected auto-generated format
+                if (parts.length === 3 && parts[0] === objectName && !isNaN(Number(parts[2]))) {
                     const counter = Number(parts[2]);
                     if (counter > maxCounter) {
                         maxCounter = counter;
@@ -141,11 +149,21 @@ export class ExcelDriver implements Driver {
                 }
             }
         }
+        
+        // If no auto-generated IDs found, start from record count to avoid collisions
+        if (maxCounter === 0 && records.length > 0) {
+            maxCounter = records.length;
+        }
+        
         this.idCounters.set(objectName, maxCounter);
     }
 
     /**
      * Save workbook to file.
+     * 
+     * Note: The xlsx library requires at least one sheet in the workbook before writing.
+     * We add a placeholder sheet for empty workbooks, which is automatically removed
+     * when the first real object/sheet is added via syncToWorkbook().
      */
     private saveWorkbook(): void {
         try {
@@ -156,7 +174,7 @@ export class ExcelDriver implements Driver {
             }
             
             // xlsx library requires at least one sheet in the workbook
-            // If empty, add a placeholder sheet that will be removed when first object is created
+            // Add a placeholder sheet for empty workbooks (will be removed when first real sheet is added)
             if (this.workbook.SheetNames.length === 0) {
                 const placeholderSheet = XLSX.utils.aoa_to_sheet([[]]);
                 XLSX.utils.book_append_sheet(this.workbook, placeholderSheet, '_placeholder');
@@ -175,6 +193,9 @@ export class ExcelDriver implements Driver {
 
     /**
      * Sync in-memory data to workbook.
+     * 
+     * Creates or updates a worksheet for the given object type.
+     * Automatically removes the placeholder sheet when first real data is added.
      */
     private syncToWorkbook(objectName: string): void {
         const records = this.data.get(objectName) || [];
@@ -182,7 +203,8 @@ export class ExcelDriver implements Driver {
         // Create worksheet from JSON data
         const worksheet = XLSX.utils.json_to_sheet(records);
         
-        // Remove placeholder sheet if it exists
+        // Remove placeholder sheet if it exists (it was added for empty workbooks)
+        // This ensures we don't have orphaned placeholder sheets in the file
         if (this.workbook.SheetNames.includes('_placeholder')) {
             const index = this.workbook.SheetNames.indexOf('_placeholder');
             this.workbook.SheetNames.splice(index, 1);
