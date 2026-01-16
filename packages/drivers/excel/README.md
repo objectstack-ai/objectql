@@ -630,15 +630,15 @@ MIT
 
 ## 🔗 Related Packages
 
-- [@objectql/types](../foundation/types) - Core ObjectQL types
-- [@objectql/core](../foundation/core) - ObjectQL core engine
+- [@objectql/types](../../foundation/types) - Core ObjectQL types
+- [@objectql/core](../../foundation/core) - ObjectQL core engine
 - [@objectql/driver-memory](../memory) - In-memory driver
 - [@objectql/driver-sql](../sql) - SQL database driver
 - [@objectql/driver-mongo](../mongo) - MongoDB driver
 
 ## 🙏 Contributing
 
-Contributions are welcome! Please read our [Contributing Guide](../../CONTRIBUTING.md) for details.
+Contributions are welcome! Please see the repository's issue tracker and pull request guidelines.
 
 ## 🐛 Issues
 

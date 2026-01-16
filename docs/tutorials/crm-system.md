@@ -1,6 +1,6 @@
 # Building a Micro-CRMSystem
 
-> **Prerequisites**: Completed [Build Your First App](./task-manager).
+> **Prerequisites**: Completed [Build Your First App](./task-manager.md).
 
 In this tutorial, we will explore **Relationships**, **Validation**, and **Hooks** by building a minimal CRM (Customer Relationship Management) system.
 

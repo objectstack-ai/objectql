@@ -1,6 +1,6 @@
 # ObjectQL - Visual Studio Code Extension
 
-![ObjectQL Logo](images/icon.png)
+![ObjectQL Logo](images/icon.svg)
 
 **The Standard Protocol for AI Software Generation**
 
@@ -285,7 +285,7 @@ Contributions are welcome! Please see the main repository for contribution guide
 
 ## 📄 License
 
-MIT License - see [LICENSE](../../LICENSE) for details.
+MIT License - see [LICENSE](../../../LICENSE) for details.
 
 ---
 

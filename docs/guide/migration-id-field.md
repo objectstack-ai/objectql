@@ -277,7 +277,7 @@ ALTER TABLE users_new RENAME TO users;
 If you encounter issues during migration:
 
 1. Check the [Driver Documentation](./drivers/index.md)
-2. Review the [API Reference](../api/README.md)
+2. Review the [API Reference](../api/index.md)
 3. Open an issue on [GitHub](https://github.com/objectql/objectql/issues)
 
 ## Summary

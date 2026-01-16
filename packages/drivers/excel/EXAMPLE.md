@@ -193,6 +193,6 @@ The Excel file will look like this:
 
 ## Next Steps
 
-- Explore the [full API documentation](../README.md)
-- Check out other drivers: [SQL](../../sql), [MongoDB](../../mongo), [Memory](../../memory)
+- Explore the [full API documentation](./README.md)
+- Check out other drivers: [SQL](../sql), [MongoDB](../mongo), [Memory](../memory)
 - Learn about [ObjectQL](../../../README.md)

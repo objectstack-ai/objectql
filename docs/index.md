@@ -116,7 +116,7 @@ ObjectQL abstracts the entire backend into a **Standardized Protocol**:
 
 ## Next Steps
 
-*   **[🤖 Configure your AI Assistant](/ai/coding-assistant)**: Get the System Prompts to turn Cursor/Copilot into an ObjectQL expert.
-*   **[🚀 Start a Tutorial](/tutorials/)**: Build a Task Manager or CRM in minutes to understand the flow.
-*   **[🔌 Building AI Agents](/ai/building-apps)**: Learn how to use ObjectQL as the tool interface for autonomous agents.
-*   **[📚 Developer Guide](/guide/getting-started)**: The classic manual for human developers.
+*   **[🤖 Configure your AI Assistant](./ai/coding-assistant.md)**: Get the System Prompts to turn Cursor/Copilot into an ObjectQL expert.
+*   **[🚀 Start a Tutorial](./tutorials/index.md)**: Build a Task Manager or CRM in minutes to understand the flow.
+*   **[🔌 Building AI Agents](./ai/building-apps.md)**: Learn how to use ObjectQL as the tool interface for autonomous agents.
+*   **[📚 Developer Guide](./guide/getting-started.md)**: The classic manual for human developers.

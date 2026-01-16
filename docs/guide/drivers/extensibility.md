@@ -147,7 +147,7 @@ To implement a custom driver:
    - [`@objectql/driver-sql`](../../../packages/drivers/sql/src/index.ts) - SQL databases
    - [`@objectql/driver-mongo`](../../../packages/drivers/mongo/src/index.ts) - MongoDB
 3. Review the [Driver Interface](../../../packages/foundation/types/src/driver.ts)
-4. Follow the [Driver Testing Guide](./testing-drivers.md) (coming soon)
+4. Follow the driver testing patterns from existing drivers (see the test suites in `@objectql/driver-sql` and `@objectql/driver-mongo`)
 
 ## Community Drivers
 

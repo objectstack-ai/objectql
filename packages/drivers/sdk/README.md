@@ -2,7 +2,7 @@
 
 > **Remote HTTP Driver for ObjectQL** - Universal client for browser, Node.js, and edge runtimes
 
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](../../LICENSE)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](../../../LICENSE)
 [![TypeScript](https://img.shields.io/badge/written%20in-TypeScript-3178C6.svg)](https://www.typescriptlang.org/)
 
 The `@objectql/sdk` package provides a type-safe HTTP client for ObjectQL servers. It works seamlessly in browsers, Node.js, Deno, and edge runtimes like Cloudflare Workers.
@@ -473,7 +473,7 @@ The SDK is designed with the ObjectQL "Trinity" architecture:
 
 ## 📄 License
 
-MIT License - see [LICENSE](../../LICENSE) file for details.
+MIT License - see [LICENSE](../../../LICENSE) file for details.
 
 ---
 
@@ -496,4 +496,4 @@ We welcome contributions! Please see the main [repository README](../../../READM
 For complete documentation, visit:
 * [Client SDK Guide](../../../docs/api/client-sdk.md)
 * [REST API Reference](../../../docs/api/rest.md)
-* [ObjectQL Documentation](https://objectql.org)
+* [ObjectQL Documentation](https://github.com/objectstack-ai/objectql)

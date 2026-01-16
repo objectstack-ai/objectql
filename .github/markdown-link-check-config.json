@@ -14,6 +14,15 @@
     },
     {
       "pattern": "^https://www.google.com/search"
+    },
+    {
+      "pattern": "^https://objectql.org"
+    },
+    {
+      "pattern": "^https://www.npmjs.com/package/@objectql/"
+    },
+    {
+      "pattern": "^https://github.com/.*/releases/tag/.*%40"
     }
   ],
   "replacementPatterns": [],

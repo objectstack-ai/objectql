@@ -1,6 +1,6 @@
 # Building an Autonomous Data Agent
 
-> **Prerequisites**: [Task Manager Tutorial](./task-manager).
+> **Prerequisites**: [Task Manager Tutorial](./task-manager.md).
 > **Concepts**: ObjectQL as a "Tool" for LLMs.
 
 In this tutorial, we will build an AI Agent that can answer questions about your data by autonomously querying the ObjectQL database. We will use OpenAI's "Function Calling" capability.

@@ -1,6 +1,6 @@
 # Federated Data Graph
 
-> **Prerequisites**: [Building a Micro-CRM](./crm-system).
+> **Prerequisites**: [Building a Micro-CRM](./crm-system.md).
 > **Requirements**: A running MongoDB instance (or use a cloud provider URI).
 
 In this advanced tutorial, we will demonstrate **Data Federation**. We will connect to two different databases simultaneously:

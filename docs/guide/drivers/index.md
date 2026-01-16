@@ -8,15 +8,15 @@ You can configure multiple drivers for different parts of your application, or u
 
 We currently support the following official drivers:
 
-*   **[SQL Driver](./sql)**: Supports PostgreSQL, MySQL, SQLite, MSSQL, etc.
-*   **[MongoDB Driver](./mongo)**: Supports MongoDB.
+*   **[SQL Driver](./sql.md)**: Supports PostgreSQL, MySQL, SQLite, MSSQL, etc.
+*   **[MongoDB Driver](./mongo.md)**: Supports MongoDB.
 
 ## Extensibility
 
 ObjectQL is designed to support additional database types through custom drivers. 
 
-*   **[Driver Extensibility Guide](./extensibility)**: Learn about potential database types that can be supported and how to choose the right one for your needs.
-*   **[Implementing a Custom Driver](./implementing-custom-driver)**: Step-by-step guide to building your own database driver for ObjectQL.
+*   **[Driver Extensibility Guide](./extensibility.md)**: Learn about potential database types that can be supported and how to choose the right one for your needs.
+*   **[Implementing a Custom Driver](./implementing-custom-driver.md)**: Step-by-step guide to building your own database driver for ObjectQL.
 
 ## Unified ID Field
 

@@ -200,5 +200,5 @@ await ctx.object('todo').execute('mark_done', 'id_123', {});
 
 *   **[Database Drivers](./drivers/index.md)**: Connect to PostgreSQL, MongoDB, etc.
 *   **[Data Modeling](./data-modeling.md)**: Learn about all field types (Select, Lookup, Date, etc.)
-*   **[SDK Reference](./sdk-reference.md)**: Explore the full API.
+*   **[API Reference](../api/index.md)**: Explore the full API.
 *   **[Hooks](./logic-hooks.md)**: Deep dive into the event system.

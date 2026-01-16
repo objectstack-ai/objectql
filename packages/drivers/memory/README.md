@@ -145,7 +145,7 @@ The Memory Driver works seamlessly in web browsers! Perfect for prototyping, cli
 
 ### Interactive Browser Demo
 
-See the **[Browser Demo](../../../examples/browser-demo/)** for a complete interactive example with:
+See the **examples** in the repository for interactive demonstrations.
 - 🎨 Beautiful UI with live CRUD operations
 - 🖥️ Browser console debugging
 - 📊 Real-time statistics
