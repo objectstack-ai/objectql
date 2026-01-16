@@ -1,0 +1,129 @@
+{
+  "$ref": "#/definitions/MenuConfig",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "MenuConfig": {
+      "additionalProperties": {
+        "description": "Custom properties"
+      },
+      "properties": {
+        "app": {
+          "description": "The application this menu belongs to",
+          "type": "string"
+        },
+        "is_active": {
+          "description": "Whether the menu is active",
+          "type": "boolean"
+        },
+        "items": {
+          "description": "Menu items",
+          "items": {
+            "$ref": "#/definitions/MenuItem"
+          },
+          "type": "array"
+        },
+        "label": {
+          "description": "Display label",
+          "type": "string"
+        },
+        "name": {
+          "description": "Unique identifier for the menu",
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/definitions/MenuType",
+          "description": "Menu type/location"
+        }
+      },
+      "required": [
+        "name",
+        "label",
+        "items"
+      ],
+      "type": "object"
+    },
+    "MenuItem": {
+      "additionalProperties": {
+        "description": "Custom properties"
+      },
+      "properties": {
+        "badge": {
+          "description": "Badge value or expression",
+          "type": "string"
+        },
+        "hidden": {
+          "description": "Visibility condition",
+          "type": [
+            "boolean",
+            "string"
+          ]
+        },
+        "icon": {
+          "description": "Icon name",
+          "type": "string"
+        },
+        "items": {
+          "description": "Nested menu items",
+          "items": {
+            "$ref": "#/definitions/MenuItem"
+          },
+          "type": "array"
+        },
+        "label": {
+          "description": "Display label",
+          "type": "string"
+        },
+        "name": {
+          "description": "Unique identifier for the menu item",
+          "type": "string"
+        },
+        "object": {
+          "description": "Associated Object name (for type: object)",
+          "type": "string"
+        },
+        "path": {
+          "description": "Navigation path (for type: page/url)",
+          "type": "string"
+        },
+        "target": {
+          "description": "Link target (e.g. _blank)",
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/definitions/MenuItemType",
+          "description": "Item type"
+        },
+        "view": {
+          "description": "Object View name (for type: object)",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "label"
+      ],
+      "type": "object"
+    },
+    "MenuItemType": {
+      "enum": [
+        "page",
+        "section",
+        "url",
+        "folder",
+        "object",
+        "action"
+      ],
+      "type": "string"
+    },
+    "MenuType": {
+      "enum": [
+        "sidebar",
+        "topnav",
+        "context",
+        "mobile",
+        "admin"
+      ],
+      "type": "string"
+    }
+  }
+}

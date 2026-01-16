@@ -1,0 +1,1460 @@
+{
+  "$ref": "#/definitions/ObjectConfig",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "ActionConfig": {
+      "additionalProperties": false,
+      "description": "The configuration of an Action visible to the Metadata engine (YAML/JSON side).",
+      "properties": {
+        "confirm_text": {
+          "description": "Message to show before executing. If present, UI should prompt confirmation.",
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "icon": {
+          "type": "string"
+        },
+        "internal": {
+          "description": "If true, this action is not exposed via API directly (server-internal).",
+          "type": "boolean"
+        },
+        "label": {
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/ActionInputDefinition",
+          "description": "Input parameter schema."
+        },
+        "return_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/FieldConfig"
+            }
+          ],
+          "description": "Output data shape description (optional, for content negotiation)."
+        },
+        "type": {
+          "$ref": "#/definitions/ActionType",
+          "description": "Default: 'global' if no fields defined, but usually specified explicitly."
+        }
+      },
+      "type": "object"
+    },
+    "ActionInputDefinition": {
+      "additionalProperties": {
+        "$ref": "#/definitions/FieldConfig"
+      },
+      "description": "Re-using FieldConfig allows us to describe input parameters  using the same rich vocabulary as database fields (validation, UI hints, etc).",
+      "type": "object"
+    },
+    "ActionType": {
+      "description": "Defines the scope of the action.\n- `record`: Acts on a specific record instance (e.g. \"Approve Order\").\n- `global`: Acts on the collection or system (e.g. \"Import CSV\", \"Daily Report\").",
+      "enum": [
+        "record",
+        "global"
+      ],
+      "type": "string"
+    },
+    "AiSearchConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "description": "Enable semantic search for this object",
+          "type": "boolean"
+        },
+        "fields": {
+          "description": "Fields to include in the embedding generation",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "model": {
+          "description": "The AI model to use for embedding (e.g. 'openai/text-embedding-3-small')",
+          "type": "string"
+        },
+        "target_field": {
+          "description": "Optional: Target vector field name if manually defined",
+          "type": "string"
+        }
+      },
+      "required": [
+        "enabled",
+        "fields"
+      ],
+      "type": "object"
+    },
+    "AnyValidationRule": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/ValidationRule"
+        },
+        {
+          "$ref": "#/definitions/CrossFieldValidationRule"
+        },
+        {
+          "$ref": "#/definitions/BusinessRuleValidationRule"
+        },
+        {
+          "$ref": "#/definitions/StateMachineValidationRule"
+        },
+        {
+          "$ref": "#/definitions/UniquenessValidationRule"
+        },
+        {
+          "$ref": "#/definitions/DependencyValidationRule"
+        },
+        {
+          "$ref": "#/definitions/CustomValidationRule"
+        }
+      ],
+      "description": "Union type for all validation rules."
+    },
+    "BusinessRuleConstraint": {
+      "additionalProperties": false,
+      "description": "Business rule constraint definition.",
+      "properties": {
+        "all_of": {
+          "description": "Logical AND conditions",
+          "items": {
+            "$ref": "#/definitions/ValidationCondition"
+          },
+          "type": "array"
+        },
+        "any_of": {
+          "description": "Logical OR conditions",
+          "items": {
+            "$ref": "#/definitions/ValidationCondition"
+          },
+          "type": "array"
+        },
+        "expression": {
+          "description": "Expression to evaluate",
+          "type": "string"
+        },
+        "relationships": {
+          "additionalProperties": {
+            "$ref": "#/definitions/ValidationRelationship"
+          },
+          "description": "Relationships needed for the rule",
+          "type": "object"
+        },
+        "then_require": {
+          "description": "Required field condition",
+          "items": {
+            "$ref": "#/definitions/ValidationCondition"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "BusinessRuleValidationRule": {
+      "additionalProperties": false,
+      "description": "Business rule validation.",
+      "properties": {
+        "ai_context": {
+          "$ref": "#/definitions/ValidationAiContext",
+          "description": "AI context for understanding the rule"
+        },
+        "apply_when": {
+          "$ref": "#/definitions/ValidationCondition",
+          "description": "Condition for applying the rule"
+        },
+        "async": {
+          "description": "Whether this is an async validation",
+          "type": "boolean"
+        },
+        "constraint": {
+          "$ref": "#/definitions/BusinessRuleConstraint",
+          "description": "The business rule constraint"
+        },
+        "context": {
+          "description": "Contexts where this rule applies",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "error_code": {
+          "description": "Error code for programmatic handling",
+          "type": "string"
+        },
+        "fields": {
+          "description": "Fields that trigger this rule when changed",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "message": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            }
+          ],
+          "description": "Human-readable error message"
+        },
+        "name": {
+          "description": "Unique name of the rule",
+          "type": "string"
+        },
+        "severity": {
+          "$ref": "#/definitions/ValidationSeverity",
+          "description": "Severity level"
+        },
+        "skip_bulk": {
+          "description": "Skip in bulk operations",
+          "type": "boolean"
+        },
+        "timeout": {
+          "description": "Timeout for async validation (ms)",
+          "type": "number"
+        },
+        "trigger": {
+          "description": "Operations that trigger this rule",
+          "items": {
+            "$ref": "#/definitions/ValidationTrigger"
+          },
+          "type": "array"
+        },
+        "type": {
+          "const": "business_rule",
+          "description": "Type of validation rule",
+          "type": "string"
+        }
+      },
+      "required": [
+        "message",
+        "name",
+        "type"
+      ],
+      "type": "object"
+    },
+    "CrossFieldValidationRule": {
+      "additionalProperties": false,
+      "description": "Cross-field validation rule.",
+      "properties": {
+        "ai_context": {
+          "$ref": "#/definitions/ValidationAiContext",
+          "description": "AI context for understanding the rule"
+        },
+        "apply_when": {
+          "$ref": "#/definitions/ValidationCondition",
+          "description": "Condition for applying the rule"
+        },
+        "async": {
+          "description": "Whether this is an async validation",
+          "type": "boolean"
+        },
+        "context": {
+          "description": "Contexts where this rule applies",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "error_code": {
+          "description": "Error code for programmatic handling",
+          "type": "string"
+        },
+        "fields": {
+          "description": "Fields that trigger this rule when changed",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "message": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            }
+          ],
+          "description": "Human-readable error message"
+        },
+        "name": {
+          "description": "Unique name of the rule",
+          "type": "string"
+        },
+        "rule": {
+          "$ref": "#/definitions/ValidationCondition",
+          "description": "The validation rule to apply"
+        },
+        "severity": {
+          "$ref": "#/definitions/ValidationSeverity",
+          "description": "Severity level"
+        },
+        "skip_bulk": {
+          "description": "Skip in bulk operations",
+          "type": "boolean"
+        },
+        "timeout": {
+          "description": "Timeout for async validation (ms)",
+          "type": "number"
+        },
+        "trigger": {
+          "description": "Operations that trigger this rule",
+          "items": {
+            "$ref": "#/definitions/ValidationTrigger"
+          },
+          "type": "array"
+        },
+        "type": {
+          "const": "cross_field",
+          "description": "Type of validation rule",
+          "type": "string"
+        }
+      },
+      "required": [
+        "message",
+        "name",
+        "type"
+      ],
+      "type": "object"
+    },
+    "CustomValidationRule": {
+      "additionalProperties": false,
+      "description": "Custom validation rule with validator function.",
+      "properties": {
+        "ai_context": {
+          "$ref": "#/definitions/ValidationAiContext",
+          "description": "AI context for understanding the rule"
+        },
+        "apply_when": {
+          "$ref": "#/definitions/ValidationCondition",
+          "description": "Condition for applying the rule"
+        },
+        "async": {
+          "description": "Whether this is an async validation",
+          "type": "boolean"
+        },
+        "context": {
+          "description": "Contexts where this rule applies",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "error_code": {
+          "description": "Error code for programmatic handling",
+          "type": "string"
+        },
+        "error_message_template": {
+          "description": "Error message template",
+          "type": "string"
+        },
+        "fields": {
+          "description": "Fields that trigger this rule when changed",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "message": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            }
+          ],
+          "description": "Human-readable error message"
+        },
+        "message_params": {
+          "description": "Message parameters",
+          "type": "object"
+        },
+        "name": {
+          "description": "Unique name of the rule",
+          "type": "string"
+        },
+        "severity": {
+          "$ref": "#/definitions/ValidationSeverity",
+          "description": "Severity level"
+        },
+        "skip_bulk": {
+          "description": "Skip in bulk operations",
+          "type": "boolean"
+        },
+        "timeout": {
+          "description": "Timeout for async validation (ms)",
+          "type": "number"
+        },
+        "trigger": {
+          "description": "Operations that trigger this rule",
+          "items": {
+            "$ref": "#/definitions/ValidationTrigger"
+          },
+          "type": "array"
+        },
+        "type": {
+          "const": "custom",
+          "description": "Type of validation rule",
+          "type": "string"
+        },
+        "validator": {
+          "description": "Validator function as string",
+          "type": "string"
+        }
+      },
+      "required": [
+        "message",
+        "name",
+        "type"
+      ],
+      "type": "object"
+    },
+    "DependencyValidationRule": {
+      "additionalProperties": false,
+      "description": "Dependency validation rule.",
+      "properties": {
+        "ai_context": {
+          "$ref": "#/definitions/ValidationAiContext",
+          "description": "AI context for understanding the rule"
+        },
+        "apply_when": {
+          "$ref": "#/definitions/ValidationCondition",
+          "description": "Condition for applying the rule"
+        },
+        "async": {
+          "description": "Whether this is an async validation",
+          "type": "boolean"
+        },
+        "condition": {
+          "additionalProperties": false,
+          "description": "Validation condition",
+          "properties": {
+            "has_related": {
+              "additionalProperties": false,
+              "description": "Related records check",
+              "properties": {
+                "filter": {
+                  "items": {
+                    "$ref": "#/definitions/ValidationCondition"
+                  },
+                  "type": "array"
+                },
+                "object": {
+                  "type": "string"
+                },
+                "relation_field": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "object",
+                "relation_field"
+              ],
+              "type": "object"
+            },
+            "lookup": {
+              "$ref": "#/definitions/ValidationRelationship",
+              "description": "Lookup validation"
+            }
+          },
+          "type": "object"
+        },
+        "context": {
+          "description": "Contexts where this rule applies",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "error_code": {
+          "description": "Error code for programmatic handling",
+          "type": "string"
+        },
+        "fields": {
+          "description": "Fields that trigger this rule when changed",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "message": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            }
+          ],
+          "description": "Human-readable error message"
+        },
+        "name": {
+          "description": "Unique name of the rule",
+          "type": "string"
+        },
+        "severity": {
+          "$ref": "#/definitions/ValidationSeverity",
+          "description": "Severity level"
+        },
+        "skip_bulk": {
+          "description": "Skip in bulk operations",
+          "type": "boolean"
+        },
+        "timeout": {
+          "description": "Timeout for async validation (ms)",
+          "type": "number"
+        },
+        "trigger": {
+          "description": "Operations that trigger this rule",
+          "items": {
+            "$ref": "#/definitions/ValidationTrigger"
+          },
+          "type": "array"
+        },
+        "type": {
+          "const": "dependency",
+          "description": "Type of validation rule",
+          "type": "string"
+        }
+      },
+      "required": [
+        "message",
+        "name",
+        "type"
+      ],
+      "type": "object"
+    },
+    "FieldConfig": {
+      "additionalProperties": false,
+      "description": "Configuration for a single field on an object. This defines the schema, validation rules, and UI hints for the attribute.",
+      "properties": {
+        "accept": {
+          "description": "Allowed file extensions for file/image fields. Example: ['.pdf', '.docx'] or ['.jpg', '.png', '.gif']",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "ai_context": {
+          "$ref": "#/definitions/ValidationAiContext",
+          "description": "AI context for the field. Provides semantic information for AI tools."
+        },
+        "blank_as_zero": {
+          "description": "Treat blank/null as zero in formula calculations.",
+          "type": "boolean"
+        },
+        "data_type": {
+          "description": "Expected return data type for formula fields.",
+          "enum": [
+            "number",
+            "text",
+            "date",
+            "datetime",
+            "boolean",
+            "currency",
+            "percent"
+          ],
+          "type": "string"
+        },
+        "defaultValue": {
+          "description": "The default value if not provided during creation."
+        },
+        "description": {
+          "description": "Description of the field for documentation or tooltip.",
+          "type": "string"
+        },
+        "dimension": {
+          "description": "Dimension of the vector for 'vector' type fields.",
+          "type": "number"
+        },
+        "filters": {
+          "items": {},
+          "type": "array"
+        },
+        "format": {
+          "description": "Display format for formula results (e.g., \"0.00\", \"YYYY-MM-DD\").",
+          "type": "string"
+        },
+        "formula": {
+          "description": "Formula expression (for 'formula' type fields).",
+          "type": "string"
+        },
+        "help_text": {
+          "description": "Tooltip or help text for the user.",
+          "type": "string"
+        },
+        "hidden": {
+          "description": "Whether the field is hidden from default UI/API response.",
+          "type": "boolean"
+        },
+        "index": {
+          "description": "Whether to create a database index for this field.",
+          "type": "boolean"
+        },
+        "label": {
+          "description": "The human-readable label used in UIs.",
+          "type": "string"
+        },
+        "max": {
+          "description": "Maximum for number/currency/percent.",
+          "type": "number"
+        },
+        "max_height": {
+          "description": "Maximum image height in pixels for image fields.",
+          "type": "number"
+        },
+        "max_length": {
+          "description": "Maximum length for text based fields.",
+          "type": "number"
+        },
+        "max_size": {
+          "description": "Maximum file size in bytes for file/image fields. Example: 5242880 (5MB)",
+          "type": "number"
+        },
+        "max_width": {
+          "description": "Maximum image width in pixels for image fields.",
+          "type": "number"
+        },
+        "min": {
+          "description": "Minimum for number/currency/percent.",
+          "type": "number"
+        },
+        "min_height": {
+          "description": "Minimum image height in pixels for image fields.",
+          "type": "number"
+        },
+        "min_length": {
+          "description": "Minimum length for text based fields.",
+          "type": "number"
+        },
+        "min_size": {
+          "description": "Minimum file size in bytes for file/image fields.",
+          "type": "number"
+        },
+        "min_width": {
+          "description": "Minimum image width in pixels for image fields.",
+          "type": "number"
+        },
+        "multiple": {
+          "description": "Whether the field allows multiple values.  Supported by 'select', 'lookup', 'file', 'image'.",
+          "type": "boolean"
+        },
+        "name": {
+          "description": "The unique API name of the field.  If defined within an object map, this is often automatically populated from the key.",
+          "type": "string"
+        },
+        "options": {
+          "description": "Options for select fields. List of available choices for select/multiselect fields.",
+          "items": {
+            "$ref": "#/definitions/FieldOption"
+          },
+          "type": "array"
+        },
+        "precision": {
+          "description": "Decimal precision for numeric formula results.",
+          "type": "number"
+        },
+        "readonly": {
+          "description": "Whether the field is read-only in UI.",
+          "type": "boolean"
+        },
+        "reference_to": {
+          "description": "Reference to another object for lookup/master_detail fields. Specifies the target object name for relationship fields.",
+          "type": "string"
+        },
+        "regex": {
+          "description": "Regular expression pattern for validation.",
+          "type": "string"
+        },
+        "required": {
+          "description": "Whether the field is mandatory. Defaults to false.",
+          "type": "boolean"
+        },
+        "summary_field": {
+          "description": "Field on the summary object.",
+          "type": "string"
+        },
+        "summary_object": {
+          "description": "Object to summarize.",
+          "type": "string"
+        },
+        "summary_type": {
+          "description": "Type of summary (count, sum, min, max, avg).",
+          "type": "string"
+        },
+        "treat_blank_as": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Default value for null/undefined referenced fields in formulas."
+        },
+        "type": {
+          "$ref": "#/definitions/FieldType",
+          "description": "The data type of the field."
+        },
+        "unique": {
+          "description": "Whether the field is unique in the table.",
+          "type": "boolean"
+        },
+        "validation": {
+          "$ref": "#/definitions/FieldValidation",
+          "description": "Field validation configuration. Defines validation rules applied at the field level."
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "type": "object"
+    },
+    "FieldOption": {
+      "additionalProperties": false,
+      "description": "Defines a single option for select/multiselect fields.",
+      "properties": {
+        "label": {
+          "description": "The display label for the option.",
+          "type": "string"
+        },
+        "value": {
+          "description": "The actual value stored in the database.",
+          "type": [
+            "string",
+            "number"
+          ]
+        }
+      },
+      "required": [
+        "label",
+        "value"
+      ],
+      "type": "object"
+    },
+    "FieldType": {
+      "description": "Represents the supported field data types in the ObjectQL schema. These types determine how data is stored, validated, and rendered.\n\n- `text`: Simple string.\n- `textarea`: Long string.\n- `select`: Choice from a list.\n- `lookup`: Relationship to another object.\n- `file`: File attachment. Value stored as AttachmentData (single) or AttachmentData[] (multiple).\n- `image`: Image attachment. Value stored as ImageAttachmentData (single) or ImageAttachmentData[] (multiple).",
+      "enum": [
+        "text",
+        "textarea",
+        "markdown",
+        "html",
+        "select",
+        "date",
+        "datetime",
+        "time",
+        "number",
+        "currency",
+        "percent",
+        "boolean",
+        "email",
+        "phone",
+        "url",
+        "image",
+        "file",
+        "location",
+        "lookup",
+        "master_detail",
+        "password",
+        "formula",
+        "summary",
+        "auto_number",
+        "object",
+        "vector",
+        "grid"
+      ],
+      "type": "string"
+    },
+    "FieldValidation": {
+      "additionalProperties": false,
+      "description": "Field validation configuration (built into FieldConfig).",
+      "properties": {
+        "format": {
+          "description": "Format validation (email, url, etc.)",
+          "enum": [
+            "email",
+            "url",
+            "phone",
+            "date",
+            "datetime"
+          ],
+          "type": "string"
+        },
+        "max": {
+          "description": "Maximum value for numbers",
+          "type": "number"
+        },
+        "max_length": {
+          "description": "Maximum length for strings",
+          "type": "number"
+        },
+        "message": {
+          "description": "Custom validation message",
+          "type": "string"
+        },
+        "min": {
+          "description": "Minimum value for numbers",
+          "type": "number"
+        },
+        "min_length": {
+          "description": "Minimum length for strings",
+          "type": "number"
+        },
+        "pattern": {
+          "description": "Regular expression pattern for validation",
+          "type": "string"
+        },
+        "protocols": {
+          "description": "Allowed protocols for URL validation",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "regex": {
+          "deprecated": "Use pattern instead",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "IndexConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "fields": {
+          "description": "List of fields involved in the index",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "unique": {
+          "description": "Whether the index enforces uniqueness",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "fields"
+      ],
+      "type": "object"
+    },
+    "ObjectAiConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "search": {
+          "$ref": "#/definitions/AiSearchConfig",
+          "description": "Configuration for semantic search / RAG"
+        }
+      },
+      "type": "object"
+    },
+    "ObjectConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "actions": {
+          "additionalProperties": {
+            "$ref": "#/definitions/ActionConfig"
+          },
+          "type": "object"
+        },
+        "ai": {
+          "$ref": "#/definitions/ObjectAiConfig",
+          "description": "AI capabilities configuration"
+        },
+        "datasource": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "fields": {
+          "additionalProperties": {
+            "$ref": "#/definitions/FieldConfig"
+          },
+          "type": "object"
+        },
+        "icon": {
+          "type": "string"
+        },
+        "indexes": {
+          "additionalProperties": {
+            "$ref": "#/definitions/IndexConfig"
+          },
+          "type": "object"
+        },
+        "label": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "validation": {
+          "additionalProperties": false,
+          "description": "Validation rules for this object",
+          "properties": {
+            "ai_context": {
+              "additionalProperties": false,
+              "description": "AI context for validation strategy",
+              "properties": {
+                "intent": {
+                  "type": "string"
+                },
+                "validation_strategy": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "rules": {
+              "description": "Validation rules",
+              "items": {
+                "$ref": "#/definitions/AnyValidationRule"
+              },
+              "type": "array"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "required": [
+        "name",
+        "fields"
+      ],
+      "type": "object"
+    },
+    "StateMachineValidationRule": {
+      "additionalProperties": false,
+      "description": "State machine validation rule.",
+      "properties": {
+        "ai_context": {
+          "$ref": "#/definitions/ValidationAiContext",
+          "description": "AI context for understanding the rule"
+        },
+        "apply_when": {
+          "$ref": "#/definitions/ValidationCondition",
+          "description": "Condition for applying the rule"
+        },
+        "async": {
+          "description": "Whether this is an async validation",
+          "type": "boolean"
+        },
+        "context": {
+          "description": "Contexts where this rule applies",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "error_code": {
+          "description": "Error code for programmatic handling",
+          "type": "string"
+        },
+        "field": {
+          "description": "Field containing the state",
+          "type": "string"
+        },
+        "fields": {
+          "description": "Fields that trigger this rule when changed",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "initial_states": {
+          "description": "Initial states",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "message": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            }
+          ],
+          "description": "Human-readable error message"
+        },
+        "name": {
+          "description": "Unique name of the rule",
+          "type": "string"
+        },
+        "severity": {
+          "$ref": "#/definitions/ValidationSeverity",
+          "description": "Severity level"
+        },
+        "skip_bulk": {
+          "description": "Skip in bulk operations",
+          "type": "boolean"
+        },
+        "timeout": {
+          "description": "Timeout for async validation (ms)",
+          "type": "number"
+        },
+        "transition_conditions": {
+          "description": "Transition conditions",
+          "type": "object"
+        },
+        "transitions": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/StateTransition"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ]
+          },
+          "description": "Valid state transitions",
+          "type": "object"
+        },
+        "trigger": {
+          "description": "Operations that trigger this rule",
+          "items": {
+            "$ref": "#/definitions/ValidationTrigger"
+          },
+          "type": "array"
+        },
+        "type": {
+          "const": "state_machine",
+          "description": "Type of validation rule",
+          "type": "string"
+        }
+      },
+      "required": [
+        "field",
+        "message",
+        "name",
+        "type"
+      ],
+      "type": "object"
+    },
+    "StateTransition": {
+      "additionalProperties": false,
+      "description": "State transition definition for state machine validation.",
+      "properties": {
+        "ai_context": {
+          "$ref": "#/definitions/ValidationAiContext",
+          "description": "AI context for the transition"
+        },
+        "allowed_next": {
+          "description": "States that can transition to this state",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "is_terminal": {
+          "description": "Whether this is a terminal state",
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "UniquenessValidationRule": {
+      "additionalProperties": false,
+      "description": "Uniqueness validation rule.",
+      "properties": {
+        "ai_context": {
+          "$ref": "#/definitions/ValidationAiContext",
+          "description": "AI context for understanding the rule"
+        },
+        "apply_when": {
+          "$ref": "#/definitions/ValidationCondition",
+          "description": "Condition for applying the rule"
+        },
+        "async": {
+          "description": "Whether this is an async validation",
+          "type": "boolean"
+        },
+        "case_sensitive": {
+          "description": "Case sensitivity for string comparison",
+          "type": "boolean"
+        },
+        "context": {
+          "description": "Contexts where this rule applies",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "error_code": {
+          "description": "Error code for programmatic handling",
+          "type": "string"
+        },
+        "field": {
+          "description": "Field to check for uniqueness",
+          "type": "string"
+        },
+        "fields": {
+          "description": "Multiple fields for composite uniqueness",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "message": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            }
+          ],
+          "description": "Human-readable error message"
+        },
+        "name": {
+          "description": "Unique name of the rule",
+          "type": "string"
+        },
+        "scope": {
+          "$ref": "#/definitions/ValidationCondition",
+          "description": "Scope constraint for conditional uniqueness"
+        },
+        "severity": {
+          "$ref": "#/definitions/ValidationSeverity",
+          "description": "Severity level"
+        },
+        "skip_bulk": {
+          "description": "Skip in bulk operations",
+          "type": "boolean"
+        },
+        "timeout": {
+          "description": "Timeout for async validation (ms)",
+          "type": "number"
+        },
+        "trigger": {
+          "description": "Operations that trigger this rule",
+          "items": {
+            "$ref": "#/definitions/ValidationTrigger"
+          },
+          "type": "array"
+        },
+        "type": {
+          "const": "unique",
+          "description": "Type of validation rule",
+          "type": "string"
+        }
+      },
+      "required": [
+        "message",
+        "name",
+        "type"
+      ],
+      "type": "object"
+    },
+    "ValidationAiContext": {
+      "additionalProperties": false,
+      "description": "AI context for validation rules. Provides semantic information for AI tools to understand validation intent.",
+      "properties": {
+        "algorithm": {
+          "description": "Algorithm description for complex validation",
+          "type": "string"
+        },
+        "business_rule": {
+          "description": "Business rule description in natural language",
+          "type": "string"
+        },
+        "compliance": {
+          "description": "Compliance requirements",
+          "type": "string"
+        },
+        "data_dependency": {
+          "description": "External dependencies required for validation",
+          "type": "string"
+        },
+        "decision_logic": {
+          "description": "Decision logic in natural language",
+          "type": "string"
+        },
+        "error_impact": {
+          "description": "Impact level if validation fails",
+          "enum": [
+            "high",
+            "medium",
+            "low"
+          ],
+          "type": "string"
+        },
+        "examples": {
+          "additionalProperties": false,
+          "description": "Examples of valid/invalid data",
+          "properties": {
+            "invalid": {
+              "items": {},
+              "type": "array"
+            },
+            "valid": {
+              "items": {},
+              "type": "array"
+            }
+          },
+          "type": "object"
+        },
+        "external_dependency": {
+          "description": "External system dependencies",
+          "type": "string"
+        },
+        "intent": {
+          "description": "Business intent behind the validation rule",
+          "type": "string"
+        },
+        "rationale": {
+          "description": "Rationale for the rule",
+          "type": "string"
+        },
+        "visualization": {
+          "description": "Visualization of the validation logic",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "ValidationCondition": {
+      "additionalProperties": false,
+      "description": "Condition for applying validation rules.",
+      "properties": {
+        "all_of": {
+          "description": "Logical AND conditions",
+          "items": {
+            "$ref": "#/definitions/ValidationCondition"
+          },
+          "type": "array"
+        },
+        "any_of": {
+          "description": "Logical OR conditions",
+          "items": {
+            "$ref": "#/definitions/ValidationCondition"
+          },
+          "type": "array"
+        },
+        "compare_to": {
+          "description": "Field name to compare against (for cross-field validation)",
+          "type": "string"
+        },
+        "expression": {
+          "description": "Expression to evaluate",
+          "type": "string"
+        },
+        "field": {
+          "description": "Field to check",
+          "type": "string"
+        },
+        "operator": {
+          "$ref": "#/definitions/ValidationOperator",
+          "description": "Comparison operator"
+        },
+        "value": {
+          "description": "Value to compare against"
+        }
+      },
+      "type": "object"
+    },
+    "ValidationOperator": {
+      "description": "Comparison operators for validation rules.",
+      "enum": [
+        "=",
+        "!=",
+        ">",
+        ">=",
+        "<",
+        "<=",
+        "in",
+        "not_in",
+        "contains",
+        "not_contains",
+        "starts_with",
+        "ends_with"
+      ],
+      "type": "string"
+    },
+    "ValidationRelationship": {
+      "additionalProperties": false,
+      "description": "Relationship lookup for business rule validation.",
+      "properties": {
+        "field": {
+          "description": "Field(s) to fetch from related object",
+          "type": "string"
+        },
+        "fields": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "object": {
+          "description": "Related object name",
+          "type": "string"
+        },
+        "validate": {
+          "$ref": "#/definitions/ValidationCondition",
+          "description": "Validation to apply on related record"
+        },
+        "via": {
+          "description": "Field that links to the related object",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "ValidationRule": {
+      "additionalProperties": false,
+      "description": "Base validation rule definition.",
+      "properties": {
+        "ai_context": {
+          "$ref": "#/definitions/ValidationAiContext",
+          "description": "AI context for understanding the rule"
+        },
+        "apply_when": {
+          "$ref": "#/definitions/ValidationCondition",
+          "description": "Condition for applying the rule"
+        },
+        "async": {
+          "description": "Whether this is an async validation",
+          "type": "boolean"
+        },
+        "context": {
+          "description": "Contexts where this rule applies",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "error_code": {
+          "description": "Error code for programmatic handling",
+          "type": "string"
+        },
+        "fields": {
+          "description": "Fields that trigger this rule when changed",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "message": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            }
+          ],
+          "description": "Human-readable error message"
+        },
+        "name": {
+          "description": "Unique name of the rule",
+          "type": "string"
+        },
+        "severity": {
+          "$ref": "#/definitions/ValidationSeverity",
+          "description": "Severity level"
+        },
+        "skip_bulk": {
+          "description": "Skip in bulk operations",
+          "type": "boolean"
+        },
+        "timeout": {
+          "description": "Timeout for async validation (ms)",
+          "type": "number"
+        },
+        "trigger": {
+          "description": "Operations that trigger this rule",
+          "items": {
+            "$ref": "#/definitions/ValidationTrigger"
+          },
+          "type": "array"
+        },
+        "type": {
+          "$ref": "#/definitions/ValidationRuleType",
+          "description": "Type of validation rule"
+        }
+      },
+      "required": [
+        "name",
+        "type",
+        "message"
+      ],
+      "type": "object"
+    },
+    "ValidationRuleType": {
+      "description": "Types of validation rules supported by ObjectQL.",
+      "enum": [
+        "field",
+        "cross_field",
+        "business_rule",
+        "state_machine",
+        "unique",
+        "dependency",
+        "custom"
+      ],
+      "type": "string"
+    },
+    "ValidationSeverity": {
+      "description": "Severity levels for validation errors.",
+      "enum": [
+        "error",
+        "warning",
+        "info"
+      ],
+      "type": "string"
+    },
+    "ValidationTrigger": {
+      "description": "Operations that can trigger validation.",
+      "enum": [
+        "create",
+        "update",
+        "delete"
+      ],
+      "type": "string"
+    }
+  }
+}
