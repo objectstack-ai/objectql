@@ -2,7 +2,7 @@
   "name": "objectql-monorepo",
   "private": true,
   "scripts": {
-    "dev": "pnpm example:tracker",
+    "dev": "pnpm objectql:tracker",
     "build": "tsc -b && pnpm -r run build",
     "clean": "rm -rf dist packages/*/dist packages/*/node_modules node_modules",
     "test": "pnpm run check-versions && pnpm -r run test",
