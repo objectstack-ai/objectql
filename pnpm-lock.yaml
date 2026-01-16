@@ -70,6 +70,25 @@ importers:
         specifier: ^1.6.4
         version: 1.6.4(@algolia/client-search@5.46.2)(@types/node@20.19.29)(postcss@8.5.6)(typescript@5.9.3)
 
+  examples/drivers/excel-demo:
+    dependencies:
+      '@objectql/driver-excel':
+        specifier: workspace:*
+        version: link:../../../packages/drivers/excel
+      '@objectql/types':
+        specifier: workspace:*
+        version: link:../../../packages/foundation/types
+    devDependencies:
+      '@types/node':
+        specifier: ^20.10.0
+        version: 20.19.29
+      ts-node:
+        specifier: ^10.9.0
+        version: 10.9.2(@types/node@20.19.29)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.0.0
+        version: 5.9.3
+
   examples/integrations/browser:
     dependencies:
       '@objectql/core':
