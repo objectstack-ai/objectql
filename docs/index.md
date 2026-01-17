@@ -3,120 +3,167 @@ layout: home
 
 hero:
   name: ObjectQL
-  text: The Standard Protocol for AI Software Generation
-  tagline: A universal, metadata-driven ORM and protocol designed to empower LLMs to generate enterprise apps without hallucinations.
+  text: The Universal Data Compiler
+  tagline: Stop writing glue code. Start compiling your data layer. Define schemas once in YAML, compile to optimized SQL for any database, auto-generate type-safe APIs.
   image:
     src: /logo.svg
     alt: ObjectQL Logo
   actions:
     - theme: brand
-      text: 📖 Read the Guide
+      text: Get Started
       link: /guide/getting-started
     - theme: alt
-      text: 🤖 AI-Native Development
-      link: /ai/
-    - theme: alt
-      text: 🔌 API Reference
-      link: /api/
+      text: View on GitHub
+      link: https://github.com/objectstack-ai/objectql
 
 features:
-  - icon: 🛡️
-    title: No Hallucinations
-    details: Schema-first architecture ensures LLMs generate valid queries against a strict contract, eliminating phantom columns and tables.
-  - icon: 📉
-    title: Token Efficient
-    details: Compact YAML/JSON metadata and declarative logic reduce context window usage compared to verbose ORM code generation.
-  - icon: 🧩
-    title: Metadata-Driven
-    details: All logic (Schema, Validation, Permissions) is defined in declarative files. Perfect for RAG and Long-term Agent Memory.
-  - icon: 🌍
-    title: Universal Runtime
-    details: Write once, run anywhere. The core protocol abstracts PostgreSQL, MongoDB, and SQLite, running in Node.js, Browser, or Edge.
+  - icon: 🔒
+    title: Zero-Overhead Security
+    details: RBAC and ACL rules are compiled directly into SQL WHERE clauses at query time, not checked in application memory. Security breaches from forgotten permission checks are impossible.
+  - icon: 🌐
+    title: Database Agnostic
+    details: Write your schema once. Switch from local SQLite in development to production PostgreSQL, MySQL, or TiDB without changing a single line of code. The compiler handles dialect translation.
+  - icon: ⚡
+    title: Virtual Columns
+    details: Define computed fields in your schema that compile to efficient database expressions. No N+1 queries, no manual JOIN management—just declare the intent and let the compiler optimize.
 ---
 
-## The Protocol in Action
+## Show Code: From Schema to SQL
 
-ObjectQL bridges the gap between AI generation and reliable execution.
-
-### 1. Declarative Modeling
-
-Define your data model in simple, human and machine-readable YAML.
+You define the intent in declarative YAML. ObjectQL compiles it into optimized, database-specific SQL.
 
 ::: code-group
 
-```yaml [account.object.yml]
-name: account
-label: Account
+```yaml [project.object.yml]
+name: project
+label: Project
 fields:
-  name: { type: text, required: true }
-  industry: 
+  name: 
+    type: text
+    required: true
+  status:
     type: select
-    options: [tech, finance, retail]
-  revenue: currency
-  status: { type: select, options: [active, vip] }
+    options: [planning, active, completed]
+    default: planning
+  owner:
+    type: lookup
+    reference_to: users
+    required: true
+  # Virtual column: computed at query time
+  task_count:
+    type: number
+    formula: "COUNT(tasks.id)"
+    virtual: true
 ```
 
-```yaml [account.validation.yml]
-# Cross-field logic without writing code
-rules:
-  vip_revenue_check:
-    when: "status == 'vip'"
-    expect: "revenue > 1000000"
-    message: "VIP accounts require >1M revenue"
+```sql [Compiled SQL (PostgreSQL)]
+-- Query: Find active projects with task counts
+SELECT 
+  p.id,
+  p.name,
+  p.status,
+  u.name AS owner_name,
+  (SELECT COUNT(*) 
+   FROM tasks t 
+   WHERE t.project_id = p.id) AS task_count
+FROM projects p
+LEFT JOIN users u ON p.owner = u.id
+WHERE p.status = 'active'
+  AND p.tenant_id = $1  -- RBAC injected automatically
+ORDER BY p.created_at DESC;
 ```
 
 :::
 
-### 2. Hallucination-Free Querying
+**You define the intent. We compile the optimized SQL.**
 
-LLMs generate structured JSON queries instead of error-prone SQL strings.
+## Why ObjectQL?
 
-::: code-group
+### Architected for Enterprise Backends
 
-```json [Request (JSON Protocol)]
-{
-  "fields": ["name", "revenue", "owner.name"],
-  "filters": [
-    ["industry", "=", "tech"], 
-    "and", 
-    ["revenue", ">", 500000]
-  ]
-}
+ObjectQL is not a runtime wrapper around your database. It's a **compiler** that transforms high-level metadata into production-grade database operations.
+
+**🔒 Security by Design**
+
+Traditional ORMs rely on developers remembering to add permission checks:
+
+```typescript
+// Traditional ORM - Easy to forget!
+const projects = await Project.find({ status: 'active' });
+// ❌ Oops, forgot to filter by user's tenant
 ```
 
-```sql [Generated SQL (Postgres)]
-SELECT t1.name, t1.revenue, t2.name 
-FROM account AS t1
-LEFT JOIN users AS t2 ON t1.owner = t2.id
-WHERE t1.industry = 'tech' 
-  AND t1.revenue > 500000
+ObjectQL injects security rules during compilation:
+
+```typescript
+// ObjectQL - Permissions enforced by the engine
+const projects = await objectql.find('project', {
+  filters: [['status', '=', 'active']]
+});
+// ✅ WHERE clause automatically includes: tenant_id = current_user.tenant_id
 ```
-:::
 
-## The Shift to AI Programming
+Permission rules are defined once in metadata and enforced at the database level. Zero chance of data leakage from application-layer bugs.
 
-We believe the future of software development isn't about humans writing better code—it's about **Humans architecting systems that AI can implement**.
+**🌐 True Database Portability**
 
-To achieve this, we need a backend technology that speaks the same language as the AI.
+Switch databases without code changes:
 
-### Why not just use TypeORM/Prisma?
+- **Development**: SQLite (zero configuration, file-based)
+- **Staging**: PostgreSQL (JSONB optimized queries)
+- **Production**: MySQL 8.0+ or TiDB (horizontal scaling)
+- **Enterprise**: Oracle or SQL Server (legacy integration)
 
-Traditional ORMs are designed for *human ergonomics*. They use complex fluent APIs, generic types, and string templates. For an LLM, these are "fuzzy" targets that lead to:
-*   **Hallucinations**: Inventing methods that don't exist.
-*   **Context Window Bloat**: Needing huge type definition files to understand the schema.
-*   **Injection Risks**: Generating unsafe raw SQL strings.
+The compiler generates dialect-specific SQL automatically. No vendor lock-in.
 
-### The ObjectQL Advantage
+**⚡ Virtual Columns Without the Pain**
 
-ObjectQL abstracts the entire backend into a **Standardized Protocol**:
+Define computed fields that compile to efficient SQL:
 
-1.  **Schema is Data**: `user.object.yml` is easier for AI to read/write than `class User extends Entity`.
-2.  **Logic is Data**: Queries are ASTs like `{ op: 'find', filters: [['age', '>', 18]] }`. 100% deterministic.
-3.  **Self-Describing**: The runtime can introspect any ObjectQL endpoint and explain it to an Agent instantly.
+```yaml
+# In your schema
+revenue_total:
+  type: currency
+  formula: "SUM(line_items.amount)"
+  virtual: true
+```
+
+ObjectQL compiles this to a subquery or JOIN based on the query context. No N+1 problems, no manual optimization needed.
+
+## Compiler vs. Traditional ORM
+
+| Feature | ObjectQL (Compiler) | Traditional ORM (Runtime) |
+|---------|---------------------|---------------------------|
+| **Runtime Overhead** | Near-zero (direct SQL compilation) | High (query builder + reflection) |
+| **Security Model** | Engine-enforced (compiled into WHERE clauses) | Application-logic (developer must remember) |
+| **Database Portability** | Protocol-based (dialect-agnostic AST) | Code-based (vendor-specific methods) |
+| **Query Optimization** | Compile-time analysis + dialect-specific optimizations | Best-effort runtime translation |
+| **Type Safety** | Schema-first (TypeScript types generated from YAML) | Code-first (manual type definitions) |
+| **Computed Fields** | Virtual columns compiled to SQL expressions | Requires manual afterLoad hooks |
+| **Permission Injection** | Automatic (part of compilation phase) | Manual (decorators or middleware) |
+| **AI Integration** | Metadata = perfect LLM context | Code = fuzzy target for generation |
+
+## Supported Drivers
+
+ObjectQL compiles to multiple database backends with dialect-specific optimizations:
+
+**🐘 PostgreSQL** — JSONB field type support, advanced indexing strategies, full-text search with `tsvector`
+
+**🐬 MySQL** — 8.0+ features including JSON columns, window functions, and CTEs
+
+**💎 SQLite** — Local-first ready, zero configuration, perfect for development and edge deployments
+
+**🏢 SQL Server & Oracle** — Enterprise-grade legacy system integration with vendor-specific optimization
+
+**🍃 MongoDB** — Document model support with schema validation (experimental)
+
+All drivers share the same query protocol. Write once, deploy anywhere.
+
+---
 
 ## Next Steps
 
-*   **[🤖 Configure your AI Assistant](./ai/coding-assistant.md)**: Get the System Prompts to turn Cursor/Copilot into an ObjectQL expert.
-*   **[🚀 Start a Tutorial](./tutorials/index.md)**: Build a Task Manager or CRM in minutes to understand the flow.
-*   **[🔌 Building AI Agents](./ai/building-apps.md)**: Learn how to use ObjectQL as the tool interface for autonomous agents.
-*   **[📚 Developer Guide](./guide/getting-started.md)**: The classic manual for human developers.
+- **[Developer Guide](/guide/getting-started)** — Build your first ObjectQL application
+- **[Data Modeling Reference](/guide/data-modeling)** — Learn the schema definition language
+- **[Query Language Spec](/spec/query-language)** — Understand the compilation target
+- **[AI-Native Development](/ai/)** — Use ObjectQL as an LLM tool interface
