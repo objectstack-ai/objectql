@@ -1,6 +1,6 @@
 {
   "name": "@objectql/create",
-  "version": "1.9.2",
+  "version": "3.0.0",
   "description": "Create ObjectQL apps with one command",
   "bin": {
     "create-objectql": "./dist/bin.js"

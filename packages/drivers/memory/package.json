@@ -1,6 +1,6 @@
 {
   "name": "@objectql/driver-memory",
-  "version": "1.9.2",
+  "version": "3.0.0",
   "description": "In-memory driver for ObjectQL - Fast, zero-dependency storage for testing and development",
   "keywords": [
     "objectql",
