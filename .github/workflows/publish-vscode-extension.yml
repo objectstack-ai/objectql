@@ -97,7 +97,14 @@ jobs:
             echo "::error::VSCE_PAT secret is not set. Cannot publish to marketplace."
             exit 1
           fi
-          npx @vscode/vsce publish --no-yarn --pat "$VSCE_PAT"
+          # Use the specific VSIX file generated in the Package step
+          VSIX_NAME=$(ls *.vsix | head -n 1)
+          if [ -z "$VSIX_NAME" ]; then
+             echo "::error::No VSIX file found to publish"
+             exit 1
+          fi
+          echo "Publishing $VSIX_NAME..."
+          npx @vscode/vsce publish --packagePath "$VSIX_NAME" --no-yarn --pat "$VSCE_PAT"
 
       - name: Create GitHub Release
         if: inputs.dry_run != true && startsWith(github.ref, 'refs/tags/')
