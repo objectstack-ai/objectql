@@ -220,6 +220,44 @@ npm run package
 
 See [`packages/tools/vscode-objectql/README.md`](./packages/tools/vscode-objectql/README.md) for detailed documentation.
 
+### Browser-Based Development Playground 🌐
+
+Work on ObjectQL projects directly in your browser with the **Dev Playground** - a web-based IDE similar to shadcn's approach.
+
+**Features:**
+- 📁 **File Browser** - Tree view of your project with real-time refresh
+- ✏️ **Code Editor** - Multi-tab editing with syntax highlighting for YAML, TypeScript, JSON
+- 🧪 **API Testing** - Interactive playground to test CRUD operations
+- 💾 **Live Editing** - Edit `.object.yml`, `.validation.yml`, `.action.ts` files directly
+- 🔄 **Auto-save** - Keyboard shortcuts (Ctrl+S / Cmd+S) for quick saves
+- 🔒 **Secure** - Only enabled in development mode with file type restrictions
+
+**Quick Start:**
+```bash
+# Start the example playground
+cd examples/integrations/dev-playground
+pnpm install
+pnpm run server  # Start backend on :3000
+pnpm run dev     # Start frontend on :5173
+```
+
+**Integration Example:**
+```typescript
+import { createDevHandler } from '@objectql/server';
+
+const devHandler = createDevHandler({
+    enabled: process.env.NODE_ENV === 'development',
+    baseDir: process.cwd()
+});
+
+// Add to your HTTP server
+if (req.url?.startsWith('/api/dev/')) {
+    await devHandler(req, res);
+}
+```
+
+See [`examples/integrations/dev-playground/README.md`](./examples/integrations/dev-playground/README.md) for complete documentation.
+
 ---
 
 ## 🛠️ Validation & Logic
