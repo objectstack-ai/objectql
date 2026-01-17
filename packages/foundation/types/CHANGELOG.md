@@ -44,6 +44,14 @@
 
   This release establishes a foundation for coordinated major releases across the ObjectQL ecosystem, ensuring compatibility and simplifying dependency management for users.
 
+## 1.9.2
+
+### Patch Changes
+
+- Release version 1.9.2 with latest improvements and bug fixes
+
+  This patch release includes stability improvements and bug fixes backported from the development branch.
+
 ## 1.9.1
 
 ### Patch Changes

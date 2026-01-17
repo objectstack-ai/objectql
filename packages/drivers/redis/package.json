@@ -1,6 +1,6 @@
 {
   "name": "@objectql/driver-redis",
-  "version": "3.0.0",
+  "version": "1.9.2",
   "description": "Redis driver for ObjectQL - Example implementation for key-value storage",
   "keywords": [
     "objectql",

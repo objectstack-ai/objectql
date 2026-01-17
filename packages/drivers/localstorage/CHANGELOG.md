@@ -49,6 +49,17 @@
 - Updated dependencies [38b01f4]
   - @objectql/types@3.0.0
 
+## 1.9.2
+
+### Patch Changes
+
+- Release version 1.9.2 with latest improvements and bug fixes
+
+  This patch release includes stability improvements and bug fixes backported from the development branch.
+
+- Updated dependencies
+  - @objectql/types@1.9.2
+
 ## 0.1.2
 
 ### Patch Changes

@@ -1,6 +1,6 @@
 {
   "name": "@objectql/server",
-  "version": "3.0.0",
+  "version": "1.9.2",
   "description": "HTTP server adapter for ObjectQL - Express/NestJS compatible with GraphQL and REST API support",
   "keywords": [
     "objectql",

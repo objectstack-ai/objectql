@@ -1,6 +1,6 @@
 {
   "name": "@objectql/platform-node",
-  "version": "3.0.0",
+  "version": "1.9.2",
   "description": "Node.js platform utilities for ObjectQL - File system integration, YAML loading, and plugin management",
   "keywords": [
     "objectql",
