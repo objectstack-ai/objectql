@@ -1,6 +1,6 @@
 {
   "name": "@objectql/example-express-server",
-  "version": "1.8.8",
+  "version": "1.8.7",
   "description": "Express API Integration Example for ObjectQL",
   "private": true,
   "keywords": [
