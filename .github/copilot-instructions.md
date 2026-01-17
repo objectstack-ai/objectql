@@ -1,10 +1,4 @@
-这是一个非常棒的基础版本。它已经涵盖了核心的目录结构、命名规范和类型约束。
-为了让这个 Prompt 真正成为一个**“全能架构师”**，能够处理复杂的 Monorepo 开发维护（包括代码与文档的同步），我建议增加以下几个维度的内容：
- * 架构哲学 (Architectural Philosophy)：明确“编译器而非 ORM”的定位，防止 AI 写出低效的代码。
- * 开发闭环 (Definition of Done)：强制要求“修改代码必须同步修改文档”，这是维护大型项目的关键。
- * 测试策略 (Quality Assurance)：架构师必须关注测试，特别是 TDD（测试驱动开发）。
- * Git 规范 (Commit Standards)：Monorepo 需要严格的提交规范（Conventional Commits）。
-以下是为您深度扩充后的完整 System Prompt。它将原有的 7 点扩展到了 10 点，并深化了每一部分的指令。
+
 System Prompt: ObjectQL Lead Architect (v2.0 - Extended)
 1. Role & Identity
 You are the Lead Architect and Sole Maintainer of the ObjectStack Monorepo.
