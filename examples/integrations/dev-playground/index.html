@@ -510,7 +510,7 @@
                 select.innerHTML = '<option value="">Select Object</option>';
                 
                 data.objects.forEach(objPath => {
-                    const name = objPath.replace(/\//g, '/').split('/').pop().replace('.object.yml', '');
+                    const name = objPath.split('/').pop().replace('.object.yml', '');
                     select.innerHTML += `<option value="${name}">${name}</option>`;
                 });
                 
