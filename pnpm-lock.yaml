@@ -391,12 +391,15 @@ importers:
       '@objectql/types':
         specifier: workspace:*
         version: link:../types
+      '@objectstack/spec':
+        specifier: ^0.1.1
+        version: 0.1.1
       js-yaml:
         specifier: ^4.1.0
         version: 4.1.1
       openai:
         specifier: ^4.28.0
-        version: 4.104.0(encoding@0.1.13)(ws@8.19.0)
+        version: 4.104.0(encoding@0.1.13)(ws@8.19.0)(zod@3.25.76)
     devDependencies:
       '@types/js-yaml':
         specifier: ^4.0.5
@@ -492,7 +495,7 @@ importers:
         version: 4.1.1
       openai:
         specifier: ^4.28.0
-        version: 4.104.0(encoding@0.1.13)(ws@8.19.0)
+        version: 4.104.0(encoding@0.1.13)(ws@8.19.0)(zod@3.25.76)
       prettier:
         specifier: ^3.0.0
         version: 3.8.0
@@ -1581,6 +1584,10 @@ packages:
     resolution: {integrity: sha512-1SUf/Cg2GzGDyaf15aR9St9TWlb+XvbZXWpDx8YKs7MLzMH/BCeopv+y9vzrzgkfykCGuWOlSu3mZhj2+FQcrg==}
     engines: {node: '>=10'}
     deprecated: This functionality has been moved to @npmcli/fs
+
+  '@objectstack/spec@0.1.1':
+    resolution: {integrity: sha512-gBeC7PiNxhz2UytY6MHmqB7i13FfRq/xrTXWkM8aobhDkd4REI9DnigaKJctmpuJumc5GWLG9lZgb2voj1rEFg==}
+    engines: {node: '>=18.0.0'}
 
   '@paralleldrive/cuid2@2.3.1':
     resolution: {integrity: sha512-XO7cAxhnTZl0Yggq6jOgjiOHhbgcO4NqFqwSmQpjK3b6TEE6Uj/jfSk6wzYyemh3+I0sHirKSetjQwn5cZktFw==}
@@ -6369,6 +6376,9 @@ packages:
     resolution: {integrity: sha512-9qv4rlDiopXg4E69k+vMHjNN63YFMe9sZMrdlvKnCjlCRWeCBswPPMPUfx+ipsAWq1LXHe70RcbaHdJJpS6hyQ==}
     engines: {node: '>= 10'}
 
+  zod@3.25.76:
+    resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
+
   zwitch@2.0.4:
     resolution: {integrity: sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A==}
 
@@ -7665,6 +7675,10 @@ snapshots:
       mkdirp: 1.0.4
       rimraf: 3.0.2
     optional: true
+
+  '@objectstack/spec@0.1.1':
+    dependencies:
+      zod: 3.25.76
 
   '@paralleldrive/cuid2@2.3.1':
     dependencies:
@@ -11787,7 +11801,7 @@ snapshots:
       is-inside-container: 1.0.0
       wsl-utils: 0.1.0
 
-  openai@4.104.0(encoding@0.1.13)(ws@8.19.0):
+  openai@4.104.0(encoding@0.1.13)(ws@8.19.0)(zod@3.25.76):
     dependencies:
       '@types/node': 18.19.130
       '@types/node-fetch': 2.6.13
@@ -11798,6 +11812,7 @@ snapshots:
       node-fetch: 2.7.0(encoding@0.1.13)
     optionalDependencies:
       ws: 8.19.0
+      zod: 3.25.76
     transitivePeerDependencies:
       - encoding
 
@@ -13365,5 +13380,7 @@ snapshots:
       archiver-utils: 3.0.4
       compress-commons: 4.1.2
       readable-stream: 3.6.2
+
+  zod@3.25.76: {}
 
   zwitch@2.0.4: {}
