@@ -6,6 +6,13 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+/**
+ * Export our runtime types.
+ * 
+ * These modules import and extend types from @objectstack/spec where needed.
+ * Users of @objectql/types should import from here to get both protocol types
+ * and runtime extensions.
+ */
 export * from './field';
 export * from './object';
 export * from './driver';

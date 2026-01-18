@@ -6,8 +6,20 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+// Import and re-export types from the Protocol Constitution (@objectstack/spec)
+import type { Action } from '@objectstack/spec';
 import { FieldConfig } from "./field";
 import { HookAPI } from "./hook"; // Reuse the restricted API interface
+
+/**
+ * Re-export Protocol Types from the Constitution
+ */
+export type { Action as SpecAction };
+
+/**
+ * RUNTIME-SPECIFIC TYPES
+ * The following types extend the Protocol Action definition with runtime execution capabilities
+ */
 
 /**
  * Defines the scope of the action.
@@ -24,6 +36,8 @@ export type ActionInputDefinition = Record<string, FieldConfig>;
 
 /**
  * Context passed to the action handler execution.
+ * 
+ * RUNTIME TYPE: Used during action execution.
  */
 export interface ActionContext<BaseT = any, InputT = any> {
     /** The object this action belongs to. */
@@ -58,11 +72,19 @@ export interface ActionContext<BaseT = any, InputT = any> {
 }
 
 /**
+ * Runtime Action Configuration
+ * 
  * The configuration of an Action visible to the Metadata engine (YAML/JSON side).
+ * Compatible with Protocol Action but adds runtime-specific options.
  */
 export interface ActionConfig {
+    /** Display label */
     label?: string;
+    
+    /** Description */
     description?: string;
+    
+    /** Icon name */
     icon?: string;
     
     /**
@@ -93,6 +115,8 @@ export interface ActionConfig {
 
 /**
  * The full implementation definition (Code side).
+ * 
+ * RUNTIME TYPE: Includes the handler function for execution.
  */
 export interface ActionDefinition<BaseT = any, InputT = any, ReturnT = any> extends ActionConfig {
     /**
