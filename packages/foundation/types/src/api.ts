@@ -1,4 +1,12 @@
 /**
+ * ObjectQL
+ * Copyright (c) 2026-present ObjectStack Inc.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+/**
  * API Type Definitions for ObjectQL
  * 
  * This file contains TypeScript interfaces for Data API and Metadata API endpoints.

@@ -1,4 +1,12 @@
 /**
+ * ObjectQL
+ * Copyright (c) 2026-present ObjectStack Inc.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+/**
  * File System Driver for ObjectQL (Production-Ready)
  * 
  * A persistent file-based driver for ObjectQL that stores data in JSON files.

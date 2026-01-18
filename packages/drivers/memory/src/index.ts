@@ -1,4 +1,12 @@
 /**
+ * ObjectQL
+ * Copyright (c) 2026-present ObjectStack Inc.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+/**
  * Memory Driver for ObjectQL (Production-Ready)
  * 
  * A high-performance in-memory driver for ObjectQL that stores data in JavaScript Maps.

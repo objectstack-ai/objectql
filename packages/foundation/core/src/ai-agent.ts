@@ -1,4 +1,12 @@
 /**
+ * ObjectQL
+ * Copyright (c) 2026-present ObjectStack Inc.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+/**
  * ObjectQL AI Agent - Programmatic API for AI-powered application generation
  * 
  * This module provides a high-level API for using AI to generate and validate

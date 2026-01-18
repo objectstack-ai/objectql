@@ -1,4 +1,12 @@
 /**
+ * ObjectQL
+ * Copyright (c) 2026-present ObjectStack Inc.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+/**
  * Integration Test Example for File Upload/Download
  * 
  * This example demonstrates how to use the file upload/download API
