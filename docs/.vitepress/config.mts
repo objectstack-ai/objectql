@@ -15,7 +15,6 @@ const guideSidebar = [
     items: [
       { text: 'Roadmap', link: '/roadmap' },
       { text: 'Development Plan', link: '/development-plan' },
-      { text: '开发计划 (中文)', link: '/development-plan-cn' },
       { text: 'Project Status', link: '/project-status' },
       { text: 'Contributing', link: '/contributing' },
     ]
@@ -117,7 +116,6 @@ export default defineConfig({
             { text: 'Overview', link: '/planning' },
             { text: 'Roadmap', link: '/roadmap' },
             { text: 'Development Plan', link: '/development-plan' },
-            { text: '开发计划 (中文)', link: '/development-plan-cn' },
             { text: 'Project Status', link: '/project-status' },
             { text: 'Contributing Guide', link: '/contributing' },
           ]

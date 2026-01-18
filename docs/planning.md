@@ -35,16 +35,6 @@ A comprehensive, actionable development plan covering the next 6 months. Include
 
 ---
 
-### [开发计划 (中文)](./development-plan-cn.md)
-**详细的12周执行计划（中文版）**
-
-Development plan translated to Chinese for Chinese-speaking contributors and stakeholders.
-
-**目标受众：** 开发团队、项目经理  
-**更新频率：** 每两周
-
----
-
 ### [Project Status](./project-status.md)
 **Comprehensive status tracking**
 

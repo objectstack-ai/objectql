@@ -256,8 +256,7 @@ This validation logic runs:
 ### Key Documents
 
 - **[ROADMAP.md](./ROADMAP.md)** - Long-term vision, milestones, and strategic direction
-- **[DEVELOPMENT_PLAN.md](./DEVELOPMENT_PLAN.md)** - Detailed 6-month development plan (English)
-- **[开发计划_CN.md](./开发计划_CN.md)** - 详细的6个月开发计划（中文）
+- **[DEVELOPMENT_PLAN.md](./DEVELOPMENT_PLAN.md)** - Detailed 6-month development plan
 
 ### Current Status
 
