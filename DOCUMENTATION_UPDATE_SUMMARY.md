@@ -191,13 +191,12 @@ All planning documents have been integrated into the VitePress documentation sit
 
 | Metric | Value |
 |--------|-------|
-| **New Documents Created** | 7 |
-| **Total Words** | ~15,000 |
-| **Total Size** | ~85 KB |
+| **New Documents Created** | 6 |
+| **Total Words** | ~13,000 |
+| **Total Size** | ~73 KB |
 | **Planning Milestones** | 4 major releases |
 | **Development Phases** | 3 phases over 12 weeks |
 | **Task Categories** | 50+ specific tasks |
-| **Languages** | 2 (English, Chinese) |
 
 ---
 
@@ -225,7 +224,6 @@ All planning documents have been integrated into the VitePress documentation sit
 - Transparent roadmap and planning
 - Easy access to project status
 - Multiple ways to get involved
-- Bilingual documentation
 
 ---
 
@@ -248,7 +246,6 @@ c959860 docs: Add planning documentation to VitePress navigation
 ```
 ✅ ROADMAP.md (11.8 KB)
 ✅ DEVELOPMENT_PLAN.md (15.0 KB)
-✅ 开发计划_CN.md (12.9 KB)
 ✅ CONTRIBUTING.md (9.4 KB)
 ✅ PROJECT_STATUS.md (9.4 KB)
 ✅ docs/planning.md (6.8 KB)
