@@ -277,8 +277,20 @@ This validation logic runs:
 **Current Version:** 3.0.0  
 **Overall Completion:** ~75%
 
+### 📈 **[Live Progress Dashboard](https://objectql.vercel.app/dashboard)** 🆕
+
+Track ObjectQL development progress in real-time with our interactive dashboard:
+- Overall completion and test coverage metrics
+- Package health and version tracking
+- Feature implementation matrix
+- Milestone timeline and roadmap
+- Recent activity feed
+
+**Powered by Vercel** - Updates automatically via GitHub Actions
+
 ### Key Documents
 
+- **[Live Dashboard](https://objectql.vercel.app/dashboard)** - Visual progress tracking 🆕
 - **[Roadmap](./docs/roadmap.md)** - Long-term vision, milestones, and strategic direction
 - **[Development Plan](./docs/development-plan.md)** - Detailed 6-month development plan
 - **[Project Status](./docs/project-status.md)** - Current state and metrics
