@@ -1,0 +1,77 @@
+---
+title: Error Handling
+---
+
+# Error Handling
+
+## Error Response Format
+
+All errors follow a consistent format:
+
+```json
+{
+  "error": {
+    "code": "ERROR_CODE",
+    "message": "Human-readable error message",
+    "details": {
+      "field": "email",
+      "reason": "Email already exists"
+    }
+  }
+}
+```
+
+## Error Codes
+
+| Code | HTTP Status | Description |
+|------|-------------|-------------|
+| `INVALID_REQUEST` | 400 | Malformed request body |
+| `VALIDATION_ERROR` | 400 | Data validation failed |
+| `UNAUTHORIZED` | 401 | Authentication required |
+| `FORBIDDEN` | 403 | Insufficient permissions |
+| `NOT_FOUND` | 404 | Object or record not found |
+| `CONFLICT` | 409 | Unique constraint violation |
+| `INTERNAL_ERROR` | 500 | Server error |
+| `DATABASE_ERROR` | 500 | Database operation failed |
+
+## Example Error Responses
+
+**Validation Error:**
+```json
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Validation failed",
+    "details": {
+      "fields": {
+        "email": "Invalid email format",
+        "age": "Must be greater than 0"
+      }
+    }
+  }
+}
+```
+
+**Permission Error:**
+```json
+{
+  "error": {
+    "code": "FORBIDDEN",
+    "message": "You do not have permission to access this resource",
+    "details": {
+      "required_permission": "users:delete",
+      "user_roles": ["user"]
+    }
+  }
+}
+```
+
+**Not Found:**
+```json
+{
+  "error": {
+    "code": "NOT_FOUND",
+    "message": "Object 'xyz' not found"
+  }
+}
+```

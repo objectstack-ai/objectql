@@ -10,6 +10,11 @@ dist
 docs/.vitepress/cache
 docs/.vitepress/dist
 
+# Fumadocs / Next.js
+apps/site/.next
+apps/site/out
+apps/site/.source
+
 # Database
 *.sqlite3
 *.db
