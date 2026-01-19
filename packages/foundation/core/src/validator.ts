@@ -190,11 +190,10 @@ export class Validator {
                 }
             }
 
-            // Pattern validation (supports both pattern and deprecated regex)
-            const patternValue = validation.pattern ?? validation.regex;
-            if (patternValue) {
+            // Pattern validation
+            if (validation.pattern) {
                 try {
-                    const pattern = new RegExp(patternValue);
+                    const pattern = new RegExp(validation.pattern);
                     if (!pattern.test(String(value))) {
                         results.push({
                             rule: `${fieldName}_pattern`,
@@ -208,7 +207,7 @@ export class Validator {
                     results.push({
                         rule: `${fieldName}_pattern`,
                         valid: false,
-                        message: `Invalid regex pattern: ${patternValue}`,
+                        message: `Invalid regex pattern: ${validation.pattern}`,
                         severity: 'error',
                         fields: [fieldName],
                     });

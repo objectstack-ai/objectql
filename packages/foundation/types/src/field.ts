@@ -114,7 +114,16 @@ export interface FieldOption {
  * The Protocol Constitution (SpecField) defines the core field schema.
  * This adds runtime conveniences and extensions.
  * 
- * We make certain spec fields optional since Zod applies defaults at parse time.
+ * Properties from the protocol Field interface that are re-declared here:
+ * - `name`, `label`: Made optional for runtime convenience (auto-populated from Record key)
+ * - `type`: Extended union type to include runtime-specific types (vector, grid, location, object)
+ * - `options`: Extended to allow numeric values for backwards compatibility
+ * - Boolean flags (`required`, `multiple`, `unique`, `hidden`, `readonly`, `encryption`, `index`, `externalId`):
+ *   Made optional since Zod applies defaults at parse time, but runtime usage typically specifies these explicitly
+ * - `deleteBehavior`: Made optional with protocol-compatible enum values
+ * 
+ * All other protocol properties (description, defaultValue, maxLength, minLength, precision, scale, min, max,
+ * reference, referenceFilters, writeRequiresMasterRead, expression, formula, summaryOperations) are inherited as-is.
  */
 export interface FieldConfig extends Omit<Field, 'name' | 'label' | 'type' | 'options' | 'required' | 'multiple' | 'unique' | 'deleteBehavior' | 'hidden' | 'readonly' | 'encryption' | 'index' | 'externalId'> {
     /** Field name (inferred from Record key when used in ObjectConfig.fields) */
@@ -166,7 +175,32 @@ export interface FieldConfig extends Omit<Field, 'name' | 'label' | 'type' | 'op
     
     /**
      * Reference to another object for lookup/master_detail fields.
-     * @deprecated Use 'reference' from SpecField instead
+     * 
+     * @deprecated Legacy alias for the protocol-level `reference` field (inherited from {@link Field}).
+     * 
+     * **Migration Guidance:**
+     * - **New schemas MUST** use the `reference` field (defined in the protocol Field interface) instead of `reference_to`.
+     * - **During migration**, engines and tooling SHOULD:
+     *   - Treat `reference_to` as a fallback alias for `reference` (i.e., if `reference` is undefined and `reference_to`
+     *     is defined, behave as though `reference` were set to the same value).
+     *   - Prefer the protocol `reference` value when both are present.
+     * - This property is retained only for backward compatibility with older *.object.yml definitions and will be
+     *   removed in a future major version once all callers have migrated to `reference`.
+     * 
+     * @example
+     * ```yaml
+     * # Old (deprecated):
+     * fields:
+     *   owner:
+     *     type: lookup
+     *     reference_to: users
+     * 
+     * # New (protocol-compliant):
+     * fields:
+     *   owner:
+     *     type: lookup
+     *     reference: users
+     * ```
      */
     reference_to?: string;
     
@@ -207,12 +241,6 @@ export interface FieldConfig extends Omit<Field, 'name' | 'label' | 'type' | 'op
      */
     min_height?: number;
     
-    /**
-     * Regular expression pattern for validation.
-     * @deprecated Use validation.pattern instead
-     */
-    regex?: string;
-    
     /** 
      * Field validation configuration.
      * Defines validation rules applied at the field level.
@@ -230,10 +258,11 @@ export interface FieldConfig extends Omit<Field, 'name' | 'label' | 'type' | 'op
         min_length?: number;
         /** Maximum length for strings */
         max_length?: number;
-        /** Regular expression pattern for validation */
+        /** 
+         * Regular expression pattern for validation.
+         * Use this for custom pattern matching (e.g., /^[A-Z]{2}\d{4}$/ for codes).
+         */
         pattern?: string;
-        /** Regex pattern (alias for pattern) */
-        regex?: string;
         /** Custom validation message */
         message?: string;
     };
