@@ -141,24 +141,6 @@ Create complex logic by nesting arrays. This mimics parentheses `(...)` in SQL.
 ]
 ```
 
-  // === 5. Graph Resolution (JOIN / $lookup) ===
-  expand?: Record<string, {
-    fields?: string[];
-    filters?: UnifiedQuery['filters']; // Filter on the related entity
-    sort?: UnifiedQuery['sort'];
-    top?: number;
-  }>;
-
-  // === 6. Analytics (GROUP BY) ===
-  groupBy?: string[];
-  // Key: field name, Value: aggregation function
-  aggregate?: Record<string, 'sum' | 'avg' | 'min' | 'max' | 'count'>;
-  
-  // === 7. Search ===
-  // Global text search (implementation depends on driver capabilities)
-  search?: string;
-}
-
 ```
 
 ## 3. Filter AST Structure
