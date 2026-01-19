@@ -1,22 +1,13 @@
 {
-  "title": "Documentation",
+  "title": "ObjectQL",
   "pages": [
     "index",
-    "---Guide---",
-    "guide",
-    "---Planning---",
-    "planning",
-    "roadmap",
-    "development-plan",
-    "project-status",
-    "contributing",
-    "---AI-Native---",
+    "getting-started",
+    "modeling",
+    "logic",
+    "data-access",
+    "server",
     "ai",
-    "---API Reference---",
-    "api",
-    "---Specification---",
-    "spec",
-    "---Tutorials---",
-    "tutorials"
+    "reference"
   ]
 }

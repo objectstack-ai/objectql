@@ -1,0 +1,11 @@
+{
+  "title": "AI Integration",
+  "pages": [
+    "index",
+    "building-apps",
+    "generating-apps",
+    "coding-assistant",
+    "programmatic-api",
+    "cli-usage"
+  ]
+}

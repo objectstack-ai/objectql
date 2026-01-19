@@ -1,0 +1,169 @@
+---
+title: "Metadata API"
+description: Metadata API
+---
+The Metadata API provides runtime access to schema information, object definitions, and configuration.
+
+## Base Endpoint
+
+```
+/api/metadata
+```
+
+## Endpoints
+
+## 1. List All Objects
+
+Get a list of all registered objects/tables.
+
+```bash
+GET /api/metadata/objects
+```
+
+**Response:**
+```json
+{
+  "objects": [
+    {
+      "name": "users",
+      "label": "Users",
+      "icon": "user",
+      "description": "System users and authentication",
+      "fields": {...}
+    },
+    {
+      "name": "orders",
+      "label": "Orders",
+      "icon": "shopping-cart",
+      "description": "Customer orders",
+      "fields": {...}
+    }
+  ]
+}
+```
+
+## 2. Get Object Schema
+
+Get detailed schema for a specific object.
+
+```bash
+GET /api/metadata/objects/users
+```
+
+**Response:**
+```json
+{
+  "name": "users",
+  "label": "Users",
+  "icon": "user",
+  "description": "System users and authentication",
+  "fields": [
+    {
+      "name": "email",
+      "type": "email",
+      "label": "Email Address",
+      "required": true,
+      "unique": true
+    },
+    {
+      "name": "role",
+      "type": "select",
+      "label": "Role",
+      "options": ["admin", "user", "guest"],
+      "defaultValue": "user"
+    }
+  ],
+  "actions": [
+    {
+      "name": "reset_password",
+      "type": "record",
+      "label": "Reset Password"
+    }
+  ],
+  "hooks": [
+    {
+      "event": "afterCreate",
+      "description": "Send welcome email"
+    }
+  ]
+}
+```
+
+## 3. Update Metadata (Admin)
+
+Dynamically update object configuration at runtime.
+
+```bash
+PUT /api/metadata/object/users
+Content-Type: application/json
+Authorization: Bearer <admin_token>
+
+{
+  "label": "System Users",
+  "description": "Updated description"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true
+}
+```
+
+## 4. Get Field Metadata
+
+Get detailed information about a specific field.
+
+```bash
+GET /api/metadata/objects/users/fields/email
+```
+
+**Response:**
+```json
+{
+  "name": "email",
+  "type": "email",
+  "label": "Email Address",
+  "required": true,
+  "unique": true,
+  "validations": [
+    {
+      "type": "email_format",
+      "message": "Must be a valid email address"
+    }
+  ]
+}
+```
+
+## 5. List Actions
+
+Get all custom actions for an object.
+
+```bash
+GET /api/metadata/objects/orders/actions
+```
+
+**Response:**
+```json
+{
+  "actions": [
+    {
+      "name": "approve",
+      "type": "record",
+      "label": "Approve Order",
+      "params": {
+        "notes": {
+          "type": "textarea",
+          "label": "Approval Notes"
+        }
+      }
+    },
+    {
+      "name": "bulk_import",
+      "type": "global",
+      "label": "Bulk Import Orders"
+    }
+  ]
+}
+```
