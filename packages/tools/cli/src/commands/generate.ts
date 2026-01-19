@@ -107,7 +107,7 @@ function mapFieldTypeToTs(field: FieldConfig): string {
         case 'number':
         case 'currency':
         case 'percent':
-        case 'auto_number':
+        case 'autonumber':
             return 'number';
         
         case 'boolean':

@@ -197,9 +197,9 @@ export function createMetadataHandler(app: IObjectQL, options?: MetadataHandlerO
                     options: field.options,
                     min: field.min,
                     max: field.max,
-                    min_length: field.min_length,
-                    max_length: field.max_length,
-                    regex: field.regex
+                    minLength: field.minLength,
+                    maxLength: field.maxLength,
+                    validation: field.validation
                 });
             }
 

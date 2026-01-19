@@ -428,6 +428,10 @@ importers:
         version: 5.9.3
 
   packages/foundation/types:
+    dependencies:
+      '@objectstack/spec':
+        specifier: ^0.1.1
+        version: 0.1.1
     devDependencies:
       ts-json-schema-generator:
         specifier: ^2.4.0

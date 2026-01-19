@@ -22,9 +22,12 @@
     "schemas"
   ],
   "scripts": {
-    "build": "tsc && npm run generate:schemas",
+    "build": "tsc",
     "generate:schemas": "node scripts/generate-schemas.js",
     "test": "jest --passWithNoTests"
+  },
+  "dependencies": {
+    "@objectstack/spec": "^0.1.1"
   },
   "devDependencies": {
     "ts-json-schema-generator": "^2.4.0"

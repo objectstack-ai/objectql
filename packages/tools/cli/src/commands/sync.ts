@@ -189,9 +189,9 @@ function generateObjectDefinition(table: IntrospectedTable, schema: Introspected
                 field.unique = true;
             }
             
-            // Add max_length for text-based fields
+            // Add maxLength for text-based fields
             if (column.maxLength && (fieldType === 'text' || fieldType === 'textarea')) {
-                field.max_length = column.maxLength;
+                field.maxLength = column.maxLength;
             }
             
             if (column.defaultValue !== undefined && column.defaultValue !== null) {

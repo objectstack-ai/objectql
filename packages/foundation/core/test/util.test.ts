@@ -327,7 +327,7 @@ describe('Utility Functions', () => {
             const objects = convertIntrospectedSchemaToObjects(schema);
             const fields = objects[0].fields!;
 
-            expect(fields.short_text.max_length).toBe(100);
+            expect(fields.short_text.maxLength).toBe(100);
         });
 
         it('should add default value when present', () => {

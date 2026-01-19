@@ -76,7 +76,7 @@ function mapFieldTypeToGraphQL(field: FieldConfig, isInput: boolean = false): Gr
         case 'currency':
         case 'percent':
             return GraphQLFloat;
-        case 'auto_number':
+        case 'autonumber':
             return GraphQLInt;
         case 'boolean':
             return GraphQLBoolean;
