@@ -93,6 +93,7 @@ export default defineConfig({
     nav: [
       { text: 'Guide', link: '/guide/' },
       { text: 'Planning', link: '/planning' },
+      { text: 'Progress Dashboard', link: '/dashboard/' },
       { text: 'AI-Native', link: '/ai/' },
       { text: 'API Reference', link: '/api/' },
       { text: 'Specification', link: '/spec/' },
@@ -108,6 +109,19 @@ export default defineConfig({
 
     // Sidebar Configuration
     sidebar: {
+      // Sidebar for Dashboard
+      '/dashboard/': [
+        {
+          text: 'Progress Dashboard',
+          items: [
+            { text: 'Overview', link: '/dashboard/' },
+            { text: 'Project Status', link: '/project-status' },
+            { text: 'Development Plan', link: '/development-plan' },
+            { text: 'Roadmap', link: '/roadmap' },
+          ]
+        }
+      ],
+
       // Sidebar for Planning
       '/planning': [
         {

@@ -1,0 +1,43 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "pnpm run docs:build",
+  "devCommand": "pnpm run docs:dev",
+  "installCommand": "pnpm install",
+  "framework": "vitepress",
+  "outputDirectory": "docs/.vitepress/dist",
+  "ignoreCommand": "git diff --quiet HEAD^ HEAD ./docs",
+  "github": {
+    "silent": true
+  },
+  "git": {
+    "deploymentEnabled": {
+      "main": true
+    }
+  },
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        }
+      ]
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/progress",
+      "destination": "/dashboard",
+      "permanent": false
+    }
+  ]
+}

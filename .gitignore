@@ -18,3 +18,4 @@ docs/.vitepress/dist
 examples/tutorials/*/CHANGELOG.md
 # Generated Types
 generated/
+docs/dashboard/data/metrics.json

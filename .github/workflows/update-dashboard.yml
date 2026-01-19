@@ -1,0 +1,87 @@
+name: Update Dashboard Metrics
+
+on:
+  # Run daily at midnight UTC
+  schedule:
+    - cron: '0 0 * * *'
+  
+  # Allow manual trigger
+  workflow_dispatch:
+  
+  # Run on push to main (when project-status.md or development-plan.md changes)
+  push:
+    branches: [main]
+    paths:
+      - 'docs/project-status.md'
+      - 'docs/development-plan.md'
+      - 'docs/roadmap.md'
+      - 'scripts/collect-dashboard-data.js'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update-metrics:
+    name: Collect and Update Dashboard Data
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for git stats
+      
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 9
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+      
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        timeout-minutes: 2
+      
+      - name: Build packages (for coverage data)
+        run: pnpm run build
+        timeout-minutes: 3
+        continue-on-error: true
+      
+      - name: Run tests with coverage
+        run: pnpm -r run test -- --coverage --coverageReporters=json-summary
+        timeout-minutes: 5
+        continue-on-error: true
+      
+      - name: Collect dashboard metrics
+        run: node scripts/collect-dashboard-data.js
+      
+      - name: Check for changes
+        id: git-check
+        run: |
+          git diff --exit-code docs/dashboard/data/metrics.json || echo "changed=true" >> $GITHUB_OUTPUT
+      
+      - name: Commit and push if changed
+        if: steps.git-check.outputs.changed == 'true'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add docs/dashboard/data/metrics.json
+          git commit -m "chore: update dashboard metrics [automated]"
+          git push
+      
+      - name: Create summary
+        run: |
+          echo "## Dashboard Metrics Updated 📊" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Dashboard metrics have been collected and updated." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ -f docs/dashboard/data/metrics.json ]; then
+            echo "### Key Metrics" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "See [Dashboard](https://your-vercel-domain.vercel.app/dashboard) for full visualization." >> $GITHUB_STEP_SUMMARY
+          fi
