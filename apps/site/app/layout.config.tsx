@@ -1,10 +1,9 @@
 import type { DocsLayoutProps } from 'fumadocs-ui/layout';
-// @ts-ignore: optional dev dependency for icons (some environments may not have types)
-import { Book, Code2, FileText, Sparkles } from 'lucide-react';
+import { Logo } from '@/components/logo';
 
 export const baseOptions: Omit<DocsLayoutProps, 'tree'> = {
   nav: {
-    title: 'ObjectQL',
+    title: <Logo />,
   },
   links: [
     {
