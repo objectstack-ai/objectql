@@ -1,3 +1,7 @@
+---
+title: Configuration
+---
+
 # Configuration
 
 ObjectQL is configured by passing an `ObjectQLConfig` object to the constructor.
@@ -36,10 +40,16 @@ A list of modules to load. A module can be:
 
 This unifies the previous concepts of `source`, `dir` and `presets`.
 
-### `plugins` ((ObjectQLPlugin | string)[])
+### `plugins`
+
+Type: `(ObjectQLPlugin | string)[]`
+
 A list of plugin instances OR package names to extend the core functionality.
 See [Plugin System](./plugins.md) for details.
 
-### `objects` (Record<string, ObjectConfig>)
+### `objects`
+
+Type: `Record<string, ObjectConfig>`
+
 (Advanced) In-memory definition of objects. Useful for dynamic runtime schema generation.
 Objects defined here take highest priority.

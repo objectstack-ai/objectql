@@ -1,3 +1,7 @@
+---
+title: Plugin System
+---
+
 # Plugin System
 
 Plugins are the primary way to extend ObjectQL. They allow you to bundle behavior, schema modifications, and logic (hooks/actions) into reusable units.
@@ -35,7 +39,7 @@ Understanding valid execution timing is critical.
 
 2.  **Phase 2: Initialization (`await app.init()`)**
     *   **Step A: Remotes:** Fetch metadata from remote services.
-    *   **Step B: Plugins (`plugin.setup`)**:  <-- **YOU ARE HERE**
+    *   **Step B: Plugins (`plugin.setup`)**: (YOU ARE HERE)
         *   This is the last chance to modify metadata before it touches the DB.
         *   You can access all objects loaded in Phase 1 & Step A.
     *   **Step C: Drivers:** Drivers connect and synchronize schema (create tables, etc.).
