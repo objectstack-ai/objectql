@@ -7,6 +7,7 @@ packages:
   - examples/integrations/*
   - examples/showcase/*
   - examples/drivers/*
+  - apps/*
 
 onlyBuiltDependencies:
   - esbuild

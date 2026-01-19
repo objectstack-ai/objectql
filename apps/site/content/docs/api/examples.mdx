@@ -1,0 +1,145 @@
+# Examples
+
+## Example 1: User Registration Flow
+
+```javascript
+// 1. Create user
+const response = await fetch('/api/objectql', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    op: 'create',
+    object: 'users',
+    args: {
+      email: 'alice@example.com',
+      name: 'Alice',
+      password_hash: 'hashed_password'
+    }
+  })
+});
+
+const user = await response.json();
+// { id: 'user_123', email: 'alice@example.com', '@type': 'users', ... }
+
+// 2. Send verification email (triggered by hook)
+// 3. User verifies email via action
+await fetch('/api/objectql', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    op: 'action',
+    object: 'users',
+    args: {
+      action: 'verify_email',
+      id: user.id,
+      input: {
+        token: 'verification_token_xyz'
+      }
+    }
+  })
+});
+```
+
+## Example 2: Dashboard Analytics
+
+```javascript
+// Get sales metrics for dashboard
+const response = await fetch('/api/objectql', {
+  method: 'POST',
+  headers: { 
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer ' + jwt_token
+  },
+  body: JSON.stringify({
+    op: 'find',
+    object: 'orders',
+    ai_context: {
+      intent: "Calculate monthly sales by category",
+      use_case: "Executive dashboard"
+    },
+    args: {
+      groupBy: ['category', 'month'],
+      aggregate: [
+        { func: 'sum', field: 'amount', alias: 'revenue' },
+        { func: 'count', field: 'id', alias: 'order_count' },
+        { func: 'avg', field: 'amount', alias: 'avg_order_value' }
+      ],
+      filters: [
+        ['status', '=', 'paid'],
+        'and',
+        ['created_at', '>=', '2024-01-01']
+      ],
+      sort: [['month', 'asc'], ['revenue', 'desc']]
+    }
+  })
+});
+
+const { items } = await response.json();
+// [
+//   { category: 'Electronics', month: '2024-01', revenue: 50000, order_count: 120, avg_order_value: 416.67 },
+//   { category: 'Clothing', month: '2024-01', revenue: 30000, order_count: 250, avg_order_value: 120.00 },
+//   ...
+// ]
+```
+
+## Example 3: Complex Search with Relations
+
+```javascript
+// Find customers with high-value recent orders
+const response = await fetch('/api/objectql', {
+  method: 'POST',
+  headers: { 
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer ' + jwt_token
+  },
+  body: JSON.stringify({
+    op: 'find',
+    object: 'customers',
+    args: {
+      fields: ['name', 'email', 'vip_level', 'total_spent'],
+      filters: [
+        ['vip_level', '>=', 'gold'],
+        'and',
+        ['is_active', '=', true]
+      ],
+      expand: {
+        orders: {
+          fields: ['order_no', 'amount', 'status'],
+          filters: [
+            ['created_at', '>', '2024-01-01'],
+            'and',
+            ['amount', '>', 1000]
+          ],
+          sort: [['created_at', 'desc']],
+          top: 5
+        }
+      },
+      sort: [['total_spent', 'desc']],
+      top: 20
+    }
+  })
+});
+```
+
+## Example 4: Bulk Operations
+
+```javascript
+// Create multiple records in one request
+const response = await fetch('/api/objectql', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    op: 'action',
+    object: 'tasks',
+    args: {
+      action: 'bulk_create',
+      input: {
+        items: [
+          { name: 'Task 1', priority: 'high' },
+          { name: 'Task 2', priority: 'medium' }
+        ]
+      }
+    }
+  })
+});
+```

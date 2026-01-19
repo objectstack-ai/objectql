@@ -1,0 +1,22 @@
+{
+  "title": "Documentation",
+  "pages": [
+    "index",
+    "---Guide---",
+    "guide",
+    "---Planning---",
+    "planning",
+    "roadmap",
+    "development-plan",
+    "project-status",
+    "contributing",
+    "---AI-Native---",
+    "ai",
+    "---API Reference---",
+    "api",
+    "---Specification---",
+    "spec",
+    "---Tutorials---",
+    "tutorials"
+  ]
+}
