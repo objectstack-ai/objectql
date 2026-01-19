@@ -116,7 +116,13 @@ export interface FieldOption {
  * 
  * We make certain spec fields optional since Zod applies defaults at parse time.
  */
-export interface FieldConfig extends Omit<Field, 'type' | 'options' | 'required' | 'multiple' | 'unique' | 'deleteBehavior' | 'hidden' | 'readonly' | 'encryption' | 'index' | 'externalId'> {
+export interface FieldConfig extends Omit<Field, 'name' | 'label' | 'type' | 'options' | 'required' | 'multiple' | 'unique' | 'deleteBehavior' | 'hidden' | 'readonly' | 'encryption' | 'index' | 'externalId'> {
+    /** Field name (inferred from Record key when used in ObjectConfig.fields) */
+    name?: string;
+    
+    /** Display label (derived from name if not provided) */
+    label?: string;
+    
     /** The data type of the field (extended with runtime types) */
     type: FieldType;
     
