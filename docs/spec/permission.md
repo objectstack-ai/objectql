@@ -1,6 +1,6 @@
-# Permission & Security Metadata
+# Permission and Security Specification
 
-Permission metadata defines access control rules for objects, fields, actions, and views using Role-Based Access Control (RBAC) and field-level security.
+Learn how to define access control and security rules. This specification covers RBAC (Role-Based Access Control), field-level security, record-level rules, and comprehensive permission metadata for securing your application.
 
 ## 1. Overview
 

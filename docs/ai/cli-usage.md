@@ -1,6 +1,6 @@
-# AI-Powered CLI
+# AI-Powered Command Line Interface
 
-The ObjectQL CLI provides AI-powered commands to generate and validate applications using natural language.
+Learn how to use ObjectQL's AI-powered CLI for generating applications, validating metadata, and getting interactive assistance through natural language commands powered by large language models.
 
 ## Overview
 

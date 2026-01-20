@@ -1,6 +1,6 @@
-# CLI Guide
+# Command Line Interface (CLI)
 
-The ObjectQL CLI (`@objectql/cli`) is an essential tool for development, automating tasks like type generation and database migrations.
+The ObjectQL CLI (`@objectql/cli`) is a powerful command-line tool for development, providing features for project scaffolding, type generation, database migrations, AI-powered app generation, and development server management.
 
 ## 1. Installation
 

@@ -1,8 +1,6 @@
-# API Documentation
+# API Reference
 
-Welcome to the ObjectQL API Reference.
-
-ObjectQL provides a **unified query protocol** that can be exposed through multiple API styles. All styles share the same underlying metadata, validation rules, and permissions system.
+Welcome to the ObjectQL API Reference. Learn about the unified query protocol that powers multiple API styles including JSON-RPC, REST, GraphQL, and Metadata APIs—all sharing the same validation, permissions, and type safety.
 
 ## Design Principles
 

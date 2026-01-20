@@ -1,6 +1,6 @@
-# Logic Hooks
+# Hooks (Database Triggers)
 
-Hooks (often called "Triggers" in SQL databases) allow you to intercept database operations to inject custom logic. They are transaction-aware and fully typed.
+Learn how to implement database hooks (triggers) to intercept and customize data operations. This guide covers before/after hooks, validation logic, side effects, and transaction-aware business rules.
 
 ## 1. Registration Methods
 

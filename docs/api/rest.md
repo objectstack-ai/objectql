@@ -1,6 +1,6 @@
-# REST-Style API
+# REST API
 
-For traditional REST clients, ObjectQL can expose a REST-style interface.
+Learn how to use ObjectQL's REST-style API for traditional web and mobile applications. This guide covers RESTful endpoints, resource patterns, and HTTP conventions for accessing ObjectQL data.
 
 ## Endpoints
 

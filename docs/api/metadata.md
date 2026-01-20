@@ -1,6 +1,6 @@
 # Metadata API
 
-The Metadata API provides runtime access to schema information, object definitions, and configuration.
+Learn how to access schema information at runtime through the Metadata API. This guide covers schema discovery, object definitions, field information, and dynamic configuration access.
 
 ## Base Endpoint
 

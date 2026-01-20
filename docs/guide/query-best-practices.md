@@ -1,6 +1,6 @@
-# Query Best Practices
+# Query Best Practices and Performance Optimization
 
-This guide provides best practices, performance optimization strategies, and recommendations for querying data in ObjectQL across different query interfaces (JSON-DSL, REST, GraphQL).
+Learn best practices for querying data efficiently in ObjectQL. This comprehensive guide covers performance optimization strategies, choosing the right API style (JSON-DSL, REST, GraphQL), and benchmarks for different query patterns.
 
 ---
 

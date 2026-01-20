@@ -1,6 +1,6 @@
 # Implementing a Custom Driver
 
-This guide walks you through implementing a custom database driver for ObjectQL. By the end, you'll understand how to create a driver that seamlessly integrates with ObjectQL's universal data protocol.
+Learn how to create custom database drivers for ObjectQL. This comprehensive guide walks through implementing the driver interface, handling queries, transactions, and seamlessly integrating with ObjectQL's universal data protocol.
 
 ## Table of Contents
 

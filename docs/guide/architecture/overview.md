@@ -1,6 +1,6 @@
-# Architecture & Concepts
+# Architecture Overview
 
-ObjectQL is built with a modular architecture that separates the data definition (Metadata) from the execution engine (Driver). This design allows applications to run on different database stacks (SQL vs NoSQL) without changing the business logic.
+Learn about ObjectQL's modular architecture and core concepts. This guide covers the metadata layer, core engine, driver abstraction, dependency graph, and key design principles that make ObjectQL a universal data protocol.
 
 ## High-Level Overview
 

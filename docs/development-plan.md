@@ -1,9 +1,6 @@
-# ObjectQL Development Plan
+# Development Plan (Q1-Q2 2026)
 
-**Document Version:** 1.0  
-**Last Updated:** January 18, 2026  
-**Planning Period:** Q1-Q2 2026  
-**Status:** Active
+Detailed 6-month development plan for ObjectQL covering foundation stabilization, enterprise features, and production readiness. This actionable plan includes phase breakdowns, resource allocation, and milestone tracking for achieving v3.1.0 and v3.2.0.
 
 ---
 
@@ -399,7 +396,7 @@ We welcome community contributions in the following areas:
 - **Examples** - Sample applications
 - **Bug Fixes** - Issue resolution
 
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines.
+See [Contributing Guide](./contributing.md) for guidelines.
 
 ---
 
@@ -541,10 +538,10 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines.
 
 ### Related Documents
 
-- [ROADMAP.md](./ROADMAP.md) - Long-term vision and milestones
-- [CONTRIBUTING.md](./CONTRIBUTING.md) - Contribution guidelines
-- [ARCHITECTURE.md](./docs/guide/architecture/overview.md) - System architecture
-- [CHANGELOG.md](./CHANGELOG.md) - Version history
+- [Roadmap](./roadmap.md) - Long-term vision and milestones
+- [Contributing Guide](./contributing.md) - Contribution guidelines
+- [Architecture Overview](./guide/architecture/overview.md) - System architecture
+- [GitHub Releases](https://github.com/objectstack-ai/objectql/releases) - Version history
 
 ### References
 

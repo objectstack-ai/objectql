@@ -1,6 +1,6 @@
-# Formulas & Rules Quick Reference
+# Formulas and Rules Quick Reference
 
-**Quick syntax reference for ObjectQL formulas and validation rules.**
+Quick syntax reference for ObjectQL formulas and validation rules. A condensed cheat sheet for common patterns, operators, and functions.
 
 For complete documentation, see:
 - 📖 [English Guide](./formulas-and-rules.md)

@@ -1,6 +1,6 @@
-# Project Planning & Status
+# Project Planning Hub
 
-Welcome to the ObjectQL project planning hub. This section contains all strategic planning documents, development roadmaps, and current project status information.
+Central hub for ObjectQL strategic planning documents. This section provides access to roadmaps, development plans, project status reports, and planning resources for understanding ObjectQL's direction and progress.
 
 ---
 

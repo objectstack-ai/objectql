@@ -1,6 +1,6 @@
-# Report Definition
+# Report Definition Specification
 
-Reports define analytics, visualizations, and data exports for business intelligence and decision-making. They provide aggregated views, charts, and formatted output of your data.
+Learn how to define analytics, visualizations, and data exports. This specification covers report metadata, aggregation patterns, chart types, and business intelligence features for data analysis and decision-making.
 
 **File Naming Convention:** `<report_name>.report.yml`
 

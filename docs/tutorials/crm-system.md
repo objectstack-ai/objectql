@@ -1,8 +1,6 @@
-# Building a Micro-CRMSystem
+# Tutorial: Building a CRM System
 
-> **Prerequisites**: Completed [Build Your First App](./task-manager.md).
-
-In this tutorial, we will explore **Relationships**, **Validation**, and **Hooks** by building a minimal CRM (Customer Relationship Management) system.
+**Intermediate Tutorial (30 minutes)** - Build a micro-CRM to master relationships, permissions, and business logic. Learn to define Account and Contact objects with 1:N relationships, add validation rules, and write beforeCreate hooks.
 
 ## 1. Define the Objects
 

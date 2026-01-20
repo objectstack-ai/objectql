@@ -1,6 +1,6 @@
-# Organizing Metadata for Large Projects
+# Metadata Organization and Project Structure
 
-When building enterprise-scale applications with ObjectQL, proper metadata organization becomes critical. This guide demonstrates best practices for structuring your object definitions, actions, hooks, and translations in a maintainable way.
+Learn best practices for organizing metadata in large-scale ObjectQL applications. This guide covers folder structures, file naming conventions, module organization, and strategies for maintaining complex enterprise projects.
 
 ## The Challenge
 

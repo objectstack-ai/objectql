@@ -1,8 +1,6 @@
-# ObjectQL Roadmap
+# ObjectQL Development Roadmap
 
-**Last Updated:** January 2026  
-**Current Version:** 3.0.0  
-**Project Status:** Active Development
+Learn about ObjectQL's vision, mission, and development roadmap. This document outlines current features, planned enhancements, and the strategic direction for making ObjectQL the standard protocol for AI software generation.
 
 ---
 
@@ -305,7 +303,7 @@ ObjectQL aims to be the **Standard Protocol for AI Software Generation** - a uni
 This roadmap represents the core team's priorities, but we welcome community input:
 
 1. **Feature Requests** - Open an issue with the `enhancement` label
-2. **Driver Contributions** - See [Driver Extensibility Guide](./docs/guide/drivers/extensibility.md)
+2. **Driver Contributions** - See [Driver Extensibility Guide](./guide/drivers/extensibility.md)
 3. **Documentation** - Submit PRs to improve guides and examples
 4. **Testing** - Help increase test coverage and report bugs
 

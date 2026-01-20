@@ -1,6 +1,6 @@
-# Programmatic AI API
+# Programmatic AI Agent API
 
-The ObjectQL AI Agent provides a programmatic API for generating and validating applications in your Node.js code.
+Learn how to use the ObjectQL AI Agent programmatically in your Node.js applications. This guide covers the TypeScript API for building custom development tools, web UIs, and automation with AI-powered generation and validation.
 
 ## Overview
 

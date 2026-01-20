@@ -1,10 +1,6 @@
-# Schema Migration Instructions - Implementation Summary
+# Schema Migration Instructions - Implementation Reference
 
-## Problem Statement
-
-**如何表达对象和字段的更新与删除指令** (How to express object and field update and delete instructions)
-
-The ObjectQL protocol needed a declarative way to express schema evolution operations - specifically updates and deletions of objects and fields.
+Learn about the declarative schema migration system in ObjectQL. This implementation reference explains how to express schema evolution operations including object and field updates, deletions, and transformations through type-safe instructions.
 
 ## Solution
 

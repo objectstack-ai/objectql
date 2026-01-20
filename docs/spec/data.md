@@ -1,6 +1,6 @@
-# Data Seeding Metadata
+# Data Seeding Specification
 
-Data source files allow you to seed the database with initial data. This is useful for lookup tables, configuration, or demo content.
+Learn how to define initial data and seed records. This specification covers data file formats, seeding strategies, and how to populate databases with lookup tables, configuration, and demo content.
 
 ## 1. Overview
 

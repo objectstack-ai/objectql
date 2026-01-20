@@ -1,6 +1,6 @@
-# Application Definition
+# Application Definition Specification
 
-Applications define high-level containers for organizing related functionality, objects, and features. They provide logical grouping, navigation structure, and branding for distinct areas of your system.
+Learn how to define high-level application containers. This specification covers app metadata, branding, navigation structure, and how applications group related functionality, objects, and features into logical units.
 
 **File Naming Convention:** `<app_name>.app.yml`
 

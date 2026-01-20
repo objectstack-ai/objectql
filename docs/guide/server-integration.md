@@ -1,6 +1,6 @@
-# Server Integration
+# Server Integration and HTTP APIs
 
-ObjectQL is designed to be framework-agnostic. While it can be used directly as a library, we provide a standard `@objectql/server` package to expose your application via HTTP.
+Learn how to integrate ObjectQL with web servers and frameworks. This guide covers the `@objectql/server` package, Express integration, Next.js setup, and exposing your application via REST, JSON-RPC, and GraphQL APIs.
 
 ## The `@objectql/server` Package
 

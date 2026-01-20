@@ -54,7 +54,9 @@ const guideSidebar = [
   {
     text: 'Low-Code UI',
     items: [
-      { text: 'Page & Layouts', link: '/guide/page-metadata' },
+      { text: 'Pages & Layouts', link: '/spec/page' },
+      { text: 'Views', link: '/spec/view' },
+      { text: 'Forms', link: '/spec/form' },
     ]
   },
   {

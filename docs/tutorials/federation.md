@@ -1,7 +1,6 @@
-# Federated Data Graph
+# Tutorial: Federated Data Architecture
 
-> **Prerequisites**: [Building a Micro-CRM](./crm-system.md).
-> **Requirements**: A running MongoDB instance (or use a cloud provider URI).
+**Advanced Tutorial (45 minutes)** - Build a federated data graph connecting multiple databases. Learn to setup MongoDB for logs, PostgreSQL for transactional data, and query across them transparently with ObjectQL's federation capabilities.
 
 In this advanced tutorial, we will demonstrate **Data Federation**. We will connect to two different databases simultaneously:
 1. **SQLite**: For structured business data (`account`, `contact`).

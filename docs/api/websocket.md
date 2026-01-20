@@ -1,6 +1,6 @@
-# WebSocket API
+# WebSocket API (Real-time Updates)
 
-*(Planned Feature)*
+Learn about ObjectQL's WebSocket API for real-time data updates, subscriptions, and live queries. **Note: This is a planned feature currently under development.**
 
 For real-time updates and live data synchronization.
 

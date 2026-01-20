@@ -1,8 +1,6 @@
-# 附件字段多选功能说明
+# Multiple File Upload Guide (Chinese)
 
-## 概述
-
-ObjectQL 附件字段**完全支持多选功能**，允许在单个附件字段上传和存储多个文件。通过设置 `multiple: true` 属性即可启用。
+Complete guide for implementing multiple file upload functionality in ObjectQL attachment fields. This Chinese document covers enabling multi-select with `multiple: true`, field configuration, batch upload methods, CRUD operations, and complete product gallery examples.
 
 ## 字段定义
 

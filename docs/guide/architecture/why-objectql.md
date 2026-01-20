@@ -1,6 +1,6 @@
-# Why ObjectQL?
+# Why Choose ObjectQL?
 
-In the era of AI automation, the requirements for backend infrastructure have shifted. We are no longer just building for human users on web forms; we are building systems that **AI Agents** need to read, understand, and manipulate.
+Understand the architectural philosophy behind ObjectQL and why it's designed for the AI era. This guide explains the limitations of traditional ORMs and how ObjectQL's protocol-first approach solves modern backend challenges.
 
 ## The Problem with Traditional ORMs
 

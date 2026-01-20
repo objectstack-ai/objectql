@@ -1,0 +1,147 @@
+---
+title: Server & Deployment
+description: Learn how to configure, integrate, and deploy ObjectQL applications
+---
+
+ObjectQL is designed to be **framework-agnostic** and can be integrated with any Node.js server or deployed to various environments. This section covers server configuration, integration patterns, and deployment strategies.
+
+## Overview
+
+The server layer in ObjectQL provides:
+
+- **Multiple Framework Support**: Express, Next.js, Fastify, and more
+- **API Styles**: REST, JSON-RPC, GraphQL, and WebSocket support
+- **Configuration Management**: Environment-based configuration
+- **Plugin System**: Extend functionality with plugins
+- **Microservices**: Federation and distributed architectures
+
+## Key Topics
+
+### [Configuration](/docs/server/configuration)
+
+Configure your ObjectQL application:
+- Database connections
+- Environment variables
+- Metadata loading
+- Driver configuration
+- Runtime options
+
+### [Server Integration](/docs/server/integration)
+
+Integrate ObjectQL with web frameworks:
+- Express.js setup
+- Next.js integration
+- Fastify adapter
+- Custom server setup
+- HTTP API exposure
+
+### [Microservices & Federation](/docs/server/microservices)
+
+Build distributed systems with ObjectQL:
+- Service federation
+- Remote data sources
+- Cross-service queries
+- Load balancing
+- Service discovery
+
+### [Plugin System](/docs/server/plugins)
+
+Extend ObjectQL with plugins:
+- Creating custom plugins
+- Plugin lifecycle
+- Bundling behavior
+- Sharing plugins
+- Official plugins
+
+## Quick Setup
+
+### Express Integration
+
+```typescript
+import express from 'express';
+import { ObjectQL } from '@objectql/core';
+import { SqlDriver } from '@objectql/driver-sql';
+import { createNodeHandler } from '@objectql/server';
+
+const app = express();
+
+// Initialize ObjectQL
+const objectql = new ObjectQL({
+  datasources: {
+    default: new SqlDriver({
+      client: 'postgresql',
+      connection: process.env.DATABASE_URL
+    })
+  }
+});
+
+await objectql.init();
+
+// Mount ObjectQL handler
+app.use('/api/objectql', createNodeHandler(objectql));
+
+// Start server
+app.listen(3000, () => {
+  console.log('Server running on http://localhost:3000');
+});
+```
+
+### Configuration File
+
+```typescript
+// objectql.config.ts
+import { defineConfig } from '@objectql/core';
+
+export default defineConfig({
+  datasources: {
+    default: {
+      driver: 'sql',
+      client: 'postgresql',
+      connection: {
+        host: process.env.DB_HOST,
+        database: process.env.DB_NAME,
+        user: process.env.DB_USER,
+        password: process.env.DB_PASSWORD
+      }
+    }
+  },
+  modules: [
+    'src/objects',
+    '@objectql/module-auth'
+  ]
+});
+```
+
+## Deployment Patterns
+
+### Traditional Server
+
+Deploy to VPS, EC2, or dedicated servers:
+- Process management with PM2
+- Nginx reverse proxy
+- Environment configuration
+- Database migrations
+
+### Serverless
+
+Deploy to serverless platforms:
+- AWS Lambda
+- Vercel Functions
+- Cloudflare Workers
+- Database connection pooling
+
+### Containers
+
+Deploy with Docker:
+- Dockerfile configuration
+- Docker Compose setup
+- Kubernetes deployment
+- Health checks and monitoring
+
+## Next Steps
+
+- Configure your application with **[Configuration](/docs/server/configuration)**
+- Integrate with your framework using **[Server Integration](/docs/server/integration)**
+- Scale with **[Microservices](/docs/server/microservices)**
+- Extend with the **[Plugin System](/docs/server/plugins)**
+- Review **[API Reference](/docs/reference/api)** for complete documentation

@@ -1,4 +1,6 @@
-# Custom API Routes Configuration
+# Custom API Routes
+
+Learn how to configure custom API routes in ObjectQL. This guide covers route definitions, custom endpoints, middleware integration, and extending the default API with your own handlers.
 
 ## Overview
 

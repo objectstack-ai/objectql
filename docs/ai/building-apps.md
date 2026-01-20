@@ -1,6 +1,6 @@
-# Building AI-Native Apps
+# Building AI-Native Applications
 
-ObjectQL is engineered to be the ideal data layer for AI Agents and LLMs. By providing a **Structure-First** protocol (JSON AST) instead of raw strings (SQL), it drastically reduces hallucinations and injection risks.
+Learn how to use ObjectQL as the data layer for AI applications. This comprehensive guide covers RAG (Retrieval-Augmented Generation), semantic search, vector databases, and building AI agents with structured data protocols.
 
 ## 1. Why ObjectQL for AI?
 

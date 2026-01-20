@@ -1,6 +1,6 @@
 # API Quick Reference
 
-This is a condensed reference for the most common ObjectQL API operations.
+A condensed reference guide for the most common ObjectQL API operations. Perfect for quick lookups during development—includes code snippets for CRUD operations, queries, and common patterns.
 
 ## Base Endpoint
 
@@ -484,10 +484,10 @@ GET /api/metadata/objects/orders/actions
 
 ## Next Steps
 
-- [Complete API Reference](./README.md)
+- [Complete API Reference](./index.md)
 - [Authentication Guide](./authentication.md)
 - [Query Language Spec](../spec/query-language.md)
-- [Examples](./README.md#examples)
+- [Examples](./examples.md)
 
 ---
 

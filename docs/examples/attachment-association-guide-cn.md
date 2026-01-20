@@ -1,6 +1,6 @@
-# 附件如何与对象记录关联
+# Attachment Association Guide (Chinese)
 
-本文档详细说明在 ObjectQL 中如何将文件附件与对象记录关联，包括两种主要方案和最佳实践。
+Detailed guide on associating file attachments with object records in ObjectQL. This Chinese document covers two main approaches (embedded attachments vs. independent attachment objects), comparison, practical examples, and best practices.
 
 ## 目录
 

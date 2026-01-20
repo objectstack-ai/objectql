@@ -1,6 +1,6 @@
-# Driver Extensibility Guide
+# Driver Extensibility
 
-ObjectQL is designed to support multiple database backends through its **Driver** abstraction layer. This guide explains how to extend ObjectQL with additional database types.
+Learn how to extend ObjectQL with additional database backends. This guide covers the driver architecture, available official drivers, and how to integrate new data sources into ObjectQL's universal protocol.
 
 ## Current Official Drivers
 

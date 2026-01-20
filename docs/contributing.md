@@ -1,6 +1,6 @@
-# Contributing to ObjectQL
+# Contributing Guide
 
-Thank you for your interest in contributing to ObjectQL! This guide will help you get started.
+Learn how to contribute to ObjectQL. This comprehensive guide covers code of conduct, development workflow, contribution types, pull request process, coding standards, testing guidelines, and documentation requirements.
 
 ---
 
@@ -189,7 +189,7 @@ Then create a pull request on GitHub.
 
 ### 🔌 New Drivers
 
-See the [Driver Extensibility Guide](./docs/guide/drivers/extensibility.md) for detailed instructions.
+See the [Driver Extensibility Guide](./guide/drivers/extensibility.md) for detailed instructions.
 
 Quick steps:
 1. Create a new package in `packages/drivers/`
@@ -437,8 +437,9 @@ Description of the function.
 
 ## See Also
 
-- [Related Feature](./related-feature.md)
-- [API Reference](/api/)
+- [API Reference](./api/)
+- [Guide Documentation](./guide/)
+- [Specifications](./spec/)
 ````
 
 ---

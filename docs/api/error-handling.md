@@ -1,4 +1,6 @@
-# Error Handling
+# Error Handling and Response Format
+
+Learn about ObjectQL's error handling system and unified response format. This guide covers error codes, response structures, validation errors, and best practices for handling failures gracefully.
 
 ## Error Response Format
 

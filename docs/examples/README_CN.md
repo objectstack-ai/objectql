@@ -1,8 +1,6 @@
-# 附件 API 实现文档
+# Attachment API Implementation Guide (Chinese)
 
-## 概述
-
-本次实现为 ObjectQL 添加了完整的文件上传、下载和管理功能。实现包括：
+Complete documentation for ObjectQL's file attachment implementation. This guide covers file storage abstraction, multipart form data parsing, validation, REST API endpoints, and comprehensive testing examples for building file upload functionality.
 
 1. **文件存储抽象层** - 支持本地文件系统和内存存储，可扩展支持 S3、OSS 等云存储
 2. **多部分表单数据解析** - 原生支持 multipart/form-data 文件上传

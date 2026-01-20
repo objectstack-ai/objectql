@@ -1,9 +1,6 @@
 # AI-Native Development
 
-ObjectQL resides at the intersection of Data and Artificial Intelligence. It is designed to be "AI-Native" in two distinct ways:
-
-1.  **For AI Agents**: It serves as the perfect structured memory system (Long-term Memory) and tool interface for AI agents.
-2.  **By AI Agents**: Its metadata-driven, protocol-first architecture makes it incredibly easy for LLMs to write valid code for it.
+ObjectQL bridges Data and Artificial Intelligence with AI-native architecture designed for both AI agents (as a structured memory system and tool interface) and by AI agents (with metadata-driven, LLM-friendly code generation).
 
 ## Overview
 

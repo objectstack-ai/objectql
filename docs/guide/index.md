@@ -1,6 +1,6 @@
-# Introduction
+# Getting Started Guide
 
-**ObjectQL** is a protocol-first application engine. It rethinks backend development by treating everything—Data Models, Queries, and Logic—as **structured data** rather than code strings.
+Learn the fundamentals of ObjectQL—a protocol-first application engine that treats data models, queries, and logic as **structured data** rather than code strings. This guide introduces core philosophy, key concepts, and next steps.
 
 ## The Core Philosophy
 

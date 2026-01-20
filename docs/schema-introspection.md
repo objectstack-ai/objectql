@@ -1,6 +1,6 @@
-# Schema Introspection - Connect to Existing Databases
+# Schema Introspection for Existing Databases
 
-ObjectQL now supports **automatic schema introspection**, allowing you to connect to an existing database without defining any metadata. The system will automatically discover tables, columns, data types, and relationships.
+Learn how to use automatic schema introspection to connect ObjectQL to existing databases. This feature discovers tables, columns, data types, and relationships without requiring metadata definitions—perfect for integrating with legacy systems.
 
 ## Features
 
@@ -260,9 +260,88 @@ Convert introspected schema to ObjectQL object configurations.
 
 **Returns:** `ObjectConfig[]` - Array of object configurations
 
-## Examples
+## Complete Example
 
-See [examples/connect-existing-database.ts](../examples/connect-existing-database.ts) for a complete working example.
+Here's a complete working example with error handling and best practices:
+
+```typescript
+import { ObjectQL } from '@objectql/core';
+import { SqlDriver } from '@objectql/driver-sql';
+import * as fs from 'fs';
+import * as path from 'path';
+import * as yaml from 'js-yaml';
+
+async function connectExistingDatabase() {
+    try {
+        // Create driver for existing database
+        const driver = new SqlDriver({
+            client: 'postgresql',
+            connection: {
+                host: process.env.DB_HOST || 'localhost',
+                database: process.env.DB_NAME || 'my_existing_db',
+                user: process.env.DB_USER || 'username',
+                password: process.env.DB_PASSWORD || 'password'
+            }
+        });
+
+        // Initialize ObjectQL
+        const app = new ObjectQL({
+            datasources: { default: driver }
+        });
+
+        console.log('Connecting to database...');
+
+        // Introspect and register all tables
+        const objects = await app.introspectAndRegister('default', {
+            excludeTables: ['migrations', 'schema_version']
+        });
+
+        console.log(`✅ Discovered ${objects.length} tables`);
+
+        // Initialize and use
+        await app.init();
+        const ctx = app.createContext({ isSystem: true });
+
+        // Query existing data
+        const users = await ctx.object('users').find({
+            top: 10
+        });
+
+        console.log(`Found ${users.length} users`);
+
+        // Optionally export metadata to files
+        const outputDir = 'src/objects';
+        
+        // Ensure directory exists
+        if (!fs.existsSync(outputDir)) {
+            fs.mkdirSync(outputDir, { recursive: true });
+        }
+
+        objects.forEach(obj => {
+            const filePath = path.join(outputDir, `${obj.name}.object.yml`);
+            try {
+                fs.writeFileSync(filePath, yaml.dump(obj));
+                console.log(`✅ Exported ${obj.name} to ${filePath}`);
+            } catch (err) {
+                console.error(`❌ Failed to export ${obj.name}:`, err.message);
+            }
+        });
+
+        console.log('✅ Database connection successful!');
+        
+    } catch (error) {
+        console.error('❌ Error connecting to database:', error.message);
+        if (error.code === 'ECONNREFUSED') {
+            console.error('Make sure the database server is running');
+        } else if (error.code === '28P01') {
+            console.error('Authentication failed - check username and password');
+        }
+        process.exit(1);
+    }
+}
+
+connectExistingDatabase();
+```
 
 ## Chinese Documentation (中文文档)
 

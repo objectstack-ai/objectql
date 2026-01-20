@@ -1,6 +1,6 @@
-# Action Definitions (Server Functions)
+# Action (Server Function) Specification
 
-Actions are custom Server-Side Functions attached to an object. They allow you to encapsulate complex business logic that goes beyond standard CRUD operations.
+Learn how to define custom server-side functions (RPCs) attached to objects. This specification covers action metadata, parameters, permissions, and patterns for implementing complex business operations beyond standard CRUD.
 
 Unlike Hooks (which trigger automatically), Actions are explicitly invoked by the client (API, Button, Scheduled Task).
 

@@ -1,6 +1,6 @@
-# 如何使用 AWS S3 存储附件
+# AWS S3 Integration Guide (Chinese)
 
-本指南详细说明如何将 ObjectQL 文件附件存储到 AWS S3，包括完整的实现代码和最佳实践。
+Comprehensive guide for integrating AWS S3 storage with ObjectQL file attachments. This document covers architecture design, implementation, configuration, usage examples, advanced features, and best practices for scalable cloud storage.
 
 ## 目录
 
