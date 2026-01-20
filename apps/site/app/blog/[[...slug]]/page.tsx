@@ -61,7 +61,7 @@ function BlogListing() {
 
                 {post.data.tags && post.data.tags.length > 0 && (
                   <div className="flex flex-wrap gap-2">
-                    {post.data.tags.map((tag: string) => (
+                    {post.data.tags.map((tag) => (
                       <span
                         key={tag}
                         className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary"
@@ -86,7 +86,9 @@ function BlogListing() {
 }
 
 // Blog post component
-function BlogPost({ page }: { page: any }) {
+function BlogPost({ page }: { page: ReturnType<typeof blogSource.getPage> }) {
+  if (!page) return null;
+  
   const MDX = page.data.body;
 
   return (
@@ -140,7 +142,7 @@ function BlogPost({ page }: { page: any }) {
 
         {page.data.tags && page.data.tags.length > 0 && (
           <div className="flex flex-wrap gap-2 mt-4">
-            {page.data.tags.map((tag: string) => (
+            {page.data.tags.map((tag) => (
               <span
                 key={tag}
                 className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary"
@@ -233,4 +235,3 @@ export function generateMetadata({ params }: { params: { slug?: string[] } }): M
     description: page.data.description,
   };
 }
-
