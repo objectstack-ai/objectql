@@ -1,6 +1,6 @@
 # File Upload Example
 
-This example demonstrates how to use the ObjectQL file upload API.
+Practical code example demonstrating how to use the ObjectQL file upload API. This example shows complete setup, initialization, and implementation of file upload functionality with ObjectQL server and local file storage.
 
 ## Setup
 
