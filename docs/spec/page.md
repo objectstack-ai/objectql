@@ -1,6 +1,6 @@
-# Page Definition
+# Page Definition Specification
 
-Pages define the user interface views and layouts for your application. They control how data is displayed and how users interact with your objects.
+Learn how to define user interface pages and layouts. This specification covers page metadata, component configuration, layout patterns, and how pages integrate with objects and data.
 
 **File Naming Convention:** `<page_name>.page.yml`
 

@@ -1,6 +1,6 @@
 # Querying Data
 
-ObjectQL uses a **JSON-based Protocol** for all data operations. Unlike SQL (strings) or Query Builders (chained methods), ObjectQL queries are **Data Structures**.
+Learn how to query data using ObjectQL's **JSON-based protocol**. This guide covers the find operation, filters, sorting, pagination, field selection, and data expansion for building complex queries as structured data.
 
 This design makes it strictly typed, easy to serialise/transport over HTTP, and safe from injection—perfect for both human developers and AI Agents.
 

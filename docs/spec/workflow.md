@@ -1,6 +1,6 @@
-# Workflow & Process Metadata
+# Workflow and Process Specification
 
-Workflow metadata defines automated business processes, approvals, and state-based orchestration. Workflows coordinate actions across objects, users, and external systems. They are designed to be both executable and AI-understandable with clear business intent.
+Learn how to define automated business processes and workflows. This specification covers workflow states, transitions, approvals, orchestration, and patterns for implementing complex business automation. **Status: Specification complete, implementation in progress.**
 
 ## 1. Overview
 

@@ -1,8 +1,6 @@
-# ObjectQL Metadata Standard - Complete Guide
+# ObjectQL Metadata Standard - Complete Reference
 
-## Introduction
-
-ObjectQL is a **universal metadata standard** for defining enterprise applications. Instead of writing code, you define your application structure, business logic, and user interface through **structured metadata** in YAML/JSON format.
+Learn the complete ObjectQL metadata standard for defining enterprise applications. This comprehensive guide covers all metadata types, from data models to business logic, UI definitions, and security—all through structured YAML/JSON configuration.
 
 **ObjectOS** interprets this metadata at runtime to generate fully functional enterprise applications - similar to how Salesforce runs on metadata, but open-source and database-agnostic.
 

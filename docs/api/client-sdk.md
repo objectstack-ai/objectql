@@ -1,6 +1,6 @@
-# Client SDK Usage Guide
+# Client SDK Usage
 
-This guide demonstrates how to use the ObjectQL TypeScript client SDK to interact with Data API and Metadata API from frontend applications.
+Learn how to use the ObjectQL TypeScript client SDK for frontend applications. This comprehensive guide covers SDK installation, configuration, API calls, and type-safe data access from JavaScript/TypeScript clients.
 
 ## Installation
 

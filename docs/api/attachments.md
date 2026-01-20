@@ -1,6 +1,6 @@
-# Attachment API Specification
+# File Attachments and Upload API
 
-**Version:** 1.0.0
+Learn how to handle file uploads, attachments, and media in ObjectQL. This comprehensive specification covers attachment fields, upload endpoints, storage strategies, and file management best practices.
 
 This document specifies how to handle file uploads, image uploads, and attachment field types in ObjectQL APIs.
 

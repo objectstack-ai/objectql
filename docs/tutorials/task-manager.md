@@ -1,8 +1,6 @@
-# Build Your First App: Task Manager
+# Tutorial: Build Your First Task Manager
 
-> **Prerequisites**: Node.js v18+, NPM/PNPM.
-
-In this tutorial, we will build a simple Task Management backend without writing any SQL or API boilerplate.
+**Beginner Tutorial (15 minutes)** - Create your first ObjectQL application with a simple task management system. Learn to define schemas, run the development server, and manage data through the Studio interface.
 
 ## 1. Setup
 

@@ -1,8 +1,6 @@
-# AI Coding Assistant Guide
+# AI Coding Assistant Configuration
 
-One of the core design goals of ObjectQL is to be the **most LLM-friendly backend protocol**.
-
-If you are using **Cursor**, **GitHub Copilot Chat**, **Windsurf**, or **ChatGPT** for development, please copy the following **System Prompt** into your AI configuration or project rules (e.g., `.cursorrules`). 
+Learn how to configure AI coding assistants (GitHub Copilot, Cursor, Windsurf) to become ObjectQL experts. This guide provides specialized system prompts that teach LLMs the ObjectQL protocol and best practices. 
 This allows the AI to accurately understand ObjectQL's syntax and best practices.
 
 ## How to Use Effectively

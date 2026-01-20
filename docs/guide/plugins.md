@@ -1,6 +1,6 @@
 # Plugin System
 
-Plugins are the primary way to extend ObjectQL. They allow you to bundle behavior, schema modifications, and logic (hooks/actions) into reusable units.
+Learn how to extend ObjectQL with plugins. This guide covers creating, registering, and distributing reusable plugins that bundle custom behavior, schema modifications, hooks, and actions.
 
 ## 1. Anatomy of a Plugin
 

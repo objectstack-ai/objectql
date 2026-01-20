@@ -1,6 +1,6 @@
-# Hooks (Triggers)
+# Hook (Trigger) Specification
 
-Hooks allow you to execute server-side logic before or after database operations. They are the primary mechanism for implementing business logic, validation, and side effects in ObjectQL.
+Learn how to define database hooks that execute server-side logic before or after data operations. This specification covers hook types, lifecycle events, parameters, and patterns for implementing business logic and side effects.
 
 ## 1. Overview
 

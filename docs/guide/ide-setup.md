@@ -1,6 +1,6 @@
-# IDE Setup
+# IDE Setup and Development Tools
 
-To get the best experience developing with ObjectQL, we recommend **Visual Studio Code** equipped with the official toolset. This setup provides you with an "AI-like" development experience with intelligent auto-completion, real-time validation, and instant code generation.
+Learn how to configure your development environment for ObjectQL. This guide covers Visual Studio Code setup, official extensions, IntelliSense configuration, and tooling for an optimal development experience.
 
 ## Visual Studio Code Extension
 

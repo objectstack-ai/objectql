@@ -1,6 +1,6 @@
-# Object Definition
+# Object Definition Specification
 
-Object files define business entities or database tables in YAML (or JSON). They are the foundation of your application's data model and are designed to be both human-readable and AI-friendly for automated code generation.
+Learn how to define business entities and database tables using ObjectQL's object metadata format. This specification covers the complete schema for `*.object.yml` files, including fields, relationships, validation, and AI-friendly metadata.
 
 **File Naming Convention:** `<object_name>.object.yml`
 

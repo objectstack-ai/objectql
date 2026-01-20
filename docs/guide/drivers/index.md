@@ -1,8 +1,6 @@
-# Database Drivers
+# Database Drivers Overview
 
-ObjectQL relies on **Drivers** to communicate with the underlying database. A driver is responsible for translating the ObjectQL specific query format (AST) into the native query language of the database (SQL, MongoDB Query, etc.).
-
-You can configure multiple drivers for different parts of your application, or use a single driver for everything.
+Learn about ObjectQL's database driver system and how it enables universal data access. This guide covers available drivers, configuration options, and how drivers translate ObjectQL queries into database-specific operations.
 
 ## Available Drivers
 

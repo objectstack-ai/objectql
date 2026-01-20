@@ -1,6 +1,6 @@
-# Data Modeling Guide
+# Data Modeling
 
-Data modeling in ObjectQL is **Metadata-First**. You define your application's schema using `*.object.yml` files (or JSON), and ObjectQL handles validation, database mapping, and type generation.
+Learn how to define your application's data models using ObjectQL's **metadata-first** approach. This guide covers object definitions, field types, relationships, and best practices for schema design using `*.object.yml` files.
 
 ## 1. The Object Definition
 

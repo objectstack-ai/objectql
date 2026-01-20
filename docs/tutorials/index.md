@@ -1,6 +1,6 @@
-# ObjectQL Tutorials
+# ObjectQL Learning Tutorials
 
-Welcome to the ObjectQL learning path. These tutorials are designed to take you from a complete beginner to an advanced architect.
+Welcome to the ObjectQL learning path. These hands-on tutorials take you from complete beginner to advanced architect through progressive, practical examples building real applications.
 
 ## 👶 Beginner
 

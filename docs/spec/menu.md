@@ -1,6 +1,6 @@
-# Menu Definition
+# Menu Definition Specification
 
-Menus define the navigation structure and organization of your application. They control how users access pages, objects, and features through a hierarchical menu system.
+Learn how to define navigation menus and application structure. This specification covers menu metadata, hierarchical organization, menu items, and how users navigate through your application's features.
 
 **File Naming Convention:** `<menu_name>.menu.yml`
 

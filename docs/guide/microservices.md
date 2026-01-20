@@ -1,6 +1,6 @@
-# Microservices & Federation
+# Microservices and Data Federation
 
-ObjectQL provides a built-in mechanism to aggregate data from multiple services into a single unified graph. This is similar to **GraphQL Federation** or Salesforce's **External Objects**, but strictly for the ObjectQL protocol.
+Learn how to build distributed systems with ObjectQL's federation capabilities. This guide covers connecting multiple services, remote data sources, and aggregating distributed data into a unified graph.
 
 ## Concept: Remote Remotes
 

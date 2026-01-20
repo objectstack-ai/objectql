@@ -1,6 +1,6 @@
-# Validation Rule Metadata
+# Validation Rules Specification
 
-Validation rules enforce data quality and business rules at the metadata level. They ensure data integrity before it reaches the database. Rules are designed to be both machine-executable and AI-understandable, with clear business intent.
+Learn how to define validation rules that enforce data quality and business logic at the metadata level. This specification covers rule syntax, operators, conditions, and patterns for building robust data validation.
 
 ## 1. Overview
 

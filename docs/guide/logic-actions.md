@@ -1,6 +1,6 @@
-# Logic: Actions (RPC)
+# Actions (Custom Server Functions)
 
-Actions (Remote Procedure Calls) allow you to define custom backend functions that go beyond simple CRUD. They are integrated into the metadata, meaning the Frontend knows exactly how to render them (buttons, confirmation dialogs, forms) and the Backend knows how to validate them.
+Learn how to define custom server-side functions using Actions (Remote Procedure Calls). Actions extend your application beyond CRUD operations, enabling complex business logic, integrations, and workflows with full metadata integration.
 
 ## 1. What is an Action?
 

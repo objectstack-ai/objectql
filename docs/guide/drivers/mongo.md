@@ -1,6 +1,6 @@
 # MongoDB Driver
 
-The MongoDB driver allows ObjectQL to store data in a MongoDB database (version 4.0+). It takes advantage of MongoDB's document model to store JSON fields natively and flexible schemas.
+Learn how to use ObjectQL with MongoDB databases. This guide covers installation, configuration, document model features, and MongoDB-specific capabilities for version 4.0 and above.
 
 ## Installation
 

@@ -1,6 +1,6 @@
-# Getting Started with ObjectQL
+# Quick Start Guide
 
-**ObjectQL** is a universal, metadata-driven ORM designed for building dynamic business applications. Unlike traditional ORMs where you define schema in class files (like TypeORM entities), ObjectQL uses a **Metadata-First** approach.
+Learn how to get started with ObjectQL—a universal, metadata-driven ORM for building dynamic business applications. This guide covers project setup, schema definition, and your first steps with ObjectQL's metadata-first approach.
 
 ## Why ObjectQL?
 

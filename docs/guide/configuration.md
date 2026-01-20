@@ -1,6 +1,6 @@
-# Configuration
+# Application Configuration
 
-ObjectQL is configured by passing an `ObjectQLConfig` object to the constructor.
+Learn how to configure ObjectQL applications through the `ObjectQLConfig` object, including database connections, metadata paths, and runtime options.
 
 ## Basic Layout
 

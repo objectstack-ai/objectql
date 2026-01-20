@@ -1,7 +1,6 @@
-# Building an Autonomous Data Agent
+# Tutorial: Building an Autonomous AI Agent
 
-> **Prerequisites**: [Task Manager Tutorial](./task-manager.md).
-> **Concepts**: ObjectQL as a "Tool" for LLMs.
+**Advanced Tutorial** - Learn how to build an autonomous AI agent using ObjectQL as the structured data layer. This tutorial covers ObjectQL as an LLM tool, implementing agent memory, and creating data-driven AI applications.
 
 In this tutorial, we will build an AI Agent that can answer questions about your data by autonomously querying the ObjectQL database. We will use OpenAI's "Function Calling" capability.
 

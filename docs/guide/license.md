@@ -1,6 +1,6 @@
-# License
+# License Information
 
-ObjectQL is released under the **MIT License**.
+ObjectQL is released under the **MIT License**. Learn about usage rights, attribution requirements, and how you can use ObjectQL in your projects.
 
 ## About This License
 

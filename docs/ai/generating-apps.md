@@ -1,8 +1,6 @@
-# Generating Apps with AI
+# Generating Applications with AI
 
-Because ObjectQL applications are defined primarily by **Metadata** (YAML/JSON) rather than **Code** (Classes/Functions), LLMs can generate complete, working backends in a single pass.
-
-This is "Zero-Shot Microservice Generation".
+Learn how to generate complete ObjectQL applications from natural language descriptions. This guide covers zero-shot microservice generation, prompt templates, and best practices for AI-powered app creation using LLMs.
 
 ## The Workflow
 

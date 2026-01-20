@@ -1,7 +1,6 @@
+# Query Language Specification (JSON-DSL)
 
-# ObjectQL Query Protocol (JSON-DSL)
-
-**Version:** 1.0.0
+Complete specification for ObjectQL's unified query protocol. This JSON-based Abstract Syntax Tree (AST) is the internal representation for all data operations, providing database-agnostic, AI-friendly, and injection-safe query capabilities.
 
 ## 1. Overview
 

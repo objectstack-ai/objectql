@@ -1,6 +1,6 @@
-# SQL Driver (Knex)
+# SQL Driver (PostgreSQL, MySQL, SQLite)
 
-The SQL driver implementation is based on [Knex.js](https://knexjs.org/), a powerful SQL query builder. It supports all major SQL databases including PostgreSQL, MySQL, SQLite3, and SQL Server.
+Learn how to use the SQL driver for relational databases. This guide covers installation, configuration, and features for PostgreSQL, MySQL, SQLite, and SQL Server using the Knex.js query builder.
 
 ## Installation
 

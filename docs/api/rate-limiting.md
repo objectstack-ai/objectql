@@ -1,6 +1,6 @@
-# Rate Limiting
+# Rate Limiting and Throttling
 
-ObjectQL supports configurable rate limiting to prevent abuse.
+Learn how to configure rate limiting to protect your ObjectQL APIs from abuse. This guide covers rate limit strategies, configuration options, and response headers for throttled requests.
 
 ## Default Limits
 

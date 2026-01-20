@@ -1,6 +1,6 @@
-# Formulas and Rules Syntax Guide
+# Formulas and Validation Rules
 
-This guide covers the complete syntax for formulas and validation rules in ObjectQL. Understanding these patterns will help you create powerful calculated fields and enforce business rules.
+Learn the complete syntax for creating formula fields and validation rules in ObjectQL. This comprehensive guide covers expressions, operators, functions, and patterns for building calculated fields and enforcing business logic.
 
 ## Table of Contents
 

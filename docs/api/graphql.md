@@ -1,6 +1,6 @@
 # GraphQL API
 
-ObjectQL provides a **GraphQL interface** for flexible, efficient queries with complex multi-table relationships. GraphQL allows clients to request exactly the data they need in a single request, making it ideal for modern frontends with complex data requirements.
+Learn how to use ObjectQL's GraphQL interface for flexible, efficient queries with complex relationships. Perfect for modern frontends that need to request exactly the data they need in a single request.
 
 ## Overview
 

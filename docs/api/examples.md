@@ -1,4 +1,6 @@
-# Examples
+# API Examples
+
+Practical examples demonstrating common ObjectQL API patterns and use cases. Learn through real-world scenarios including user registration, authentication flows, data queries, and business logic integration.
 
 ## Example 1: User Registration Flow
 

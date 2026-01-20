@@ -1,6 +1,6 @@
-# View Definition
+# View Definition Specification
 
-Views define saved queries, filters, and display configurations for data collections. They allow users to create and share custom perspectives on object data without modifying the underlying page definitions.
+Learn how to define saved queries, filters, and display configurations for data collections. This specification covers view metadata, filter syntax, column selection, and how users can create custom perspectives on object data.
 
 **File Naming Convention:** `<view_name>.view.yml`
 

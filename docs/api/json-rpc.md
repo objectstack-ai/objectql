@@ -1,6 +1,6 @@
-# JSON-RPC Style API
+# JSON-RPC API
 
-The **primary ObjectQL API** is a JSON-RPC style protocol where all operations are sent to a single endpoint.
+Learn how to use ObjectQL's primary JSON-RPC API where all operations are sent to a single unified endpoint. This protocol-first approach is ideal for microservices, AI agents, and universal clients.
 
 ## Base Endpoint
 

@@ -1,6 +1,6 @@
-# Form Definition
+# Form Definition Specification
 
-Forms define data entry layouts and configurations for creating and editing records. They control which fields are visible, their validation rules, and the user experience for data input.
+Learn how to define data entry forms and layouts. This specification covers form metadata, field placement, validation rules, and user experience configuration for creating and editing records.
 
 **File Naming Convention:** `<form_name>.form.yml`
 

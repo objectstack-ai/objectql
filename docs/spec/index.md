@@ -1,6 +1,6 @@
 # Metadata Specifications
 
-This section contains the complete metadata specifications for the ObjectQL platform. ObjectQL is a metadata-driven standard for enterprise applications - every aspect of your application is defined through structured metadata.
+Complete metadata specifications for the ObjectQL platform. ObjectQL is a metadata-driven standard where every aspect of your application—data models, business logic, UI, security—is defined through structured, version-controlled metadata.
 
 📖 **[Read the Complete Metadata Standard Guide](./metadata-standard.md)** - A comprehensive overview of the entire metadata system and how all pieces fit together.
 

@@ -1,6 +1,6 @@
 # Formula Engine Specification
 
-Formula fields are **read-only calculated fields** that automatically derive their values from other fields, related records, or system variables. They are computed at query time and are never stored in the database.
+Learn how to define calculated fields using ObjectQL's formula engine. This specification covers formula syntax, expressions, functions, and computed fields that are evaluated at query time without database storage.
 
 The Formula Engine is a core component of ObjectQL that enables declarative, metadata-driven calculations without requiring custom code for simple business logic.
 

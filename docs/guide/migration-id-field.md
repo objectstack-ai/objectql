@@ -1,6 +1,6 @@
 # Migration Guide: Unified ID Field
 
-This guide helps you migrate from the legacy `_id` field to the unified `id` field API.
+Learn how to migrate from the legacy `_id` field to the unified `id` field API. This guide provides step-by-step instructions, code examples, and migration strategies for updating existing applications.
 
 ## What Changed?
 

@@ -1,4 +1,6 @@
-# Authentication & Authorization
+# Authentication and Authorization
+
+Learn how to secure your ObjectQL APIs with authentication and authorization. This guide covers authentication methods, JWT tokens, role-based access control (RBAC), and permission enforcement strategies.
 
 ## Authentication Methods
 
