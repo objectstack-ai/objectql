@@ -25,7 +25,18 @@ export const baseOptions: Omit<DocsLayoutProps, 'tree'> = {
   // Enable table of contents
   toc: {
     enabled: true,
-    component: undefined,
+    footer: (
+      <div className="flex flex-col gap-2 border-t pt-4 mt-4 text-xs">
+        <a
+          href="https://github.com/objectstack-ai/objectql/blob/main/apps/site"
+          className="text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Edit this page on GitHub →
+        </a>
+      </div>
+    ),
   },
   // Enable last updated timestamp
   lastUpdate: {
