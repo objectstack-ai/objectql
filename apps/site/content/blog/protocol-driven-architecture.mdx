@@ -1,0 +1,82 @@
+---
+title: Understanding ObjectQL's Protocol-Driven Architecture
+description: A deep dive into how ObjectQL separates intent from implementation through its protocol-driven design.
+date: 2026-01-19
+authors:
+  - ObjectQL Team
+tags:
+  - architecture
+  - technical
+  - protocol
+---
+
+# Understanding ObjectQL's Protocol-Driven Architecture
+
+One of ObjectQL's core principles is being **Protocol-Driven, Not Code-Driven**. But what does this mean in practice?
+
+## The Problem with Traditional ORMs
+
+Traditional ORMs mix two concerns:
+
+1. **What** you want (the business logic)
+2. **How** to achieve it (the implementation details)
+
+This creates several issues:
+
+- Tight coupling to specific databases
+- Difficulty in testing and mocking
+- Hard to optimize queries
+- Challenging for AI to generate correctly
+
+## The ObjectQL Approach
+
+ObjectQL decouples these concerns through a three-layer architecture:
+
+### 1. The Intent Layer (YAML Schema)
+
+```yaml
+name: project
+fields:
+  name:
+    type: text
+    required: true
+  status:
+    type: select
+    options: [planning, active, completed]
+```
+
+This layer is **database-agnostic**. It describes what you want, not how to achieve it.
+
+### 2. The Compilation Layer
+
+The ObjectQL engine acts as a **compiler**, not a runtime wrapper:
+
+- Validates schema integrity
+- Injects permission checks
+- Optimizes query patterns
+- Generates type definitions
+
+### 3. The Driver Layer
+
+Drivers translate the compiled AST into database-specific operations:
+
+- `@objectql/driver-sql` → PostgreSQL, MySQL
+- `@objectql/driver-mongo` → MongoDB
+- `@objectql/driver-sdk` → Remote HTTP APIs
+
+## Benefits for AI Code Generation
+
+This architecture makes ObjectQL ideal for AI-driven development:
+
+✅ **Hallucination-Free**: YAML schemas are validated before compilation
+✅ **Type-Safe**: All operations are strongly typed
+✅ **Testable**: Mock drivers for testing without a real database
+✅ **Portable**: Change databases without rewriting business logic
+
+## Learn More
+
+Want to dive deeper? Check out:
+
+- [Architecture Specification](/docs/reference/spec/architecture)
+- [Core Concepts](/docs/modeling/concepts)
+- [Driver Development Guide](/docs/reference/api/drivers)
