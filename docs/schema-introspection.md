@@ -262,59 +262,85 @@ Convert introspected schema to ObjectQL object configurations.
 
 ## Complete Example
 
-Here's a complete working example combining all features:
+Here's a complete working example with error handling and best practices:
 
 ```typescript
 import { ObjectQL } from '@objectql/core';
 import { SqlDriver } from '@objectql/driver-sql';
 import * as fs from 'fs';
+import * as path from 'path';
 import * as yaml from 'js-yaml';
 
 async function connectExistingDatabase() {
-    // Create driver for existing database
-    const driver = new SqlDriver({
-        client: 'postgresql',
-        connection: {
-            host: 'localhost',
-            database: 'my_existing_db',
-            user: 'username',
-            password: 'password'
+    try {
+        // Create driver for existing database
+        const driver = new SqlDriver({
+            client: 'postgresql',
+            connection: {
+                host: process.env.DB_HOST || 'localhost',
+                database: process.env.DB_NAME || 'my_existing_db',
+                user: process.env.DB_USER || 'username',
+                password: process.env.DB_PASSWORD || 'password'
+            }
+        });
+
+        // Initialize ObjectQL
+        const app = new ObjectQL({
+            datasources: { default: driver }
+        });
+
+        console.log('Connecting to database...');
+
+        // Introspect and register all tables
+        const objects = await app.introspectAndRegister('default', {
+            excludeTables: ['migrations', 'schema_version']
+        });
+
+        console.log(`✅ Discovered ${objects.length} tables`);
+
+        // Initialize and use
+        await app.init();
+        const ctx = app.createContext({ isSystem: true });
+
+        // Query existing data
+        const users = await ctx.object('users').find({
+            top: 10
+        });
+
+        console.log(`Found ${users.length} users`);
+
+        // Optionally export metadata to files
+        const outputDir = 'src/objects';
+        
+        // Ensure directory exists
+        if (!fs.existsSync(outputDir)) {
+            fs.mkdirSync(outputDir, { recursive: true });
         }
-    });
 
-    // Initialize ObjectQL
-    const app = new ObjectQL({
-        datasources: { default: driver }
-    });
+        objects.forEach(obj => {
+            const filePath = path.join(outputDir, `${obj.name}.object.yml`);
+            try {
+                fs.writeFileSync(filePath, yaml.dump(obj));
+                console.log(`✅ Exported ${obj.name} to ${filePath}`);
+            } catch (err) {
+                console.error(`❌ Failed to export ${obj.name}:`, err.message);
+            }
+        });
 
-    // Introspect and register all tables
-    const objects = await app.introspectAndRegister('default', {
-        excludeTables: ['migrations', 'schema_version']
-    });
-
-    console.log(`Discovered ${objects.length} tables`);
-
-    // Initialize and use
-    await app.init();
-    const ctx = app.createContext({ isSystem: true });
-
-    // Query existing data
-    const users = await ctx.object('users').find({
-        top: 10
-    });
-
-    console.log('Users:', users);
-
-    // Optionally export metadata to files
-    objects.forEach(obj => {
-        fs.writeFileSync(
-            `src/objects/${obj.name}.object.yml`,
-            yaml.dump(obj)
-        );
-    });
+        console.log('✅ Database connection successful!');
+        
+    } catch (error) {
+        console.error('❌ Error connecting to database:', error.message);
+        if (error.code === 'ECONNREFUSED') {
+            console.error('Make sure the database server is running');
+        } else if (error.code === '28P01') {
+            console.error('Authentication failed - check username and password');
+        }
+        process.exit(1);
+    }
 }
 
-connectExistingDatabase().catch(console.error);
+connectExistingDatabase();
 ```
 
 ## Chinese Documentation (中文文档)
