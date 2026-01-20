@@ -11,6 +11,11 @@ export const baseOptions: Omit<DocsLayoutProps, 'tree'> = {
       url: '/docs',
       active: 'nested-url',
     },
+    {
+      text: 'Blog',
+      url: '/blog',
+      active: 'nested-url',
+    },
   ],
   githubUrl: 'https://github.com/objectstack-ai/objectql',
   // Enable sidebar search

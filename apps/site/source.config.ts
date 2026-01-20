@@ -1,4 +1,4 @@
-import { defineDocs, defineConfig } from 'fumadocs-mdx/config';
+import { defineDocs, defineConfig, defineCollections } from 'fumadocs-mdx/config';
 import { rehypeCode } from 'fumadocs-core/mdx-plugins';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -8,6 +8,11 @@ import rehypeAutolinkHeadings from 'rehype-autolink-headings';
 
 export const { docs, meta } = defineDocs({
   dir: 'content/docs',
+});
+
+export const blog = defineCollections({
+  dir: 'content/blog',
+  type: 'doc',
 });
 
 export default defineConfig({
