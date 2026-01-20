@@ -1,6 +1,6 @@
 # Attachment Association Guide (Chinese)
 
-Detailed guide on associating file attachments with object records in ObjectQL. This document covers two main approaches (embedded attachments vs. independent attachment objects), comparison, use cases, querying patterns, and best practices.
+Detailed guide on associating file attachments with object records in ObjectQL. This Chinese document covers two main approaches (embedded attachments vs. independent attachment objects), comparison, practical examples, and best practices.
 
 ## 目录
 

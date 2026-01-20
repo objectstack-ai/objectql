@@ -1,6 +1,6 @@
 # Multiple File Upload Guide (Chinese)
 
-Complete guide for implementing multiple file upload functionality in ObjectQL attachment fields. Learn how to enable multi-select with `multiple: true`, configure validation, handle batch uploads, and implement image galleries.
+Complete guide for implementing multiple file upload functionality in ObjectQL attachment fields. This Chinese document covers enabling multi-select with `multiple: true`, field configuration, batch upload methods, CRUD operations, and complete product gallery examples.
 
 ## 字段定义
 
