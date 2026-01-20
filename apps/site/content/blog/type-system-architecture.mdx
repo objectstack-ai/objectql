@@ -1,0 +1,258 @@
+---
+title: "The Type System Architecture: Inside @objectql/types"
+description: A comprehensive deep dive into ObjectQL's type system - the constitutional layer that defines contracts, prevents circular dependencies, and enables universal compatibility.
+date: 2026-01-20
+authors:
+  - ObjectQL Team
+tags:
+  - architecture
+  - technical
+  - types
+  - deep-dive
+---
+
+# The Type System Architecture: Inside @objectql/types
+
+In any well-architected software system, there exists a foundational layer that defines the rules of engagement—the contract that all other components must honor. In ObjectQL, this is **`@objectql/types`**, often referred to as "The Constitution."
+
+## The Zero-Dependency Principle
+
+One of the most critical architectural decisions in ObjectQL is the **zero-dependency rule** for `@objectql/types`. This package:
+
+- Contains **only** Pure TypeScript interfaces, enums, and custom errors
+- Has **zero** external dependencies
+- Can **never** import from other ObjectQL packages
+- Serves as the single source of truth for the entire ecosystem
+
+### Why Zero Dependencies Matter
+
+```typescript
+// ✅ ALLOWED in @objectql/types
+export interface ObjectSchema {
+  name: string;
+  label?: string;
+  fields: Record<string, FieldSchema>;
+}
+
+// ❌ FORBIDDEN in @objectql/types
+import { validateSchema } from '@objectql/core'; // Circular dependency!
+```
+
+This strict rule prevents circular dependencies and ensures a clean dependency graph:
+
+```
+@objectql/types (zero deps)
+    ↑
+    ├─── @objectql/core
+    ├─── @objectql/driver-sql
+    ├─── @objectql/driver-mongo
+    └─── @objectql/sdk
+```
+
+## The Core Type Hierarchy
+
+### 1. Schema Types: The Data Model Contract
+
+ObjectQL's schema types define how data structures are declared:
+
+```typescript
+interface ObjectSchema {
+  name: string;           // Machine-readable identifier
+  label?: string;         // Human-readable display name
+  fields: Record<string, FieldSchema>;
+  indexes?: IndexSchema[];
+  permissions?: PermissionSchema[];
+}
+
+interface FieldSchema {
+  type: FieldType;        // text, number, select, lookup, etc.
+  label?: string;
+  required?: boolean;
+  defaultValue?: any;
+  // Type-specific properties
+  reference_to?: string;  // For lookup fields
+  options?: string[];     // For select fields
+}
+```
+
+These interfaces are deliberately simple—they're designed to be **serializable** and **validatable** by both humans and AI agents.
+
+### 2. Query Types: The AST Protocol
+
+ObjectQL doesn't use SQL strings or MongoDB query objects directly. Instead, it defines an **Abstract Syntax Tree (AST)** for queries:
+
+```typescript
+interface Query {
+  object: string;              // Target object name
+  fields?: string[];           // Projection
+  filters?: FilterClause[];    // WHERE conditions
+  sort?: SortClause[];         // ORDER BY
+  limit?: number;
+  skip?: number;
+}
+
+interface FilterClause {
+  field: string;
+  operator: FilterOperator;   // eq, ne, gt, in, contains, etc.
+  value: any;
+}
+```
+
+This AST approach provides several benefits:
+
+- **Type-Safe**: TypeScript validates queries at compile time
+- **Serializable**: Can be sent over HTTP as JSON
+- **Database-Agnostic**: Drivers translate to their native formats
+- **AI-Friendly**: LLMs can generate valid queries without knowing SQL syntax
+
+### 3. Driver Interface: The Portability Contract
+
+The `Driver` interface defines the contract that all database adapters must implement:
+
+```typescript
+interface Driver {
+  connect(config: DriverConfig): Promise<void>;
+  disconnect(): Promise<void>;
+  
+  // CRUD Operations
+  find(query: Query): Promise<Record<string, any>[]>;
+  findOne(query: Query): Promise<Record<string, any> | null>;
+  insert(object: string, doc: Record<string, any>): Promise<Record<string, any>>;
+  update(object: string, id: string, doc: Record<string, any>): Promise<Record<string, any>>;
+  delete(object: string, id: string): Promise<void>;
+  
+  // Schema Management
+  syncSchema(objects: ObjectSchema[]): Promise<void>;
+}
+```
+
+This interface is **intentionally minimal**. Advanced features (aggregations, transactions) are provided through optional capabilities that drivers can implement.
+
+## Custom Error Types: Type-Safe Error Handling
+
+ObjectQL defines a hierarchy of custom errors instead of throwing generic `Error` objects:
+
+```typescript
+class ObjectQLError extends Error {
+  code: string;
+  details?: Record<string, any>;
+  
+  constructor(options: { code: string; message: string; details?: any }) {
+    super(options.message);
+    this.code = options.code;
+    this.details = options.details;
+  }
+}
+
+// Specialized error types
+class ValidationError extends ObjectQLError { /* ... */ }
+class PermissionError extends ObjectQLError { /* ... */ }
+class NotFoundError extends ObjectQLError { /* ... */ }
+```
+
+This enables type-safe error handling:
+
+```typescript
+try {
+  await repository.insert('project', data);
+} catch (error) {
+  if (error instanceof ValidationError) {
+    // Handle validation errors specifically
+    console.error('Invalid data:', error.details);
+  } else if (error instanceof PermissionError) {
+    // Handle permission errors
+    console.error('Access denied:', error.message);
+  }
+}
+```
+
+## Universal Runtime Compatibility
+
+Because `@objectql/types` has zero dependencies and uses only pure TypeScript, it works in **any** JavaScript environment:
+
+- ✅ Node.js
+- ✅ Browser (via bundlers)
+- ✅ Deno
+- ✅ Cloudflare Workers
+- ✅ Vercel Edge Functions
+- ✅ React Native
+
+This is crucial for ObjectQL's vision of "write once, run anywhere."
+
+## Versioning and Compatibility
+
+The `@objectql/types` package follows strict semantic versioning:
+
+- **Major version**: Breaking changes to interfaces (rare)
+- **Minor version**: New interfaces or optional properties (common)
+- **Patch version**: Documentation or internal improvements (frequent)
+
+Since all packages depend on `@objectql/types`, version compatibility is critical:
+
+```json
+{
+  "dependencies": {
+    "@objectql/types": "^1.0.0",
+    "@objectql/core": "^1.0.0"
+  }
+}
+```
+
+The `^` (caret) ensures that updates to `@objectql/types` minor versions don't break dependent packages.
+
+## Best Practices for Using Types
+
+### 1. Always Import from @objectql/types
+
+```typescript
+// ✅ CORRECT
+import type { ObjectSchema, Query } from '@objectql/types';
+
+// ❌ WRONG - don't re-export or copy types
+import type { ObjectSchema } from '@objectql/core';
+```
+
+### 2. Use Type Guards for Runtime Checks
+
+```typescript
+import { isValidQuery } from '@objectql/core'; // Runtime validator
+
+function handleQuery(input: unknown) {
+  if (isValidQuery(input)) {
+    // TypeScript now knows input is Query
+    console.log(input.object);
+  }
+}
+```
+
+### 3. Extend Types with Generics
+
+```typescript
+import type { Query } from '@objectql/types';
+
+// Add type-safe field projection
+type TypedQuery<T> = Query & {
+  fields?: (keyof T)[];
+};
+```
+
+## The Constitutional Role
+
+`@objectql/types` is more than just a package—it's the **constitutional document** of the ObjectQL ecosystem:
+
+- **Immutable Contracts**: Interfaces define what's possible
+- **Universal Language**: All packages speak the same types
+- **Stability Guarantees**: Breaking changes require major versions
+- **AI-Readable**: LLMs can understand and generate valid code
+
+When you work with ObjectQL, you're not just using an ORM—you're operating within a **type system** that guarantees consistency, safety, and portability across the entire stack.
+
+## Learn More
+
+- [Architecture Specification](/docs/reference/spec/architecture)
+- [API Reference: @objectql/types](/docs/reference/api/types)
+- [Driver Development Guide](/docs/reference/api/drivers)
+
+---
+
+**Next in Series**: [Compiler vs ORM: Understanding ObjectQL's Execution Model](/blog/compiler-execution-model)

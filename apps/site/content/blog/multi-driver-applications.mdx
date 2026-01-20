@@ -1,0 +1,644 @@
+---
+title: "Building Multi-Driver Applications: Database Portability in Practice"
+description: Learn how ObjectQL's driver architecture enables true database portability, allowing you to switch between SQL, MongoDB, and other data stores without changing business logic.
+date: 2026-01-20
+authors:
+  - ObjectQL Team
+tags:
+  - architecture
+  - drivers
+  - portability
+  - deep-dive
+---
+
+# Building Multi-Driver Applications: Database Portability in Practice
+
+One of ObjectQL's most powerful features is **true database portability**. Write your business logic once, and run it on PostgreSQL, MongoDB, in-memory storage, or even a remote HTTP API—all without changing a single line of code.
+
+## The Portability Problem
+
+Traditional applications are tightly coupled to their database:
+
+```typescript
+// PostgreSQL-specific code
+const result = await pool.query(
+  'SELECT * FROM projects WHERE status = $1',
+  ['active']
+);
+
+// MongoDB-specific code
+const result = await db.collection('projects').find({
+  status: 'active'
+}).toArray();
+```
+
+Switching databases requires rewriting all data access code. Even with ORMs, you're often locked into a single database family (SQL vs NoSQL).
+
+## The ObjectQL Solution: The Driver Interface
+
+ObjectQL solves this with a minimal, universal driver interface defined in `@objectql/types`:
+
+```typescript
+interface Driver {
+  // Lifecycle
+  connect(config: DriverConfig): Promise<void>;
+  disconnect(): Promise<void>;
+  
+  // CRUD Operations (database-agnostic)
+  find(query: Query): Promise<Record<string, any>[]>;
+  findOne(query: Query): Promise<Record<string, any> | null>;
+  insert(object: string, doc: Record<string, any>): Promise<Record<string, any>>;
+  update(object: string, id: string, doc: Record<string, any>): Promise<Record<string, any>>;
+  delete(object: string, id: string): Promise<void>;
+  
+  // Schema Management
+  syncSchema(objects: ObjectSchema[]): Promise<void>;
+}
+```
+
+This interface is **intentionally minimal**—it defines the lowest common denominator that all databases can implement efficiently.
+
+## Driver Ecosystem
+
+ObjectQL provides drivers for various data stores:
+
+| Driver | Package | Environment | Use Case |
+|--------|---------|-------------|----------|
+| **SQL** | `@objectql/driver-sql` | Node.js | PostgreSQL, MySQL, SQLite, SQL Server |
+| **MongoDB** | `@objectql/driver-mongo` | Node.js | MongoDB with aggregation pipeline |
+| **Memory** | `@objectql/driver-memory` | Universal | Testing, browser apps, prototyping |
+| **LocalStorage** | `@objectql/driver-localstorage` | Browser | Client-side persistent storage |
+| **File System** | `@objectql/driver-fs` | Node.js | JSON file-based storage |
+| **Redis** | `@objectql/driver-redis` | Node.js | Key-value cache, session storage |
+| **HTTP/SDK** | `@objectql/sdk` | Universal | Remote ObjectQL servers |
+
+## Example: One Codebase, Multiple Databases
+
+Let's build a task management app that works with any database:
+
+### 1. Define Your Schema (Database-Agnostic)
+
+```yaml
+# tasks.object.yml
+name: task
+label: Task
+fields:
+  title:
+    type: text
+    required: true
+  description:
+    type: textarea
+  status:
+    type: select
+    options: [todo, in_progress, done]
+    default: todo
+  assignee:
+    type: lookup
+    reference_to: users
+  due_date:
+    type: date
+  priority:
+    type: select
+    options: [low, medium, high]
+    default: medium
+```
+
+This schema works identically across all drivers.
+
+### 2. Write Database-Agnostic Business Logic
+
+```typescript
+import { Repository } from '@objectql/core';
+import type { Driver } from '@objectql/types';
+
+export class TaskService {
+  constructor(private repository: Repository) {}
+
+  async createTask(data: {
+    title: string;
+    assignee: string;
+    due_date?: Date;
+  }) {
+    return await this.repository.insert('task', {
+      ...data,
+      status: 'todo',
+      priority: 'medium'
+    });
+  }
+
+  async getActiveTasks(userId: string) {
+    return await this.repository.find({
+      object: 'task',
+      filters: [
+        { field: 'assignee', operator: 'eq', value: userId },
+        { field: 'status', operator: 'in', value: ['todo', 'in_progress'] }
+      ],
+      sort: [
+        { field: 'priority', order: 'desc' },
+        { field: 'due_date', order: 'asc' }
+      ]
+    });
+  }
+
+  async completeTask(taskId: string) {
+    return await this.repository.update('task', taskId, {
+      status: 'done'
+    });
+  }
+}
+```
+
+This code **never mentions** which database it's using.
+
+### 3. Configure the Driver at Runtime
+
+Now you can switch databases with just configuration:
+
+#### Production: PostgreSQL
+
+```typescript
+// config/production.ts
+import { SQLDriver } from '@objectql/driver-sql';
+import { Repository } from '@objectql/core';
+
+const driver = new SQLDriver({
+  client: 'postgresql',
+  connection: {
+    host: 'db.production.com',
+    database: 'tasks_prod',
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD
+  }
+});
+
+await driver.connect();
+const repository = new Repository({ driver });
+```
+
+#### Development: SQLite
+
+```typescript
+// config/development.ts
+import { SQLDriver } from '@objectql/driver-sql';
+
+const driver = new SQLDriver({
+  client: 'sqlite3',
+  connection: {
+    filename: './dev.sqlite3'
+  }
+});
+```
+
+#### Testing: In-Memory
+
+```typescript
+// config/test.ts
+import { MemoryDriver } from '@objectql/driver-memory';
+
+const driver = new MemoryDriver();
+// No connection needed, no database setup, instant startup
+```
+
+#### Edge/Browser: LocalStorage
+
+```typescript
+// config/browser.ts
+import { LocalStorageDriver } from '@objectql/driver-localstorage';
+
+const driver = new LocalStorageDriver({
+  prefix: 'myapp_'
+});
+```
+
+#### MongoDB
+
+```typescript
+// config/mongodb.ts
+import { MongoDriver } from '@objectql/driver-mongo';
+
+const driver = new MongoDriver({
+  url: 'mongodb://localhost:27017',
+  database: 'tasks'
+});
+```
+
+The **exact same** `TaskService` code works with all of them!
+
+## How Drivers Translate Queries
+
+Let's trace how a single query gets translated by different drivers:
+
+### Source Query (Universal)
+
+```typescript
+const query = {
+  object: 'task',
+  filters: [
+    { field: 'status', operator: 'in', value: ['todo', 'in_progress'] },
+    { field: 'priority', operator: 'eq', value: 'high' }
+  ],
+  sort: [{ field: 'due_date', order: 'asc' }],
+  limit: 10
+};
+```
+
+### SQL Driver Output (PostgreSQL)
+
+```sql
+SELECT 
+  _id, title, description, status, assignee, due_date, priority
+FROM tasks
+WHERE status IN ($1, $2)
+  AND priority = $3
+ORDER BY due_date ASC
+LIMIT 10
+```
+
+Parameters: `['todo', 'in_progress', 'high']`
+
+### MongoDB Driver Output
+
+```javascript
+db.tasks.find({
+  status: { $in: ['todo', 'in_progress'] },
+  priority: 'high'
+})
+.sort({ due_date: 1 })
+.limit(10)
+```
+
+### Memory Driver Output (JavaScript)
+
+```javascript
+tasks
+  .filter(t => 
+    ['todo', 'in_progress'].includes(t.status) &&
+    t.priority === 'high'
+  )
+  .sort((a, b) => a.due_date - b.due_date)
+  .slice(0, 10)
+```
+
+Each driver optimizes for its target platform, but the business logic remains identical.
+
+## Advanced Multi-Driver Patterns
+
+### Pattern 1: Hybrid Storage
+
+Use multiple drivers in the same application:
+
+```typescript
+// Primary data in PostgreSQL
+const sqlDriver = new SQLDriver({ /* ... */ });
+const primaryRepo = new Repository({ driver: sqlDriver });
+
+// Cache in Redis
+const redisDriver = new RedisDriver({ /* ... */ });
+const cacheRepo = new Repository({ driver: redisDriver });
+
+// Business logic
+async function getUser(id: string) {
+  // Check cache first
+  const cached = await cacheRepo.findOne({
+    object: 'user',
+    filters: [{ field: '_id', operator: 'eq', value: id }]
+  });
+  
+  if (cached) return cached;
+  
+  // Fetch from database
+  const user = await primaryRepo.findOne({
+    object: 'user',
+    filters: [{ field: '_id', operator: 'eq', value: id }]
+  });
+  
+  // Update cache
+  await cacheRepo.insert('user', user);
+  
+  return user;
+}
+```
+
+### Pattern 2: Testing with Fake Data
+
+```typescript
+import { MemoryDriver } from '@objectql/driver-memory';
+
+describe('TaskService', () => {
+  let service: TaskService;
+  let driver: MemoryDriver;
+  
+  beforeEach(async () => {
+    driver = new MemoryDriver();
+    const repository = new Repository({ driver });
+    service = new TaskService(repository);
+    
+    // Seed test data
+    await driver.insert('task', {
+      _id: 'task1',
+      title: 'Test Task',
+      status: 'todo',
+      priority: 'high'
+    });
+  });
+  
+  it('should complete tasks', async () => {
+    await service.completeTask('task1');
+    
+    const task = await driver.findOne({
+      object: 'task',
+      filters: [{ field: '_id', operator: 'eq', value: 'task1' }]
+    });
+    
+    expect(task.status).toBe('done');
+  });
+});
+```
+
+No database setup, instant test execution, perfect isolation.
+
+### Pattern 3: Progressive Enhancement
+
+Start with in-memory, upgrade to persistent storage later:
+
+```typescript
+// v1.0: Prototype with in-memory
+const driver = new MemoryDriver();
+
+// v1.1: Add persistence with LocalStorage (browser)
+const driver = new LocalStorageDriver({ prefix: 'app_' });
+
+// v1.2: Scale with SQLite
+const driver = new SQLDriver({
+  client: 'sqlite3',
+  connection: { filename: './app.db' }
+});
+
+// v2.0: Production PostgreSQL
+const driver = new SQLDriver({
+  client: 'postgresql',
+  connection: { /* ... */ }
+});
+```
+
+No code changes, just swap the driver!
+
+## Driver-Specific Features
+
+While the core interface is universal, some drivers provide additional capabilities:
+
+### SQL Driver: Raw Queries
+
+```typescript
+import { SQLDriver } from '@objectql/driver-sql';
+
+const driver = new SQLDriver({ /* ... */ });
+
+// Access underlying Knex instance for complex queries
+const stats = await driver.knex.raw(`
+  SELECT 
+    status,
+    COUNT(*) as count,
+    AVG(priority) as avg_priority
+  FROM tasks
+  GROUP BY status
+`);
+```
+
+### MongoDB Driver: Aggregation Pipeline
+
+```typescript
+import { MongoDriver } from '@objectql/driver-mongo';
+
+const driver = new MongoDriver({ /* ... */ });
+
+// Use native aggregation
+const pipeline = [
+  { $match: { status: 'done' } },
+  { $group: { _id: '$assignee', count: { $sum: 1 } } },
+  { $sort: { count: -1 } }
+];
+
+const stats = await driver.aggregate('task', pipeline);
+```
+
+### Memory Driver: Snapshots
+
+```typescript
+import { MemoryDriver } from '@objectql/driver-memory';
+
+const driver = new MemoryDriver();
+
+// Take snapshot for rollback
+const snapshot = driver.snapshot();
+
+// Make changes
+await repository.insert('task', { /* ... */ });
+
+// Rollback if needed
+driver.restore(snapshot);
+```
+
+## Performance Considerations
+
+### When to Choose Each Driver
+
+**SQL Driver (PostgreSQL/MySQL)**
+- ✅ Best for: Complex queries, ACID transactions, large datasets
+- ✅ Strengths: Mature ecosystem, full-text search, JSON columns
+- ⚠️ Considerations: Requires database server, connection pooling
+
+**MongoDB Driver**
+- ✅ Best for: Document-heavy workloads, flexible schemas, horizontal scaling
+- ✅ Strengths: Native JSON, powerful aggregation, sharding
+- ⚠️ Considerations: Eventual consistency, different query paradigms
+
+**Memory Driver**
+- ✅ Best for: Testing, prototypes, small datasets, browser apps
+- ✅ Strengths: Zero setup, instant, perfect for development
+- ⚠️ Considerations: Data lost on restart, limited by RAM
+
+**LocalStorage Driver**
+- ✅ Best for: Client-side apps, offline-first, small user data
+- ✅ Strengths: Persistent in browser, no backend needed
+- ⚠️ Considerations: 5-10MB limit, same-origin only
+
+### Query Optimization Across Drivers
+
+ObjectQL's compiler optimizes queries for each driver:
+
+```typescript
+// Complex query with lookup
+const query = {
+  object: 'task',
+  fields: ['title', 'assignee.name', 'assignee.email'],
+  filters: [{ field: 'status', operator: 'eq', value: 'todo' }]
+};
+```
+
+**SQL Driver**: Uses `LEFT JOIN`
+
+```sql
+SELECT t.title, u.name, u.email
+FROM tasks t
+LEFT JOIN users u ON t.assignee = u._id
+WHERE t.status = 'todo'
+```
+
+**MongoDB Driver**: Uses `$lookup`
+
+```javascript
+db.tasks.aggregate([
+  { $match: { status: 'todo' } },
+  { $lookup: {
+      from: 'users',
+      localField: 'assignee',
+      foreignField: '_id',
+      as: 'assignee'
+    }
+  },
+  { $unwind: '$assignee' }
+])
+```
+
+**Memory Driver**: Uses JavaScript joins
+
+```javascript
+tasks
+  .filter(t => t.status === 'todo')
+  .map(t => ({
+    title: t.title,
+    assignee: {
+      name: users[t.assignee]?.name,
+      email: users[t.assignee]?.email
+    }
+  }))
+```
+
+## Migration Strategy
+
+### Step 1: Abstract Data Access
+
+```typescript
+// ❌ Before - direct database code
+import { Pool } from 'pg';
+const pool = new Pool({ /* ... */ });
+const result = await pool.query('SELECT * FROM tasks');
+
+// ✅ After - ObjectQL
+import { Repository } from '@objectql/core';
+const tasks = await repository.find({ object: 'task' });
+```
+
+### Step 2: Define Schemas
+
+Convert database schemas to ObjectQL format:
+
+```typescript
+// tasks.object.yml
+name: task
+fields:
+  title: { type: text }
+  status: { type: select, options: [todo, in_progress, done] }
+  # ... other fields
+```
+
+### Step 3: Choose Driver(s)
+
+```typescript
+// Keep using PostgreSQL initially
+const driver = new SQLDriver({ client: 'postgresql', /* ... */ });
+```
+
+### Step 4: Gradually Refactor
+
+Replace database code incrementally, testing along the way.
+
+### Step 5: Switch or Add Drivers
+
+Once abstracted, switching is trivial:
+
+```typescript
+// Switch to MongoDB
+const driver = new MongoDriver({ /* ... */ });
+
+// Or run both
+const sqlRepo = new Repository({ driver: sqlDriver });
+const mongoRepo = new Repository({ driver: mongoDriver });
+```
+
+## Best Practices
+
+1. **Keep Business Logic Driver-Agnostic**: Never import driver-specific code in services
+2. **Use Driver Features Sparingly**: Stick to core interface unless absolutely necessary
+3. **Test with Memory Driver**: Fast, isolated, deterministic
+4. **Deploy with SQL/Mongo**: Production-ready, scalable
+5. **Cache with Redis Driver**: High-performance reads
+6. **Version Your Schemas**: Use migrations for schema changes
+
+## Real-World Example: Multi-Tenant SaaS
+
+```typescript
+class TenantManager {
+  private drivers = new Map<string, Driver>();
+  
+  async getRepository(tenantId: string): Promise<Repository> {
+    let driver = this.drivers.get(tenantId);
+    
+    if (!driver) {
+      // Allocate driver based on tenant tier
+      const tenant = await this.getTenant(tenantId);
+      
+      if (tenant.tier === 'enterprise') {
+        // Dedicated PostgreSQL
+        driver = new SQLDriver({
+          client: 'postgresql',
+          connection: { host: `${tenantId}.db.company.com` }
+        });
+      } else if (tenant.tier === 'pro') {
+        // Shared PostgreSQL with schema isolation
+        driver = new SQLDriver({
+          client: 'postgresql',
+          connection: { /* shared */ },
+          searchPath: [tenantId, 'public']
+        });
+      } else {
+        // Free tier uses MongoDB
+        driver = new MongoDriver({
+          database: `tenant_${tenantId}`
+        });
+      }
+      
+      await driver.connect();
+      this.drivers.set(tenantId, driver);
+    }
+    
+    return new Repository({ driver });
+  }
+}
+```
+
+Different tenants on different databases, same code!
+
+## Conclusion
+
+ObjectQL's driver architecture provides true database portability:
+
+- 🔄 **Switch databases** without changing business logic
+- 🧪 **Test in-memory** for fast, isolated tests
+- 🌍 **Deploy anywhere** from browser to edge to server
+- 📦 **Mix and match** multiple drivers in one application
+- ⚡ **Optimize per driver** while maintaining a common interface
+
+The key insight: **business logic should never know which database it's using**. By programming against an abstract interface, you gain flexibility, testability, and future-proofing.
+
+## Learn More
+
+- [Driver API Reference](/docs/reference/api/drivers)
+- [SQL Driver Guide](/docs/drivers/sql)
+- [MongoDB Driver Guide](/docs/drivers/mongodb)
+- [Testing Best Practices](/docs/testing/unit-tests)
+
+---
+
+**Next in Series**: [Security by Design: How ObjectQL Prevents Common Vulnerabilities](/blog/security-by-design)

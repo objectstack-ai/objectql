@@ -1,0 +1,659 @@
+---
+title: "Security by Design: How ObjectQL Prevents Common Vulnerabilities"
+description: Explore ObjectQL's built-in security mechanisms that automatically prevent SQL injection, enforce permissions, validate inputs, and eliminate entire classes of vulnerabilities.
+date: 2026-01-20
+authors:
+  - ObjectQL Team
+tags:
+  - security
+  - architecture
+  - best-practices
+  - deep-dive
+---
+
+# Security by Design: How ObjectQL Prevents Common Vulnerabilities
+
+Security is not a feature you add—it's a property of the system's architecture. ObjectQL embeds security mechanisms at the **compiler level**, making it impossible for developers to accidentally create vulnerable code.
+
+## The Security Problem in Traditional Development
+
+Most security vulnerabilities arise from **developer mistakes**:
+
+```typescript
+// 🚨 SQL Injection vulnerability
+const username = req.query.username; // User input
+const query = `SELECT * FROM users WHERE username = '${username}'`;
+await db.query(query);
+
+// 🚨 Missing permission check
+const projectId = req.params.id;
+const project = await db.query('SELECT * FROM projects WHERE id = ?', [projectId]);
+// ❌ What if this user doesn't have access to this project?
+
+// 🚨 Unvalidated input
+await db.insert('users', req.body);
+// ❌ What if req.body contains malicious fields?
+```
+
+Even experienced developers make these mistakes, especially under time pressure or when the codebase is large and complex.
+
+## The ObjectQL Approach: Security by Design
+
+ObjectQL's philosophy: **Developers forget, the engine never forgets.**
+
+Security checks are **automatically injected** during query compilation, not manually added by developers.
+
+```typescript
+// ObjectQL - secure by default
+const project = await repository.findOne({
+  object: 'project',
+  filters: [{ field: '_id', operator: 'eq', value: projectId }]
+});
+// ✅ Permissions automatically checked
+// ✅ Input automatically validated
+// ✅ SQL injection impossible by design
+```
+
+## Built-In Security Mechanisms
+
+### 1. SQL Injection Prevention
+
+ObjectQL **never concatenates strings** to build queries. All values go through parameterized queries.
+
+#### How Traditional ORMs Fail
+
+```typescript
+// Method chaining can be exploited
+const searchTerm = "admin'; DROP TABLE users; --";
+await User.where(`username = '${searchTerm}'`).find();
+// Executes: SELECT * FROM users WHERE username = 'admin'; DROP TABLE users; --'
+```
+
+#### How ObjectQL Prevents This
+
+```typescript
+// User input
+const searchTerm = "admin'; DROP TABLE users; --";
+
+// ObjectQL query (structured data)
+const query = {
+  object: 'user',
+  filters: [
+    { field: 'username', operator: 'eq', value: searchTerm }
+  ]
+};
+
+// Driver output (always parameterized)
+// SQL: SELECT * FROM users WHERE username = $1
+// Params: ["admin'; DROP TABLE users; --"]
+```
+
+The malicious input is treated as **data**, not **code**. It's stored as a literal string in the database.
+
+**Why it works:**
+- Query structure is defined by TypeScript objects, not strings
+- Values are passed separately to the database driver
+- No string interpolation anywhere in the pipeline
+
+### 2. Automatic Permission Enforcement
+
+ObjectQL injects permission checks during compilation, before the query reaches the database.
+
+#### Permission Schema Definition
+
+```yaml
+# project.permission.yml
+name: project
+permissions:
+  - role: owner
+    allow_read: true
+    allow_create: true
+    allow_edit: true
+    allow_delete: true
+    filter: { owner: "{userId}" }
+  
+  - role: member
+    allow_read: true
+    allow_create: false
+    allow_edit: false
+    allow_delete: false
+    filter: { team_members: { contains: "{userId}" } }
+  
+  - role: guest
+    allow_read: true
+    allow_create: false
+    allow_edit: false
+    allow_delete: false
+    filter: { public: true }
+```
+
+#### Automatic Filter Injection
+
+```typescript
+// User makes a request
+const currentUser = { _id: 'user123', role: 'member' };
+
+// User's query (no permission logic)
+const userQuery = {
+  object: 'project',
+  filters: [
+    { field: 'status', operator: 'eq', value: 'active' }
+  ]
+};
+
+// Engine compiles with permissions
+const compiledQuery = {
+  object: 'project',
+  filters: [
+    { field: 'status', operator: 'eq', value: 'active' },
+    // 👇 Automatically injected based on user's role
+    { field: 'team_members', operator: 'contains', value: 'user123' }
+  ]
+};
+```
+
+**Result:** Users can **never** see data they don't have access to, because the filter is applied at the engine level, not in application code.
+
+#### Operation-Level Permissions
+
+```typescript
+// User tries to delete a project
+await repository.delete('project', 'proj456');
+
+// Engine checks permissions BEFORE database access
+// If user.role === 'member':
+//   ❌ PermissionError: User 'user123' cannot 'delete' on 'project'
+//
+// If user.role === 'owner' && project.owner === 'user123':
+//   ✅ Allowed
+```
+
+### 3. Schema-Based Input Validation
+
+All data is validated against the schema before reaching the database.
+
+#### Schema Definition
+
+```yaml
+# user.object.yml
+name: user
+fields:
+  email:
+    type: email
+    required: true
+    unique: true
+  age:
+    type: number
+    min: 18
+    max: 120
+  role:
+    type: select
+    options: [user, admin, moderator]
+    default: user
+  password:
+    type: password
+    min_length: 8
+```
+
+#### Automatic Validation
+
+```typescript
+// Malicious/invalid input
+const maliciousData = {
+  email: 'not-an-email',        // ❌ Invalid format
+  age: 15,                       // ❌ Below minimum
+  role: 'superadmin',           // ❌ Not in options
+  password: '123',               // ❌ Too short
+  is_admin: true,               // ❌ Field doesn't exist
+  _internal_flag: 'hacked'      // ❌ Internal field
+};
+
+// Attempt to insert
+try {
+  await repository.insert('user', maliciousData);
+} catch (error) {
+  // ValidationError: {
+  //   email: "Invalid email format",
+  //   age: "Must be at least 18",
+  //   role: "Invalid value 'superadmin'. Allowed: user, admin, moderator",
+  //   password: "Must be at least 8 characters",
+  //   is_admin: "Field 'is_admin' not defined in schema",
+  //   _internal_flag: "Field '_internal_flag' not defined in schema"
+  // }
+}
+```
+
+**Key points:**
+- Validation happens **before** database access
+- Unknown fields are rejected
+- Type coercion is applied safely
+- All errors collected and returned together
+
+### 4. Protected Fields
+
+ObjectQL supports read-only and write-protected fields:
+
+```yaml
+name: user
+fields:
+  _id:
+    type: text
+    readonly: true
+  created_at:
+    type: datetime
+    readonly: true
+  updated_at:
+    type: datetime
+    readonly: true
+  password:
+    type: password
+    writeonly: true    # Can write, cannot read
+  credit_card:
+    type: text
+    encrypt: true      # Automatically encrypted at rest
+```
+
+```typescript
+// User tries to modify protected fields
+await repository.update('user', userId, {
+  _id: 'new-id',           // ❌ Rejected: _id is readonly
+  created_at: new Date(),  // ❌ Rejected: created_at is readonly
+  password: 'newpass'      // ✅ Allowed (writeonly)
+});
+
+// User tries to read protected fields
+const user = await repository.findOne({
+  object: 'user',
+  fields: ['email', 'password'], // password requested
+  filters: [{ field: '_id', operator: 'eq', value: userId }]
+});
+// Result: { email: 'user@example.com', password: undefined }
+// ✅ Password excluded from response
+```
+
+### 5. Rate Limiting and Audit Logging
+
+ObjectQL automatically logs all operations for security auditing:
+
+```typescript
+// Configuration
+const repository = new Repository({
+  driver,
+  audit: {
+    enabled: true,
+    logTo: 'audit_log',  // Object to store logs
+    capture: ['create', 'update', 'delete', 'read']
+  }
+});
+
+// User performs operation
+await repository.delete('project', 'proj123');
+
+// Audit log entry automatically created:
+// {
+//   _id: 'log001',
+//   timestamp: '2026-01-20T10:30:00Z',
+//   userId: 'user123',
+//   object: 'project',
+//   objectId: 'proj123',
+//   operation: 'delete',
+//   ip: '192.168.1.100',
+//   userAgent: 'Mozilla/5.0...',
+//   success: true
+// }
+```
+
+Built-in rate limiting prevents abuse:
+
+```typescript
+const repository = new Repository({
+  driver,
+  rateLimit: {
+    enabled: true,
+    maxRequests: 100,
+    windowMs: 60000,  // 100 requests per minute
+    byUser: true      // Per-user rate limiting
+  }
+});
+
+// After 100 requests in one minute:
+// RateLimitError: Rate limit exceeded. Try again in 45 seconds.
+```
+
+## Advanced Security Features
+
+### 1. Field-Level Permissions
+
+Different roles can see different fields:
+
+```yaml
+# user.permission.yml
+name: user
+field_permissions:
+  - role: owner
+    visible_fields: [email, password, credit_card, ssn, address]
+  
+  - role: admin
+    visible_fields: [email, address, role]
+  
+  - role: user
+    visible_fields: [email, role]
+```
+
+```typescript
+// User requests all fields
+const query = {
+  object: 'user',
+  fields: ['email', 'credit_card', 'ssn', 'role'],
+  filters: [{ field: '_id', operator: 'eq', value: 'user456' }]
+};
+
+// If currentUser.role === 'user':
+// Result: { email: '...', role: '...' }  
+// ✅ credit_card and ssn filtered out
+
+// If currentUser.role === 'admin':
+// Result: { email: '...', role: '...' }
+// ✅ Still no credit_card or ssn (not in admin's visible_fields)
+
+// If currentUser._id === 'user456' (owner):
+// Result: { email: '...', credit_card: '...', ssn: '...', role: '...' }
+// ✅ All requested fields included
+```
+
+### 2. Data Encryption at Rest
+
+```yaml
+# sensitive.object.yml
+name: sensitive_data
+fields:
+  ssn:
+    type: text
+    encrypt: true
+    encryption_key: "{env:ENCRYPTION_KEY}"
+  
+  credit_card:
+    type: text
+    encrypt: true
+    encryption_key: "{env:ENCRYPTION_KEY}"
+```
+
+```typescript
+// User writes data
+await repository.insert('sensitive_data', {
+  ssn: '123-45-6789',
+  credit_card: '4111111111111111'
+});
+
+// Database stores encrypted:
+// {
+//   ssn: 'U2FsdGVkX1+...',
+//   credit_card: 'U2FsdGVkX1+...'
+// }
+
+// User reads data
+const record = await repository.findOne({
+  object: 'sensitive_data',
+  filters: [{ field: '_id', operator: 'eq', value: 'rec123' }]
+});
+// Result: { ssn: '123-45-6789', credit_card: '4111111111111111' }
+// ✅ Automatically decrypted if user has permission
+```
+
+### 3. Cross-Site Request Forgery (CSRF) Protection
+
+When using `@objectql/server`, CSRF protection is enabled by default:
+
+```typescript
+import { createObjectQLServer } from '@objectql/server';
+
+const server = createObjectQLServer({
+  repository,
+  security: {
+    csrf: {
+      enabled: true,
+      cookieName: 'csrf_token',
+      headerName: 'X-CSRF-Token'
+    }
+  }
+});
+```
+
+All state-changing requests require a valid CSRF token:
+
+```typescript
+// Client-side
+const response = await fetch('/api/objects/project', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'X-CSRF-Token': getCsrfToken()  // Must include token
+  },
+  body: JSON.stringify(data)
+});
+```
+
+### 4. Content Security Policy (CSP)
+
+```typescript
+const server = createObjectQLServer({
+  repository,
+  security: {
+    csp: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", 'data:', 'https:']
+      }
+    }
+  }
+});
+```
+
+### 5. Secure Session Management
+
+```typescript
+const server = createObjectQLServer({
+  repository,
+  session: {
+    secret: process.env.SESSION_SECRET,
+    name: 'objectql.sid',
+    cookie: {
+      httpOnly: true,     // Cannot access via JavaScript
+      secure: true,       // Only sent over HTTPS
+      sameSite: 'strict', // CSRF protection
+      maxAge: 86400000    // 24 hours
+    }
+  }
+});
+```
+
+## Security Best Practices
+
+### 1. Use Environment Variables for Secrets
+
+```typescript
+// ❌ NEVER hardcode secrets
+const driver = new SQLDriver({
+  connection: {
+    password: 'mypassword123'
+  }
+});
+
+// ✅ Use environment variables
+const driver = new SQLDriver({
+  connection: {
+    password: process.env.DB_PASSWORD
+  }
+});
+```
+
+### 2. Implement Role-Based Access Control (RBAC)
+
+```yaml
+# Define roles clearly
+name: document
+permissions:
+  - role: owner
+    allow_read: true
+    allow_edit: true
+    allow_delete: true
+  
+  - role: editor
+    allow_read: true
+    allow_edit: true
+    allow_delete: false
+  
+  - role: viewer
+    allow_read: true
+    allow_edit: false
+    allow_delete: false
+```
+
+### 3. Validate on Both Client and Server
+
+```typescript
+// Client-side (UX)
+if (!email.includes('@')) {
+  showError('Invalid email');
+  return;
+}
+
+// Server-side (Security)
+// ObjectQL validates automatically, but you can add custom validation:
+repository.on('beforeInsert', (context) => {
+  if (context.object === 'user') {
+    if (!isStrongPassword(context.doc.password)) {
+      throw new ValidationError({
+        code: 'WEAK_PASSWORD',
+        message: 'Password must contain uppercase, lowercase, number, and symbol'
+      });
+    }
+  }
+});
+```
+
+### 4. Use HTTPS in Production
+
+```typescript
+// Production configuration
+if (process.env.NODE_ENV === 'production') {
+  const httpsServer = https.createServer({
+    key: fs.readFileSync('privkey.pem'),
+    cert: fs.readFileSync('cert.pem')
+  }, app);
+  
+  httpsServer.listen(443);
+}
+```
+
+### 5. Keep Dependencies Updated
+
+```bash
+# Regular security audits
+npm audit
+npm audit fix
+
+# Or with pnpm
+pnpm audit
+```
+
+## Security Vulnerabilities ObjectQL Prevents
+
+| Vulnerability | How ObjectQL Prevents |
+|---------------|----------------------|
+| **SQL Injection** | Parameterized queries always, no string concatenation |
+| **NoSQL Injection** | Structured query AST, validated before execution |
+| **Unauthorized Access** | Automatic permission filter injection |
+| **Mass Assignment** | Schema validation rejects unknown fields |
+| **XSS (Reflected)** | Output encoding in server layer |
+| **CSRF** | Built-in token validation in server |
+| **Insecure Direct Object Reference** | Permission checks on every query |
+| **Sensitive Data Exposure** | Field-level permissions, encryption at rest |
+| **Missing Function Level Access Control** | Operation-level permission checks |
+| **Unvalidated Redirects** | Not applicable (API-only, no redirects) |
+
+## Real-World Security Scenario
+
+Let's trace a complete request through ObjectQL's security layers:
+
+```typescript
+// 1. User request (potentially malicious)
+const req = {
+  userId: 'user123',
+  role: 'member',
+  body: {
+    _id: 'admin_override',         // Attempting to control ID
+    name: "'; DROP TABLE projects;--", // SQL injection attempt
+    owner: 'other_user',           // Attempting privilege escalation
+    secret_field: 'hacked',        // Unknown field
+    created_at: '1970-01-01'       // Attempting to fake timestamp
+  }
+};
+
+// 2. Repository call
+try {
+  const result = await repository.insert('project', req.body, {
+    userId: req.userId,
+    userRole: req.role
+  });
+} catch (error) {
+  // 3. Security checks performed:
+  
+  // ✅ Schema validation
+  // - _id: Rejected (readonly field)
+  // - secret_field: Rejected (not in schema)
+  // - created_at: Rejected (readonly field)
+  
+  // ✅ Permission check
+  // - owner: Rejected (user trying to set owner to someone else)
+  //   Automatically set to req.userId instead
+  
+  // ✅ Input sanitization
+  // - name: Accepted as literal string (no SQL injection possible)
+  
+  // 4. Final data inserted:
+  // {
+  //   _id: 'auto_generated_uuid',
+  //   name: "'; DROP TABLE projects;--",  // Stored as literal text
+  //   owner: 'user123',                    // Forced to current user
+  //   created_at: '2026-01-20T10:30:00Z'  // Auto-generated
+  // }
+  
+  // 5. Audit log created:
+  // {
+  //   userId: 'user123',
+  //   operation: 'insert',
+  //   object: 'project',
+  //   rejected_fields: ['_id', 'secret_field', 'created_at', 'owner'],
+  //   warnings: ['Attempted privilege escalation on owner field']
+  // }
+}
+```
+
+Every layer provides defense in depth.
+
+## Conclusion
+
+ObjectQL's security model is **proactive, not reactive**:
+
+- 🛡️ **Prevention**: Security is enforced at compile time
+- 🤖 **Automation**: Developers don't need to remember to add checks
+- 🔍 **Transparency**: All security decisions are audited
+- 📐 **Consistency**: Security rules apply uniformly across the application
+
+By embedding security into the architecture, ObjectQL eliminates entire classes of vulnerabilities that plague traditional applications.
+
+**Remember:** The best security is security you don't have to think about.
+
+## Learn More
+
+- [Permission System Reference](/docs/reference/permissions)
+- [Validation Rules](/docs/reference/validation)
+- [Audit Logging Guide](/docs/guides/audit-logging)
+- [OWASP Top 10 and ObjectQL](https://owasp.org/www-project-top-ten/)
+
+---
+
+**Next in Series**: [Zero-Dependency Core: Universal Runtime Architecture](/blog/zero-dependency-core)
