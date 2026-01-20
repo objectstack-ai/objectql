@@ -1,0 +1,111 @@
+---
+title: Fumadocs Features Demo
+description: Demonstration of enabled fumadocs features
+---
+
+## GitHub Flavored Markdown
+
+### Tables
+
+| Feature | Status | Description |
+|---------|--------|-------------|
+| GFM Tables | ✅ Enabled | Support for GitHub Flavored Markdown tables |
+| Math Equations | ✅ Enabled | LaTeX math rendering with KaTeX |
+| Code Highlighting | ✅ Enabled | Syntax highlighting with themes |
+| Anchor Links | ✅ Enabled | Automatic heading anchors |
+
+### Task Lists
+
+- [x] Install fumadocs dependencies
+- [x] Configure MDX plugins
+- [x] Enable enhanced code highlighting
+- [ ] Add more content examples
+
+### Strikethrough
+
+~~This text has been deprecated~~ Use the new API instead.
+
+## Math Equations
+
+Fumadocs now supports LaTeX math equations!
+
+### Inline Math
+
+The quadratic formula is $x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}$.
+
+### Block Math
+
+$$
+E = mc^2
+$$
+
+$$
+\int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}
+$$
+
+### Complex Equations
+
+The Schrödinger equation:
+
+$$
+i\hbar\frac{\partial}{\partial t}\Psi(\mathbf{r},t) = \hat{H}\Psi(\mathbf{r},t)
+$$
+
+## Code Highlighting
+
+### TypeScript Example
+
+```typescript
+import { ObjectQL } from '@objectql/core';
+
+interface User {
+  id: string;
+  name: string;
+  email: string;
+}
+
+async function getUser(id: string): Promise<User> {
+  const user = await ObjectQL.findOne('users', { _id: id });
+  return user as User;
+}
+```
+
+### Python Example
+
+```python
+def fibonacci(n):
+    """Calculate the nth Fibonacci number."""
+    if n <= 1:
+        return n
+    return fibonacci(n-1) + fibonacci(n-2)
+
+# Usage
+result = fibonacci(10)
+print(f"The 10th Fibonacci number is {result}")
+```
+
+### Bash Example
+
+```bash
+# Install ObjectQL
+pnpm add @objectql/core
+
+# Run development server
+pnpm dev
+```
+
+## Blockquotes
+
+> **Note**: This is an important note about ObjectQL.
+> 
+> It supports multiple lines and **formatted text**.
+
+> **Warning**: Be careful when modifying production data!
+
+## Links and Navigation
+
+- Jump to [Tables](#tables)
+- Go to [Math Equations](#math-equations)
+- Check out [Code Highlighting](#code-highlighting)
+
+All headings now have automatic anchor links!
