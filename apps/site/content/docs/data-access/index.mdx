@@ -1,0 +1,99 @@
+---
+title: Data Access
+description: Learn how to query and access data using ObjectQL's type-safe SDK and JSON-based protocol
+---
+
+ObjectQL provides powerful data access capabilities through a **JSON-based Protocol** that works seamlessly across different database backends. Unlike SQL strings or Query Builders, ObjectQL queries are structured data that are type-safe, serializable, and perfect for AI agents.
+
+## Overview
+
+The data access layer in ObjectQL is designed to be:
+
+- **Type-Safe**: Full TypeScript support with auto-generated types from your schema
+- **Database Agnostic**: The same query works on MongoDB, PostgreSQL, SQLite, and more
+- **AI-Friendly**: Structured JSON format prevents hallucinations and syntax errors
+- **Serializable**: Queries can be sent over HTTP, stored in files, or logged for debugging
+
+## Key Topics
+
+### [Querying Data](/docs/data-access/querying)
+
+Learn the fundamentals of querying data with ObjectQL:
+- Find operations and filters
+- Sorting and pagination
+- Field selection and data expansion
+- Aggregations and grouping
+- Complex queries with nested conditions
+
+### [Client SDK](/docs/data-access/sdk)
+
+Use the TypeScript SDK for type-safe data access:
+- Installation and setup
+- Basic CRUD operations
+- Advanced querying techniques
+- Error handling
+- TypeScript integration
+
+### [Query Best Practices](/docs/data-access/best-practices)
+
+Optimize your queries for performance:
+- Query optimization strategies
+- Avoiding N+1 problems
+- Efficient data loading
+- Caching strategies
+- Performance benchmarks
+
+## Quick Example
+
+```typescript
+import { ObjectQL } from '@objectql/core';
+
+// Initialize ObjectQL
+const app = new ObjectQL({
+  datasources: { 
+    default: driver 
+  }
+});
+
+await app.init();
+const ctx = app.createContext({ isSystem: true });
+
+// Query data with filters
+const products = await ctx.object('product').find({
+  fields: ['name', 'price', 'category'],
+  filters: [
+    ['category', '=', 'electronics'],
+    'and',
+    ['price', '<', 1000]
+  ],
+  sort: [['price', 'asc']],
+  top: 10
+});
+
+console.log('Products:', products);
+```
+
+## JSON Query Protocol
+
+All queries in ObjectQL follow a consistent JSON structure:
+
+```json
+{
+  "op": "find",
+  "object": "product",
+  "args": {
+    "fields": ["name", "price"],
+    "filters": [["category", "=", "electronics"]],
+    "top": 10
+  }
+}
+```
+
+This structure makes it easy for frontends, AI agents, and external systems to generate safe, valid queries.
+
+## Next Steps
+
+- Start with **[Querying Data](/docs/data-access/querying)** to learn the basics
+- Explore the **[Client SDK](/docs/data-access/sdk)** for type-safe access
+- Review **[Best Practices](/docs/data-access/best-practices)** for optimization strategies
+- Check the **[API Reference](/docs/reference/api)** for complete documentation
