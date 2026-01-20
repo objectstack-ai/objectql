@@ -242,7 +242,7 @@ ObjectQL is a universal data compiler that transforms declarative YAML metadata 
 - [ ] Complete audit system
 - [ ] Performance optimization
 
-See [ROADMAP.md](./ROADMAP.md) for complete roadmap.
+See [Roadmap](./roadmap.md) for complete roadmap.
 
 ---
 
@@ -350,16 +350,16 @@ See [ROADMAP.md](./ROADMAP.md) for complete roadmap.
 
 We welcome contributions! See:
 
-- [CONTRIBUTING.md](./CONTRIBUTING.md) - Contribution guidelines
-- [DEVELOPMENT_PLAN.md](./DEVELOPMENT_PLAN.md) - Detailed development plan
+- [Contributing Guide](./contributing.md) - Contribution guidelines
+- [Development Plan](./development-plan.md) - Detailed development plan
 - [GitHub Issues](https://github.com/objectstack-ai/objectql/issues) - Open issues
 
 ---
 
 ## License
 
-ObjectQL is released under the PolyForm Shield License 1.0.0. See [LICENSE](./LICENSE) for details.
+ObjectQL is released under the PolyForm Shield License 1.0.0. See [LICENSE](../LICENSE) for details.
 
 ---
 
-*This status document is updated monthly. For real-time updates, see the [CHANGELOG.md](./CHANGELOG.md) and [GitHub Releases](https://github.com/objectstack-ai/objectql/releases).*
+*This status document is updated monthly. For real-time updates, see [GitHub Releases](https://github.com/objectstack-ai/objectql/releases).*

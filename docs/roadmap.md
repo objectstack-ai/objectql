@@ -303,7 +303,7 @@ ObjectQL aims to be the **Standard Protocol for AI Software Generation** - a uni
 This roadmap represents the core team's priorities, but we welcome community input:
 
 1. **Feature Requests** - Open an issue with the `enhancement` label
-2. **Driver Contributions** - See [Driver Extensibility Guide](./docs/guide/drivers/extensibility.md)
+2. **Driver Contributions** - See [Driver Extensibility Guide](./guide/drivers/extensibility.md)
 3. **Documentation** - Submit PRs to improve guides and examples
 4. **Testing** - Help increase test coverage and report bugs
 

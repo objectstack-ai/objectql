@@ -1236,7 +1236,7 @@ Configure file storage behavior using environment variables:
 ## Related Documentation
 
 - [Object Definition Specification](../spec/object.md) - Field type definitions
-- [API Reference](./README.md) - Complete API documentation
+- [API Reference](./index.md) - Complete API documentation
 - [Validation Rules](../spec/validation.md) - File validation configuration
 - [Server Integration](../guide/server-integration.md) - Setting up file storage
 

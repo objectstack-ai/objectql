@@ -189,7 +189,7 @@ Then create a pull request on GitHub.
 
 ### 🔌 New Drivers
 
-See the [Driver Extensibility Guide](./docs/guide/drivers/extensibility.md) for detailed instructions.
+See the [Driver Extensibility Guide](./guide/drivers/extensibility.md) for detailed instructions.
 
 Quick steps:
 1. Create a new package in `packages/drivers/`
@@ -437,7 +437,7 @@ Description of the function.
 
 ## See Also
 
-- [Related Feature](./related-feature.md)
+- Related Feature (link to specific feature documentation as needed)
 - [API Reference](/api/)
 ````
 

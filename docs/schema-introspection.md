@@ -260,9 +260,62 @@ Convert introspected schema to ObjectQL object configurations.
 
 **Returns:** `ObjectConfig[]` - Array of object configurations
 
-## Examples
+## Complete Example
 
-See [examples/connect-existing-database.ts](../examples/connect-existing-database.ts) for a complete working example.
+Here's a complete working example combining all features:
+
+```typescript
+import { ObjectQL } from '@objectql/core';
+import { SqlDriver } from '@objectql/driver-sql';
+import * as fs from 'fs';
+import * as yaml from 'js-yaml';
+
+async function connectExistingDatabase() {
+    // Create driver for existing database
+    const driver = new SqlDriver({
+        client: 'postgresql',
+        connection: {
+            host: 'localhost',
+            database: 'my_existing_db',
+            user: 'username',
+            password: 'password'
+        }
+    });
+
+    // Initialize ObjectQL
+    const app = new ObjectQL({
+        datasources: { default: driver }
+    });
+
+    // Introspect and register all tables
+    const objects = await app.introspectAndRegister('default', {
+        excludeTables: ['migrations', 'schema_version']
+    });
+
+    console.log(`Discovered ${objects.length} tables`);
+
+    // Initialize and use
+    await app.init();
+    const ctx = app.createContext({ isSystem: true });
+
+    // Query existing data
+    const users = await ctx.object('users').find({
+        top: 10
+    });
+
+    console.log('Users:', users);
+
+    // Optionally export metadata to files
+    objects.forEach(obj => {
+        fs.writeFileSync(
+            `src/objects/${obj.name}.object.yml`,
+            yaml.dump(obj)
+        );
+    });
+}
+
+connectExistingDatabase().catch(console.error);
+```
 
 ## Chinese Documentation (中文文档)
 

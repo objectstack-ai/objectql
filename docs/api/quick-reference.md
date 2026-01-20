@@ -484,10 +484,10 @@ GET /api/metadata/objects/orders/actions
 
 ## Next Steps
 
-- [Complete API Reference](./README.md)
+- [Complete API Reference](./index.md)
 - [Authentication Guide](./authentication.md)
 - [Query Language Spec](../spec/query-language.md)
-- [Examples](./README.md#examples)
+- [Examples](./examples.md)
 
 ---
 

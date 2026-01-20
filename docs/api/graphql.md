@@ -938,7 +938,7 @@ mutation DeleteUser($id: String!) {
 
 - [GraphQL Specification](https://spec.graphql.org/)
 - [ObjectQL Query Language](../spec/query-language.md)
-- [REST API Documentation](./README.md#rest-style-api)
+- [REST API Documentation](./index.md)
 - [Authentication Guide](./authentication.md)
 
 ---
