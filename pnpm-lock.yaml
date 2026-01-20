@@ -461,9 +461,15 @@ importers:
       '@objectql/types':
         specifier: workspace:*
         version: link:../types
-      '@objectstack/spec':
+      '@objectstack/objectql':
         specifier: ^0.1.1
         version: 0.1.1
+      '@objectstack/runtime':
+        specifier: ^0.1.1
+        version: 0.1.1
+      '@objectstack/spec':
+        specifier: ^0.1.2
+        version: 0.1.2
       js-yaml:
         specifier: ^4.1.0
         version: 4.1.1
@@ -500,8 +506,8 @@ importers:
   packages/foundation/types:
     dependencies:
       '@objectstack/spec':
-        specifier: ^0.1.1
-        version: 0.1.1
+        specifier: ^0.1.2
+        version: 0.1.2
     devDependencies:
       ts-json-schema-generator:
         specifier: ^2.4.0
@@ -1909,9 +1915,18 @@ packages:
     engines: {node: '>=10'}
     deprecated: This functionality has been moved to @npmcli/fs
 
-  '@objectstack/spec@0.1.1':
-    resolution: {integrity: sha512-gBeC7PiNxhz2UytY6MHmqB7i13FfRq/xrTXWkM8aobhDkd4REI9DnigaKJctmpuJumc5GWLG9lZgb2voj1rEFg==}
+  '@objectstack/objectql@0.1.1':
+    resolution: {integrity: sha512-oVWUOWU7g7j12jY4r8XlLF6yyFf0kiWzSLgm3dRot8/w0/cyLsq9fc+7Dnm/xx9MZwbzXrLBDu9DPxPVVsn3Ng==}
+
+  '@objectstack/runtime@0.1.1':
+    resolution: {integrity: sha512-uTDwIz3JdnOmLNfrrkRYQJSlNoVGZ7e9T6EcvdUzCPA9Y3jZpi3vXQ8Y30HvT6MVFXdm+P1U2XxkidbwHgOKfg==}
+
+  '@objectstack/spec@0.1.2':
+    resolution: {integrity: sha512-xnGZV8ND9YnMKHURV5+iOiUQhqGpll95v5Wz9Kgw0rKGd6V6BlvAcl2S56EF8YIK+khZAqWiE4RqrOIXDKoRCw==}
     engines: {node: '>=18.0.0'}
+
+  '@objectstack/types@0.1.1':
+    resolution: {integrity: sha512-XGkoSfxZvsa2l3LCSMr6XzN8CuxfotbFhICaMgqY746wF41WajZsYJIlQe/4WC9ob9dhBREVdMVbgZlGlh+zjQ==}
 
   '@paralleldrive/cuid2@2.3.1':
     resolution: {integrity: sha512-XO7cAxhnTZl0Yggq6jOgjiOHhbgcO4NqFqwSmQpjK3b6TEE6Uj/jfSk6wzYyemh3+I0sHirKSetjQwn5cZktFw==}
@@ -9632,9 +9647,23 @@ snapshots:
       rimraf: 3.0.2
     optional: true
 
-  '@objectstack/spec@0.1.1':
+  '@objectstack/objectql@0.1.1':
+    dependencies:
+      '@objectstack/spec': 0.1.2
+
+  '@objectstack/runtime@0.1.1':
+    dependencies:
+      '@objectstack/objectql': 0.1.1
+      '@objectstack/spec': 0.1.2
+      '@objectstack/types': 0.1.1
+
+  '@objectstack/spec@0.1.2':
     dependencies:
       zod: 3.25.76
+
+  '@objectstack/types@0.1.1':
+    dependencies:
+      '@objectstack/spec': 0.1.2
 
   '@paralleldrive/cuid2@2.3.1':
     dependencies:

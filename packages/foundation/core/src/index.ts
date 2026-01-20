@@ -6,6 +6,12 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+// Re-export types from @objectstack packages for API compatibility
+// Note: Using type-only imports to avoid runtime issues with @objectstack/objectql package configuration
+export type { ObjectStackKernel, ObjectStackRuntimeProtocol } from '@objectstack/runtime';
+export type { ObjectQL as ObjectQLEngine, SchemaRegistry } from '@objectstack/objectql';
+
+// Export our enhanced runtime components (actual implementations)
 export * from './repository';
 export * from './app';
 
