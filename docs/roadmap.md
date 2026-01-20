@@ -1,8 +1,6 @@
-# ObjectQL Roadmap
+# ObjectQL Development Roadmap
 
-**Last Updated:** January 2026  
-**Current Version:** 3.0.0  
-**Project Status:** Active Development
+Learn about ObjectQL's vision, mission, and development roadmap. This document outlines current features, planned enhancements, and the strategic direction for making ObjectQL the standard protocol for AI software generation.
 
 ---
 

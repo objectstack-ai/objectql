@@ -1,6 +1,6 @@
-# Contributing to ObjectQL
+# Contributing Guide
 
-Thank you for your interest in contributing to ObjectQL! This guide will help you get started.
+Learn how to contribute to ObjectQL. This comprehensive guide covers code of conduct, development workflow, contribution types, pull request process, coding standards, testing guidelines, and documentation requirements.
 
 ---
 

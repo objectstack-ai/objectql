@@ -1,6 +1,6 @@
-# Schema Introspection - Connect to Existing Databases
+# Schema Introspection for Existing Databases
 
-ObjectQL now supports **automatic schema introspection**, allowing you to connect to an existing database without defining any metadata. The system will automatically discover tables, columns, data types, and relationships.
+Learn how to use automatic schema introspection to connect ObjectQL to existing databases. This feature discovers tables, columns, data types, and relationships without requiring metadata definitions—perfect for integrating with legacy systems.
 
 ## Features
 
