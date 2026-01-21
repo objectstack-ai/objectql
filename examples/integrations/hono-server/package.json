@@ -1,0 +1,42 @@
+{
+  "name": "@objectql/example-hono-server",
+  "version": "3.0.1",
+  "description": "Hono Server Integration Example for ObjectQL",
+  "private": true,
+  "keywords": [
+    "objectql",
+    "module",
+    "hono",
+    "api",
+    "rest",
+    "server",
+    "interface"
+  ],
+  "license": "MIT",
+  "author": "ObjectQL Contributors",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/objectql/objectql.git",
+    "directory": "examples/integrations/hono-server"
+  },
+  "scripts": {
+    "build": "tsc && cp src/*.yml dist/ || true",
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts"
+  },
+  "dependencies": {
+    "@objectql/core": "workspace:*",
+    "@objectql/plugin-server": "workspace:*",
+    "@objectql/types": "workspace:*",
+    "@objectql/driver-sql": "workspace:*",
+    "@objectql/platform-node": "workspace:*",
+    "hono": "^4.11.0",
+    "@hono/node-server": "^1.19.0",
+    "sqlite3": "^5.1.7"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "typescript": "^5.0.0",
+    "tsx": "^4.7.0"
+  }
+}
