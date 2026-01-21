@@ -208,9 +208,9 @@ importers:
       '@objectql/platform-node':
         specifier: workspace:*
         version: link:../../../packages/foundation/platform-node
-      '@objectql/server':
+      '@objectql/plugin-server':
         specifier: workspace:*
-        version: link:../../../packages/runtime/server
+        version: link:../../../packages/plugins/server
       '@objectql/types':
         specifier: workspace:*
         version: link:../../../packages/foundation/types
@@ -583,25 +583,10 @@ importers:
 
   packages/runtime/server:
     dependencies:
-      '@graphql-tools/schema':
-        specifier: ^10.0.2
-        version: 10.0.31(graphql@16.12.0)
-      '@objectql/core':
+      '@objectql/plugin-server':
         specifier: workspace:*
-        version: link:../../foundation/core
-      '@objectql/types':
-        specifier: workspace:*
-        version: link:../../foundation/types
-      graphql:
-        specifier: ^16.8.1
-        version: 16.12.0
-      js-yaml:
-        specifier: ^4.1.1
-        version: 4.1.1
+        version: link:../../plugins/server
     devDependencies:
-      '@types/js-yaml':
-        specifier: ^4.0.9
-        version: 4.0.9
       '@types/node':
         specifier: ^20.10.0
         version: 20.19.29

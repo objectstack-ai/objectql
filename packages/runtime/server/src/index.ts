@@ -7,29 +7,26 @@
  */
 
 /**
- * @deprecated This package is deprecated. Use @objectql/plugin-server instead.
+ * @deprecated This package has been replaced by @objectql/plugin-server
+ * 
+ * This package now serves as a compatibility layer that re-exports from @objectql/plugin-server.
+ * Please update your imports to use @objectql/plugin-server directly:
  * 
  * @example
  * ```typescript
- * // Old way (still supported for backward compatibility)
+ * // Old (deprecated, but still works):
  * import { createNodeHandler } from '@objectql/server';
  * 
- * // New way (recommended)
+ * // New (recommended):
+ * import { createNodeHandler } from '@objectql/plugin-server';
+ * 
+ * // Or use the plugin directly:
  * import { ServerPlugin } from '@objectql/plugin-server';
  * ```
+ * 
+ * All server functionality has been moved to @objectql/plugin-server
+ * to enable a plugin-based architecture with support for multiple frameworks.
  */
 
-export * from './types';
-export * from './utils';
-export * from './openapi';
-export * from './server';
-export * from './metadata';
-export * from './storage';
-export * from './file-handler';
-// We export createNodeHandler from root for convenience, 
-// but in the future we might encourage 'import ... from @objectql/server/node'
-export * from './adapters/node';
-// Export REST adapter
-export * from './adapters/rest';
-// Export GraphQL adapter
-export * from './adapters/graphql';
+// Re-export everything from the plugin package
+export * from '@objectql/plugin-server';

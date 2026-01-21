@@ -10,7 +10,7 @@ import express from 'express';
 import { ObjectQL } from '@objectql/core';
 import { SqlDriver } from '@objectql/driver-sql';
 import { ObjectLoader } from '@objectql/platform-node';
-import { createNodeHandler, createMetadataHandler, createRESTHandler } from '@objectql/server';
+import { createNodeHandler, createMetadataHandler, createRESTHandler } from '@objectql/plugin-server';
 import * as path from 'path';
 
 async function main() {

@@ -27,7 +27,7 @@
   },
   "dependencies": {
     "@objectql/core": "workspace:*",
-    "@objectql/server": "workspace:*",
+    "@objectql/plugin-server": "workspace:*",
     "@objectql/types": "workspace:*",
     "@objectql/driver-sql": "workspace:*",
     "@objectql/platform-node": "workspace:*",

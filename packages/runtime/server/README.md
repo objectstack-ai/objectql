@@ -1,151 +1,95 @@
 # @objectql/server
 
-Generic HTTP Server Adapter for ObjectQL.
-Allows running ObjectQL on Node.js, Express, Next.js, etc.
+> **⚠️ DEPRECATED**: This package has been replaced by `@objectql/plugin-server`.
+> 
+> This package now serves as a compatibility layer that re-exports from `@objectql/plugin-server`.
+> Please migrate to `@objectql/plugin-server` for the latest features and updates.
+
+## Migration Guide
+
+### From @objectql/server to @objectql/plugin-server
+
+**Old way (still works, but deprecated):**
+
+```typescript
+import { createNodeHandler } from '@objectql/server';
+
+const handler = createNodeHandler(app);
+```
+
+**New way (recommended):**
+
+```typescript
+import { createNodeHandler } from '@objectql/plugin-server';
+
+const handler = createNodeHandler(app);
+```
+
+### Using the Plugin Directly
+
+For new projects, use the plugin-based approach:
+
+```typescript
+import { ObjectQL } from '@objectql/core';
+import { ServerPlugin } from '@objectql/plugin-server';
+
+const app = new ObjectQL({
+    datasources: { /* ... */ },
+    plugins: [
+        new ServerPlugin({
+            port: 3000,
+            autoStart: true,
+            enableREST: true,
+            enableRPC: true
+        })
+    ]
+});
+
+await app.init();
+```
+
+### Hono Framework Support
+
+The new plugin package supports modern frameworks like Hono:
+
+```typescript
+import { Hono } from 'hono';
+import { createHonoAdapter } from '@objectql/plugin-server';
+
+const server = new Hono();
+const objectqlHandler = createHonoAdapter(app);
+server.all('/api/*', objectqlHandler);
+```
+
+## Why the Change?
+
+The server functionality has been refactored into a plugin-based architecture to:
+
+1. **Enable Framework Agnostic Design**: Support multiple web frameworks (Express, Hono, Fastify, etc.)
+2. **Improve Modularity**: Server capabilities are now optional plugins
+3. **Support Edge Computing**: Hono adapter enables deployment to edge runtimes
+4. **Better Extensibility**: Easier to add new adapters and features
 
 ## Installation
+
+For new projects, install the plugin package directly:
+
+```bash
+pnpm add @objectql/plugin-server
+```
+
+For legacy support (compatibility layer):
 
 ```bash
 pnpm add @objectql/server
 ```
 
-## Usage
+## Documentation
 
-### Node.js (Raw HTTP)
+For complete documentation, see:
+- [@objectql/plugin-server README](../../plugins/server/README.md)
+- [Examples](../../../examples/integrations/)
 
-```typescript
-import { createNodeHandler } from '@objectql/server';
-import { app } from './objectql'; // Your initialized ObjectQL instance
-import { createServer } from 'http';
+## License
 
-const handler = createNodeHandler(app);
-const server = createServer(handler);
-server.listen(3000);
-```
-
-### Express
-
-```typescript
-import express from 'express';
-import { createNodeHandler } from '@objectql/server';
-import { app } from './objectql';
-
-const server = express();
-
-// Optional: Mount express.json() if you want, but ObjectQL handles parsing too.
-// server.use(express.json());
-
-// Mount the handler
-server.all('/api/objectql', createNodeHandler(app));
-
-server.listen(3000);
-```
-
-### Next.js (API Routes)
-
-```typescript
-// pages/api/objectql.ts
-import { createNodeHandler } from '@objectql/server';
-import { app } from '../../lib/objectql';
-
-export const config = {
-  api: {
-    bodyParser: false, // ObjectQL handles body parsing
-  },
-};
-
-export default createNodeHandler(app);
-```
-
-## API Response Format
-
-ObjectQL uses a standardized response format for all operations:
-
-### List Operations (find)
-
-List operations return data in an `items` array with optional pagination metadata:
-
-```json
-{
-  "items": [
-    {
-      "id": "1001",
-      "name": "Contract A",
-      "amount": 5000
-    },
-    {
-      "id": "1002",
-      "name": "Contract B",
-      "amount": 3000
-    }
-  ],
-  "meta": {
-    "total": 105,       // Total number of records
-    "page": 1,          // Current page number (1-indexed)
-    "size": 20,         // Number of items per page
-    "pages": 6,         // Total number of pages
-    "has_next": true    // Whether there is a next page
-  }
-}
-```
-
-**Note:** The `meta` object is only included when pagination parameters (`limit` and/or `skip`) are used.
-
-### Single Item Operations (findOne, create, update, delete)
-
-Single item operations return data in a `data` field:
-
-```json
-{
-  "data": {
-    "id": "1001",
-    "name": "Contract A",
-    "amount": 5000
-  }
-}
-```
-
-### Error Responses
-
-All errors follow a consistent format:
-
-```json
-{
-  "error": {
-    "code": "NOT_FOUND",
-    "message": "Record not found",
-    "details": {
-      "field": "id",
-      "reason": "No record found with the given ID"
-    }
-  }
-}
-```
-
-## REST API Endpoints
-
-The server exposes the following REST endpoints:
-
-- `GET /api/data/:object` - List records (supports `?limit=10&skip=0` for pagination)
-- `GET /api/data/:object/:id` - Get single record
-- `POST /api/data/:object` - Create record
-- `PUT /api/data/:object/:id` - Update record
-- `DELETE /api/data/:object/:id` - Delete record
-
-### Pagination Example
-
-```bash
-# Get first page (10 items)
-GET /api/data/contracts?limit=10&skip=0
-
-# Get second page (10 items)
-GET /api/data/contracts?limit=10&skip=10
-```
-
-## Metadata API Endpoints
-
-- `GET /api/metadata/object` - List all objects
-- `GET /api/metadata/object/:name` - Get object definition
-- `GET /api/metadata/object/:name/actions` - List object actions
-
-All metadata list endpoints return data in the standardized `items` format.
+MIT
