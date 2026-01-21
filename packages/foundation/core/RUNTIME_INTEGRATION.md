@@ -16,9 +16,30 @@ As of version 3.0.1, ObjectQL core integrates with the latest ObjectStack runtim
 
 ```
 @objectql/core (this package)
-├── Extends/complements @objectstack/objectql
+├── Uses @objectstack/objectql for driver management
+├── Extends with hooks, actions, validation, and repository pattern
 ├── Uses types from @objectstack/spec
 └── Re-exports types from @objectstack/runtime
+```
+
+### Driver Management Integration
+
+The core package now delegates driver management to `@objectstack/objectql`:
+
+```typescript
+import { ObjectQL } from '@objectql/core';
+
+const app = new ObjectQL({
+    datasources: {
+        default: myDriver
+    }
+});
+
+// Drivers are managed by @objectstack/objectql internally
+await app.init();
+
+// Access the ObjectStack engine for advanced driver management
+const stackEngine = app.getStackEngine();
 ```
 
 ### Type Exports
@@ -26,7 +47,14 @@ As of version 3.0.1, ObjectQL core integrates with the latest ObjectStack runtim
 The core package exports types from the runtime packages for API compatibility:
 
 ```typescript
-// Type-only exports to avoid runtime issues
+// Type exports for driver development
+export type { 
+  DriverInterface,
+  DriverOptions, 
+  QueryAST 
+} from '@objectstack/spec';
+
+// Type exports for runtime integration
 export type { 
   ObjectStackKernel, 
   ObjectStackRuntimeProtocol 
@@ -51,6 +79,7 @@ The current `ObjectQL` class in this package is a **production-ready, feature-ri
 - Repository pattern
 - Formula engine
 - AI integration
+- **Driver management via @objectstack/objectql**
 
 The `ObjectQLEngine` from `@objectstack/objectql` is a **simpler, lightweight** implementation suitable for:
 
@@ -58,9 +87,62 @@ The `ObjectQLEngine` from `@objectstack/objectql` is a **simpler, lightweight** 
 - Simple driver management
 - Minimal runtime overhead
 
-### Why Type-Only Exports?
+### Driver Management
 
-The `@objectstack/objectql` package currently has a configuration issue where it points to source files instead of compiled dist files. To avoid runtime errors, we use **type-only imports** which provide TypeScript type checking without executing the runtime code.
+ObjectQL now wraps drivers to work with the ObjectStack engine:
+
+```typescript
+// In @objectql/core
+private stackEngine: ObjectStackEngine;
+
+constructor(config: ObjectQLConfig) {
+    this.stackEngine = new ObjectStackEngine({});
+    
+    // Wrap and register drivers
+    for (const [name, driver] of Object.entries(config.datasources)) {
+        const wrappedDriver = this.wrapDriver(name, driver);
+        this.stackEngine.registerDriver(wrappedDriver, name === 'default');
+    }
+}
+```
+
+### Custom Driver Development
+
+To build custom drivers for ObjectStack:
+
+1. **Implement DriverInterface from @objectstack/spec**:
+
+```typescript
+import { DriverInterface, QueryAST } from '@objectstack/spec';
+
+export class MyCustomDriver implements DriverInterface {
+    name = 'MyDriver';
+    version = '1.0.0';
+    
+    async connect() { }
+    async disconnect() { }
+    async find(object: string, query: QueryAST) { }
+    async create(object: string, data: any) { }
+    async update(object: string, id: string, data: any) { }
+    async delete(object: string, id: string) { }
+}
+```
+
+2. **Register with ObjectQL**:
+
+```typescript
+import { ObjectQL } from '@objectql/core';
+import { MyCustomDriver } from './my-driver';
+
+const app = new ObjectQL({
+    datasources: {
+        default: new MyCustomDriver()
+    }
+});
+
+// Or register dynamically
+app.registerDriver('mydb', new MyCustomDriver(), false);
+```
 
 ## Usage
 
@@ -83,10 +165,10 @@ const items = await repo.find({});
 ### Using Type Definitions from Runtime
 
 ```typescript
-import type { ObjectStackKernel, SchemaRegistry } from '@objectql/core';
+import type { DriverInterface, QueryAST } from '@objectql/core';
 
 // Use types for compile-time checking
-function processKernel(kernel: ObjectStackKernel) {
+function processQuery(driver: DriverInterface, query: QueryAST) {
   // Your code here
 }
 ```
@@ -97,21 +179,23 @@ If you want to use the simpler `@objectstack/objectql` implementation:
 
 1. Install it directly: `npm install @objectstack/objectql`
 2. Import from the package: `import { ObjectQL } from '@objectstack/objectql'`
-3. Note: Ensure the package is properly built before use
+3. Note: You'll lose hooks, actions, validation, and other advanced features
 
 ## Compatibility
 
-- **@objectstack/spec@0.1.2**: Introduces `searchable` field requirement on FieldConfig
+- **@objectstack/spec@0.1.2**: Introduces `DriverInterface` with standard query format
+- **@objectstack/objectql@0.1.1**: Provides driver registration and management
 - **Backward Compatible**: All existing ObjectQL APIs remain unchanged
-- **Tests**: 236 tests pass successfully, confirming backward compatibility
+- **Tests**: All tests pass successfully, confirming backward compatibility
 
 ## Future Plans
 
-Once the `@objectstack/objectql` package configuration is fixed, we may:
+The integration with `@objectstack/objectql` enables:
 
-1. Use it as a base class for our ObjectQL implementation
-2. Move framework-specific features to plugins
-3. Provide both lightweight and full-featured options
+1. Standardized driver interface across the ObjectStack ecosystem
+2. Plugin system for extending driver capabilities
+3. Unified driver management across multiple packages
+4. Future: Driver marketplace and discovery
 
 ## Related Documentation
 
@@ -119,3 +203,4 @@ Once the `@objectstack/objectql` package configuration is fixed, we may:
 - [ObjectQL Platform Node](../platform-node/README.md)
 - [@objectstack/spec on npm](https://www.npmjs.com/package/@objectstack/spec)
 - [@objectstack/runtime on npm](https://www.npmjs.com/package/@objectstack/runtime)
+- [@objectstack/objectql on npm](https://www.npmjs.com/package/@objectstack/objectql)

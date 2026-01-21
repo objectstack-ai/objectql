@@ -31,6 +31,10 @@ import { registerHookHelper, triggerHookHelper, HookEntry } from './hook';
 import { registerObjectHelper, getConfigsHelper } from './object';
 import { convertIntrospectedSchemaToObjects } from './util';
 
+// Import ObjectStack engine for driver management
+import { ObjectQL as ObjectStackEngine } from '@objectstack/objectql';
+import { DriverInterface } from '@objectstack/spec';
+
 export class ObjectQL implements IObjectQL {
     public metadata: MetadataRegistry;
     private datasources: Record<string, Driver> = {};
@@ -38,6 +42,9 @@ export class ObjectQL implements IObjectQL {
     private hooks: Record<string, HookEntry[]> = {};
     private actions: Record<string, ActionEntry> = {};
     private pluginsList: ObjectQLPlugin[] = [];
+    
+    // ObjectStack engine instance for driver management
+    private stackEngine: ObjectStackEngine;
     
     // Store config for lazy loading in init()
     private config: ObjectQLConfig;
@@ -47,6 +54,18 @@ export class ObjectQL implements IObjectQL {
         this.metadata = config.registry || new MetadataRegistry();
         this.datasources = config.datasources || {};
         // this.remotes = config.remotes || [];
+        
+        // Initialize ObjectStack engine for driver management
+        this.stackEngine = new ObjectStackEngine({});
+        
+        // Register drivers with ObjectStack engine
+        if (this.datasources) {
+            for (const [name, driver] of Object.entries(this.datasources)) {
+                // Wrap the driver to match DriverInterface from @objectstack/spec
+                const wrappedDriver = this.wrapDriver(name, driver);
+                this.stackEngine.registerDriver(wrappedDriver, name === 'default');
+            }
+        }
         
         if (config.connection) {
              throw new Error("Connection strings are not supported in core directly. Use @objectql/platform-node's createDriverFromConnection or pass a driver instance to 'datasources'.");
@@ -63,8 +82,54 @@ export class ObjectQL implements IObjectQL {
             }
         }
     }
+    
+    /**
+     * Wrap @objectql/types.Driver to @objectstack/spec.DriverInterface
+     */
+    private wrapDriver(name: string, driver: Driver): DriverInterface {
+        return {
+            name: name,
+            version: '1.0.0',
+            async connect() {
+                // No-op, connection handled in init()
+            },
+            async disconnect() {
+                if (driver.disconnect) {
+                    await driver.disconnect();
+                }
+            },
+            async find(object: string, query: any, options?: any) {
+                return await driver.find(object, query, options);
+            },
+            async create(object: string, data: any, options?: any) {
+                return await driver.create(object, data, options);
+            },
+            async update(object: string, id: string, data: any, options?: any) {
+                return await driver.update(object, id, data, options);
+            },
+            async delete(object: string, id: string, options?: any) {
+                return await driver.delete(object, id, options);
+            }
+        };
+    }
     use(plugin: ObjectQLPlugin) {
         this.pluginsList.push(plugin);
+    }
+    
+    /**
+     * Get the ObjectStack engine instance for advanced driver management
+     */
+    getStackEngine(): ObjectStackEngine {
+        return this.stackEngine;
+    }
+    
+    /**
+     * Register a new driver with ObjectStack engine
+     */
+    registerDriver(name: string, driver: Driver, isDefault: boolean = false) {
+        this.datasources[name] = driver;
+        const wrappedDriver = this.wrapDriver(name, driver);
+        this.stackEngine.registerDriver(wrappedDriver, isDefault);
     }
 
     removePackage(name: string) {
@@ -206,6 +271,13 @@ export class ObjectQL implements IObjectQL {
     }
 
     async close() {
+        // Close ObjectStack engine
+        if (this.stackEngine) {
+            console.log('[ObjectQL] Closing ObjectStack engine...');
+            await this.stackEngine.destroy();
+        }
+        
+        // Close local drivers
         for (const [name, driver] of Object.entries(this.datasources)) {
             if (driver.disconnect) {
                 console.log(`Closing driver '${name}'...`);
@@ -215,7 +287,11 @@ export class ObjectQL implements IObjectQL {
     }
 
     async init() {
-        // 0. Init Plugins (This allows plugins to register custom loaders)
+        // 0. Initialize ObjectStack engine
+        console.log('[ObjectQL] Initializing ObjectStack engine...');
+        await this.stackEngine.init();
+        
+        // 1. Init Plugins (This allows plugins to register custom loaders)
         for (const plugin of this.pluginsList) {
             console.log(`Initializing plugin '${plugin.name}'...`);
             

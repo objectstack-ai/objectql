@@ -7,7 +7,6 @@ packages:
   - examples/integrations/*
   - examples/showcase/*
   - examples/drivers/*
-  - examples/plugin-driver-memory
   - apps/*
 
 onlyBuiltDependencies:
