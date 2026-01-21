@@ -89,7 +89,6 @@ export interface Driver {
     
     // Additional methods for DriverInterface compatibility
     execute?(command: any, parameters?: any[], options?: any): Promise<any>;
-    findOne?(objectName: string, id: string | number, query?: any, options?: any): Promise<any>;
     bulkCreate?(objectName: string, data: any[], options?: any): Promise<any>;
     bulkUpdate?(objectName: string, updates: Array<{id: string | number, data: any}>, options?: any): Promise<any>;
     bulkDelete?(objectName: string, ids: Array<string | number>, options?: any): Promise<any>;

@@ -74,7 +74,6 @@ export class ObjectQL implements IObjectQL {
         for (const [name, driver] of Object.entries(this.datasources)) {
             this.stackEngine.registerDriver(driver as any, name === 'default');
         }
-        }
         
         if (config.connection) {
              throw new Error("Connection strings are not supported in core directly. Use @objectql/platform-node's createDriverFromConnection or pass a driver instance to 'datasources'.");
