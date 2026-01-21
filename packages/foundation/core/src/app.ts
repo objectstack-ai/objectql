@@ -218,7 +218,21 @@ export class ObjectQL implements IObjectQL {
      * Create a PluginContext from the current IObjectQL instance.
      * This adapts the IObjectQL interface to the PluginContext expected by @objectstack/spec plugins.
      * 
+     * **Current Implementation Status:**
+     * - ✅ ql.object() - Fully functional, provides repository interface for data access
+     * - ❌ ql.query() - Not implemented, throws error with guidance
+     * - ❌ os.getCurrentUser() - Stub, returns null
+     * - ❌ os.getConfig() - Stub, returns null
+     * - ✅ logger - Functional, logs to console with [Plugin] prefix
+     * - ❌ storage - Stub, no persistence implemented
+     * - ✅ i18n - Basic fallback implementation
+     * - ✅ metadata - Direct access to MetadataRegistry
+     * - ❌ events - Empty object, event bus not implemented
+     * - ❌ app.router - Stub methods, no actual routing
+     * - ❌ app.scheduler - Not implemented (optional in spec)
+     * 
      * @private
+     * @returns Minimal PluginContext adapter for current plugin system capabilities
      */
     private createPluginContext(): import('@objectstack/spec').PluginContextData {
         // TODO: Implement full PluginContext conversion
