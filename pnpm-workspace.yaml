@@ -1,5 +1,7 @@
 packages:
   - packages/foundation/*
+  - packages/core/*
+  - packages/plugins/*
   - packages/drivers/*
   - packages/runtime/*
   - packages/tools/*

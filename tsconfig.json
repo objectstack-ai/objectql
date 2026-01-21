@@ -1,6 +1,7 @@
 {
   "files": [],
   "references": [
+    { "path": "./packages/core/types" },
     { "path": "./packages/foundation/types" },
     { "path": "./packages/foundation/core" },
     { "path": "./packages/drivers/mongo" },

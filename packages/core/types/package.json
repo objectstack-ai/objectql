@@ -1,0 +1,28 @@
+{
+  "name": "@objectql/types",
+  "version": "4.0.0",
+  "description": "Type definitions and plugin interfaces for ObjectQL - Query-specific types and plugin architecture",
+  "keywords": [
+    "objectql",
+    "types",
+    "typescript",
+    "interfaces",
+    "plugin",
+    "query",
+    "ai-native"
+  ],
+  "license": "MIT",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "jest --passWithNoTests"
+  },
+  "dependencies": {
+    "@objectstack/spec": "^0.2.0",
+    "@objectstack/runtime": "^0.2.0"
+  }
+}
