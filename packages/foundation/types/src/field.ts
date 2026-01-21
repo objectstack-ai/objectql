@@ -125,7 +125,7 @@ export interface FieldOption {
  * All other protocol properties (description, defaultValue, maxLength, minLength, precision, scale, min, max,
  * reference, referenceFilters, writeRequiresMasterRead, expression, formula, summaryOperations) are inherited as-is.
  */
-export interface FieldConfig extends Omit<Field, 'name' | 'label' | 'type' | 'options' | 'required' | 'multiple' | 'unique' | 'deleteBehavior' | 'hidden' | 'readonly' | 'encryption' | 'index' | 'externalId'> {
+export interface FieldConfig extends Omit<Field, 'name' | 'label' | 'type' | 'options' | 'required' | 'multiple' | 'unique' | 'deleteBehavior' | 'hidden' | 'readonly' | 'encryption' | 'index' | 'externalId' | 'searchable'> {
     /** Field name (inferred from Record key when used in ObjectConfig.fields) */
     name?: string;
     
@@ -146,6 +146,9 @@ export interface FieldConfig extends Omit<Field, 'name' | 'label' | 'type' | 'op
     
     /** Whether the field is unique in the table. */
     unique?: boolean;
+    
+    /** Whether the field is searchable (full-text search). Defaults to false. */
+    searchable?: boolean;
     
     /** Delete behavior for relationships */
     deleteBehavior?: 'set_null' | 'cascade' | 'restrict';

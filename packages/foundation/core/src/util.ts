@@ -117,7 +117,8 @@ export function convertIntrospectedSchemaToObjects(
                     type: 'lookup',
                     reference_to: foreignKey.referencedTable,
                     label: toTitleCase(column.name),
-                    required: !column.nullable
+                    required: !column.nullable,
+                    searchable: false
                 };
             } else {
                 // Regular field
@@ -129,7 +130,8 @@ export function convertIntrospectedSchemaToObjects(
                     name: column.name,
                     type: fieldType,
                     label: toTitleCase(column.name),
-                    required: !column.nullable
+                    required: !column.nullable,
+                    searchable: false
                 };
                 
                 // Add unique constraint
