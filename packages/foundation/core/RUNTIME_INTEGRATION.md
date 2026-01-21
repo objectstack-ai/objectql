@@ -167,9 +167,10 @@ const items = await repo.find({});
 ```typescript
 import type { DriverInterface, QueryAST } from '@objectql/core';
 
-// Use types for compile-time checking
-function processQuery(driver: DriverInterface, query: QueryAST) {
-  // Your code here
+// Use types for compile-time checking (type-only import)
+function validateQuery(query: QueryAST): boolean {
+  // Type checking only - no runtime usage of DriverInterface
+  return query.object !== undefined;
 }
 ```
 

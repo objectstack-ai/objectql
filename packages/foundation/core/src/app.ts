@@ -59,12 +59,10 @@ export class ObjectQL implements IObjectQL {
         this.stackEngine = new ObjectStackEngine({});
         
         // Register drivers with ObjectStack engine
-        if (this.datasources) {
-            for (const [name, driver] of Object.entries(this.datasources)) {
-                // Wrap the driver to match DriverInterface from @objectstack/spec
-                const wrappedDriver = this.wrapDriver(name, driver);
-                this.stackEngine.registerDriver(wrappedDriver, name === 'default');
-            }
+        for (const [name, driver] of Object.entries(this.datasources)) {
+            // Wrap the driver to match DriverInterface from @objectstack/spec
+            const wrappedDriver = this.wrapDriver(name, driver);
+            this.stackEngine.registerDriver(wrappedDriver, name === 'default');
         }
         
         if (config.connection) {
@@ -91,7 +89,7 @@ export class ObjectQL implements IObjectQL {
             name: name,
             version: '1.0.0',
             async connect() {
-                // No-op, connection handled in init()
+                // Driver connection lifecycle is managed separately
             },
             async disconnect() {
                 if (driver.disconnect) {
@@ -127,6 +125,9 @@ export class ObjectQL implements IObjectQL {
      * Register a new driver with ObjectStack engine
      */
     registerDriver(name: string, driver: Driver, isDefault: boolean = false) {
+        if (this.datasources[name]) {
+            console.warn(`[ObjectQL] Driver '${name}' already exists. Overwriting...`);
+        }
         this.datasources[name] = driver;
         const wrappedDriver = this.wrapDriver(name, driver);
         this.stackEngine.registerDriver(wrappedDriver, isDefault);
@@ -273,7 +274,7 @@ export class ObjectQL implements IObjectQL {
     async close() {
         // Close ObjectStack engine
         if (this.stackEngine) {
-            console.log('[ObjectQL] Closing ObjectStack engine...');
+            console.log('[ObjectQL] Closing engine...');
             await this.stackEngine.destroy();
         }
         
@@ -288,7 +289,7 @@ export class ObjectQL implements IObjectQL {
 
     async init() {
         // 0. Initialize ObjectStack engine
-        console.log('[ObjectQL] Initializing ObjectStack engine...');
+        console.log('[ObjectQL] Initializing engine...');
         await this.stackEngine.init();
         
         // 1. Init Plugins (This allows plugins to register custom loaders)
