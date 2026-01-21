@@ -19,7 +19,8 @@ import {
     HookContext,
     ActionHandler,
     ActionContext,
-    LoaderPlugin
+    LoaderPlugin,
+    Driver
 } from '@objectql/types';
 import { ObjectRepository } from './repository';
 
@@ -28,13 +29,12 @@ import { registerHookHelper, triggerHookHelper, HookEntry } from './hook';
 import { registerObjectHelper, getConfigsHelper } from './object';
 import { convertIntrospectedSchemaToObjects } from './util';
 
-// Import ObjectStack engine and standard driver interface
+// Import ObjectStack engine (without using its driver types)
 import { ObjectQL as ObjectStackEngine } from '@objectstack/objectql';
-import { DriverInterface } from '@objectstack/spec';
 
 export class ObjectQL implements IObjectQL {
     public metadata: MetadataRegistry;
-    private datasources: Record<string, DriverInterface> = {};
+    private datasources: Record<string, Driver> = {};
     private remotes: string[] = [];
     private hooks: Record<string, HookEntry[]> = {};
     private actions: Record<string, ActionEntry> = {};
@@ -55,8 +55,9 @@ export class ObjectQL implements IObjectQL {
         this.stackEngine = new ObjectStackEngine({});
         
         // Register drivers with ObjectStack engine (no wrapping needed)
+        // Cast to any since our Driver interface is compatible with spec's DriverInterface
         for (const [name, driver] of Object.entries(this.datasources)) {
-            this.stackEngine.registerDriver(driver, name === 'default');
+            this.stackEngine.registerDriver(driver as any, name === 'default');
         }
         
         if (config.connection) {
@@ -89,12 +90,13 @@ export class ObjectQL implements IObjectQL {
     /**
      * Register a new driver with ObjectStack engine
      */
-    registerDriver(name: string, driver: DriverInterface, isDefault: boolean = false) {
+    registerDriver(name: string, driver: Driver, isDefault: boolean = false) {
         if (this.datasources[name]) {
             console.warn(`[ObjectQL] Driver '${name}' already exists. Overwriting...`);
         }
         this.datasources[name] = driver;
-        this.stackEngine.registerDriver(driver, isDefault);
+        // Cast to any since our Driver interface is compatible with spec's DriverInterface
+        this.stackEngine.registerDriver(driver as any, isDefault);
     }
 
     removePackage(name: string) {
@@ -159,10 +161,10 @@ export class ObjectQL implements IObjectQL {
 
                  try {
                      const result = await callback(trxCtx);
-                     if (driver.commit) await driver.commit(trx);
+                     if (driver.commitTransaction) await driver.commitTransaction(trx);
                      return result;
                  } catch (error) {
-                     if (driver.rollback) await driver.rollback(trx);
+                     if (driver.rollbackTransaction) await driver.rollbackTransaction(trx);
                      throw error;
                  }
             },
@@ -189,7 +191,7 @@ export class ObjectQL implements IObjectQL {
         return getConfigsHelper(this.metadata);
     }
 
-    datasource(name: string): DriverInterface {
+    datasource(name: string): Driver {
         const driver = this.datasources[name];
         if (!driver) {
             throw new Error(`Datasource '${name}' not found`);

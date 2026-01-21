@@ -6,21 +6,14 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { IntrospectedSchema, IntrospectedTable, IntrospectedColumn, IntrospectedForeignKey } from '@objectql/types';
-import type { DriverInterface } from '@objectstack/spec';
+import { Driver, IntrospectedSchema, IntrospectedTable, IntrospectedColumn, IntrospectedForeignKey } from '@objectql/types';
 import knex, { Knex } from 'knex';
 
-export class SqlDriver implements DriverInterface {
-    readonly name = 'sql';
-    readonly version = '3.0.1';
-    readonly supports = {
-        transactions: true,
-        joins: true,
-        fullTextSearch: false,
-        jsonFields: true,
-        arrayFields: false
-    };
-    
+/**
+ * SQL Driver for ObjectQL
+ * Implements Driver interface from @objectql/types
+ */
+export class SqlDriver implements Driver {
     private knex: Knex;
     private config: any;
     private jsonFields: Record<string, string[]> = {};
@@ -230,41 +223,16 @@ export class SqlDriver implements DriverInterface {
         return 0;
     }
 
-    // Connection Management
-    async connect(): Promise<void> {
-        // Knex initializes connection pool automatically
-        // We can test the connection here
-        await this.knex.raw('SELECT 1');
-    }
-    
-    async checkHealth(): Promise<boolean> {
-        try {
-            await this.knex.raw('SELECT 1');
-            return true;
-        } catch {
-            return false;
-        }
-    }
-    
-    async execute(command: any, parameters?: any[], options?: any): Promise<any> {
-        // For SQL driver, execute raw SQL
-        if (typeof command === 'string') {
-            return await this.knex.raw(command, parameters);
-        }
-        // For object commands, could be knex query builder
-        throw new Error('Execute with non-string commands not supported in SQL driver');
-    }
-
     // Transaction Support
     async beginTransaction(): Promise<any> {
         return await this.knex.transaction();
     }
 
-    async commit(trx: Knex.Transaction): Promise<void> {
+    async commitTransaction(trx: Knex.Transaction): Promise<void> {
         await trx.commit();
     }
 
-    async rollback(trx: Knex.Transaction): Promise<void> {
+    async rollbackTransaction(trx: Knex.Transaction): Promise<void> {
         await trx.rollback();
     }
 
@@ -314,43 +282,21 @@ export class SqlDriver implements DriverInterface {
     }
     
     // Bulk Operations
-    async bulkCreate(objectName: string, data: any[], options?: any): Promise<any> {
+    async createMany(objectName: string, data: any[], options?: any): Promise<any> {
         const builder = this.getBuilder(objectName, options);
         return await builder.insert(data).returning('*');
     }
     
-    async bulkUpdate(objectName: string, filters: any, data: any, options?: any): Promise<any> {
+    async updateMany(objectName: string, filters: any, data: any, options?: any): Promise<any> {
         const builder = this.getBuilder(objectName, options);
         if(filters) this.applyFilters(builder, filters);
         return await builder.update(data);
     }
     
-    async bulkDelete(objectName: string, filters: any, options?: any): Promise<any> {
+    async deleteMany(objectName: string, filters: any, options?: any): Promise<any> {
         const builder = this.getBuilder(objectName, options);
         if(filters) this.applyFilters(builder, filters);
         return await builder.delete();
-    }
-    
-    // Aliases for backward compatibility
-    async createMany(objectName: string, data: any[], options?: any): Promise<any> {
-        return this.bulkCreate(objectName, data, options);
-    }
-    
-    async updateMany(objectName: string, filters: any, data: any, options?: any): Promise<any> {
-        return this.bulkUpdate(objectName, filters, data, options);
-    }
-    
-    async deleteMany(objectName: string, filters: any, options?: any): Promise<any> {
-        return this.bulkDelete(objectName, filters, options);
-    }
-    
-    // Transaction aliases for backward compatibility
-    async commitTransaction(trx: Knex.Transaction): Promise<void> {
-        return this.commit(trx);
-    }
-
-    async rollbackTransaction(trx: Knex.Transaction): Promise<void> {
-        return this.rollback(trx);
     }
 
     async init(objects: any[]): Promise<void> {
@@ -565,21 +511,6 @@ export class SqlDriver implements DriverInterface {
     }
 
     /**
-     * Synchronize schema - alias for init for DriverInterface compatibility
-     */
-    async syncSchema(objects: any[]): Promise<void> {
-        return this.init(objects);
-    }
-    
-    /**
-     * Drop a table from the database
-     */
-    async dropTable(tableName: string): Promise<void> {
-        const exists = await this.knex.schema.hasTable(tableName);
-        if (exists) {
-            await this.knex.schema.dropTable(tableName);
-        }
-    }
 
     /**
      * Introspect the database schema to discover existing tables, columns, and relationships.
