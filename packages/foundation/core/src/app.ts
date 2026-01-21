@@ -221,7 +221,7 @@ export class ObjectQL implements IObjectQL {
      * 
      * @private
      */
-    private createPluginContext(app: IObjectQL): any {
+    private createPluginContext(app: IObjectQL): import('@objectstack/spec').PluginContextData {
         // TODO: Implement full PluginContext conversion
         // For now, provide a minimal adapter that maps IObjectQL to PluginContext
         return {
@@ -233,7 +233,12 @@ export class ObjectQL implements IObjectQL {
                 },
                 query: async (soql: string) => {
                     // TODO: Implement SOQL query execution
-                    throw new Error('SOQL queries not yet implemented in adapter');
+                    // This requires implementing a SOQL parser and converter
+                    // For now, throw a descriptive error to guide users
+                    throw new Error(
+                        'SOQL queries are not yet supported in plugin context adapter. ' +
+                        'Please use context.ql.object(name).find() instead for data access.'
+                    );
                 }
             },
             os: {
@@ -274,13 +279,13 @@ export class ObjectQL implements IObjectQL {
             },
             app: {
                 router: {
-                    get: (path: string, handler: Function) => {
+                    get: (path: string, handler: (...args: unknown[]) => unknown, ...args: unknown[]) => {
                         // TODO: Implement router registration
                     },
-                    post: (path: string, handler: Function) => {
+                    post: (path: string, handler: (...args: unknown[]) => unknown, ...args: unknown[]) => {
                         // TODO: Implement router registration
                     },
-                    use: (pathOrHandler: string | Function, handler?: Function) => {
+                    use: (path: string | undefined, handler: (...args: unknown[]) => unknown, ...args: unknown[]) => {
                         // TODO: Implement middleware registration
                     }
                 },

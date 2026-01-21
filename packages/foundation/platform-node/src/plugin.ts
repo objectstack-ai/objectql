@@ -25,11 +25,16 @@ export function loadPlugin(packageName: string): ObjectQLPlugin | PluginDefiniti
     // Helper to check if candidate is a new PluginDefinition
     const isNewPlugin = (candidate: any): candidate is PluginDefinition => {
         return candidate && (
+            // Check for any lifecycle method
             typeof candidate.onEnable === 'function' ||
             typeof candidate.onDisable === 'function' ||
             typeof candidate.onInstall === 'function' ||
             typeof candidate.onUninstall === 'function' ||
             typeof candidate.onUpgrade === 'function'
+        ) && (
+            // Note: id is optional in PluginDefinition, so we don't require it
+            // The spec allows plugins without id (it just defaults to package name)
+            candidate.id === undefined || typeof candidate.id === 'string'
         );
     };
 
