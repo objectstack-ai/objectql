@@ -6,6 +6,19 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+/**
+ * @deprecated This package is deprecated. Use @objectql/plugin-server instead.
+ * 
+ * @example
+ * ```typescript
+ * // Old way (still supported for backward compatibility)
+ * import { createNodeHandler } from '@objectql/server';
+ * 
+ * // New way (recommended)
+ * import { ServerPlugin } from '@objectql/plugin-server';
+ * ```
+ */
+
 export * from './types';
 export * from './utils';
 export * from './openapi';

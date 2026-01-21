@@ -1,0 +1,46 @@
+{
+  "name": "@objectql/plugin-server",
+  "version": "3.0.1",
+  "description": "HTTP server plugin for ObjectQL - Provides Express, Hono and REST API support",
+  "keywords": [
+    "objectql",
+    "plugin",
+    "server",
+    "http",
+    "api",
+    "rest",
+    "graphql",
+    "express",
+    "hono",
+    "adapter",
+    "backend"
+  ],
+  "license": "MIT",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@objectql/core": "workspace:*",
+    "@objectql/types": "workspace:*",
+    "graphql": "^16.8.1",
+    "@graphql-tools/schema": "^10.0.2",
+    "js-yaml": "^4.1.1"
+  },
+  "peerDependencies": {
+    "hono": "^4.11.0"
+  },
+  "peerDependenciesMeta": {
+    "hono": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^20.10.0",
+    "hono": "^4.11.0",
+    "typescript": "^5.3.0"
+  }
+}

@@ -2,6 +2,7 @@ packages:
   - packages/foundation/*
   - packages/drivers/*
   - packages/runtime/*
+  - packages/plugins/*
   - packages/tools/*
   - examples/quickstart/*
   - examples/integrations/*
