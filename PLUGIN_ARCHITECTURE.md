@@ -7,7 +7,7 @@ This document defines the plugin architecture for ObjectQL 4.0, where the reposi
 ## Design Principles
 
 ### 1. Plugin-First Philosophy
-**Every feature is a plugin.** Even core query functionality is modular and composable.
+**Every feature is a Plugin.** Even core query functionality is modular and composable.
 
 ### 2. Clear Separation of Concerns
 - **@objectstack/runtime**: Application lifecycle, metadata, security, transactions
@@ -581,13 +581,13 @@ My awesome plugin for ObjectQL.
 
 ## Installation
 
-\`\`\`bash
+```bash
 npm install @objectql/my-plugin
-\`\`\`
+```
 
 ## Usage
 
-\`\`\`typescript
+```typescript
 import { createRuntime } from '@objectstack/runtime';
 import { myPlugin } from '@objectql/my-plugin';
 

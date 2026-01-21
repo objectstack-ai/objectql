@@ -76,17 +76,15 @@ packages/
 - Thin type re-exports from @objectstack/spec
 
 **Changes:**
-```diff
-- Remove: Driver interface (use @objectstack/spec)
-- Remove: MetadataRegistry types (use @objectstack/runtime)
-- Remove: Context types (use @objectstack/runtime)
-- Remove: Hook types (use @objectstack/runtime)
-- Remove: Action types (use @objectstack/runtime)
-+ Add: QueryPlugin interface
-+ Add: RepositoryPlugin interface
-+ Add: Plugin-specific types
-+ Keep: Query-specific helper types
-```
+- ❌ Remove: Driver interface (use @objectstack/spec)
+- ❌ Remove: MetadataRegistry types (use @objectstack/runtime)
+- ❌ Remove: Context types (use @objectstack/runtime)
+- ❌ Remove: Hook types (use @objectstack/runtime)
+- ❌ Remove: Action types (use @objectstack/runtime)
+- ✅ Add: QueryPlugin interface
+- ✅ Add: RepositoryPlugin interface
+- ✅ Add: Plugin-specific types
+- ✅ Keep: Query-specific helper types
 
 **Migration Steps:**
 1. Create `/packages/core/types/` (new location)
