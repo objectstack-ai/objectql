@@ -93,11 +93,11 @@ async function main() {
     <h2>Available APIs</h2>
     <div class="endpoint">
         <strong>JSON-RPC:</strong> <code>POST /api/objectql</code><br>
-        Example: <code>{"op": "find", "object": "User", "args": {}}</code>
+        Example: <code>{"op": "find", "object": "user", "args": {}}</code>
     </div>
     <div class="endpoint">
         <strong>REST:</strong> <code>GET /api/data/:object</code><br>
-        Example: <code>GET /api/data/User</code>
+        Example: <code>GET /api/data/user</code>
     </div>
     <div class="endpoint">
         <strong>Metadata:</strong> <code>GET /api/metadata/object</code><br>
@@ -107,9 +107,9 @@ async function main() {
     <h2>Test Commands</h2>
     <pre><code>curl -X POST http://localhost:${port}/api/objectql \\
   -H "Content-Type: application/json" \\
-  -d '{"op": "find", "object": "User", "args": {}}'
+  -d '{"op": "find", "object": "user", "args": {}}'
 
-curl http://localhost:${port}/api/data/User
+curl http://localhost:${port}/api/data/user
 
 curl http://localhost:${port}/api/metadata/object</code></pre>
 </body>
@@ -119,38 +119,38 @@ curl http://localhost:${port}/api/metadata/object</code></pre>
 
     // Create some sample data
     const ctx = app.createContext({ isSystem: true });
-    await ctx.object('User').create({ 
+    await ctx.object('user').create({ 
         name: 'Alice', 
         email: 'alice@example.com', 
         age: 28, 
         status: 'active' 
     });
-    await ctx.object('User').create({ 
+    await ctx.object('user').create({ 
         name: 'Bob', 
         email: 'bob@example.com', 
         age: 35, 
         status: 'active' 
     });
-    await ctx.object('User').create({ 
+    await ctx.object('user').create({ 
         name: 'Charlie', 
         email: 'charlie@example.com', 
         age: 42, 
         status: 'inactive' 
     });
 
-    await ctx.object('Task').create({ 
+    await ctx.object('task').create({ 
         title: 'Complete project', 
         description: 'Finish the ObjectQL console', 
         status: 'in-progress', 
         priority: 'high' 
     });
-    await ctx.object('Task').create({ 
+    await ctx.object('task').create({ 
         title: 'Write documentation', 
         description: 'Document the new console feature', 
         status: 'pending', 
         priority: 'medium' 
     });
-    await ctx.object('Task').create({ 
+    await ctx.object('task').create({ 
         title: 'Code review', 
         description: 'Review pull requests', 
         status: 'pending', 

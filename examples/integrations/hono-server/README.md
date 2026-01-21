@@ -28,19 +28,19 @@ The server will start on http://localhost:3005
 ```bash
 curl -X POST http://localhost:3005/api/objectql \
   -H "Content-Type: application/json" \
-  -d '{"op": "find", "object": "User", "args": {}}'
+  -d '{"op": "find", "object": "user", "args": {}}'
 ```
 
 ### REST API
 ```bash
 # List all users
-curl http://localhost:3005/api/data/User
+curl http://localhost:3005/api/data/user
 
 # Get a specific user
-curl http://localhost:3005/api/data/User/1
+curl http://localhost:3005/api/data/user/1
 
 # Create a user
-curl -X POST http://localhost:3005/api/data/User \
+curl -X POST http://localhost:3005/api/data/user \
   -H "Content-Type: application/json" \
   -d '{"name": "John", "email": "john@example.com", "age": 30, "status": "active"}'
 ```
@@ -50,8 +50,8 @@ curl -X POST http://localhost:3005/api/data/User \
 # List all objects
 curl http://localhost:3005/api/metadata/object
 
-# Get User object schema
-curl http://localhost:3005/api/metadata/object/User
+# Get user object schema
+curl http://localhost:3005/api/metadata/object/user
 ```
 
 ## Why Hono?
