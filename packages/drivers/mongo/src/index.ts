@@ -21,7 +21,7 @@ export class MongoDriver implements Driver {
         this.connected = this.connect();
     }
 
-    private async connect() {
+    async connect() {
         await this.client.connect();
         this.db = this.client.db(this.config.dbName);
     }
