@@ -282,6 +282,9 @@ importers:
       '@objectql/types':
         specifier: workspace:*
         version: link:../../../packages/foundation/types
+      '@objectstack/spec':
+        specifier: ^0.2.0
+        version: 0.2.0
       '@types/jest':
         specifier: ^30.0.0
         version: 30.0.0
@@ -492,6 +495,9 @@ importers:
       '@objectql/types':
         specifier: workspace:*
         version: link:../types
+      '@objectstack/spec':
+        specifier: ^0.2.0
+        version: 0.2.0
       fast-glob:
         specifier: ^3.3.2
         version: 3.3.3

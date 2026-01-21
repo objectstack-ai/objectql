@@ -8,7 +8,8 @@
 
 import { ObjectQL } from '../src/app';
 import { MockDriver } from './mock-driver';
-import { ObjectConfig, PluginDefinition, HookContext, ActionContext, Metadata } from '@objectql/types';
+import { ObjectConfig, HookContext, ActionContext, Metadata } from '@objectql/types';
+import type { PluginDefinition } from '@objectstack/spec';
 
 const todoObject: ObjectConfig = {
     name: 'todo',

@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { PluginDefinition, PluginContextData } from '@objectql/types';
+import type { PluginDefinition, PluginContextData } from '@objectstack/spec';
 
 const AuditLogPlugin: PluginDefinition = {
     id: 'audit-log',

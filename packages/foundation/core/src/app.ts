@@ -14,7 +14,6 @@ import {
     ObjectQLContextOptions, 
     IObjectQL, 
     ObjectQLConfig,
-    PluginDefinition,
     HookName,
     HookHandler,
     HookContext,
@@ -22,6 +21,7 @@ import {
     ActionContext,
     LoaderPlugin
 } from '@objectql/types';
+import type { PluginDefinition } from '@objectstack/spec';
 import { ObjectRepository } from './repository';
 // import { createDriverFromConnection } from './driver'; // REMOVE THIS
 

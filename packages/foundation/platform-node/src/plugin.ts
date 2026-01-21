@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { PluginDefinition } from '@objectql/types';
+import type { PluginDefinition } from '@objectstack/spec';
 
 export function loadPlugin(packageName: string): PluginDefinition {
     let mod: any;
