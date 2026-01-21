@@ -15,6 +15,7 @@ import {
     IObjectQL, 
     ObjectQLConfig,
     ObjectQLPlugin,
+    PluginDefinition,
     HookName,
     HookHandler,
     HookContext,
@@ -37,7 +38,7 @@ export class ObjectQL implements IObjectQL {
     private remotes: string[] = [];
     private hooks: Record<string, HookEntry[]> = {};
     private actions: Record<string, ActionEntry> = {};
-    private pluginsList: ObjectQLPlugin[] = [];
+    private pluginsList: Array<ObjectQLPlugin | PluginDefinition> = [];
     
     // Store config for lazy loading in init()
     private config: ObjectQLConfig;
@@ -63,7 +64,7 @@ export class ObjectQL implements IObjectQL {
             }
         }
     }
-    use(plugin: ObjectQLPlugin) {
+    use(plugin: ObjectQLPlugin | PluginDefinition) {
         this.pluginsList.push(plugin);
     }
 
@@ -214,10 +215,87 @@ export class ObjectQL implements IObjectQL {
         }
     }
 
+    /**
+     * Create a PluginContext from the current IObjectQL instance.
+     * This adapts the IObjectQL interface to the PluginContext expected by @objectstack/spec plugins.
+     * 
+     * @private
+     */
+    private createPluginContext(app: IObjectQL): any {
+        // TODO: Implement full PluginContext conversion
+        // For now, provide a minimal adapter that maps IObjectQL to PluginContext
+        return {
+            ql: {
+                object: (name: string) => {
+                    // Return a repository-like interface
+                    return app.createContext().object(name);
+                },
+                query: async (soql: string) => {
+                    // TODO: Implement SOQL query execution
+                    throw new Error('SOQL queries not yet implemented in adapter');
+                }
+            },
+            os: {
+                getCurrentUser: async () => {
+                    // TODO: Get from context
+                    return null;
+                },
+                getConfig: async (key: string) => {
+                    // TODO: Implement config access
+                    return null;
+                }
+            },
+            logger: {
+                debug: (...args: any[]) => console.debug('[Plugin]', ...args),
+                info: (...args: any[]) => console.info('[Plugin]', ...args),
+                warn: (...args: any[]) => console.warn('[Plugin]', ...args),
+                error: (...args: any[]) => console.error('[Plugin]', ...args),
+            },
+            storage: {
+                get: async (key: string) => {
+                    // TODO: Implement plugin storage
+                    return null;
+                },
+                set: async (key: string, value: any) => {
+                    // TODO: Implement plugin storage
+                },
+                delete: async (key: string) => {
+                    // TODO: Implement plugin storage
+                }
+            },
+            i18n: {
+                t: (key: string, params?: any) => key, // Fallback: return key
+                getLocale: () => 'en'
+            },
+            metadata: app.metadata,
+            events: {
+                // TODO: Implement event bus
+            },
+            app: {
+                router: {
+                    get: (path: string, handler: Function) => {
+                        // TODO: Implement router registration
+                    },
+                    post: (path: string, handler: Function) => {
+                        // TODO: Implement router registration
+                    },
+                    use: (pathOrHandler: string | Function, handler?: Function) => {
+                        // TODO: Implement middleware registration
+                    }
+                },
+                scheduler: undefined // Optional in spec
+            }
+        };
+    }
+
     async init() {
         // 0. Init Plugins (This allows plugins to register custom loaders)
         for (const plugin of this.pluginsList) {
-            console.log(`Initializing plugin '${plugin.name}'...`);
+            // Type guard: check if it's a legacy plugin or new PluginDefinition
+            const isLegacyPlugin = 'setup' in plugin && typeof plugin.setup === 'function';
+            const pluginId = isLegacyPlugin ? (plugin as ObjectQLPlugin).name : (plugin as PluginDefinition).id || 'unknown';
+            
+            console.log(`Initializing plugin '${pluginId}'...`);
             
             let app: IObjectQL = this;
             const pkgName = (plugin as any)._packageName;
@@ -239,7 +317,21 @@ export class ObjectQL implements IObjectQL {
                 });
             }
 
-            await plugin.setup(app);
+            if (isLegacyPlugin) {
+                // Legacy plugin with setup() method
+                await (plugin as ObjectQLPlugin).setup(app);
+            } else {
+                // New plugin with lifecycle hooks
+                const newPlugin = plugin as PluginDefinition;
+                
+                // Call onEnable hook if it exists
+                if (newPlugin.onEnable) {
+                    // TODO: Build proper PluginContext from IObjectQL
+                    // For now, we'll create a minimal context adapter
+                    const context = this.createPluginContext(app);
+                    await newPlugin.onEnable(context);
+                }
+            }
         }
 
         // Packages, Presets, Source, Objects loading logic removed from Core.
