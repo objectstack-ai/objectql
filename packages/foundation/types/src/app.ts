@@ -7,17 +7,16 @@
  */
 
 import { ObjectConfig } from "./object";
+import { Driver } from "./driver";
 import { MetadataRegistry } from "./registry";
 import { HookName, HookHandler, HookContext } from "./hook";
 import { ActionHandler, ActionContext } from "./action";
 import { LoaderPlugin } from "./loader";
-// Import DriverInterface from @objectstack/spec
-import type { DriverInterface } from "@objectstack/spec";
 
 export interface IObjectQL {
     getObject(name: string): ObjectConfig | undefined;
     getConfigs(): Record<string, ObjectConfig>;
-    datasource(name: string): DriverInterface;
+    datasource(name: string): Driver;
     init(): Promise<void>;
     close?(): Promise<void>;
     removePackage(name: string): void;

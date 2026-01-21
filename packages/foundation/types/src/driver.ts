@@ -63,6 +63,18 @@ export interface IntrospectedSchema {
 }
 
 export interface Driver {
+    // Required for DriverInterface compatibility
+    name?: string;
+    version?: string;
+    supports?: {
+        transactions?: boolean;
+        joins?: boolean;
+        fullTextSearch?: boolean;
+        jsonFields?: boolean;
+        arrayFields?: boolean;
+    };
+    
+    // Core CRUD methods (existing)
     find(objectName: string, query: any, options?: any): Promise<any[]>;
     findOne(objectName: string, id: string | number, query?: any, options?: any): Promise<any>;
     create(objectName: string, data: any, options?: any): Promise<any>;
@@ -70,7 +82,26 @@ export interface Driver {
     delete(objectName: string, id: string | number, options?: any): Promise<any>;
     count(objectName: string, filters: any, options?: any): Promise<number>;
     
-    // Schema / Lifecycle
+    // Lifecycle methods
+    connect?(): Promise<void>;
+    disconnect?(): Promise<void>;
+    checkHealth?(): Promise<boolean>;
+    
+    // Additional methods for DriverInterface compatibility
+    execute?(command: any, parameters?: any[], options?: any): Promise<any>;
+    findOne?(objectName: string, id: string | number, query?: any, options?: any): Promise<any>;
+    bulkCreate?(objectName: string, data: any[], options?: any): Promise<any>;
+    bulkUpdate?(objectName: string, updates: Array<{id: string | number, data: any}>, options?: any): Promise<any>;
+    bulkDelete?(objectName: string, ids: Array<string | number>, options?: any): Promise<any>;
+    distinct?(objectName: string, field: string, filters?: any, options?: any): Promise<any[]>;
+    aggregate?(objectName: string, aggregations: any[], filters?: any, options?: any): Promise<any[]>;
+    
+    // Transaction support
+    beginTransaction?(): Promise<any>;
+    commitTransaction?(transaction: any): Promise<void>;
+    rollbackTransaction?(transaction: any): Promise<void>;
+    
+    // Schema / Lifecycle (existing)
     init?(objects: any[]): Promise<void>;
     
     /**
