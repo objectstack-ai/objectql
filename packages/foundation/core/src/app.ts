@@ -8,7 +8,7 @@
 
 import { 
     MetadataRegistry, 
-    Driver,
+    Driver, 
     ObjectConfig, 
     ObjectQLContext, 
     ObjectQLContextOptions, 
@@ -23,39 +23,21 @@ import {
     LoaderPlugin
 } from '@objectql/types';
 import { ObjectRepository } from './repository';
+// import { createDriverFromConnection } from './driver'; // REMOVE THIS
 
+// import { loadRemoteFromUrl } from './remote';
 import { executeActionHelper, registerActionHelper, ActionEntry } from './action';
 import { registerHookHelper, triggerHookHelper, HookEntry } from './hook';
 import { registerObjectHelper, getConfigsHelper } from './object';
 import { convertIntrospectedSchemaToObjects } from './util';
 
-// Import ObjectStack engine for driver management
-// Note: We use type casting when interfacing with ObjectStack to maintain
-// backward compatibility with existing Driver implementations
-import { ObjectQL as ObjectStackEngine } from '@objectstack/objectql';
-
-/**
- * ObjectQL Application
- * 
- * Integrates with @objectstack/objectql for driver management while
- * maintaining backward compatibility with existing Driver implementations.
- * 
- * Drivers implementing the extended Driver interface from @objectql/types
- * are compatible with DriverInterface from @objectstack/spec through
- * optional property extensions.
- */
 export class ObjectQL implements IObjectQL {
     public metadata: MetadataRegistry;
-    // Uses Driver from @objectql/types which has been extended to be
-    // compatible with DriverInterface from @objectstack/spec
     private datasources: Record<string, Driver> = {};
     private remotes: string[] = [];
     private hooks: Record<string, HookEntry[]> = {};
     private actions: Record<string, ActionEntry> = {};
     private pluginsList: ObjectQLPlugin[] = [];
-    
-    // ObjectStack engine instance for driver management
-    private stackEngine: ObjectStackEngine;
     
     // Store config for lazy loading in init()
     private config: ObjectQLConfig;
@@ -64,16 +46,7 @@ export class ObjectQL implements IObjectQL {
         this.config = config;
         this.metadata = config.registry || new MetadataRegistry();
         this.datasources = config.datasources || {};
-        
-        // Initialize ObjectStack engine for driver management
-        this.stackEngine = new ObjectStackEngine({});
-        
-        // Register drivers with ObjectStack engine
-        // Type casting is used here because Driver from @objectql/types is structurally
-        // compatible with DriverInterface from @objectstack/spec through optional extensions
-        for (const [name, driver] of Object.entries(this.datasources)) {
-            this.stackEngine.registerDriver(driver as any, name === 'default');
-        }
+        // this.remotes = config.remotes || [];
         
         if (config.connection) {
              throw new Error("Connection strings are not supported in core directly. Use @objectql/platform-node's createDriverFromConnection or pass a driver instance to 'datasources'.");
@@ -90,36 +63,8 @@ export class ObjectQL implements IObjectQL {
             }
         }
     }
-    
     use(plugin: ObjectQLPlugin) {
         this.pluginsList.push(plugin);
-    }
-    
-    /**
-     * Get access to the ObjectStack engine for advanced driver features
-     * 
-     * @returns The ObjectStack engine instance managing drivers
-     */
-    getStackEngine(): ObjectStackEngine {
-        return this.stackEngine;
-    }
-    
-    /**
-     * Register a new driver with ObjectStack engine
-     * 
-     * @param name - The name of the datasource
-     * @param driver - Driver instance implementing Driver interface from @objectql/types
-     * @param isDefault - Whether this driver should be the default datasource
-     */
-    registerDriver(name: string, driver: Driver, isDefault: boolean = false) {
-        if (this.datasources[name]) {
-            console.warn(`[ObjectQL] Driver '${name}' already exists. Overwriting...`);
-        }
-        this.datasources[name] = driver;
-        // Type casting for ObjectStack engine compatibility
-        // Driver from @objectql/types has been extended with optional properties
-        // to be compatible with DriverInterface from @objectstack/spec
-        this.stackEngine.registerDriver(driver as any, isDefault);
     }
 
     removePackage(name: string) {
@@ -261,19 +206,16 @@ export class ObjectQL implements IObjectQL {
     }
 
     async close() {
-        // Close ObjectStack engine (handles all driver lifecycle)
-        if (this.stackEngine) {
-            console.log('[ObjectQL] Closing engine...');
-            await this.stackEngine.destroy();
+        for (const [name, driver] of Object.entries(this.datasources)) {
+            if (driver.disconnect) {
+                console.log(`Closing driver '${name}'...`);
+                await driver.disconnect();
+            }
         }
     }
 
     async init() {
-        // 0. Initialize ObjectStack engine
-        console.log('[ObjectQL] Initializing engine...');
-        await this.stackEngine.init();
-        
-        // 1. Init Plugins (This allows plugins to register custom loaders)
+        // 0. Init Plugins (This allows plugins to register custom loaders)
         for (const plugin of this.pluginsList) {
             console.log(`Initializing plugin '${plugin.name}'...`);
             

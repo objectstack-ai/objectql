@@ -65,7 +65,7 @@ export class RedisDriver implements Driver {
         this.connected = this.connect();
     }
 
-    private async connect(): Promise<void> {
+    async connect(): Promise<void> {
         await this.client.connect();
     }
 
