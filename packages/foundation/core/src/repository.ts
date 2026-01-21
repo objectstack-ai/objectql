@@ -6,7 +6,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { ObjectQLContext, IObjectQL, ObjectConfig, Driver, UnifiedQuery, ActionContext, HookAPI, RetrievalHookContext, MutationHookContext, UpdateHookContext, ValidationContext, ValidationError, ValidationRuleResult, FormulaContext } from '@objectql/types';
+import { ObjectQLContext, IObjectQL, ObjectConfig, UnifiedQuery, ActionContext, HookAPI, RetrievalHookContext, MutationHookContext, UpdateHookContext, ValidationContext, ValidationError, ValidationRuleResult, FormulaContext } from '@objectql/types';
+import type { DriverInterface } from '@objectstack/spec';
 import { Validator } from './validator';
 import { FormulaEngine } from './formula-engine';
 
@@ -23,7 +24,7 @@ export class ObjectRepository {
         this.formulaEngine = new FormulaEngine();
     }
 
-    private getDriver(): Driver {
+    private getDriver(): DriverInterface {
         const obj = this.getSchema();
         const datasourceName = obj.datasource || 'default';
         return this.app.datasource(datasourceName);

@@ -243,31 +243,6 @@ importers:
         specifier: ^5.0.0
         version: 5.9.3
 
-  examples/plugin-driver-memory:
-    dependencies:
-      '@objectql/core':
-        specifier: workspace:*
-        version: link:../../packages/foundation/core
-      '@objectql/types':
-        specifier: workspace:*
-        version: link:../../packages/foundation/types
-      '@objectstack/objectql':
-        specifier: ^0.1.1
-        version: 0.1.1
-      '@objectstack/spec':
-        specifier: ^0.1.2
-        version: 0.1.2
-    devDependencies:
-      '@types/node':
-        specifier: ^20.0.0
-        version: 20.19.29
-      ts-node:
-        specifier: ^10.9.0
-        version: 10.9.2(@types/node@20.19.29)(typescript@5.9.3)
-      typescript:
-        specifier: ^5.0.0
-        version: 5.9.3
-
   examples/quickstart/hello-world:
     dependencies:
       '@objectql/core':
@@ -473,6 +448,9 @@ importers:
       '@objectql/types':
         specifier: workspace:*
         version: link:../../foundation/types
+      '@objectstack/spec':
+        specifier: ^0.1.2
+        version: 0.1.2
       knex:
         specifier: ^3.1.0
         version: 3.1.0(sqlite3@5.1.7)

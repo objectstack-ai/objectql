@@ -159,10 +159,10 @@ export class ObjectQL implements IObjectQL {
 
                  try {
                      const result = await callback(trxCtx);
-                     if (driver.commitTransaction) await driver.commitTransaction(trx);
+                     if (driver.commit) await driver.commit(trx);
                      return result;
                  } catch (error) {
-                     if (driver.rollbackTransaction) await driver.rollbackTransaction(trx);
+                     if (driver.rollback) await driver.rollback(trx);
                      throw error;
                  }
             },
