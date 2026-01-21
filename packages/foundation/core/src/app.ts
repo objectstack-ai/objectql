@@ -8,7 +8,6 @@
 
 import { 
     MetadataRegistry, 
-    Driver, 
     ObjectConfig, 
     ObjectQLContext, 
     ObjectQLContextOptions, 
@@ -23,21 +22,19 @@ import {
     LoaderPlugin
 } from '@objectql/types';
 import { ObjectRepository } from './repository';
-// import { createDriverFromConnection } from './driver'; // REMOVE THIS
 
-// import { loadRemoteFromUrl } from './remote';
 import { executeActionHelper, registerActionHelper, ActionEntry } from './action';
 import { registerHookHelper, triggerHookHelper, HookEntry } from './hook';
 import { registerObjectHelper, getConfigsHelper } from './object';
 import { convertIntrospectedSchemaToObjects } from './util';
 
-// Import ObjectStack engine for driver management
+// Import ObjectStack engine and standard driver interface
 import { ObjectQL as ObjectStackEngine } from '@objectstack/objectql';
 import { DriverInterface } from '@objectstack/spec';
 
 export class ObjectQL implements IObjectQL {
     public metadata: MetadataRegistry;
-    private datasources: Record<string, Driver> = {};
+    private datasources: Record<string, DriverInterface> = {};
     private remotes: string[] = [];
     private hooks: Record<string, HookEntry[]> = {};
     private actions: Record<string, ActionEntry> = {};
