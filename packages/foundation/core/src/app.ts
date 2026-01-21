@@ -45,11 +45,10 @@ export class ObjectQL implements IObjectQL {
     constructor(config: ObjectQLConfig) {
         this.config = config;
         this.metadata = config.registry || new MetadataRegistry();
-        this.datasources = config.datasources || {};
         // this.remotes = config.remotes || [];
         
         if (config.connection) {
-             throw new Error("Connection strings are not supported in core directly. Use @objectql/platform-node's createDriverFromConnection or pass a driver instance to 'datasources'.");
+             throw new Error("Connection strings are not supported in core directly. Use @objectql/platform-node's createDriverFromConnection and register via plugin.");
         }
 
         // Initialize Plugin List (but don't setup yet)

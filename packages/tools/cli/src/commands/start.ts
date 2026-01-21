@@ -7,7 +7,7 @@
  */
 
 import { ObjectQL } from '@objectql/core';
-import { SqlDriver } from '@objectql/driver-sql';
+import { createSqlDriverPlugin } from '@objectql/driver-sql';
 import { ObjectLoader, loadModules } from '@objectql/platform-node';
 import { createNodeHandler } from '@objectql/server';
 import { createServer } from 'http';
@@ -67,7 +67,7 @@ export async function start(options: StartOptions) {
     }
 
     // Initialize datasource from config or use default SQLite
-    // Note: Config files may use 'datasource' (singular) while ObjectQLConfig uses 'datasources' (plural)
+    // Note: Config files may use 'datasource' (singular) while ObjectQLConfig uses plugins
     const datasourceConfig = config?.datasources?.default || config?.datasource?.default || {
         client: 'sqlite3',
         connection: {
@@ -76,9 +76,13 @@ export async function start(options: StartOptions) {
         useNullAsDefault: true
     };
 
-    const driver = new SqlDriver(datasourceConfig);
     const app = new ObjectQL({
-        datasources: { default: driver }
+        plugins: [
+            createSqlDriverPlugin({
+                name: 'default',
+                config: datasourceConfig
+            })
+        ]
     });
 
     // Load Schema

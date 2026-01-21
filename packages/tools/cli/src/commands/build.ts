@@ -36,7 +36,7 @@ export async function build(options: BuildOptions) {
         console.log(chalk.cyan('1️⃣  Validating metadata files...'));
         
         try {
-            const app = new ObjectQL({ datasources: {} });
+            const app = new ObjectQL({ plugins: [] });
             const loader = new ObjectLoader(app.metadata);
             loader.load(rootDir);
             console.log(chalk.green('   ✅ Metadata validation passed\n'));

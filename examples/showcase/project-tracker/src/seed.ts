@@ -7,7 +7,7 @@
  */
 
 import { ObjectQL } from '@objectql/core';
-import { SqlDriver } from '@objectql/driver-sql';
+import { createSqlDriverPlugin } from '@objectql/driver-sql';
 import { ObjectLoader } from '@objectql/platform-node';
 import * as path from 'path';
 
@@ -15,13 +15,16 @@ async function main() {
     console.log("🚀 Starting Project Tracker Showcase...");
 
     const app = new ObjectQL({
-        datasources: {
-            default: new SqlDriver({
-                client: 'sqlite3',
-                connection: { filename: ':memory:' },
-                useNullAsDefault: true
+        plugins: [
+            createSqlDriverPlugin({
+                name: 'default',
+                config: {
+                    client: 'sqlite3',
+                    connection: { filename: ':memory:' },
+                    useNullAsDefault: true
+                }
             })
-        }
+        ]
     });
 
     const loader = new ObjectLoader(app.metadata);

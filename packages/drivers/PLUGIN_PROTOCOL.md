@@ -2,11 +2,11 @@
 
 ## Overview
 
-According to @objectstack/spec, all drivers in ObjectQL have been enhanced to support the plugin protocol. This allows drivers to be registered as plugins, providing a more flexible and consistent way to configure datasources.
+According to @objectstack/spec, all drivers in ObjectQL must be registered as plugins. This provides a consistent and flexible way to configure datasources following the spec strictly.
 
 ## Plugin Protocol
 
-Each driver now exports a plugin factory function following the pattern:
+Each driver exports a plugin factory function following the pattern:
 
 ```typescript
 export function create{DriverName}Plugin(options: {
@@ -14,6 +14,8 @@ export function create{DriverName}Plugin(options: {
   config: DriverConfig;
 }): ObjectQLPlugin;
 ```
+
+All drivers are registered through the `plugins` array in ObjectQL configuration. Direct driver instantiation via `datasources` is not supported - drivers must be registered as plugins.
 
 ## Available Driver Plugins
 
@@ -208,48 +210,18 @@ await users.find({});
 const cacheDriver = app.datasource('cache');
 ```
 
-## Backward Compatibility
-
-The old approach of passing drivers directly to `datasources` config is still supported:
-
-```typescript
-import { ObjectQL } from '@objectql/core';
-import { SqlDriver } from '@objectql/driver-sql';
-
-const driver = new SqlDriver({
-  client: 'sqlite3',
-  connection: { filename: ':memory:' },
-  useNullAsDefault: true
-});
-
-const app = new ObjectQL({
-  datasources: {
-    default: driver
-  }
-});
-```
-
 ## Benefits of Plugin-Based Approach
 
-1. **Consistency**: All drivers follow the same plugin protocol from @objectstack/spec
-2. **Flexibility**: Easy to swap drivers without changing application code
-3. **Composability**: Mix and match multiple drivers as plugins
-4. **Testability**: Easier to mock and test with plugin-based configuration
-5. **Type Safety**: Plugin configurations are fully typed
+1. **Standards Compliance**: Follows @objectstack/spec plugin protocol strictly
+2. **Consistency**: All drivers follow the same plugin protocol
+3. **Flexibility**: Easy to swap drivers without changing application code
+4. **Composability**: Mix and match multiple drivers as plugins
+5. **Testability**: Easier to mock and test with plugin-based configuration
+6. **Type Safety**: Plugin configurations are fully typed
 
-## Migration Guide
+## Usage Pattern
 
-### Old Approach
-
-```typescript
-import { ObjectQL } from '@objectql/core';
-import { SqlDriver } from '@objectql/driver-sql';
-
-const driver = new SqlDriver(config);
-const app = new ObjectQL({ datasources: { default: driver } });
-```
-
-### New Plugin-Based Approach
+All drivers must be registered through the `plugins` array:
 
 ```typescript
 import { ObjectQL } from '@objectql/core';

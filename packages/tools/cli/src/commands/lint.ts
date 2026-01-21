@@ -31,7 +31,7 @@ export async function lint(options: LintOptions) {
     let hasWarnings = false;
     
     try {
-        const app = new ObjectQL({ datasources: {} });
+        const app = new ObjectQL({ plugins: [] });
         const loader = new ObjectLoader(app.metadata);
         
         console.log(chalk.cyan('Loading metadata files...'));

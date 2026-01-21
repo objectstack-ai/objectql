@@ -10,7 +10,7 @@ npm install @objectql/driver-sql
 
 ## Usage
 
-### Plugin-Based Usage (Recommended)
+All drivers must be registered as plugins following the @objectstack/spec protocol:
 
 ```typescript
 import { ObjectQL } from '@objectql/core';
@@ -34,28 +34,7 @@ const app = new ObjectQL({
 await app.init();
 ```
 
-### Direct Driver Usage (Legacy)
-
-```typescript
-import { ObjectQL } from '@objectql/core';
-import { SqlDriver } from '@objectql/driver-sql';
-
-const driver = new SqlDriver({
-    client: 'sqlite3',
-    connection: {
-        filename: './data.db'
-    },
-    useNullAsDefault: true
-});
-
-const app = new ObjectQL({
-    datasources: {
-        default: driver
-    }
-});
-```
-
 ## Plugin Protocol
 
-The SQL driver now supports the @objectstack/spec plugin protocol. See [PLUGIN_PROTOCOL.md](../PLUGIN_PROTOCOL.md) for more details.
+The SQL driver follows the @objectstack/spec plugin protocol strictly. See [PLUGIN_PROTOCOL.md](../PLUGIN_PROTOCOL.md) for more details.
 

@@ -13,7 +13,6 @@ import { ObjectQLPlugin } from "./plugin";
 
 export interface ObjectQLConfig {
     registry?: MetadataRegistry;
-    datasources?: Record<string, Driver>;
     /**
      * Optional connection string for auto-configuration.
      * e.g. "sqlite://dev.db", "postgres://localhost/db", "mongodb://localhost/db"
@@ -40,6 +39,7 @@ export interface ObjectQLConfig {
     /**
      * List of plugins to load. 
      * Can be an instance of ObjectQLPlugin or a package name string.
+     * Drivers must be registered through plugins using registerDatasource().
      */
     plugins?: (ObjectQLPlugin | string)[];
     /**

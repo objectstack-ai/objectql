@@ -13,7 +13,7 @@
  */
 
 import { ObjectQL } from '@objectql/core';
-import { SqlDriver } from '@objectql/driver-sql';
+import { createSqlDriverPlugin } from '@objectql/driver-sql';
 import { ObjectLoader } from '@objectql/platform-node';
 import * as path from 'path';
 
@@ -23,15 +23,18 @@ describe('Metadata Loading', () => {
     beforeAll(async () => {
         // Initialize ObjectQL
         app = new ObjectQL({
-            datasources: {
-                default: new SqlDriver({
-                    client: 'sqlite3',
-                    connection: {
-                        filename: ':memory:'
-                    },
-                    useNullAsDefault: true
+            plugins: [
+                createSqlDriverPlugin({
+                    name: 'default',
+                    config: {
+                        client: 'sqlite3',
+                        connection: {
+                            filename: ':memory:'
+                        },
+                        useNullAsDefault: true
+                    }
                 })
-            }
+            ]
         });
 
         // Load metadata from src directory

@@ -7,26 +7,26 @@
  */
 
 import { ObjectQL } from '@objectql/core';
-import { SqlDriver } from '@objectql/driver-sql';
+import { createSqlDriverPlugin } from '@objectql/driver-sql';
 
 async function main() {
   console.log("🚀 Starting ObjectQL Hello World...");
 
-  // 1. Initialize Driver
-  const driver = new SqlDriver({
-    client: 'sqlite3',
-    connection: { filename: ':memory:' }, 
-    useNullAsDefault: true
-  });
-
-  // 2. Initialize Engine (Pass driver in config)
+  // 1. Initialize Engine with Plugin
   const app = new ObjectQL({
-    datasources: {
-        default: driver
-    }
+    plugins: [
+      createSqlDriverPlugin({
+        name: 'default',
+        config: {
+          client: 'sqlite3',
+          connection: { filename: ':memory:' }, 
+          useNullAsDefault: true
+        }
+      })
+    ]
   });
   
-  // 3. Define Metadata Inline
+  // 2. Define Metadata Inline
   app.registerObject({
     name: 'deal',
     fields: {
@@ -44,9 +44,9 @@ async function main() {
     }
   });
 
-  await app.init(); // Boot the engine
+  await app.init(); // Boot the engine and setup plugins
 
-  // 4. Run Business Logic
+  // 3. Run Business Logic
   const ctx = app.createContext({ isSystem: true });
   const repo = ctx.object('deal');
   

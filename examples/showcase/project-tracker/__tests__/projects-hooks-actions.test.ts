@@ -24,17 +24,20 @@ describe('Project Hooks - Comprehensive Examples', () => {
 
     beforeEach(async () => {
         // Use in-memory driver for testing
+        const mockPlugin = {
+            name: 'default',
+            driver: {
+                find: jest.fn().mockResolvedValue([]),
+                findOne: jest.fn().mockResolvedValue(null),
+                create: jest.fn((obj, data) => ({ ...data, _id: 'test-id' })),
+                update: jest.fn((obj, id, data) => data),
+                delete: jest.fn().mockResolvedValue(true),
+                count: jest.fn().mockResolvedValue(0)
+            } as any
+        };
+        
         app = new ObjectQL({
-            datasources: {
-                default: {
-                    find: jest.fn().mockResolvedValue([]),
-                    findOne: jest.fn().mockResolvedValue(null),
-                    create: jest.fn((obj, data) => ({ ...data, _id: 'test-id' })),
-                    update: jest.fn((obj, id, data) => data),
-                    delete: jest.fn().mockResolvedValue(true),
-                    count: jest.fn().mockResolvedValue(0)
-                } as any
-            },
+            plugins: [mockPlugin as any],
             objects: {
                 'projects': {
                     name: 'projects',

@@ -7,7 +7,7 @@
  */
 
 import { ObjectQL } from '@objectql/core';
-import { SqlDriver } from '@objectql/driver-sql';
+import { createSqlDriverPlugin } from '@objectql/driver-sql';
 import { ObjectLoader } from '@objectql/platform-node';
 import * as path from 'path';
 import { AuditLogPlugin } from './plugins/audit/audit.plugin';
@@ -16,17 +16,18 @@ async function main() {
     console.log("🚀 Starting Enterprise ERP Showcase...");
 
     const app = new ObjectQL({
-        datasources: {
-            default: new SqlDriver({
-                client: 'sqlite3',
-                connection: { filename: ':memory:' },
-                useNullAsDefault: true
-            })
-        }
+        plugins: [
+            createSqlDriverPlugin({
+                name: 'default',
+                config: {
+                    client: 'sqlite3',
+                    connection: { filename: ':memory:' },
+                    useNullAsDefault: true
+                }
+            }),
+            new AuditLogPlugin()
+        ]
     });
-
-    // Register Plugin
-    app.use(new AuditLogPlugin());
 
     const loader = new ObjectLoader(app.metadata);
     await loader.load(path.join(__dirname));

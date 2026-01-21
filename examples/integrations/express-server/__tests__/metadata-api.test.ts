@@ -16,7 +16,7 @@ import request from 'supertest';
 import { createServer } from 'http';
 import express from 'express';
 import { ObjectQL } from '@objectql/core';
-import { SqlDriver } from '@objectql/driver-sql';
+import { createSqlDriverPlugin } from '@objectql/driver-sql';
 import { ObjectLoader } from '@objectql/platform-node';
 import { createMetadataHandler } from '@objectql/server';
 import * as path from 'path';
@@ -29,15 +29,18 @@ describe('Metadata API', () => {
     beforeAll(async () => {
         // Initialize ObjectQL
         app = new ObjectQL({
-            datasources: {
-                default: new SqlDriver({
-                    client: 'sqlite3',
-                    connection: {
-                        filename: ':memory:'
-                    },
-                    useNullAsDefault: true
+            plugins: [
+                createSqlDriverPlugin({
+                    name: 'default',
+                    config: {
+                        client: 'sqlite3',
+                        connection: {
+                            filename: ':memory:'
+                        },
+                        useNullAsDefault: true
+                    }
                 })
-            }
+            ]
         });
 
         // Load metadata
