@@ -7,13 +7,14 @@
  */
 
 import { MetadataRegistry } from "./registry";
-import { Driver } from "./driver";
 import { ObjectConfig } from "./object";
 import { ObjectQLPlugin } from "./plugin";
+// Import DriverInterface from @objectstack/spec
+import type { DriverInterface } from "@objectstack/spec";
 
 export interface ObjectQLConfig {
     registry?: MetadataRegistry;
-    datasources?: Record<string, Driver>;
+    datasources?: Record<string, DriverInterface>;
     /**
      * Optional connection string for auto-configuration.
      * e.g. "sqlite://dev.db", "postgres://localhost/db", "mongodb://localhost/db"

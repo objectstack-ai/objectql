@@ -53,16 +53,13 @@ export class ObjectQL implements IObjectQL {
         this.config = config;
         this.metadata = config.registry || new MetadataRegistry();
         this.datasources = config.datasources || {};
-        // this.remotes = config.remotes || [];
         
         // Initialize ObjectStack engine for driver management
         this.stackEngine = new ObjectStackEngine({});
         
-        // Register drivers with ObjectStack engine
+        // Register drivers with ObjectStack engine (no wrapping needed)
         for (const [name, driver] of Object.entries(this.datasources)) {
-            // Wrap the driver to match DriverInterface from @objectstack/spec
-            const wrappedDriver = this.wrapDriver(name, driver);
-            this.stackEngine.registerDriver(wrappedDriver, name === 'default');
+            this.stackEngine.registerDriver(driver, name === 'default');
         }
         
         if (config.connection) {
@@ -81,35 +78,6 @@ export class ObjectQL implements IObjectQL {
         }
     }
     
-    /**
-     * Wrap @objectql/types.Driver to @objectstack/spec.DriverInterface
-     */
-    private wrapDriver(name: string, driver: Driver): DriverInterface {
-        return {
-            name: name,
-            version: '1.0.0',
-            async connect() {
-                // Driver connection lifecycle is managed separately
-            },
-            async disconnect() {
-                if (driver.disconnect) {
-                    await driver.disconnect();
-                }
-            },
-            async find(object: string, query: any, options?: any) {
-                return await driver.find(object, query, options);
-            },
-            async create(object: string, data: any, options?: any) {
-                return await driver.create(object, data, options);
-            },
-            async update(object: string, id: string, data: any, options?: any) {
-                return await driver.update(object, id, data, options);
-            },
-            async delete(object: string, id: string, options?: any) {
-                return await driver.delete(object, id, options);
-            }
-        };
-    }
     use(plugin: ObjectQLPlugin) {
         this.pluginsList.push(plugin);
     }
@@ -124,13 +92,12 @@ export class ObjectQL implements IObjectQL {
     /**
      * Register a new driver with ObjectStack engine
      */
-    registerDriver(name: string, driver: Driver, isDefault: boolean = false) {
+    registerDriver(name: string, driver: DriverInterface, isDefault: boolean = false) {
         if (this.datasources[name]) {
             console.warn(`[ObjectQL] Driver '${name}' already exists. Overwriting...`);
         }
         this.datasources[name] = driver;
-        const wrappedDriver = this.wrapDriver(name, driver);
-        this.stackEngine.registerDriver(wrappedDriver, isDefault);
+        this.stackEngine.registerDriver(driver, isDefault);
     }
 
     removePackage(name: string) {
@@ -225,7 +192,7 @@ export class ObjectQL implements IObjectQL {
         return getConfigsHelper(this.metadata);
     }
 
-    datasource(name: string): Driver {
+    datasource(name: string): DriverInterface {
         const driver = this.datasources[name];
         if (!driver) {
             throw new Error(`Datasource '${name}' not found`);
@@ -272,18 +239,10 @@ export class ObjectQL implements IObjectQL {
     }
 
     async close() {
-        // Close ObjectStack engine
+        // Close ObjectStack engine (handles all driver lifecycle)
         if (this.stackEngine) {
             console.log('[ObjectQL] Closing engine...');
             await this.stackEngine.destroy();
-        }
-        
-        // Close local drivers
-        for (const [name, driver] of Object.entries(this.datasources)) {
-            if (driver.disconnect) {
-                console.log(`Closing driver '${name}'...`);
-                await driver.disconnect();
-            }
         }
     }
 
