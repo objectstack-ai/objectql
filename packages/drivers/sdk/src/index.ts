@@ -445,8 +445,7 @@ export class MetadataApiClient implements IMetadataApiClient {
  *     createSdkDriverPlugin({
  *       name: 'remote',
  *       config: {
- *         baseUrl: 'https://api.example.com',
- *         apiKey: 'your-api-key'
+ *         baseUrl: 'https://api.example.com'
  *       }
  *     })
  *   ]
@@ -461,14 +460,19 @@ export interface SdkDriverPluginConfig {
     /** Name of the datasource (e.g., 'remote', 'api') */
     name: string;
     /** SDK driver configuration */
-    config: DataApiClientConfig;
+    config: {
+        /** Base URL for the remote ObjectQL API */
+        baseUrl: string;
+        /** Optional RPC path (default: '/api/objectql') */
+        rpcPath?: string;
+    };
 }
 
 export function createSdkDriverPlugin(options: SdkDriverPluginConfig): ObjectQLPlugin {
     return {
         name: `sdk-driver:${options.name}`,
         setup(app: IObjectQL) {
-            const driver = new DataApiClient(options.config);
+            const driver = new RemoteDriver(options.config.baseUrl, options.config.rpcPath);
             app.registerDatasource(options.name, driver);
         }
     };
