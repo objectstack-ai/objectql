@@ -9,6 +9,10 @@
 import { Driver, IntrospectedSchema, IntrospectedTable, IntrospectedColumn, IntrospectedForeignKey } from '@objectql/types';
 import knex, { Knex } from 'knex';
 
+/**
+ * SQL Driver for ObjectQL
+ * Implements Driver interface from @objectql/types
+ */
 export class SqlDriver implements Driver {
     private knex: Knex;
     private config: any;
@@ -277,7 +281,7 @@ export class SqlDriver implements Driver {
         }
     }
     
-    // Bulk
+    // Bulk Operations
     async createMany(objectName: string, data: any[], options?: any): Promise<any> {
         const builder = this.getBuilder(objectName, options);
         return await builder.insert(data).returning('*');
@@ -505,6 +509,8 @@ export class SqlDriver implements Driver {
         }
         return data;
     }
+
+    /**
 
     /**
      * Introspect the database schema to discover existing tables, columns, and relationships.
