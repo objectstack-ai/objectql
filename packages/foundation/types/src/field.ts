@@ -6,14 +6,78 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-// Import types from the Protocol Constitution (@objectstack/spec)
-import type { FieldType as ProtocolFieldType, Field, SelectOption as SpecSelectOption } from '@objectstack/spec';
+// Note: Types from @objectstack/spec would be imported here when available
+// import type { FieldType as ProtocolFieldType, Field, SelectOption as SpecSelectOption } from '@objectstack/spec';
 
 /**
  * Re-export Protocol Types from the Constitution
  * These are the wire-protocol standard types defined in @objectstack/spec
+ * TODO: Re-enable when @objectstack/spec is available
  */
-export type { Field as SpecField, SpecSelectOption, ProtocolFieldType };
+// export type { Field as SpecField, SpecSelectOption, ProtocolFieldType };
+
+/**
+ * Protocol Field Types (stub definitions until @objectstack/spec is available)
+ * These match the core field types from the ObjectStack specification
+ */
+type ProtocolFieldType = 
+    | 'text'
+    | 'textarea'
+    | 'number'
+    | 'boolean'
+    | 'date'
+    | 'datetime'
+    | 'time'
+    | 'select'
+    | 'lookup'
+    | 'master_detail'
+    | 'formula'
+    | 'summary'
+    | 'autonumber'
+    | 'url'
+    | 'email'
+    | 'phone'
+    | 'currency'
+    | 'percent'
+    | 'markdown'
+    | 'html'
+    | 'password'
+    | 'file'
+    | 'image';
+
+/**
+ * Base Field interface (stub definition until @objectstack/spec is available)
+ */
+interface Field {
+    name: string;
+    label: string;
+    type: string;
+    description?: string;
+    options?: Array<{label: string; value: string}>;
+    required?: boolean;
+    multiple?: boolean;
+    unique?: boolean;
+    deleteBehavior?: string;
+    hidden?: boolean;
+    readonly?: boolean;
+    encryption?: boolean;
+    index?: boolean;
+    externalId?: boolean;
+    searchable?: boolean;
+    defaultValue?: any;
+    maxLength?: number;
+    minLength?: number;
+    min?: number;
+    max?: number;
+    precision?: number;
+    scale?: number;
+    formula?: string;
+    reference?: string;
+    referenceFilters?: any;
+    writeRequiresMasterRead?: boolean;
+    expression?: string;
+    summaryOperations?: string[];
+}
 
 /**
  * RUNTIME-SPECIFIC TYPES

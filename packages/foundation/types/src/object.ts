@@ -6,16 +6,17 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-// Import and re-export types from the Protocol Constitution (@objectstack/spec)
-import type { ServiceObject, IndexSchema } from '@objectstack/spec';
+// Note: Types from @objectstack/spec would be imported here when available
+// import type { ServiceObject, IndexSchema } from '@objectstack/spec';
 import { FieldConfig } from './field';
 import { ActionConfig } from './action';
 import { AnyValidationRule } from './validation';
 
 /**
  * Re-export Protocol Types from the Constitution
+ * TODO: Re-enable when @objectstack/spec is available
  */
-export type { ServiceObject as SpecObject, IndexSchema };
+// export type { ServiceObject as SpecObject, IndexSchema };
 
 /**
  * RUNTIME-SPECIFIC TYPES

@@ -6,15 +6,16 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-// Import and re-export types from the Protocol Constitution (@objectstack/spec)
-import type { Action } from '@objectstack/spec';
+// Note: Types from @objectstack/spec would be imported here when available
+// import type { Action } from '@objectstack/spec';
 import { FieldConfig } from "./field";
 import { HookAPI } from "./hook"; // Reuse the restricted API interface
 
 /**
  * Re-export Protocol Types from the Constitution
+ * TODO: Re-enable when @objectstack/spec is available
  */
-export type { Action as SpecAction };
+// export type { Action as SpecAction };
 
 /**
  * RUNTIME-SPECIFIC TYPES

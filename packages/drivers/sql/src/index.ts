@@ -9,6 +9,12 @@
 import { Driver, IntrospectedSchema, IntrospectedTable, IntrospectedColumn, IntrospectedForeignKey } from '@objectql/types';
 import knex, { Knex } from 'knex';
 
+/**
+ * SQL Driver for ObjectQL
+ * 
+ * Implements the Driver interface from @objectql/types with optional
+ * ObjectStack-compatible properties for integration with @objectstack/objectql.
+ */
 export class SqlDriver implements Driver {
     private knex: Knex;
     private config: any;
@@ -277,7 +283,7 @@ export class SqlDriver implements Driver {
         }
     }
     
-    // Bulk
+    // Bulk Operations
     async createMany(objectName: string, data: any[], options?: any): Promise<any> {
         const builder = this.getBuilder(objectName, options);
         return await builder.insert(data).returning('*');
