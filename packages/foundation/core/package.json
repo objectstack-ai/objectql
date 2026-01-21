@@ -23,7 +23,7 @@
   },
   "dependencies": {
     "@objectql/types": "workspace:*",
-    "@objectstack/spec": "^0.1.2",
+    "@objectstack/spec": "^0.2.0",
     "@objectstack/runtime": "^0.1.1",
     "@objectstack/objectql": "^0.1.1",
     "js-yaml": "^4.1.0",
