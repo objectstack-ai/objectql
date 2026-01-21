@@ -11,7 +11,9 @@ import knex, { Knex } from 'knex';
 
 /**
  * SQL Driver for ObjectQL
- * Implements Driver interface from @objectql/types
+ * 
+ * Implements the Driver interface from @objectql/types with optional
+ * ObjectStack-compatible properties for integration with @objectstack/objectql.
  */
 export class SqlDriver implements Driver {
     private knex: Knex;
@@ -509,8 +511,6 @@ export class SqlDriver implements Driver {
         }
         return data;
     }
-
-    /**
 
     /**
      * Introspect the database schema to discover existing tables, columns, and relationships.

@@ -30,10 +30,24 @@ import { registerObjectHelper, getConfigsHelper } from './object';
 import { convertIntrospectedSchemaToObjects } from './util';
 
 // Import ObjectStack engine for driver management
+// Note: We use type casting when interfacing with ObjectStack to maintain
+// backward compatibility with existing Driver implementations
 import { ObjectQL as ObjectStackEngine } from '@objectstack/objectql';
 
+/**
+ * ObjectQL Application
+ * 
+ * Integrates with @objectstack/objectql for driver management while
+ * maintaining backward compatibility with existing Driver implementations.
+ * 
+ * Drivers implementing the extended Driver interface from @objectql/types
+ * are compatible with DriverInterface from @objectstack/spec through
+ * optional property extensions.
+ */
 export class ObjectQL implements IObjectQL {
     public metadata: MetadataRegistry;
+    // Uses Driver from @objectql/types which has been extended to be
+    // compatible with DriverInterface from @objectstack/spec
     private datasources: Record<string, Driver> = {};
     private remotes: string[] = [];
     private hooks: Record<string, HookEntry[]> = {};
@@ -55,6 +69,8 @@ export class ObjectQL implements IObjectQL {
         this.stackEngine = new ObjectStackEngine({});
         
         // Register drivers with ObjectStack engine
+        // Type casting is used here because Driver from @objectql/types is structurally
+        // compatible with DriverInterface from @objectstack/spec through optional extensions
         for (const [name, driver] of Object.entries(this.datasources)) {
             this.stackEngine.registerDriver(driver as any, name === 'default');
         }
@@ -81,7 +97,9 @@ export class ObjectQL implements IObjectQL {
     }
     
     /**
-     * Get the ObjectStack engine instance for advanced driver management
+     * Get access to the ObjectStack engine for advanced driver features
+     * 
+     * @returns The ObjectStack engine instance managing drivers
      */
     getStackEngine(): ObjectStackEngine {
         return this.stackEngine;
@@ -89,12 +107,19 @@ export class ObjectQL implements IObjectQL {
     
     /**
      * Register a new driver with ObjectStack engine
+     * 
+     * @param name - The name of the datasource
+     * @param driver - Driver instance implementing Driver interface from @objectql/types
+     * @param isDefault - Whether this driver should be the default datasource
      */
     registerDriver(name: string, driver: Driver, isDefault: boolean = false) {
         if (this.datasources[name]) {
             console.warn(`[ObjectQL] Driver '${name}' already exists. Overwriting...`);
         }
         this.datasources[name] = driver;
+        // Type casting for ObjectStack engine compatibility
+        // Driver from @objectql/types has been extended with optional properties
+        // to be compatible with DriverInterface from @objectstack/spec
         this.stackEngine.registerDriver(driver as any, isDefault);
     }
 
