@@ -49,6 +49,60 @@ pnpm add @objectql/driver-memory
 
 ## Basic Usage
 
+### Plugin-Based Usage (Recommended)
+
+```typescript
+import { ObjectQL } from '@objectql/core';
+import { createMemoryDriverPlugin } from '@objectql/driver-memory';
+
+const app = new ObjectQL({
+  plugins: [
+    createMemoryDriverPlugin({
+      name: 'default',
+      config: {
+        strictMode: false
+      }
+    })
+  ]
+});
+
+// Register your schema
+app.registerObject({
+  name: 'users',
+  fields: {
+    name: { type: 'text', required: true },
+    email: { type: 'email', unique: true },
+    role: { type: 'select', options: ['admin', 'user'] }
+  }
+});
+
+await app.init();
+
+// Use it!
+const ctx = app.createContext({ isSystem: true });
+const repo = ctx.object('users');
+
+// Create
+const user = await repo.create({
+  name: 'Alice',
+  email: 'alice@example.com',
+  role: 'admin'
+});
+
+// Find
+const users = await repo.find({
+  filters: [['role', '=', 'user']]
+});
+
+// Update
+await repo.update(user.id, { email: 'alice.new@example.com' });
+
+// Delete
+await repo.delete(user.id);
+```
+
+### Direct Driver Usage (Legacy)
+
 ```typescript
 import { ObjectQL } from '@objectql/core';
 import { MemoryDriver } from '@objectql/driver-memory';
@@ -95,6 +149,10 @@ await repo.update(user.id, { email: 'alice.new@example.com' });
 // Delete
 await repo.delete(user.id);
 ```
+
+## Plugin Protocol
+
+The Memory driver now supports the @objectstack/spec plugin protocol. See [PLUGIN_PROTOCOL.md](../PLUGIN_PROTOCOL.md) for more details.
 
 ## Browser Usage
 
