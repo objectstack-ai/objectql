@@ -837,3 +837,49 @@ export class SqlDriver implements Driver {
  * @deprecated Use SqlDriver instead.
  */
 export { SqlDriver as KnexDriver };
+
+/**
+ * SQL Driver Plugin for ObjectQL
+ * 
+ * A plugin wrapper that registers an SQL driver as a datasource in ObjectQL.
+ * This follows the @objectstack/spec plugin protocol.
+ * 
+ * @example
+ * ```typescript
+ * import { ObjectQL } from '@objectql/core';
+ * import { createSqlDriverPlugin } from '@objectql/driver-sql';
+ * 
+ * const app = new ObjectQL({
+ *   plugins: [
+ *     createSqlDriverPlugin({
+ *       name: 'default',
+ *       config: {
+ *         client: 'sqlite3',
+ *         connection: { filename: ':memory:' },
+ *         useNullAsDefault: true
+ *       }
+ *     })
+ *   ]
+ * });
+ * 
+ * await app.init();
+ * ```
+ */
+import { ObjectQLPlugin, IObjectQL } from '@objectql/types';
+
+export interface SqlDriverPluginConfig {
+    /** Name of the datasource (e.g., 'default', 'analytics') */
+    name: string;
+    /** Knex configuration */
+    config: any;
+}
+
+export function createSqlDriverPlugin(options: SqlDriverPluginConfig): ObjectQLPlugin {
+    return {
+        name: `sql-driver:${options.name}`,
+        setup(app: IObjectQL) {
+            const driver = new SqlDriver(options.config);
+            app.registerDatasource(options.name, driver);
+        }
+    };
+}

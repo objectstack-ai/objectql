@@ -428,3 +428,47 @@ export class RedisDriver implements Driver {
         });
     }
 }
+
+/**
+ * Redis Driver Plugin for ObjectQL
+ * 
+ * A plugin wrapper that registers a Redis driver as a datasource in ObjectQL.
+ * This follows the @objectstack/spec plugin protocol.
+ * 
+ * @example
+ * ```typescript
+ * import { ObjectQL } from '@objectql/core';
+ * import { createRedisDriverPlugin } from '@objectql/driver-redis';
+ * 
+ * const app = new ObjectQL({
+ *   plugins: [
+ *     createRedisDriverPlugin({
+ *       name: 'default',
+ *       config: {
+ *         url: 'redis://localhost:6379'
+ *       }
+ *     })
+ *   ]
+ * });
+ * 
+ * await app.init();
+ * ```
+ */
+import { ObjectQLPlugin, IObjectQL } from '@objectql/types';
+
+export interface RedisDriverPluginConfig {
+    /** Name of the datasource (e.g., 'default', 'cache') */
+    name: string;
+    /** Redis connection configuration */
+    config: RedisDriverConfig;
+}
+
+export function createRedisDriverPlugin(options: RedisDriverPluginConfig): ObjectQLPlugin {
+    return {
+        name: `redis-driver:${options.name}`,
+        setup(app: IObjectQL) {
+            const driver = new RedisDriver(options.config);
+            app.registerDatasource(options.name, driver);
+        }
+    };
+}

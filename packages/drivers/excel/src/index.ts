@@ -966,3 +966,48 @@ export class ExcelDriver implements Driver {
         return `${objectName}-${timestamp}-${counter}`;
     }
 }
+
+/**
+ * Excel Driver Plugin for ObjectQL
+ * 
+ * A plugin wrapper that registers an Excel driver as a datasource in ObjectQL.
+ * This follows the @objectstack/spec plugin protocol.
+ * 
+ * @example
+ * ```typescript
+ * import { ObjectQL } from '@objectql/core';
+ * import { createExcelDriverPlugin } from '@objectql/driver-excel';
+ * 
+ * const app = new ObjectQL({
+ *   plugins: [
+ *     createExcelDriverPlugin({
+ *       name: 'default',
+ *       config: {
+ *         filePath: './data.xlsx',
+ *         storageMode: 'single-file'
+ *       }
+ *     })
+ *   ]
+ * });
+ * 
+ * await app.init();
+ * ```
+ */
+import { ObjectQLPlugin, IObjectQL } from '@objectql/types';
+
+export interface ExcelDriverPluginConfig {
+    /** Name of the datasource (e.g., 'default', 'export') */
+    name: string;
+    /** Excel driver configuration */
+    config: ExcelDriverConfig;
+}
+
+export function createExcelDriverPlugin(options: ExcelDriverPluginConfig): ObjectQLPlugin {
+    return {
+        name: `excel-driver:${options.name}`,
+        setup(app: IObjectQL) {
+            const driver = new ExcelDriver(options.config);
+            app.registerDatasource(options.name, driver);
+        }
+    };
+}

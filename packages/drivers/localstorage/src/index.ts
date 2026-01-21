@@ -631,3 +631,48 @@ export class LocalStorageDriver implements Driver {
         return `${objectName}-${timestamp}-${counter}`;
     }
 }
+
+/**
+ * LocalStorage Driver Plugin for ObjectQL
+ * 
+ * A plugin wrapper that registers a LocalStorage driver as a datasource in ObjectQL.
+ * This follows the @objectstack/spec plugin protocol.
+ * 
+ * @example
+ * ```typescript
+ * import { ObjectQL } from '@objectql/core';
+ * import { createLocalStorageDriverPlugin } from '@objectql/driver-localstorage';
+ * 
+ * const app = new ObjectQL({
+ *   plugins: [
+ *     createLocalStorageDriverPlugin({
+ *       name: 'default',
+ *       config: {
+ *         namespace: 'myapp',
+ *         strictMode: true
+ *       }
+ *     })
+ *   ]
+ * });
+ * 
+ * await app.init();
+ * ```
+ */
+import { ObjectQLPlugin, IObjectQL } from '@objectql/types';
+
+export interface LocalStorageDriverPluginConfig {
+    /** Name of the datasource (e.g., 'default', 'cache') */
+    name: string;
+    /** LocalStorage driver configuration */
+    config?: LocalStorageDriverConfig;
+}
+
+export function createLocalStorageDriverPlugin(options: LocalStorageDriverPluginConfig): ObjectQLPlugin {
+    return {
+        name: `localstorage-driver:${options.name}`,
+        setup(app: IObjectQL) {
+            const driver = new LocalStorageDriver(options.config);
+            app.registerDatasource(options.name, driver);
+        }
+    };
+}

@@ -428,3 +428,48 @@ export class MetadataApiClient implements IMetadataApiClient {
         );
     }
 }
+
+/**
+ * SDK Driver Plugin for ObjectQL
+ * 
+ * A plugin wrapper that registers an SDK driver as a datasource in ObjectQL.
+ * This follows the @objectstack/spec plugin protocol.
+ * 
+ * @example
+ * ```typescript
+ * import { ObjectQL } from '@objectql/core';
+ * import { createSdkDriverPlugin } from '@objectql/driver-sdk';
+ * 
+ * const app = new ObjectQL({
+ *   plugins: [
+ *     createSdkDriverPlugin({
+ *       name: 'remote',
+ *       config: {
+ *         baseUrl: 'https://api.example.com',
+ *         apiKey: 'your-api-key'
+ *       }
+ *     })
+ *   ]
+ * });
+ * 
+ * await app.init();
+ * ```
+ */
+import { ObjectQLPlugin, IObjectQL } from '@objectql/types';
+
+export interface SdkDriverPluginConfig {
+    /** Name of the datasource (e.g., 'remote', 'api') */
+    name: string;
+    /** SDK driver configuration */
+    config: DataApiClientConfig;
+}
+
+export function createSdkDriverPlugin(options: SdkDriverPluginConfig): ObjectQLPlugin {
+    return {
+        name: `sdk-driver:${options.name}`,
+        setup(app: IObjectQL) {
+            const driver = new DataApiClient(options.config);
+            app.registerDatasource(options.name, driver);
+        }
+    };
+}

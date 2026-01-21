@@ -17,6 +17,7 @@ export interface IObjectQL {
     getObject(name: string): ObjectConfig | undefined;
     getConfigs(): Record<string, ObjectConfig>;
     datasource(name: string): Driver;
+    registerDatasource(name: string, driver: Driver): void;
     init(): Promise<void>;
     close?(): Promise<void>;
     removePackage(name: string): void;

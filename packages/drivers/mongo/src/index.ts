@@ -309,3 +309,53 @@ export class MongoDriver implements Driver {
     }
 }
 
+/**
+ * MongoDB Driver Plugin for ObjectQL
+ * 
+ * A plugin wrapper that registers a MongoDB driver as a datasource in ObjectQL.
+ * This follows the @objectstack/spec plugin protocol.
+ * 
+ * @example
+ * ```typescript
+ * import { ObjectQL } from '@objectql/core';
+ * import { createMongoDriverPlugin } from '@objectql/driver-mongo';
+ * 
+ * const app = new ObjectQL({
+ *   plugins: [
+ *     createMongoDriverPlugin({
+ *       name: 'default',
+ *       config: {
+ *         url: 'mongodb://localhost:27017',
+ *         dbName: 'mydb'
+ *       }
+ *     })
+ *   ]
+ * });
+ * 
+ * await app.init();
+ * ```
+ */
+import { ObjectQLPlugin, IObjectQL } from '@objectql/types';
+
+export interface MongoDriverPluginConfig {
+    /** Name of the datasource (e.g., 'default', 'analytics') */
+    name: string;
+    /** MongoDB connection configuration */
+    config: {
+        /** MongoDB connection URL */
+        url: string;
+        /** Database name */
+        dbName?: string;
+    };
+}
+
+export function createMongoDriverPlugin(options: MongoDriverPluginConfig): ObjectQLPlugin {
+    return {
+        name: `mongo-driver:${options.name}`,
+        setup(app: IObjectQL) {
+            const driver = new MongoDriver(options.config);
+            app.registerDatasource(options.name, driver);
+        }
+    };
+}
+

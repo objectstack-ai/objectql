@@ -533,3 +533,50 @@ export class MemoryDriver implements Driver {
         return `${objectName}-${timestamp}-${counter}`;
     }
 }
+
+/**
+ * Memory Driver Plugin for ObjectQL
+ * 
+ * A plugin wrapper that registers a Memory driver as a datasource in ObjectQL.
+ * This follows the @objectstack/spec plugin protocol.
+ * 
+ * @example
+ * ```typescript
+ * import { ObjectQL } from '@objectql/core';
+ * import { createMemoryDriverPlugin } from '@objectql/driver-memory';
+ * 
+ * const app = new ObjectQL({
+ *   plugins: [
+ *     createMemoryDriverPlugin({
+ *       name: 'default',
+ *       config: {
+ *         strictMode: true,
+ *         initialData: {
+ *           users: [{ id: '1', name: 'Alice' }]
+ *         }
+ *       }
+ *     })
+ *   ]
+ * });
+ * 
+ * await app.init();
+ * ```
+ */
+import { ObjectQLPlugin, IObjectQL } from '@objectql/types';
+
+export interface MemoryDriverPluginConfig {
+    /** Name of the datasource (e.g., 'default', 'cache') */
+    name: string;
+    /** Memory driver configuration */
+    config?: MemoryDriverConfig;
+}
+
+export function createMemoryDriverPlugin(options: MemoryDriverPluginConfig): ObjectQLPlugin {
+    return {
+        name: `memory-driver:${options.name}`,
+        setup(app: IObjectQL) {
+            const driver = new MemoryDriver(options.config);
+            app.registerDatasource(options.name, driver);
+        }
+    };
+}

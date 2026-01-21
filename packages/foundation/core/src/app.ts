@@ -167,6 +167,10 @@ export class ObjectQL implements IObjectQL {
         return driver;
     }
 
+    registerDatasource(name: string, driver: Driver): void {
+        this.datasources[name] = driver;
+    }
+
     /**
      * Introspect the database schema and automatically register objects.
      * This allows connecting to an existing database without defining metadata.

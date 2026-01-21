@@ -708,3 +708,49 @@ export class FileSystemDriver implements Driver {
         return `${objectName}-${timestamp}-${counter}`;
     }
 }
+
+/**
+ * FileSystem Driver Plugin for ObjectQL
+ * 
+ * A plugin wrapper that registers a FileSystem driver as a datasource in ObjectQL.
+ * This follows the @objectstack/spec plugin protocol.
+ * 
+ * @example
+ * ```typescript
+ * import { ObjectQL } from '@objectql/core';
+ * import { createFileSystemDriverPlugin } from '@objectql/driver-fs';
+ * 
+ * const app = new ObjectQL({
+ *   plugins: [
+ *     createFileSystemDriverPlugin({
+ *       name: 'default',
+ *       config: {
+ *         dataDir: './data',
+ *         prettyPrint: true,
+ *         enableBackup: true
+ *       }
+ *     })
+ *   ]
+ * });
+ * 
+ * await app.init();
+ * ```
+ */
+import { ObjectQLPlugin, IObjectQL } from '@objectql/types';
+
+export interface FileSystemDriverPluginConfig {
+    /** Name of the datasource (e.g., 'default', 'backup') */
+    name: string;
+    /** FileSystem driver configuration */
+    config: FileSystemDriverConfig;
+}
+
+export function createFileSystemDriverPlugin(options: FileSystemDriverPluginConfig): ObjectQLPlugin {
+    return {
+        name: `fs-driver:${options.name}`,
+        setup(app: IObjectQL) {
+            const driver = new FileSystemDriver(options.config);
+            app.registerDatasource(options.name, driver);
+        }
+    };
+}
