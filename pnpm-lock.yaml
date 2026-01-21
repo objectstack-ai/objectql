@@ -282,6 +282,9 @@ importers:
       '@objectql/types':
         specifier: workspace:*
         version: link:../../../packages/foundation/types
+      '@objectstack/spec':
+        specifier: ^0.2.0
+        version: 0.2.0
       '@types/jest':
         specifier: ^30.0.0
         version: 30.0.0
@@ -468,8 +471,8 @@ importers:
         specifier: ^0.1.1
         version: 0.1.1
       '@objectstack/spec':
-        specifier: ^0.1.2
-        version: 0.1.2
+        specifier: ^0.2.0
+        version: 0.2.0
       js-yaml:
         specifier: ^4.1.0
         version: 4.1.1
@@ -492,6 +495,9 @@ importers:
       '@objectql/types':
         specifier: workspace:*
         version: link:../types
+      '@objectstack/spec':
+        specifier: ^0.2.0
+        version: 0.2.0
       fast-glob:
         specifier: ^3.3.2
         version: 3.3.3
@@ -506,8 +512,8 @@ importers:
   packages/foundation/types:
     dependencies:
       '@objectstack/spec':
-        specifier: ^0.1.2
-        version: 0.1.2
+        specifier: ^0.2.0
+        version: 0.2.0
     devDependencies:
       ts-json-schema-generator:
         specifier: ^2.4.0
@@ -1923,6 +1929,10 @@ packages:
 
   '@objectstack/spec@0.1.2':
     resolution: {integrity: sha512-xnGZV8ND9YnMKHURV5+iOiUQhqGpll95v5Wz9Kgw0rKGd6V6BlvAcl2S56EF8YIK+khZAqWiE4RqrOIXDKoRCw==}
+    engines: {node: '>=18.0.0'}
+
+  '@objectstack/spec@0.2.0':
+    resolution: {integrity: sha512-y4JALcsTgOeEE0xRJ7Co16beQTIO42c6KngFFcy7QQH0BeN4gKgMoqWGkRxPfOKZnnlUzYo/1hSLxmmUtJMisA==}
     engines: {node: '>=18.0.0'}
 
   '@objectstack/types@0.1.1':
@@ -9658,6 +9668,10 @@ snapshots:
       '@objectstack/types': 0.1.1
 
   '@objectstack/spec@0.1.2':
+    dependencies:
+      zod: 3.25.76
+
+  '@objectstack/spec@0.2.0':
     dependencies:
       zod: 3.25.76
 

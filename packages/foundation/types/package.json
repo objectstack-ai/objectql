@@ -27,7 +27,7 @@
     "test": "jest --passWithNoTests"
   },
   "dependencies": {
-    "@objectstack/spec": "^0.1.2"
+    "@objectstack/spec": "^0.2.0"
   },
   "devDependencies": {
     "ts-json-schema-generator": "^2.4.0"

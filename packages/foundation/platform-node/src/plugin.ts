@@ -6,9 +6,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { ObjectQLPlugin } from '@objectql/types';
+import type { PluginDefinition } from '@objectstack/spec';
 
-export function loadPlugin(packageName: string): ObjectQLPlugin {
+export function loadPlugin(packageName: string): PluginDefinition {
     let mod: any;
     try {
         const modulePath = require.resolve(packageName, { paths: [process.cwd()] });
@@ -17,26 +17,43 @@ export function loadPlugin(packageName: string): ObjectQLPlugin {
         throw new Error(`Failed to resolve plugin '${packageName}': ${e}`);
     }
 
+    // Helper to check if candidate is a PluginDefinition
+    const isPlugin = (candidate: any): candidate is PluginDefinition => {
+        return candidate && (
+            // Check for any lifecycle method
+            typeof candidate.onEnable === 'function' ||
+            typeof candidate.onDisable === 'function' ||
+            typeof candidate.onInstall === 'function' ||
+            typeof candidate.onUninstall === 'function' ||
+            typeof candidate.onUpgrade === 'function'
+        ) && (
+            // Note: id is optional in PluginDefinition, so we don't require it
+            // The spec allows plugins without id (it just defaults to package name)
+            candidate.id === undefined || typeof candidate.id === 'string'
+        );
+    };
+
     // Helper to find plugin instance
-    const findPlugin = (candidate: any): ObjectQLPlugin | undefined => {
+    const findPlugin = (candidate: any): PluginDefinition | undefined => {
             if (!candidate) return undefined;
             
-            // 1. Try treating as Class
+            // 1. Check if it's a PluginDefinition
+            if (isPlugin(candidate)) {
+                return candidate;
+            }
+
+            // 2. Try treating as Class
             if (typeof candidate === 'function') {
                 try {
                     const inst = new candidate();
-                    if (inst && typeof inst.setup === 'function') {
-                        return inst; // Found it!
+                    if (isPlugin(inst)) {
+                        return inst;
                     }
                 } catch (e) {
                     // Not a constructor or instantiation failed
                 }
             }
-
-            // 2. Try treating as Instance
-            if (candidate && typeof candidate.setup === 'function') {
-                if (candidate.name) return candidate;
-            }
+            
             return undefined;
     };
 
@@ -55,7 +72,7 @@ export function loadPlugin(packageName: string): ObjectQLPlugin {
         (instance as any)._packageName = packageName;
         return instance;
     } else {
-        console.error(`[PluginLoader] Failed to find ObjectQLPlugin in '${packageName}'. Exports:`, Object.keys(mod));
-        throw new Error(`Plugin '${packageName}' must export a class or object implementing ObjectQLPlugin.`);
+        console.error(`[PluginLoader] Failed to find plugin in '${packageName}'. Exports:`, Object.keys(mod));
+        throw new Error(`Plugin '${packageName}' must export a PluginDefinition with lifecycle hooks (onEnable, onDisable, etc.).`);
     }
 }

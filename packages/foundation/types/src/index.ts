@@ -22,7 +22,6 @@ export * from './hook';
 export * from './action';
 export * from './repository';
 export * from './app';
-export * from './plugin';
 export * from './config';
 export * from './context';
 export * from './validation';
