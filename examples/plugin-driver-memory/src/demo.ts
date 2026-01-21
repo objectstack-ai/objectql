@@ -155,28 +155,28 @@ async function main() {
         filters: [['priority', '=', 'high']]
     });
     console.log(`\n🔥 High priority projects: ${highPriority.length}`);
-    highPriority.forEach(p => console.log(`   - ${p.name}`));
+    highPriority.forEach((p: any) => console.log(`   - ${p.name}`));
 
     // Find active projects
     const active = await projects.find({
         filters: [['status', '=', 'active']]
     });
     console.log(`\n⚡ Active projects: ${active.length}`);
-    active.forEach(p => console.log(`   - ${p.name}`));
+    active.forEach((p: any) => console.log(`   - ${p.name}`));
 
     // Find projects with budget > 40000
     const largeBudget = await projects.find({
         filters: [['budget', '>', 40000]]
     });
     console.log(`\n💰 Projects with budget > $40,000: ${largeBudget.length}`);
-    largeBudget.forEach(p => console.log(`   - ${p.name}: $${p.budget.toLocaleString()}`));
+    largeBudget.forEach((p: any) => console.log(`   - ${p.name}: $${p.budget.toLocaleString()}`));
 
     // Sort by budget (descending)
     const sortedByBudget = await projects.find({
         sort: [['budget', 'desc']]
     });
     console.log(`\n📈 Projects sorted by budget (desc):`);
-    sortedByBudget.forEach(p => console.log(`   - ${p.name}: $${p.budget.toLocaleString()}`));
+    sortedByBudget.forEach((p: any) => console.log(`   - ${p.name}: $${p.budget.toLocaleString()}`));
 
     // ====================================================================
     // Step 6: Update Example
