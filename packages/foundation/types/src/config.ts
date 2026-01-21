@@ -9,7 +9,7 @@
 import { MetadataRegistry } from "./registry";
 import { Driver } from "./driver";
 import { ObjectConfig } from "./object";
-import { ObjectQLPlugin, PluginDefinition } from "./plugin";
+import { PluginDefinition } from "./plugin";
 
 export interface ObjectQLConfig {
     registry?: MetadataRegistry;
@@ -40,11 +40,10 @@ export interface ObjectQLConfig {
     /**
      * List of plugins to load. 
      * Can be:
-     * - An instance of ObjectQLPlugin (legacy, deprecated)
-     * - An instance of PluginDefinition (from @objectstack/spec, recommended)
+     * - An instance of PluginDefinition (from @objectstack/spec)
      * - A package name string
      */
-    plugins?: (ObjectQLPlugin | PluginDefinition | string)[];
+    plugins?: (PluginDefinition | string)[];
     /**
      * List of remote ObjectQL instances to connect to.
      * e.g. ["http://user-service:3000", "http://order-service:3000"]

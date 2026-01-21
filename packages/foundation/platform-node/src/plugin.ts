@@ -6,9 +6,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { ObjectQLPlugin, PluginDefinition } from '@objectql/types';
+import { PluginDefinition } from '@objectql/types';
 
-export function loadPlugin(packageName: string): ObjectQLPlugin | PluginDefinition {
+export function loadPlugin(packageName: string): PluginDefinition {
     let mod: any;
     try {
         const modulePath = require.resolve(packageName, { paths: [process.cwd()] });
@@ -17,13 +17,8 @@ export function loadPlugin(packageName: string): ObjectQLPlugin | PluginDefiniti
         throw new Error(`Failed to resolve plugin '${packageName}': ${e}`);
     }
 
-    // Helper to check if candidate is a legacy ObjectQLPlugin
-    const isLegacyPlugin = (candidate: any): candidate is ObjectQLPlugin => {
-        return candidate && typeof candidate.setup === 'function' && candidate.name;
-    };
-
-    // Helper to check if candidate is a new PluginDefinition
-    const isNewPlugin = (candidate: any): candidate is PluginDefinition => {
+    // Helper to check if candidate is a PluginDefinition
+    const isPlugin = (candidate: any): candidate is PluginDefinition => {
         return candidate && (
             // Check for any lifecycle method
             typeof candidate.onEnable === 'function' ||
@@ -39,32 +34,24 @@ export function loadPlugin(packageName: string): ObjectQLPlugin | PluginDefiniti
     };
 
     // Helper to find plugin instance
-    const findPlugin = (candidate: any): ObjectQLPlugin | PluginDefinition | undefined => {
+    const findPlugin = (candidate: any): PluginDefinition | undefined => {
             if (!candidate) return undefined;
             
-            // 1. Check if it's a new PluginDefinition
-            if (isNewPlugin(candidate)) {
+            // 1. Check if it's a PluginDefinition
+            if (isPlugin(candidate)) {
                 return candidate;
             }
 
-            // 2. Try treating as Class (legacy)
+            // 2. Try treating as Class
             if (typeof candidate === 'function') {
                 try {
                     const inst = new candidate();
-                    if (isLegacyPlugin(inst)) {
-                        return inst;
-                    }
-                    if (isNewPlugin(inst)) {
+                    if (isPlugin(inst)) {
                         return inst;
                     }
                 } catch (e) {
                     // Not a constructor or instantiation failed
                 }
-            }
-
-            // 3. Try treating as Instance (legacy)
-            if (isLegacyPlugin(candidate)) {
-                return candidate;
             }
             
             return undefined;
@@ -86,6 +73,6 @@ export function loadPlugin(packageName: string): ObjectQLPlugin | PluginDefiniti
         return instance;
     } else {
         console.error(`[PluginLoader] Failed to find plugin in '${packageName}'. Exports:`, Object.keys(mod));
-        throw new Error(`Plugin '${packageName}' must export a PluginDefinition (with lifecycle hooks) or legacy ObjectQLPlugin (with setup method).`);
+        throw new Error(`Plugin '${packageName}' must export a PluginDefinition with lifecycle hooks (onEnable, onDisable, etc.).`);
     }
 }

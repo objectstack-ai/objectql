@@ -8,7 +8,7 @@
 
 import { ObjectQL } from '../src/app';
 import { MockDriver } from './mock-driver';
-import { ObjectConfig, ObjectQLPlugin, HookContext, ActionContext, Metadata } from '@objectql/types';
+import { ObjectConfig, PluginDefinition, HookContext, ActionContext, Metadata } from '@objectql/types';
 
 const todoObject: ObjectConfig = {
     name: 'todo',
@@ -65,9 +65,9 @@ describe('ObjectQL App', () => {
         });
 
         it('should accept plugin instances', () => {
-            const mockPlugin: ObjectQLPlugin = {
-                name: 'test-plugin',
-                setup: jest.fn()
+            const mockPlugin: PluginDefinition = {
+                id: 'test-plugin',
+                onEnable: jest.fn()
             };
             const app = new ObjectQL({
                 datasources: {},
@@ -291,10 +291,10 @@ describe('ObjectQL App', () => {
 
     describe('Plugin System', () => {
         it('should initialize plugins on init', async () => {
-            const setupFn = jest.fn();
-            const mockPlugin: ObjectQLPlugin = {
-                name: 'test-plugin',
-                setup: setupFn
+            const onEnableFn = jest.fn();
+            const mockPlugin: PluginDefinition = {
+                id: 'test-plugin',
+                onEnable: onEnableFn
             };
 
             const app = new ObjectQL({
@@ -303,42 +303,18 @@ describe('ObjectQL App', () => {
             });
 
             await app.init();
-            expect(setupFn).toHaveBeenCalledWith(app);
+            expect(onEnableFn).toHaveBeenCalled();
         });
 
         it('should use plugin method', () => {
-            const mockPlugin: ObjectQLPlugin = {
-                name: 'test-plugin',
-                setup: jest.fn()
+            const mockPlugin: PluginDefinition = {
+                id: 'test-plugin',
+                onEnable: jest.fn()
             };
 
             const app = new ObjectQL({ datasources: {} });
             app.use(mockPlugin);
             expect(app).toBeDefined();
-        });
-
-        it('should provide package-scoped proxy for plugins', async () => {
-            let capturedApp: any;
-            const mockPlugin: ObjectQLPlugin = {
-                name: 'test-plugin',
-                setup: async (app) => {
-                    capturedApp = app;
-                }
-            };
-            (mockPlugin as any)._packageName = 'test-package';
-
-            const app = new ObjectQL({
-                datasources: {},
-                plugins: [mockPlugin]
-            });
-            app.registerObject(todoObject);
-
-            await app.init();
-
-            // Test proxied methods
-            const handler = jest.fn();
-            capturedApp.on('beforeCreate', 'todo', handler);
-            capturedApp.registerAction('todo', 'test', handler);
         });
     });
 

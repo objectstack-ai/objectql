@@ -14,7 +14,6 @@ import {
     ObjectQLContextOptions, 
     IObjectQL, 
     ObjectQLConfig,
-    ObjectQLPlugin,
     PluginDefinition,
     HookName,
     HookHandler,
@@ -38,7 +37,7 @@ export class ObjectQL implements IObjectQL {
     private remotes: string[] = [];
     private hooks: Record<string, HookEntry[]> = {};
     private actions: Record<string, ActionEntry> = {};
-    private pluginsList: Array<ObjectQLPlugin | PluginDefinition> = [];
+    private pluginsList: PluginDefinition[] = [];
     
     // Store config for lazy loading in init()
     private config: ObjectQLConfig;
@@ -64,7 +63,7 @@ export class ObjectQL implements IObjectQL {
             }
         }
     }
-    use(plugin: ObjectQLPlugin | PluginDefinition) {
+    use(plugin: PluginDefinition) {
         this.pluginsList.push(plugin);
     }
 
@@ -221,7 +220,7 @@ export class ObjectQL implements IObjectQL {
      * 
      * @private
      */
-    private createPluginContext(app: IObjectQL): import('@objectstack/spec').PluginContextData {
+    private createPluginContext(): import('@objectstack/spec').PluginContextData {
         // TODO: Implement full PluginContext conversion
         // For now, provide a minimal adapter that maps IObjectQL to PluginContext
         return {
@@ -273,7 +272,7 @@ export class ObjectQL implements IObjectQL {
                 t: (key: string, params?: any) => key, // Fallback: return key
                 getLocale: () => 'en'
             },
-            metadata: app.metadata,
+            metadata: this.metadata,
             events: {
                 // TODO: Implement event bus
             },
@@ -297,46 +296,14 @@ export class ObjectQL implements IObjectQL {
     async init() {
         // 0. Init Plugins (This allows plugins to register custom loaders)
         for (const plugin of this.pluginsList) {
-            // Type guard: check if it's a legacy plugin or new PluginDefinition
-            const isLegacyPlugin = 'setup' in plugin && typeof plugin.setup === 'function';
-            const pluginId = isLegacyPlugin ? (plugin as ObjectQLPlugin).name : (plugin as PluginDefinition).id || 'unknown';
+            const pluginId = plugin.id || 'unknown';
             
             console.log(`Initializing plugin '${pluginId}'...`);
             
-            let app: IObjectQL = this;
-            const pkgName = (plugin as any)._packageName;
-
-            if (pkgName) {
-                app = new Proxy(this, {
-                    get(target, prop) {
-                        if (prop === 'on') {
-                            return (event: HookName, obj: string, handler: HookHandler) => 
-                                target.on(event, obj, handler, pkgName);
-                        }
-                        if (prop === 'registerAction') {
-                            return (obj: string, act: string, handler: ActionHandler) => 
-                                target.registerAction(obj, act, handler, pkgName);
-                        }
-                        const value = (target as any)[prop];
-                        return typeof value === 'function' ? value.bind(target) : value;
-                    }
-                });
-            }
-
-            if (isLegacyPlugin) {
-                // Legacy plugin with setup() method
-                await (plugin as ObjectQLPlugin).setup(app);
-            } else {
-                // New plugin with lifecycle hooks
-                const newPlugin = plugin as PluginDefinition;
-                
-                // Call onEnable hook if it exists
-                if (newPlugin.onEnable) {
-                    // TODO: Build proper PluginContext from IObjectQL
-                    // For now, we'll create a minimal context adapter
-                    const context = this.createPluginContext(app);
-                    await newPlugin.onEnable(context);
-                }
+            // Call onEnable hook if it exists
+            if (plugin.onEnable) {
+                const context = this.createPluginContext();
+                await plugin.onEnable(context);
             }
         }
 
