@@ -228,7 +228,8 @@ export class ObjectQL implements IObjectQL {
             ql: {
                 object: (name: string) => {
                     // Return a repository-like interface
-                    return app.createContext().object(name);
+                    // Cast to ObjectQL to access createContext
+                    return (this as ObjectQL).createContext({}).object(name);
                 },
                 query: async (soql: string) => {
                     // TODO: Implement SOQL query execution
