@@ -1,0 +1,20 @@
+{
+  "name": "@objectstack/runtime",
+  "version": "0.2.0",
+  "description": "ObjectStack Runtime - Core Runtime Types",
+  "keywords": [
+    "objectstack",
+    "runtime",
+    "types"
+  ],
+  "license": "MIT",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "echo 'No tests for stub package'"
+  }
+}

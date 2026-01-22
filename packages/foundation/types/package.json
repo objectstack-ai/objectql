@@ -1,6 +1,6 @@
 {
   "name": "@objectql/types",
-  "version": "3.0.1",
+  "version": "4.0.0-beta.1",
   "description": "Pure TypeScript type definitions and interfaces for the ObjectQL protocol - The Contract",
   "keywords": [
     "objectql",
@@ -26,11 +26,13 @@
     "generate:schemas": "node scripts/generate-schemas.js",
     "test": "jest --passWithNoTests"
   },
-  "dependencies": {
+  "peerDependencies": {
     "@objectstack/spec": "^0.2.0",
     "@objectstack/runtime": "^0.2.0"
   },
   "devDependencies": {
+    "@objectstack/spec": "workspace:*",
+    "@objectstack/runtime": "workspace:*",
     "ts-json-schema-generator": "^2.4.0"
   }
 }

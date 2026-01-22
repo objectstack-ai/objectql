@@ -3,6 +3,7 @@ packages:
   - packages/drivers/*
   - packages/runtime/*
   - packages/tools/*
+  - packages/objectstack/*
   - examples/quickstart/*
   - examples/integrations/*
   - examples/showcase/*

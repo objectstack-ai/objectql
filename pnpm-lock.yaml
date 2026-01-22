@@ -516,17 +516,20 @@ importers:
         version: 5.9.3
 
   packages/foundation/types:
-    dependencies:
-      '@objectstack/runtime':
-        specifier: ^0.2.0
-        version: 0.2.0
-      '@objectstack/spec':
-        specifier: ^0.2.0
-        version: 0.2.0
     devDependencies:
+      '@objectstack/runtime':
+        specifier: workspace:*
+        version: link:../../objectstack/runtime
+      '@objectstack/spec':
+        specifier: workspace:*
+        version: link:../../objectstack/spec
       ts-json-schema-generator:
         specifier: ^2.4.0
         version: 2.4.0
+
+  packages/objectstack/runtime: {}
+
+  packages/objectstack/spec: {}
 
   packages/runtime/server:
     dependencies:
