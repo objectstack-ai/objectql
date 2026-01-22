@@ -13,7 +13,7 @@
  * These types enable frontend applications to make type-safe API calls.
  */
 
-import { UnifiedQuery, FilterExpression } from './query';
+import { UnifiedQuery, Filter } from './query';
 import { ObjectConfig } from './object';
 import { FieldConfig } from './field';
 import { ActionConfig } from './action';
@@ -142,8 +142,8 @@ export interface DataApiItemResponse<T = unknown> extends DataApiResponse<T> {
  * Query parameters for GET /api/data/:object (list records)
  */
 export interface DataApiListParams {
-    /** Filter expression (can be FilterExpression array or JSON string) */
-    filter?: FilterExpression | string;
+    /** Filter expression (can be Filter object or JSON string) */
+    filter?: Filter | string;
     /** Fields to return (array or comma-separated string) */
     fields?: string[] | string;
     /** Sort criteria - array of [field, direction] tuples */
@@ -184,7 +184,7 @@ export interface DataApiUpdateRequest {
  */
 export interface DataApiBulkUpdateRequest {
     /** Filter criteria to select records to update */
-    filters: FilterExpression;
+    filters: Filter;
     /** Data to update */
     data: Record<string, unknown>;
 }
@@ -194,7 +194,7 @@ export interface DataApiBulkUpdateRequest {
  */
 export interface DataApiBulkDeleteRequest {
     /** Filter criteria to select records to delete */
-    filters: FilterExpression;
+    filters: Filter;
 }
 
 /**
@@ -461,7 +461,7 @@ export interface IDataApiClient {
      * @param objectName - Name of the object
      * @param filters - Filter criteria
      */
-    count(objectName: string, filters?: FilterExpression): Promise<DataApiCountResponse>;
+    count(objectName: string, filters?: Filter): Promise<DataApiCountResponse>;
 }
 
 /**
