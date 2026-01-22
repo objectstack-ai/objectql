@@ -48,9 +48,21 @@ export class ObjectRepository {
      * Converts modern object-based syntax to legacy array-based syntax:
      * Input:  { age: { $gte: 18 }, $or: [{ status: "active" }, { role: "admin" }] }
      * Output: [["age", ">=", 18], "or", [["status", "=", "active"], "or", ["role", "=", "admin"]]]
+     * 
+     * Also supports backward compatibility: if filters is already in array format, pass through.
      */
     private translateFilters(filters?: Filter): FilterNode | undefined {
-        if (!filters || Object.keys(filters).length === 0) {
+        if (!filters) {
+            return undefined;
+        }
+
+        // Backward compatibility: if it's already an array (old format), pass through
+        if (Array.isArray(filters)) {
+            return filters as FilterNode;
+        }
+
+        // If it's an empty object, return undefined
+        if (typeof filters === 'object' && Object.keys(filters).length === 0) {
             return undefined;
         }
 
