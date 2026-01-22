@@ -409,6 +409,9 @@ importers:
       '@objectql/types':
         specifier: workspace:*
         version: link:../../foundation/types
+      '@objectstack/spec':
+        specifier: ^0.2.0
+        version: 0.2.0
       mongodb:
         specifier: ^5.9.2
         version: 5.9.2

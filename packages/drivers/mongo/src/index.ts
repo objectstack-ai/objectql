@@ -284,6 +284,11 @@ export class MongoDriver implements Driver {
                 const dbField = (field === 'id' || field === '_id') ? '_id' : field;
                 (findOptions.projection as any)[dbField] = 1;
             }
+            // Explicitly exclude _id if 'id' is not in the requested fields
+            const hasIdField = normalizedQuery.fields.some((f: string) => f === 'id' || f === '_id');
+            if (!hasIdField) {
+                (findOptions.projection as any)._id = 0;
+            }
         }
 
         const results = await collection.find(filter, findOptions).toArray();
@@ -344,7 +349,10 @@ export class MongoDriver implements Driver {
 
     async count(objectName: string, filters: any, options?: any): Promise<number> {
         const collection = await this.getCollection(objectName);
-        const filter = this.mapFilters(filters);
+        // Normalize to support both filter arrays and full query objects
+        const normalizedQuery = this.normalizeQuery(filters);
+        const actualFilters = normalizedQuery.filters || filters;
+        const filter = this.mapFilters(actualFilters);
         return await collection.countDocuments(filter);
     }
     
