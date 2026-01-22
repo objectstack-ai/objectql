@@ -27,7 +27,7 @@
   "scripts": {
     "start": "ts-node src/index.ts",
     "codegen": "objectql types -s src -o src/types",
-    "build": "npm run codegen && tsc && rsync -a --include '*/' --include '*.yml' --exclude '*' src/ dist/",
+    "build": "tsc && rsync -a --include '*/' --include '*.yml' --exclude '*' src/ dist/",
     "test": "jest"
   },
   "peerDependencies": {

@@ -250,6 +250,15 @@ export class ObjectQL implements IObjectQL {
         // Create the kernel instance with all collected plugins
         this.kernel = new ObjectStackKernel(this.kernelPlugins);
         
+        // TEMPORARY: Set driver for backward compatibility during migration
+        // This allows the kernel mock to delegate to the driver
+        if (typeof (this.kernel as any).setDriver === 'function') {
+            const defaultDriver = this.datasources['default'];
+            if (defaultDriver) {
+                (this.kernel as any).setDriver(defaultDriver);
+            }
+        }
+        
         // Start the kernel - this will install and start all plugins
         await this.kernel.start();
 

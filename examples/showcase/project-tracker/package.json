@@ -28,7 +28,7 @@
     "start": "objectql start --dir src",
     "seed": "ts-node src/seed.ts",
     "codegen": "objectql types -s src -o src/types",
-    "build": "npm run codegen && tsc && rsync -a --include '*/' --include '*.yml' --exclude '*' src/ dist/",
+    "build": "tsc && rsync -a --include '*/' --include '*.yml' --exclude '*' src/ dist/",
     "repl": "objectql repl",
     "test": "jest"
   },

@@ -6,25 +6,38 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import type { PluginDefinition, PluginContextData } from '@objectstack/spec';
+// Import RuntimePlugin types from @objectql/core instead of @objectstack/runtime
+// to avoid ESM/CJS compatibility issues
+interface RuntimeContext {
+    engine: any; // ObjectStackKernel
+}
 
-const AuditLogPlugin: PluginDefinition = {
-    id: 'audit-log',
+interface RuntimePlugin {
+    name: string;
+    install?: (ctx: RuntimeContext) => void | Promise<void>;
+    onStart?: (ctx: RuntimeContext) => void | Promise<void>;
+}
+
+const AuditLogPlugin: RuntimePlugin = {
+    name: 'audit-log',
     
-    onEnable: async (context: PluginContextData) => {
-        console.log('[AuditLogPlugin] Enabling...');
-
-        // TODO: Register event handlers using the new context API
-        // The PluginContextData provides:
-        // - context.events for event handling
-        // - context.ql for data access
-        // - context.logger for logging
+    async install(ctx: RuntimeContext) {
+        console.log('[AuditLogPlugin] Installing...');
+        // Plugin installation logic here
+    },
+    
+    async onStart(ctx: RuntimeContext) {
+        console.log('[AuditLogPlugin] Starting...');
         
-        // For now, we'll just log that the plugin is enabled
-        context.logger.info('[AuditLogPlugin] Plugin enabled');
+        // TODO: Register event handlers using the runtime context
+        // The RuntimeContext provides:
+        // - ctx.engine for accessing the kernel
         
-        // Note: The new plugin system uses context.events instead of app.on()
-        // This will need to be implemented when the events API is available
+        // For now, we'll just log that the plugin is started
+        console.log('[AuditLogPlugin] Plugin started');
+        
+        // Note: The new plugin system uses RuntimeContext instead of PluginContextData
+        // This will need to be enhanced when the full events API is available
     }
 };
 

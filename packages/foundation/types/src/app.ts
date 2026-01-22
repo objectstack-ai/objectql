@@ -29,4 +29,10 @@ export interface IObjectQL {
 
     registerAction(objectName: string, actionName: string, handler: ActionHandler): void;
     executeAction(objectName: string, actionName: string, ctx: ActionContext): Promise<any>;
+    
+    /**
+     * Get the underlying ObjectStackKernel instance
+     * @returns The ObjectStackKernel instance
+     */
+    getKernel(): any; // Using 'any' to avoid circular dependency with @objectstack/runtime
 }
