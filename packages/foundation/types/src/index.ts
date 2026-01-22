@@ -77,14 +77,82 @@ export type { FilterCondition } from '@objectstack/spec';
  */
 export type { RuntimePlugin } from '@objectstack/runtime';
 
-// TODO: Add remaining re-exports in future commits
-// - DriverInterface from @objectstack/spec
-// - MetadataRegistry from @objectstack/types (when available)
-// - ObjectConfig from @objectstack/types (when available)
-// - FieldConfig from @objectstack/types (when available)
-// - ObjectQLContext from @objectstack/types (when available)
-// - HookHandler from @objectstack/runtime (when available)
-// - ActionHandler from @objectstack/runtime (when available)
+/**
+ * @deprecated Import from @objectstack/spec directly.
+ * 
+ * This re-export will be removed in v5.0.0.
+ * Note: DriverInterface is the standard driver interface in @objectstack.
+ * The legacy Driver interface in this package is kept for backward compatibility.
+ * 
+ * @example
+ * ```typescript
+ * // Old (v3.x)
+ * import { Driver } from '@objectql/types';
+ * 
+ * // New (v4.0+ - recommended)
+ * import { DriverInterface } from '@objectstack/spec';
+ * ```
+ */
+export type { DriverInterface } from '@objectstack/spec';
+
+/**
+ * @deprecated Import from @objectstack/runtime directly.
+ * 
+ * This re-export will be removed in v5.0.0.
+ * 
+ * @example
+ * ```typescript
+ * // Old (v3.x)
+ * import { RuntimeContext } from '@objectql/types';
+ * 
+ * // New (v4.0+ - recommended)
+ * import { RuntimeContext } from '@objectstack/runtime';
+ * ```
+ */
+export type { RuntimeContext } from '@objectstack/runtime';
+
+/**
+ * @deprecated Import from @objectstack/runtime directly.
+ * 
+ * This re-export will be removed in v5.0.0.
+ * 
+ * @example
+ * ```typescript
+ * // Old (v3.x)
+ * import { ObjectStackKernel } from '@objectql/types';
+ * 
+ * // New (v4.0+ - recommended)
+ * import { ObjectStackKernel } from '@objectstack/runtime';
+ * ```
+ */
+export type { ObjectStackKernel } from '@objectstack/runtime';
+
+/**
+ * @deprecated Import from @objectstack/runtime directly.
+ * 
+ * This re-export will be removed in v5.0.0.
+ * 
+ * @example
+ * ```typescript
+ * // Old (v3.x)
+ * import { ObjectStackRuntimeProtocol } from '@objectql/types';
+ * 
+ * // New (v4.0+ - recommended)
+ * import { ObjectStackRuntimeProtocol } from '@objectstack/runtime';
+ * ```
+ */
+export type { ObjectStackRuntimeProtocol } from '@objectstack/runtime';
+
+// Note: The following types are currently defined in @objectql/types but may
+// move to @objectstack packages in future releases:
+// - MetadataRegistry (may move to @objectstack/types)
+// - ObjectConfig (may move to @objectstack/types)
+// - FieldConfig (may move to @objectstack/types)
+// - ObjectQLContext (may move to @objectstack/types)
+// - HookHandler (may move to @objectstack/runtime)
+// - ActionHandler (may move to @objectstack/runtime)
+//
+// These will be added as re-exports once they are available in @objectstack packages.
 
 
 // ============================================================================

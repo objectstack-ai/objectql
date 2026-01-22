@@ -59,15 +59,22 @@ These types will be re-exported for backward compatibility but users should impo
 |----------------|--------------|----------------|------------------|
 | `FilterCondition` | query.ts | @objectstack/spec | ✅ Re-export added |
 | `RuntimePlugin` | config.ts | @objectstack/runtime | ✅ Re-export added |
-| `DriverInterface` | (none yet) | @objectstack/spec | ⏳ TODO |
-| `MetadataRegistry` | registry.ts | @objectstack/types | ⏳ TODO |
-| `ObjectConfig` | object.ts | @objectstack/types | ⏳ TODO |
-| `FieldConfig` | field.ts | @objectstack/types | ⏳ TODO |
-| `ObjectQLContext` | context.ts | @objectstack/types | ⏳ TODO |
-| `HookHandler` | hook.ts | @objectstack/runtime | ⏳ TODO |
-| `ActionHandler` | action.ts | @objectstack/runtime | ⏳ TODO |
+| `DriverInterface` | (none yet) | @objectstack/spec | ✅ Re-export added |
+| `RuntimeContext` | (none yet) | @objectstack/runtime | ✅ Re-export added |
+| `ObjectStackKernel` | (none yet) | @objectstack/runtime | ✅ Re-export added |
+| `ObjectStackRuntimeProtocol` | (none yet) | @objectstack/runtime | ✅ Re-export added |
+| `MetadataRegistry` | registry.ts | @objectstack/types | ⏳ When available in @objectstack |
+| `ObjectConfig` | object.ts | @objectstack/types | ⏳ When available in @objectstack |
+| `FieldConfig` | field.ts | @objectstack/types | ⏳ When available in @objectstack |
+| `ObjectQLContext` | context.ts | @objectstack/types | ⏳ When available in @objectstack |
+| `HookHandler` | hook.ts | @objectstack/runtime | ⏳ When available in @objectstack |
+| `ActionHandler` | action.ts | @objectstack/runtime | ⏳ When available in @objectstack |
 
-**Status**: 2/9 re-exports added
+**Status**: 6/12 re-exports added (50%)
+
+**Note**: Some types (MetadataRegistry, ObjectConfig, etc.) are still defined in @objectql/types
+and will be moved to @objectstack packages in future releases. Re-exports will be added once
+the types are available in @objectstack.
 
 ---
 
