@@ -261,6 +261,8 @@ export interface App {
 export interface ObjectStackManifest {
     /** Manifest version */
     version: string;
+    /** Manifest ID */
+    id?: string;
     /** Application info */
     app?: App;
     /** List of objects */
@@ -285,6 +287,41 @@ export interface DriverInterface {
         jsonFields?: boolean;
         arrayFields?: boolean;
     };
+    /** Connect to the database */
+    connect?(): Promise<void>;
+    /** Disconnect from the database */
+    disconnect?(): Promise<void>;
+    /** Find records */
+    find?(objectName: string, query: any, options?: any): Promise<any[]>;
+    /** Find a single record */
+    findOne?(objectName: string, id: string | number, query?: any, options?: any): Promise<any>;
+    /** Create a record */
+    create?(objectName: string, data: any, options?: any): Promise<any>;
+    /** Update a record */
+    update?(objectName: string, id: string | number, data: any, options?: any): Promise<any>;
+    /** Delete a record */
+    delete?(objectName: string, id: string | number, options?: any): Promise<any>;
+    /** Count records */
+    count?(objectName: string, filters: any, options?: any): Promise<number>;
+    /** Execute a command */
+    execute?(command: any, parameters?: any[], options?: any): Promise<any>;
+    /** Bulk operations */
+    bulkCreate?(objectName: string, data: any[], options?: any): Promise<any>;
+    bulkUpdate?(objectName: string, updates: Array<{id: string | number, data: any}>, options?: any): Promise<any>;
+    bulkDelete?(objectName: string, ids: Array<string | number>, options?: any): Promise<any>;
+    /** Aggregation */
+    distinct?(objectName: string, field: string, filters?: any, options?: any): Promise<any[]>;
+    aggregate?(objectName: string, aggregations: any[], filters?: any, options?: any): Promise<any[]>;
+    /** Transaction support */
+    beginTransaction?(): Promise<any>;
+    commitTransaction?(transaction: any): Promise<void>;
+    rollbackTransaction?(transaction: any): Promise<void>;
+    /** Schema initialization */
+    init?(objects: any[]): Promise<void>;
+    /** Schema introspection */
+    introspectSchema?(): Promise<any>;
+    /** Health check */
+    checkHealth?(): Promise<boolean>;
 }
 
 /**
