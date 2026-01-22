@@ -40,12 +40,51 @@ export * from './repository';
 // ============================================================================
 // These types are defined in @objectstack but re-exported here for backward
 // compatibility. They will be removed in v5.0.0.
+//
+// Migration Guide:
+// - Old: import { FilterCondition } from '@objectql/types';
+// - New: import { FilterCondition } from '@objectstack/spec';
 
-/** @deprecated Use @objectstack/spec directly. Will be removed in v5.0 */
+/**
+ * @deprecated Import from @objectstack/spec directly.
+ * 
+ * This re-export will be removed in v5.0.0.
+ * 
+ * @example
+ * ```typescript
+ * // Old (v3.x - deprecated)
+ * import { FilterCondition } from '@objectql/types';
+ * 
+ * // New (v4.0+ - recommended)
+ * import { FilterCondition } from '@objectstack/spec';
+ * ```
+ */
 export type { FilterCondition } from '@objectstack/spec';
 
-/** @deprecated Use @objectstack/runtime directly. Will be removed in v5.0 */
+/**
+ * @deprecated Import from @objectstack/runtime directly.
+ * 
+ * This re-export will be removed in v5.0.0.
+ * 
+ * @example
+ * ```typescript
+ * // Old (v3.x - deprecated)
+ * import { RuntimePlugin } from '@objectql/types';
+ * 
+ * // New (v4.0+ - recommended)
+ * import { RuntimePlugin } from '@objectstack/runtime';
+ * ```
+ */
 export type { RuntimePlugin } from '@objectstack/runtime';
+
+// TODO: Add remaining re-exports in future commits
+// - DriverInterface from @objectstack/spec
+// - MetadataRegistry from @objectstack/types (when available)
+// - ObjectConfig from @objectstack/types (when available)
+// - FieldConfig from @objectstack/types (when available)
+// - ObjectQLContext from @objectstack/types (when available)
+// - HookHandler from @objectstack/runtime (when available)
+// - ActionHandler from @objectstack/runtime (when available)
 
 
 // ============================================================================

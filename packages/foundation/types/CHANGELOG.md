@@ -1,5 +1,90 @@
 # @objectql/types
 
+## 4.0.0-alpha.1 - 2026-01-22
+
+### 🎯 Major Changes - Plugin Architecture Migration
+
+This version marks the beginning of the migration to position ObjectQL as a query extension plugin for @objectstack/runtime. The package is being refactored to contain only query-specific types.
+
+### Added
+
+- **Query-Specific Type Organization**: Reorganized exports into clear sections
+  - Query-Specific Types (Core ObjectQL features)
+  - Re-exports from @objectstack (Backward compatibility)
+  - ObjectQL-Owned Types (May migrate in future)
+
+- **Comprehensive Deprecation Warnings**: Added detailed JSDoc deprecation notices
+  - `FilterCondition` - Use `@objectstack/spec` instead
+  - `RuntimePlugin` - Use `@objectstack/runtime` instead
+  - Includes migration examples in documentation
+
+- **Migration Documentation**:
+  - `TYPE_MIGRATION.md` - Detailed type-by-type migration tracking
+  - `README_V4.md` - v4.0 documentation with migration guide
+  - Clear migration examples in deprecation warnings
+
+- **Package Metadata Updates**:
+  - Added `objectstack-plugin` keyword
+  - Added peerDependencies for `@objectstack/spec` and `@objectstack/runtime`
+  - Updated description to reflect plugin architecture
+
+### Changed
+
+- **Package Description**: Now "Query-specific type definitions for ObjectQL - A plugin for @objectstack/runtime"
+- **Package Keywords**: Updated to emphasize query focus and plugin architecture
+- **Version**: 3.0.1 → 4.0.0-alpha.1 (breaking changes in future)
+
+### Deprecated
+
+The following types are re-exported for backward compatibility but will be removed in v5.0.0:
+
+- `FilterCondition` - Import from `@objectstack/spec` instead
+- `RuntimePlugin` - Import from `@objectstack/runtime` instead
+
+More types will be deprecated in future alpha releases as they migrate to @objectstack packages.
+
+### Migration Guide
+
+#### v3.x to v4.0 Migration
+
+**Option 1: Update Imports (Recommended)**
+
+```typescript
+// Before (v3.x)
+import { FilterCondition, UnifiedQuery } from '@objectql/types';
+
+// After (v4.0 - Recommended)
+import { FilterCondition } from '@objectstack/spec';
+import { UnifiedQuery } from '@objectql/types';
+```
+
+**Option 2: Use Re-exports (Temporary)**
+
+```typescript
+// Still works in v4.0 but deprecated
+import { FilterCondition, UnifiedQuery } from '@objectql/types';
+```
+
+#### Deprecation Timeline
+
+- **v4.0-alpha**: Re-exports available with deprecation warnings
+- **v4.0-beta**: All re-exports finalized
+- **v4.0**: Stable release with full backward compatibility
+- **v4.x**: Re-exports maintained throughout v4 lifecycle
+- **v5.0**: Re-exports removed (breaking change)
+
+### Notes
+
+#### Query-Specific Types (Staying in @objectql/types)
+
+- `UnifiedQuery`, `Filter`, `AggregateOption`
+- `IntrospectedTable`, `IntrospectedColumn`, `IntrospectedForeignKey`
+- `ObjectQLRepository`
+
+See `TYPE_MIGRATION.md` for complete details.
+
+---
+
 ## 3.0.1
 
 ### Patch Changes
