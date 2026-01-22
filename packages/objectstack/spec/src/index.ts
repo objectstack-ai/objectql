@@ -14,10 +14,57 @@
  * - Explicit operators: { field: { $eq: value, $gt: 10 } }
  * - Logical operators: { $and: [...], $or: [...] }
  */
-export type FilterCondition = 
-    | { [key: string]: any } // Field equality or operator object
-    | { $and?: FilterCondition[] }
-    | { $or?: FilterCondition[] };
+export interface FilterCondition {
+    [key: string]: any;
+    $and?: FilterCondition[];
+    $or?: FilterCondition[];
+    $not?: FilterCondition;
+}
+
+/**
+ * Filter Node - AST representation of a filter condition
+ */
+export interface FilterNode {
+    type: 'and' | 'or' | 'not' | 'comparison';
+    operator?: string;
+    field?: string;
+    value?: any;
+    children?: FilterNode[];
+}
+
+/**
+ * Sort Node - AST representation of sort order
+ */
+export interface SortNode {
+    field: string;
+    order: 'asc' | 'desc';
+}
+
+/**
+ * Query AST - Abstract Syntax Tree for queries
+ */
+export interface QueryAST {
+    /** Target object name */
+    object?: string;
+    /** Fields to select */
+    fields?: string[];
+    /** Filter conditions */
+    filters?: FilterNode;
+    /** Sort order */
+    sort?: SortNode[];
+    /** Number of records to skip */
+    skip?: number;
+    /** Maximum number of records to return */
+    top?: number;
+    /** Group by fields */
+    groupBy?: string[];
+    /** Aggregations to perform */
+    aggregations?: Array<{
+        function: string;
+        field: string;
+        alias?: string;
+    }>;
+}
 
 /**
  * Protocol Field Types
@@ -195,3 +242,75 @@ export interface Action {
     /** Whether this action is internal only */
     internal?: boolean;
 }
+
+/**
+ * Application Manifest
+ */
+export interface App {
+    /** App name */
+    name: string;
+    /** App version */
+    version?: string;
+    /** App description */
+    description?: string;
+}
+
+/**
+ * ObjectStack Manifest
+ */
+export interface ObjectStackManifest {
+    /** Manifest version */
+    version: string;
+    /** Application info */
+    app?: App;
+    /** List of objects */
+    objects?: ServiceObject[];
+}
+
+/**
+ * Driver Interface
+ * 
+ * Base interface for database drivers
+ */
+export interface DriverInterface {
+    /** Driver name */
+    name?: string;
+    /** Driver version */
+    version?: string;
+    /** Driver capabilities */
+    supports?: {
+        transactions?: boolean;
+        joins?: boolean;
+        fullTextSearch?: boolean;
+        jsonFields?: boolean;
+        arrayFields?: boolean;
+    };
+}
+
+/**
+ * Driver Options
+ * 
+ * Configuration options for database drivers
+ */
+export interface DriverOptions {
+    /** Connection string or configuration */
+    connection?: string | any;
+    /** Additional driver-specific options */
+    [key: string]: any;
+}
+
+/**
+ * Plugin Definition
+ * 
+ * Base interface for plugins
+ */
+export interface PluginDefinition {
+    /** Plugin name */
+    name: string;
+    /** Plugin version */
+    version?: string;
+    /** Plugin description */
+    description?: string;
+}
+
+

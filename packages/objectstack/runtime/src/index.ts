@@ -11,7 +11,7 @@
  */
 export interface RuntimeContext {
     /** The ObjectStack kernel instance */
-    engine: any; // ObjectStackKernel
+    engine: ObjectStackKernel;
 }
 
 /**
@@ -35,13 +35,71 @@ export interface RuntimePlugin {
  * ObjectStack Kernel
  * The core runtime engine
  */
-export interface ObjectStackKernel {
+export class ObjectStackKernel {
     /** Query interface (QL) */
-    ql: any;
+    public ql: any = null;
+
+    constructor(plugins: RuntimePlugin[] = []) {
+        // Stub implementation
+    }
+
     /** Start the kernel */
-    start(): Promise<void>;
+    async start(): Promise<void> {
+        // Stub implementation
+    }
+
     /** Stop the kernel */
-    stop?(): Promise<void>;
+    async stop(): Promise<void> {
+        // Stub implementation
+    }
+
     /** Seed initial data */
-    seed?(): Promise<void>;
+    async seed(): Promise<void> {
+        // Stub implementation
+    }
+
+    /** Find records */
+    async find(objectName: string, query: any): Promise<{ value: any[]; count: number }> {
+        return { value: [], count: 0 };
+    }
+
+    /** Get a single record */
+    async get(objectName: string, id: string): Promise<any> {
+        return {};
+    }
+
+    /** Create a record */
+    async create(objectName: string, data: any): Promise<any> {
+        return data;
+    }
+
+    /** Update a record */
+    async update(objectName: string, id: string, data: any): Promise<any> {
+        return data;
+    }
+
+    /** Delete a record */
+    async delete(objectName: string, id: string): Promise<boolean> {
+        return true;
+    }
+
+    /** Get metadata for an object */
+    getMetadata(objectName: string): any {
+        return {};
+    }
+
+    /** Get view configuration */
+    getView(objectName: string, viewType?: 'list' | 'form'): any {
+        return null;
+    }
 }
+
+/**
+ * ObjectStack Runtime Protocol
+ * Base class for runtime protocol implementations
+ */
+export class ObjectStackRuntimeProtocol {
+    // Stub implementation
+}
+
+
