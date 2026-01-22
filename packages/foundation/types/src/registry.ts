@@ -23,5 +23,5 @@ export interface Metadata {
     id: string;
     path?: string;
     package?: string;
-    content: any;
+    content: unknown;
 }

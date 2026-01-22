@@ -6,6 +6,17 @@
  */
 
 /**
+ * Runtime Error
+ * Simple error class for runtime package
+ */
+export class RuntimeError extends Error {
+    constructor(public code: string, message: string) {
+        super(message);
+        this.name = 'RuntimeError';
+    }
+}
+
+/**
  * Action Context
  * Context passed to action handlers
  */
@@ -80,7 +91,10 @@ export class ActionManager {
         const entry = this.actions.get(key);
         
         if (!entry) {
-            throw new Error(`Action '${actionName}' not found for object '${objectName}'`);
+            throw new RuntimeError(
+                'ACTION_NOT_FOUND',
+                `Action '${actionName}' not found for object '${objectName}'`
+            );
         }
         
         return await entry.handler(ctx);

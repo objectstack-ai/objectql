@@ -8,6 +8,7 @@
 
 import type { Filter } from '@objectql/types';
 import type { FilterNode } from '@objectstack/spec';
+import { ObjectQLError } from '@objectql/types';
 
 /**
  * Filter Translator
@@ -63,7 +64,10 @@ export class FilterTranslator {
         
         // Note: $not operator is not currently supported in the legacy FilterNode format
         if (filter.$not) {
-            throw new Error('$not operator is not supported. Use $ne for field negation instead.');
+            throw new ObjectQLError({
+                code: 'UNSUPPORTED_OPERATOR',
+                message: '$not operator is not supported. Use $ne for field negation instead.'
+            });
         }
         
         // Process field conditions

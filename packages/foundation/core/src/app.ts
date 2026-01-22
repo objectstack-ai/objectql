@@ -77,10 +77,16 @@ export class ObjectQL implements IObjectQL {
         if (config.registry) {
             // Copy metadata from provided registry to kernel's registry
             for (const type of config.registry.getTypes()) {
-                for (const item of config.registry.list(type)) {
+                const items = config.registry.list(type);
+                for (const item of items) {
+                    // Safely extract the item's id/name
+                    const itemId = typeof item === 'object' && item !== null 
+                        ? (item as { name?: string; id?: string }).name || (item as { name?: string; id?: string }).id || 'unknown'
+                        : 'unknown';
+                    
                     this.kernel.metadata.register(type, {
                         type,
-                        id: (item as any).name || (item as any).id,
+                        id: itemId,
                         content: item
                     });
                 }

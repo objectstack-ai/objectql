@@ -38,7 +38,7 @@ export class ObjectRepository {
         return this.app.getKernel();
     }
 
-    private getOptions(extra: any = {}) {
+    private getOptions(extra: Record<string, unknown> = {}) {
         return {
             transaction: this.context.transactionHandle,
             ...extra

@@ -16,7 +16,7 @@ export interface MetadataItem {
     /** Unique identifier */
     id: string;
     /** The actual metadata content */
-    content: any;
+    content: unknown;
     /** Package name this metadata belongs to */
     packageName?: string;
     /** Optional path to the metadata source file */
@@ -113,7 +113,7 @@ export class MetadataRegistry {
         const items = this.packages.get(packageName);
         if (!items) {
             // Also try to find by scanning all entries (for compatibility)
-            for (const [type, typeMap] of this.store.entries()) {
+            for (const [, typeMap] of this.store.entries()) {
                 const entriesToDelete: string[] = [];
                 for (const [id, item] of typeMap.entries()) {
                     if (item.package === packageName || item.packageName === packageName) {
