@@ -1,0 +1,487 @@
+# Modern Filter Syntax Guide
+
+ObjectQL now supports a modern, intuitive object-based filter syntax inspired by MongoDB, Prisma, and other leading ORMs. This guide covers the new filter syntax and migration from the legacy array-based format.
+
+## Overview
+
+### Old Syntax (Legacy - Still Supported)
+```typescript
+const results = await repo.find({
+  filters: [
+    ['status', '=', 'active'],
+    'and',
+    ['price', '>', 100]
+  ]
+});
+```
+
+### New Syntax (Recommended)
+```typescript
+const results = await repo.find({
+  filters: {
+    status: 'active',
+    price: { $gt: 100 }
+  }
+});
+```
+
+## Basic Filters
+
+### Implicit Equality
+
+The simplest form - just specify field and value:
+
+```typescript
+// Find products in Electronics category
+const results = await repo.find({
+  filters: { category: 'Electronics' }
+});
+
+// Multiple conditions (implicit AND)
+const results = await repo.find({
+  filters: {
+    category: 'Electronics',
+    status: 'active'
+  }
+});
+```
+
+### Explicit Equality ($eq)
+
+```typescript
+const results = await repo.find({
+  filters: {
+    status: { $eq: 'active' }
+  }
+});
+```
+
+## Comparison Operators
+
+### Equality and Inequality
+
+```typescript
+// Equal
+{ status: { $eq: 'active' } }
+
+// Not equal
+{ status: { $ne: 'inactive' } }
+```
+
+### Numeric and Date Comparisons
+
+```typescript
+// Greater than
+{ price: { $gt: 100 } }
+
+// Greater than or equal
+{ price: { $gte: 100 } }
+
+// Less than
+{ price: { $lt: 500 } }
+
+// Less than or equal
+{ price: { $lte: 500 } }
+
+// Range query (combines operators)
+{
+  price: {
+    $gte: 100,
+    $lte: 500
+  }
+}
+
+// Date comparisons
+{
+  createdAt: {
+    $gte: new Date('2024-01-01'),
+    $lt: new Date('2024-12-31')
+  }
+}
+```
+
+### Set Membership
+
+```typescript
+// In array
+{
+  status: { $in: ['active', 'pending', 'processing'] }
+}
+
+// Not in array
+{
+  status: { $nin: ['inactive', 'deleted'] }
+}
+```
+
+## String Operators
+
+```typescript
+// Contains substring (case-sensitive)
+{
+  name: { $contains: 'laptop' }
+}
+
+// Starts with
+{
+  name: { $startsWith: 'Apple' }
+}
+
+// Ends with
+{
+  email: { $endsWith: '@company.com' }
+}
+```
+
+## Null and Existence Checks
+
+```typescript
+// Is null
+{
+  deletedAt: { $null: true }
+}
+
+// Is not null
+{
+  deletedAt: { $null: false }
+}
+
+// Field exists (primarily for NoSQL)
+{
+  optionalField: { $exist: true }
+}
+```
+
+## Logical Operators
+
+### AND (Explicit)
+
+```typescript
+// Explicit AND
+const results = await repo.find({
+  filters: {
+    $and: [
+      { category: 'Electronics' },
+      { status: 'active' },
+      { price: { $gt: 100 } }
+    ]
+  }
+});
+
+// Note: Top-level fields are implicitly AND-ed
+// These are equivalent:
+{ category: 'Electronics', status: 'active' }
+{ $and: [{ category: 'Electronics' }, { status: 'active' }] }
+```
+
+### OR
+
+```typescript
+const results = await repo.find({
+  filters: {
+    $or: [
+      { category: 'Electronics' },
+      { category: 'Computers' },
+      { featured: true }
+    ]
+  }
+});
+```
+
+### NOT
+
+```typescript
+const results = await repo.find({
+  filters: {
+    $not: {
+      status: 'deleted'
+    }
+  }
+});
+```
+
+### Complex Nested Logic
+
+```typescript
+// (category = 'Electronics' OR category = 'Computers') 
+// AND status = 'active' 
+// AND price > 100
+const results = await repo.find({
+  filters: {
+    $and: [
+      {
+        $or: [
+          { category: 'Electronics' },
+          { category: 'Computers' }
+        ]
+      },
+      { status: 'active' },
+      { price: { $gt: 100 } }
+    ]
+  }
+});
+```
+
+## Real-World Examples
+
+### E-Commerce Product Search
+
+```typescript
+// Find available products in price range
+const products = await repo.find({
+  filters: {
+    status: 'active',
+    stock: { $gt: 0 },
+    price: {
+      $gte: 50,
+      $lte: 200
+    },
+    category: { $in: ['Electronics', 'Computers', 'Accessories'] }
+  }
+});
+```
+
+### User Management
+
+```typescript
+// Find active users created in the last 30 days
+const thirtyDaysAgo = new Date();
+thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+const recentUsers = await repo.find({
+  filters: {
+    status: 'active',
+    emailVerified: true,
+    createdAt: { $gte: thirtyDaysAgo },
+    $or: [
+      { role: 'premium' },
+      { trialExpires: { $null: false } }
+    ]
+  }
+});
+```
+
+### Task Management
+
+```typescript
+// Find high-priority tasks assigned to team or overdue
+const urgentTasks = await repo.find({
+  filters: {
+    $or: [
+      { priority: 'high' },
+      { dueDate: { $lt: new Date() } }
+    ],
+    status: { $nin: ['completed', 'cancelled'] },
+    assignedTo: { $in: teamMemberIds }
+  }
+});
+```
+
+## Operator Reference Table
+
+| Operator | Description | Example |
+|----------|-------------|---------|
+| (implicit) | Equal to | `{ status: 'active' }` |
+| `$eq` | Equal to | `{ status: { $eq: 'active' } }` |
+| `$ne` | Not equal to | `{ status: { $ne: 'deleted' } }` |
+| `$gt` | Greater than | `{ price: { $gt: 100 } }` |
+| `$gte` | Greater than or equal | `{ price: { $gte: 100 } }` |
+| `$lt` | Less than | `{ price: { $lt: 500 } }` |
+| `$lte` | Less than or equal | `{ price: { $lte: 500 } }` |
+| `$in` | In array | `{ status: { $in: ['active', 'pending'] } }` |
+| `$nin` | Not in array | `{ status: { $nin: ['deleted'] } }` |
+| `$contains` | Contains substring | `{ name: { $contains: 'pro' } }` |
+| `$startsWith` | Starts with | `{ name: { $startsWith: 'Apple' } }` |
+| `$endsWith` | Ends with | `{ email: { $endsWith: '@gmail.com' } }` |
+| `$null` | Is null (true) or not null (false) | `{ deletedAt: { $null: true } }` |
+| `$exist` | Field exists | `{ metadata: { $exist: true } }` |
+| `$and` | Logical AND | `{ $and: [{...}, {...}] }` |
+| `$or` | Logical OR | `{ $or: [{...}, {...}] }` |
+| `$not` | Logical NOT | `{ $not: {...} }` |
+
+## Migration Guide
+
+### Simple Equality
+```typescript
+// Old
+filters: [['status', '=', 'active']]
+
+// New
+filters: { status: 'active' }
+```
+
+### Multiple Conditions (AND)
+```typescript
+// Old
+filters: [
+  ['category', '=', 'Electronics'],
+  'and',
+  ['status', '=', 'active']
+]
+
+// New
+filters: {
+  category: 'Electronics',
+  status: 'active'
+}
+```
+
+### Comparison Operators
+```typescript
+// Old
+filters: [['price', '>', 100]]
+
+// New
+filters: { price: { $gt: 100 } }
+```
+
+### OR Conditions
+```typescript
+// Old
+filters: [
+  ['category', '=', 'Electronics'],
+  'or',
+  ['category', '=', 'Furniture']
+]
+
+// New
+filters: {
+  $or: [
+    { category: 'Electronics' },
+    { category: 'Furniture' }
+  ]
+}
+```
+
+### Complex Nested Filters
+```typescript
+// Old
+filters: [
+  [
+    ['category', '=', 'Electronics'],
+    'or',
+    ['category', '=', 'Furniture']
+  ],
+  'and',
+  ['status', '=', 'active']
+]
+
+// New
+filters: {
+  $and: [
+    {
+      $or: [
+        { category: 'Electronics' },
+        { category: 'Furniture' }
+      ]
+    },
+    { status: 'active' }
+  ]
+}
+```
+
+## TypeScript Support
+
+The new filter syntax is fully type-safe:
+
+```typescript
+import { Filter } from '@objectql/types';
+
+// Define a typed filter
+interface Product {
+  name: string;
+  price: number;
+  category: string;
+  inStock: boolean;
+}
+
+const productFilter: Filter<Product> = {
+  category: 'Electronics',
+  price: { $gte: 100, $lte: 500 },
+  inStock: true
+};
+
+const results = await repo.find({ filters: productFilter });
+```
+
+## Best Practices
+
+### 1. Use Implicit Equality for Simple Conditions
+```typescript
+// ✅ Good
+{ status: 'active' }
+
+// ❌ Unnecessary
+{ status: { $eq: 'active' } }
+```
+
+### 2. Group Related Conditions
+```typescript
+// ✅ Good - Price range clearly grouped
+{
+  category: 'Electronics',
+  price: {
+    $gte: 100,
+    $lte: 500
+  }
+}
+
+// ❌ Less clear
+{
+  category: 'Electronics',
+  $and: [
+    { price: { $gte: 100 } },
+    { price: { $lte: 500 } }
+  ]
+}
+```
+
+### 3. Use $in for Multiple Values
+```typescript
+// ✅ Good
+{ status: { $in: ['active', 'pending', 'processing'] } }
+
+// ❌ Verbose
+{
+  $or: [
+    { status: 'active' },
+    { status: 'pending' },
+    { status: 'processing' }
+  ]
+}
+```
+
+### 4. Keep Filters Readable
+```typescript
+// ✅ Good - Extract complex filters to variables
+const priceRange = { $gte: 100, $lte: 500 };
+const activeCategories = ['Electronics', 'Computers'];
+
+const filter = {
+  price: priceRange,
+  category: { $in: activeCategories },
+  status: 'active'
+};
+
+const results = await repo.find({ filters: filter });
+```
+
+## Performance Considerations
+
+1. **Index Your Fields**: Ensure fields used in filters are indexed in your database
+2. **Use Specific Operators**: Use `$in` instead of multiple `$or` conditions when possible
+3. **Limit Range Queries**: Range queries on non-indexed fields can be slow
+4. **Avoid $not When Possible**: Negative conditions can prevent index usage in some databases
+
+## Backward Compatibility
+
+The legacy array-based syntax is still fully supported for existing code:
+
+```typescript
+// This still works
+const results = await repo.find({
+  filters: [['status', '=', 'active']]
+});
+```
+
+However, new code should use the modern object-based syntax for better readability and type safety.
