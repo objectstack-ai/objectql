@@ -127,6 +127,7 @@ export class SqlDriver implements Driver {
      * 
      * QueryAST format uses 'top' for limit, while UnifiedQuery uses 'limit'.
      * QueryAST sort is array of {field, order}, while UnifiedQuery is array of [field, order].
+     * QueryAST uses 'aggregations', while legacy uses 'aggregate'.
      */
     private normalizeQuery(query: any): any {
         if (!query) return {};
@@ -136,6 +137,16 @@ export class SqlDriver implements Driver {
         // Normalize limit/top
         if (normalized.top !== undefined && normalized.limit === undefined) {
             normalized.limit = normalized.top;
+        }
+        
+        // Normalize aggregations/aggregate
+        if (normalized.aggregations !== undefined && normalized.aggregate === undefined) {
+            // Convert QueryAST aggregations format to legacy aggregate format
+            normalized.aggregate = normalized.aggregations.map((agg: any) => ({
+                func: agg.function,
+                field: agg.field,
+                alias: agg.alias
+            }));
         }
         
         // Normalize sort format
@@ -250,12 +261,14 @@ export class SqlDriver implements Driver {
     }
 
     async count(objectName: string, filters: any, options?: any): Promise<number> {
+        // Normalize the query to support both QueryAST and legacy formats
+        const normalizedQuery = this.normalizeQuery(filters);
         const builder = this.getBuilder(objectName, options);
         
-        let actualFilters = filters;
+        let actualFilters = normalizedQuery;
         // If filters is a query object with a 'filters' property, use that
-        if (filters && !Array.isArray(filters) && filters.filters) {
-            actualFilters = filters.filters;
+        if (normalizedQuery && !Array.isArray(normalizedQuery) && normalizedQuery.filters) {
+            actualFilters = normalizedQuery.filters;
         }
 
         if (actualFilters) {
@@ -285,25 +298,26 @@ export class SqlDriver implements Driver {
 
     // Aggregation
     async aggregate(objectName: string, query: any, options?: any): Promise<any> {
+        const normalizedQuery = this.normalizeQuery(query);
         const builder = this.getBuilder(objectName, options);
         
         // 1. Filter
-        if (query.filters) {
-            this.applyFilters(builder, query.filters);
+        if (normalizedQuery.filters) {
+            this.applyFilters(builder, normalizedQuery.filters);
         }
 
         // 2. GroupBy
-        if (query.groupBy) {
-            builder.groupBy(query.groupBy);
+        if (normalizedQuery.groupBy) {
+            builder.groupBy(normalizedQuery.groupBy);
             // Select grouping keys
-            for (const field of query.groupBy) {
+            for (const field of normalizedQuery.groupBy) {
                 builder.select(field);
             }
         }
 
         // 3. Aggregate Functions
-        if (query.aggregate) {
-            for (const agg of query.aggregate) {
+        if (normalizedQuery.aggregate) {
+            for (const agg of normalizedQuery.aggregate) {
                 // func: 'sum', field: 'amount', alias: 'total'
                 const rawFunc = this.mapAggregateFunc(agg.func); 
                 if (agg.alias) {
@@ -870,6 +884,28 @@ export class SqlDriver implements Driver {
         }
         
         return uniqueColumns;
+    }
+
+    /**
+     * Connect to the database (optional - connection is established in constructor)
+     * This method is here for DriverInterface compatibility.
+     */
+    async connect(): Promise<void> {
+        // Connection is already established in constructor via Knex
+        // This is a no-op for compatibility with DriverInterface
+        return Promise.resolve();
+    }
+
+    /**
+     * Check database connection health
+     */
+    async checkHealth(): Promise<boolean> {
+        try {
+            await this.knex.raw('SELECT 1');
+            return true;
+        } catch (error) {
+            return false;
+        }
     }
 
     async disconnect() {
