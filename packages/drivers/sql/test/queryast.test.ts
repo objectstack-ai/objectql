@@ -74,9 +74,18 @@ describe('SqlDriver (QueryAST Format)', () => {
         });
 
         it('should support disconnect method', async () => {
-            await expect(driver.disconnect()).resolves.toBeUndefined();
+            // Create a separate driver instance for this test
+            const testDriver = new SqlDriver({
+                client: 'sqlite3',
+                connection: {
+                    filename: ':memory:'
+                },
+                useNullAsDefault: true
+            });
+            
+            await expect(testDriver.disconnect()).resolves.toBeUndefined();
             // After disconnect, health check should fail
-            const healthy = await driver.checkHealth();
+            const healthy = await testDriver.checkHealth();
             expect(healthy).toBe(false);
         });
     });
