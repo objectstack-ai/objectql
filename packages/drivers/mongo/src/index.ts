@@ -9,7 +9,27 @@
 import { Driver } from '@objectql/types';
 import { MongoClient, Db, Filter, ObjectId, FindOptions } from 'mongodb';
 
+/**
+ * MongoDB Driver for ObjectQL
+ * 
+ * Implements both the legacy Driver interface from @objectql/types and
+ * the standard DriverInterface from @objectstack/spec for compatibility
+ * with the new kernel-based plugin system.
+ * 
+ * The driver internally converts QueryAST format to MongoDB query format.
+ */
 export class MongoDriver implements Driver {
+    // Driver metadata (ObjectStack-compatible)
+    public readonly name = 'MongoDriver';
+    public readonly version = '3.0.1';
+    public readonly supports = {
+        transactions: true,
+        joins: false,
+        fullTextSearch: true,
+        jsonFields: true,
+        arrayFields: true
+    };
+
     private client: MongoClient;
     private db?: Db;
     private config: any;
@@ -18,12 +38,37 @@ export class MongoDriver implements Driver {
     constructor(config: { url: string, dbName?: string }) {
         this.config = config;
         this.client = new MongoClient(config.url);
-        this.connected = this.connect();
+        this.connected = this.internalConnect();
     }
 
-    async connect() {
+    /**
+     * Internal connect method used in constructor
+     */
+    private async internalConnect() {
         await this.client.connect();
         this.db = this.client.db(this.config.dbName);
+    }
+
+    /**
+     * Connect to the database (for DriverInterface compatibility)
+     * This method ensures the connection is established.
+     */
+    async connect(): Promise<void> {
+        await this.connected;
+    }
+
+    /**
+     * Check database connection health
+     */
+    async checkHealth(): Promise<boolean> {
+        try {
+            await this.connected;
+            if (!this.db) return false;
+            await this.db.admin().ping();
+            return true;
+        } catch (error) {
+            return false;
+        }
     }
 
     private async getCollection(objectName: string) {
@@ -170,28 +215,78 @@ export class MongoDriver implements Driver {
         return mongoCondition;
     }
 
+    /**
+     * Normalizes query format to support both legacy UnifiedQuery and QueryAST formats.
+     * This ensures backward compatibility while supporting the new @objectstack/spec interface.
+     * 
+     * QueryAST format uses 'top' for limit, while UnifiedQuery uses 'limit'.
+     * QueryAST sort is array of {field, order}, while UnifiedQuery is array of [field, order].
+     * QueryAST uses 'aggregations', while legacy uses 'aggregate'.
+     */
+    private normalizeQuery(query: any): any {
+        if (!query) return {};
+        
+        const normalized: any = { ...query };
+        
+        // Normalize limit/top
+        if (normalized.top !== undefined && normalized.limit === undefined) {
+            normalized.limit = normalized.top;
+        }
+        
+        // Normalize aggregations/aggregate
+        if (normalized.aggregations !== undefined && normalized.aggregate === undefined) {
+            // Convert QueryAST aggregations format to legacy aggregate format
+            normalized.aggregate = normalized.aggregations.map((agg: any) => ({
+                func: agg.function || agg.func,
+                field: agg.field,
+                alias: agg.alias
+            }));
+        }
+        
+        // Normalize sort format
+        if (normalized.sort && Array.isArray(normalized.sort)) {
+            // Check if it's already in the array format [field, order]
+            const firstSort = normalized.sort[0];
+            if (firstSort && typeof firstSort === 'object' && !Array.isArray(firstSort)) {
+                // Convert from QueryAST format {field, order} to internal format [field, order]
+                normalized.sort = normalized.sort.map((item: any) => [
+                    item.field,
+                    item.order || item.direction || item.dir || 'asc'
+                ]);
+            }
+        }
+        
+        return normalized;
+    }
+
     async find(objectName: string, query: any, options?: any): Promise<any[]> {
+        const normalizedQuery = this.normalizeQuery(query);
         const collection = await this.getCollection(objectName);
-        const filter = this.mapFilters(query.filters);
+        const filter = this.mapFilters(normalizedQuery.filters);
         
         const findOptions: FindOptions = {};
-        if (query.skip) findOptions.skip = query.skip;
-        if (query.limit) findOptions.limit = query.limit;
-        if (query.sort) {
+        if (normalizedQuery.skip) findOptions.skip = normalizedQuery.skip;
+        if (normalizedQuery.limit) findOptions.limit = normalizedQuery.limit;
+        if (normalizedQuery.sort) {
             // map [['field', 'desc']] to { field: -1 }
             findOptions.sort = {};
-            for (const [field, order] of query.sort) {
+            for (const [field, order] of normalizedQuery.sort) {
                 // Map both 'id' and '_id' to '_id' for backward compatibility
                 const dbField = (field === 'id' || field === '_id') ? '_id' : field;
                 (findOptions.sort as any)[dbField] = order === 'desc' ? -1 : 1;
             }
         }
-        if (query.fields && query.fields.length > 0) {
+        if (normalizedQuery.fields && normalizedQuery.fields.length > 0) {
             findOptions.projection = {};
-            for (const field of query.fields) {
+            for (const field of normalizedQuery.fields) {
                 // Map both 'id' and '_id' to '_id' for backward compatibility
                 const dbField = (field === 'id' || field === '_id') ? '_id' : field;
                 (findOptions.projection as any)[dbField] = 1;
+            }
+            // Explicitly exclude _id if 'id' is not in the requested fields
+            const hasIdField = normalizedQuery.fields.some((f: string) => f === 'id' || f === '_id');
+            if (!hasIdField) {
+                (findOptions.projection as any)._id = 0;
             }
         }
 
@@ -253,7 +348,10 @@ export class MongoDriver implements Driver {
 
     async count(objectName: string, filters: any, options?: any): Promise<number> {
         const collection = await this.getCollection(objectName);
-        const filter = this.mapFilters(filters);
+        // Normalize to support both filter arrays and full query objects
+        const normalizedQuery = this.normalizeQuery(filters);
+        const actualFilters = normalizedQuery.filters || filters;
+        const filter = this.mapFilters(actualFilters);
         return await collection.countDocuments(filter);
     }
     
