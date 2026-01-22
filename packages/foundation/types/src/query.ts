@@ -14,11 +14,13 @@ import type { FilterCondition } from '@objectstack/spec';
  * Supports MongoDB/Prisma-style object-based syntax:
  * - Implicit equality: { field: value }
  * - Explicit operators: { field: { $eq: value, $gt: 10 } }
- * - Logical operators: { $and: [...], $or: [...], $not: {...} }
+ * - Logical operators: { $and: [...], $or: [...] }
  * - String operators: { name: { $contains: "text" } }
- * - Range operators: { age: { $between: [18, 65] } }
+ * - Range operators: { age: { $gte: 18, $lte: 65 } }
  * - Set operators: { status: { $in: ["active", "pending"] } }
  * - Null checks: { field: { $null: true } }
+ * 
+ * Note: $not operator is not supported. Use $ne for field-level negation.
  */
 export type Filter = FilterCondition;
 

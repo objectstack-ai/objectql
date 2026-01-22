@@ -109,9 +109,13 @@ export class ObjectRepository {
             if (value === null || value === undefined) {
                 nodes.push([field, '=', value]);
             } else if (typeof value === 'object' && !Array.isArray(value) && !(value instanceof Date)) {
-                // Explicit operators
-                for (const [op, opValue] of Object.entries(value)) {
-                    if (nodes.length > 0 && nodes[nodes.length - 1] !== 'and') {
+                // Explicit operators - multiple operators on same field are AND-ed together
+                const entries = Object.entries(value);
+                for (let i = 0; i < entries.length; i++) {
+                    const [op, opValue] = entries[i];
+                    
+                    // Add 'and' before each operator (except the very first node)
+                    if (nodes.length > 0 || i > 0) {
                         nodes.push('and');
                     }
                     
