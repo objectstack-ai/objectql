@@ -257,11 +257,12 @@ export interface App {
 
 /**
  * ObjectStack Manifest
+ * Configuration manifest for ObjectStack applications
  */
 export interface ObjectStackManifest {
     /** Manifest version */
     version: string;
-    /** Manifest ID */
+    /** Unique identifier for the manifest (optional) */
     id?: string;
     /** Application info */
     app?: App;

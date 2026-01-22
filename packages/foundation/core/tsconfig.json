@@ -5,7 +5,13 @@
     "rootDir": "src"
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "../../../node_modules/@objectstack+objectql"],
+  "exclude": [
+    "node_modules", 
+    "dist", 
+    // Exclude external @objectstack/objectql package that has type incompatibilities
+    // with our stub packages during migration phase
+    "../../../node_modules/@objectstack+objectql"
+  ],
   "references": [
     { "path": "../types" }
   ]
