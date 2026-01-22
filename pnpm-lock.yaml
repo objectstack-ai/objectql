@@ -288,6 +288,9 @@ importers:
       '@types/jest':
         specifier: ^30.0.0
         version: 30.0.0
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.29
       jest:
         specifier: ^30.2.0
         version: 30.2.0(@types/node@20.19.29)(ts-node@10.9.2(@types/node@20.19.29)(typescript@5.9.3))
@@ -318,6 +321,9 @@ importers:
       '@types/jest':
         specifier: ^30.0.0
         version: 30.0.0
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.29
       jest:
         specifier: ^30.2.0
         version: 30.2.0(@types/node@20.19.29)(ts-node@10.9.2(@types/node@20.19.29)(typescript@5.9.3))
