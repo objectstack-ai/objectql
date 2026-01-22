@@ -1,18 +1,17 @@
 {
   "name": "@objectql/types",
-  "version": "3.0.1",
-  "description": "Pure TypeScript type definitions and interfaces for the ObjectQL protocol - The Contract",
+  "version": "4.0.0-alpha.1",
+  "description": "Query-specific type definitions for ObjectQL - A plugin for @objectstack/runtime",
   "keywords": [
     "objectql",
+    "objectstack-plugin",
+    "query-types",
     "types",
     "typescript",
     "interfaces",
-    "protocol",
-    "schema",
-    "metadata",
-    "ai-native",
-    "orm",
-    "database"
+    "query-optimization",
+    "database-introspection",
+    "ai-native"
   ],
   "license": "MIT",
   "main": "dist/index.js",
@@ -27,6 +26,10 @@
     "test": "jest --passWithNoTests"
   },
   "dependencies": {
+    "@objectstack/spec": "^0.2.0",
+    "@objectstack/runtime": "^0.2.0"
+  },
+  "peerDependencies": {
     "@objectstack/spec": "^0.2.0",
     "@objectstack/runtime": "^0.2.0"
   },
