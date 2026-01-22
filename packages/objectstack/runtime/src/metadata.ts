@@ -19,6 +19,10 @@ export interface MetadataItem {
     content: any;
     /** Package name this metadata belongs to */
     packageName?: string;
+    /** Optional path to the metadata source file */
+    path?: string;
+    /** Alternative package name field for compatibility */
+    package?: string;
 }
 
 /**
@@ -26,27 +30,29 @@ export interface MetadataItem {
  * Central registry for all metadata in the ObjectStack ecosystem
  */
 export class MetadataRegistry {
-    private items: Map<string, Map<string, MetadataItem>> = new Map();
+    // Expose store for compatibility
+    public store: Map<string, Map<string, MetadataItem>> = new Map();
     private packages: Map<string, string[]> = new Map();
 
     /**
      * Register a metadata item
      */
     register(type: string, item: MetadataItem): void {
-        if (!this.items.has(type)) {
-            this.items.set(type, new Map());
+        if (!this.store.has(type)) {
+            this.store.set(type, new Map());
         }
         
-        const typeMap = this.items.get(type)!;
+        const typeMap = this.store.get(type)!;
         typeMap.set(item.id, item);
 
-        // Track package association
-        if (item.packageName) {
-            if (!this.packages.has(item.packageName)) {
-                this.packages.set(item.packageName, []);
+        // Track package association (support both packageName and package fields)
+        const pkgName = item.packageName || item.package;
+        if (pkgName) {
+            if (!this.packages.has(pkgName)) {
+                this.packages.set(pkgName, []);
             }
             const key = `${type}:${item.id}`;
-            const packageItems = this.packages.get(item.packageName)!;
+            const packageItems = this.packages.get(pkgName)!;
             if (!packageItems.includes(key)) {
                 packageItems.push(key);
             }
@@ -57,7 +63,7 @@ export class MetadataRegistry {
      * Get a specific metadata item
      */
     get<T = any>(type: string, id: string): T | undefined {
-        const typeMap = this.items.get(type);
+        const typeMap = this.store.get(type);
         if (!typeMap) return undefined;
         
         const item = typeMap.get(id);
@@ -68,7 +74,7 @@ export class MetadataRegistry {
      * List all items of a specific type
      */
     list<T = any>(type: string): T[] {
-        const typeMap = this.items.get(type);
+        const typeMap = this.store.get(type);
         if (!typeMap) return [];
         
         return Array.from(typeMap.values()).map(item => item.content as T);
@@ -78,7 +84,7 @@ export class MetadataRegistry {
      * Check if a metadata item exists
      */
     has(type: string, id: string): boolean {
-        const typeMap = this.items.get(type);
+        const typeMap = this.store.get(type);
         return typeMap?.has(id) ?? false;
     }
 
@@ -86,10 +92,18 @@ export class MetadataRegistry {
      * Unregister a specific item
      */
     unregister(type: string, id: string): void {
-        const typeMap = this.items.get(type);
+        const typeMap = this.store.get(type);
         if (typeMap) {
             typeMap.delete(id);
         }
+    }
+
+    /**
+     * Get the full metadata entry (not just content)
+     */
+    getEntry(type: string, id: string): MetadataItem | undefined {
+        const typeMap = this.store.get(type);
+        return typeMap ? typeMap.get(id) : undefined;
     }
 
     /**
@@ -97,7 +111,21 @@ export class MetadataRegistry {
      */
     unregisterPackage(packageName: string): void {
         const items = this.packages.get(packageName);
-        if (!items) return;
+        if (!items) {
+            // Also try to find by scanning all entries (for compatibility)
+            for (const [type, typeMap] of this.store.entries()) {
+                const entriesToDelete: string[] = [];
+                for (const [id, item] of typeMap.entries()) {
+                    if (item.package === packageName || item.packageName === packageName) {
+                        entriesToDelete.push(id);
+                    }
+                }
+                for (const id of entriesToDelete) {
+                    typeMap.delete(id);
+                }
+            }
+            return;
+        }
 
         for (const key of items) {
             const [type, id] = key.split(':');
@@ -111,7 +139,7 @@ export class MetadataRegistry {
      * Clear all metadata
      */
     clear(): void {
-        this.items.clear();
+        this.store.clear();
         this.packages.clear();
     }
 
@@ -119,6 +147,6 @@ export class MetadataRegistry {
      * Get all types
      */
     getTypes(): string[] {
-        return Array.from(this.items.keys());
+        return Array.from(this.store.keys());
     }
 }
