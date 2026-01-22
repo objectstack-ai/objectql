@@ -23,9 +23,7 @@ export * from './formula-plugin';
 // Export query-specific modules (ObjectQL core competency)
 export * from './query';
 
-export * from './action';
-export * from './hook';
-export * from './object';
+// Export utilities
 export * from './validator';
 export * from './util';
 export * from './ai-agent';
