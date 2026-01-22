@@ -4,11 +4,11 @@ This document explains the integration of `@objectstack/runtime` and `@objectsta
 
 ## Overview
 
-As of version 3.0.1, ObjectQL core natively uses the ObjectStack runtime packages:
+As of version 4.0.0, ObjectQL core uses the ObjectStack runtime packages with plugin architecture:
 
-- **@objectstack/spec@0.1.2**: Protocol specification with standard `DriverInterface`
-- **@objectstack/objectql@0.1.1**: Core ObjectQL engine with driver management
-- **@objectstack/runtime@0.1.1**: Runtime kernel with application lifecycle orchestration
+- **@objectstack/spec@0.2.0**: Protocol specification with standard `DriverInterface`
+- **@objectstack/objectql@0.2.0**: Core ObjectQL engine with driver management
+- **@objectstack/runtime@0.2.0**: Runtime kernel with application lifecycle orchestration and plugin system
 
 ## Architecture
 
@@ -16,27 +16,51 @@ As of version 3.0.1, ObjectQL core natively uses the ObjectStack runtime package
 
 ```
 @objectql/core (this package)
+├── Wraps ObjectStackKernel from @objectstack/runtime
+├── Implements ObjectQLPlugin for enhanced features
 ├── Uses @objectstack/objectql for driver management
 ├── Natively uses @objectstack/spec.DriverInterface (no wrapper)
 └── Re-exports types from @objectstack/runtime
 ```
 
-### Driver Management Integration
+### Plugin Architecture (v4.0.0)
 
-**Breaking Change (v3.0.1):** The core package now **natively uses** `DriverInterface` from `@objectstack/spec`:
+**Breaking Change (v4.0.0):** The core package now **wraps `ObjectStackKernel`** and uses a plugin architecture:
 
 ```typescript
-import { ObjectQL } from '@objectql/core';
+import { ObjectQL, ObjectQLPlugin } from '@objectql/core';
 import type { DriverInterface } from '@objectstack/spec';
 
-// Drivers must implement DriverInterface from @objectstack/spec
+// ObjectQL now wraps ObjectStackKernel internally
 const app = new ObjectQL({
     datasources: {
         default: myDriver  // Must be DriverInterface
     }
 });
 
-await app.init();
+// Access the kernel if needed
+const kernel = app.getKernel();
+
+await app.init(); // This calls kernel.start() internally
+```
+
+### ObjectQLPlugin
+
+The new `ObjectQLPlugin` class implements the `RuntimePlugin` interface from `@objectstack/runtime`:
+
+```typescript
+import { ObjectQLPlugin, ObjectQLPluginConfig } from '@objectql/core';
+
+// Configure the plugin
+const plugin = new ObjectQLPlugin({
+    enableRepository: true,
+    enableValidator: true,
+    enableFormulas: true,
+    enableAI: true
+});
+
+// The plugin is automatically registered when you create an ObjectQL instance
+const app = new ObjectQL({ datasources: {} });
 ```
 
 ### Type Exports
@@ -76,6 +100,7 @@ The current `ObjectQL` class in this package is a **production-ready, feature-ri
 - Repository pattern
 - Formula engine
 - AI integration
+- **Wraps ObjectStackKernel for plugin architecture**
 - **Native driver management via @objectstack/objectql**
 
 The `ObjectQLEngine` from `@objectstack/objectql` is a **simpler, lightweight** implementation suitable for:
@@ -83,6 +108,46 @@ The `ObjectQLEngine` from `@objectstack/objectql` is a **simpler, lightweight** 
 - Basic CRUD operations
 - Simple driver management
 - Minimal runtime overhead
+
+### Kernel Integration
+
+ObjectQL now wraps the `ObjectStackKernel` to provide plugin architecture and lifecycle management:
+
+```typescript
+// In @objectql/core
+import { ObjectStackKernel } from '@objectstack/runtime';
+import { ObjectQLPlugin } from './plugin';
+
+export class ObjectQL implements IObjectQL {
+    private kernel: ObjectStackKernel;
+    private kernelPlugins: any[] = [];
+    
+    constructor(config: ObjectQLConfig) {
+        // Add the ObjectQL plugin to provide enhanced features
+        this.kernelPlugins.push(new ObjectQLPlugin());
+        
+        // Create the kernel instance
+        this.kernel = new ObjectStackKernel(this.kernelPlugins);
+    }
+    
+    async init() {
+        console.log('[ObjectQL] Initializing with ObjectStackKernel...');
+        
+        // Start the kernel first - this will install and start all plugins
+        await this.kernel.start();
+        
+        // Continue with legacy initialization...
+    }
+    
+    /**
+     * Get the underlying ObjectStackKernel instance
+     * for advanced usage scenarios
+     */
+    getKernel(): ObjectStackKernel {
+        return this.kernel;
+    }
+}
+```
 
 ### Driver Management (No Compatibility Layer)
 
@@ -174,12 +239,73 @@ app.registerDriver('mydb', new MyCustomDriver(), false);
 
 ## Breaking Changes
 
+### v4.0.0: Plugin Architecture
+
+**What Changed:**
+- `ObjectQL` now wraps `ObjectStackKernel` from `@objectstack/runtime`
+- New `ObjectQLPlugin` class implements `RuntimePlugin` interface
+- Initialization process now calls `kernel.start()` which installs and starts all plugins
+- Dependencies updated to `@objectstack/*@0.2.0`
+- New `getKernel()` method provides access to the underlying kernel
+- **Removed legacy plugin support** - all plugins must now implement the `RuntimePlugin` interface
+
+**Migration Guide:**
+
+The ObjectQL API remains the same:
+```typescript
+import { ObjectQL } from '@objectql/core';
+import { MyDriver } from './my-driver';
+
+const app = new ObjectQL({
+    datasources: {
+        default: new MyDriver()
+    }
+});
+
+await app.init(); // Calls kernel.start() internally
+```
+
+Access the kernel for advanced use cases:
+```typescript
+const kernel = app.getKernel(); // Must call after init()
+```
+
+**Plugin Migration:**
+
+Old plugins with `onEnable` hook are no longer supported. Migrate to `RuntimePlugin`:
+
+```typescript
+// Old (no longer supported)
+const plugin = {
+    id: 'my-plugin',
+    onEnable: async (context) => {
+        // initialization logic
+    }
+};
+
+// New (required)
+import type { RuntimePlugin, RuntimeContext } from '@objectstack/runtime';
+
+class MyPlugin implements RuntimePlugin {
+    name = 'my-plugin';
+    
+    async install(ctx: RuntimeContext): Promise<void> {
+        // installation logic
+    }
+    
+    async onStart(ctx: RuntimeContext): Promise<void> {
+        // startup logic
+    }
+}
+
+const plugin = new MyPlugin();
+```
+
 ### v3.0.1: Native DriverInterface Adoption
 
 **What Changed:**
 - `ObjectQLConfig.datasources` now requires `Record<string, DriverInterface>` (from `@objectstack/spec`)
 - Removed compatibility wrapper for old `Driver` type
-- `app.registerDriver()` now accepts `DriverInterface` instead of legacy `Driver`
 - `app.datasource()` now returns `DriverInterface`
 - Driver lifecycle is fully managed by ObjectStack engine
 
