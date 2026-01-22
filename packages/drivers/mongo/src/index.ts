@@ -55,7 +55,6 @@ export class MongoDriver implements Driver {
      */
     async connect(): Promise<void> {
         await this.connected;
-        return Promise.resolve();
     }
 
     /**
@@ -238,7 +237,7 @@ export class MongoDriver implements Driver {
         if (normalized.aggregations !== undefined && normalized.aggregate === undefined) {
             // Convert QueryAST aggregations format to legacy aggregate format
             normalized.aggregate = normalized.aggregations.map((agg: any) => ({
-                func: agg.function,
+                func: agg.function || agg.func,
                 field: agg.field,
                 alias: agg.alias
             }));
