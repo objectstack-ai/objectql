@@ -78,12 +78,64 @@ function createTimeoutSignal(ms: number): AbortSignal {
 
 /**
  * Legacy Driver implementation that uses JSON-RPC style API
+ * 
+ * Implements both the legacy Driver interface from @objectql/types and
+ * the standard DriverInterface from @objectstack/spec for compatibility
+ * with the new kernel-based plugin system.
  */
 export class RemoteDriver implements Driver {
+    // Driver metadata (ObjectStack-compatible)
+    public readonly name = 'RemoteDriver';
+    public readonly version = '3.0.1';
+    public readonly supports = {
+        transactions: false,
+        joins: false,
+        fullTextSearch: false,
+        jsonFields: true,
+        arrayFields: true
+    };
+
     private rpcPath: string;
+    private baseUrl: string;
     
-    constructor(private baseUrl: string, rpcPath: string = '/api/objectql') {
+    constructor(baseUrl: string, rpcPath: string = '/api/objectql') {
+        this.baseUrl = baseUrl;
         this.rpcPath = rpcPath;
+    }
+
+    /**
+     * Connect to the remote server (for DriverInterface compatibility)
+     */
+    async connect(): Promise<void> {
+        // Test connection with a simple health check
+        try {
+            await this.checkHealth();
+        } catch (error) {
+            throw new Error(`Failed to connect to remote server: ${(error as Error).message}`);
+        }
+    }
+
+    /**
+     * Check remote server connection health
+     */
+    async checkHealth(): Promise<boolean> {
+        try {
+            const endpoint = `${this.baseUrl.replace(/\/$/, '')}${this.rpcPath}`;
+            const res = await fetch(endpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    op: 'ping',
+                    object: '_health',
+                    args: {}
+                })
+            });
+            return res.ok;
+        } catch (error) {
+            return false;
+        }
     }
 
     private async request(op: string, objectName: string, args: any) {
@@ -112,12 +164,47 @@ export class RemoteDriver implements Driver {
         return json.data;
     }
 
+    /**
+     * Normalizes query format to support both legacy UnifiedQuery and QueryAST formats.
+     * This ensures backward compatibility while supporting the new @objectstack/spec interface.
+     * 
+     * QueryAST format uses 'top' for limit, while UnifiedQuery uses 'limit'.
+     * QueryAST sort is array of {field, order}, while UnifiedQuery is array of [field, order].
+     */
+    private normalizeQuery(query: any): any {
+        if (!query) return {};
+        
+        const normalized: any = { ...query };
+        
+        // Normalize limit/top
+        if (normalized.top !== undefined && normalized.limit === undefined) {
+            normalized.limit = normalized.top;
+        }
+        
+        // Normalize sort format
+        if (normalized.sort && Array.isArray(normalized.sort)) {
+            // Check if it's already in the array format [field, order]
+            const firstSort = normalized.sort[0];
+            if (firstSort && typeof firstSort === 'object' && !Array.isArray(firstSort)) {
+                // Convert from QueryAST format {field, order} to internal format [field, order]
+                normalized.sort = normalized.sort.map((item: any) => [
+                    item.field,
+                    item.order || item.direction || item.dir || 'asc'
+                ]);
+            }
+        }
+        
+        return normalized;
+    }
+
     async find(objectName: string, query: any, options?: any): Promise<any[]> {
-        return this.request('find', objectName, query);
+        const normalizedQuery = this.normalizeQuery(query);
+        return this.request('find', objectName, normalizedQuery);
     }
 
     async findOne(objectName: string, id: string | number, query?: any, options?: any): Promise<any> {
-        return this.request('findOne', objectName, { id, query }); // Note: args format must match server expectation
+        const normalizedQuery = query ? this.normalizeQuery(query) : undefined;
+        return this.request('findOne', objectName, { id, query: normalizedQuery }); // Note: args format must match server expectation
     }
 
     async create(objectName: string, data: any, options?: any): Promise<any> {

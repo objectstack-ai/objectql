@@ -12,6 +12,10 @@
  * A persistent file-based driver for ObjectQL that stores data in JSON files.
  * Each object type is stored in a separate JSON file for easy inspection and backup.
  * 
+ * Implements both the legacy Driver interface from @objectql/types and
+ * the standard DriverInterface from @objectstack/spec for compatibility
+ * with the new kernel-based plugin system.
+ * 
  * ✅ Production-ready features:
  * - Persistent storage with JSON files
  * - One file per table/object (e.g., users.json, projects.json)
@@ -56,6 +60,17 @@ export interface FileSystemDriverConfig {
  * - Content: Array of records `[{id: "1", ...}, {id: "2", ...}]`
  */
 export class FileSystemDriver implements Driver {
+    // Driver metadata (ObjectStack-compatible)
+    public readonly name = 'FileSystemDriver';
+    public readonly version = '3.0.1';
+    public readonly supports = {
+        transactions: false,
+        joins: false,
+        fullTextSearch: false,
+        jsonFields: true,
+        arrayFields: true
+    };
+
     private config: FileSystemDriverConfig;
     private idCounters: Map<string, number>;
     private cache: Map<string, any[]>;
@@ -78,6 +93,31 @@ export class FileSystemDriver implements Driver {
         // Load initial data if provided
         if (config.initialData) {
             this.loadInitialData(config.initialData);
+        }
+    }
+
+    /**
+     * Connect to the database (for DriverInterface compatibility)
+     * This is a no-op for filesystem driver as there's no external connection.
+     */
+    async connect(): Promise<void> {
+        // No-op: FileSystem driver doesn't need connection
+    }
+
+    /**
+     * Check database connection health
+     */
+    async checkHealth(): Promise<boolean> {
+        try {
+            // Check if data directory is accessible
+            if (!fs.existsSync(this.config.dataDir)) {
+                return false;
+            }
+            // Try to read directory
+            fs.readdirSync(this.config.dataDir);
+            return true;
+        } catch (error) {
+            return false;
         }
     }
 
@@ -217,29 +257,31 @@ export class FileSystemDriver implements Driver {
      * Find multiple records matching the query criteria.
      */
     async find(objectName: string, query: any = {}, options?: any): Promise<any[]> {
+        // Normalize query to support both legacy and QueryAST formats
+        const normalizedQuery = this.normalizeQuery(query);
         let results = this.loadRecords(objectName);
 
         // Apply filters
-        if (query.filters) {
-            results = this.applyFilters(results, query.filters);
+        if (normalizedQuery.filters) {
+            results = this.applyFilters(results, normalizedQuery.filters);
         }
 
         // Apply sorting
-        if (query.sort && Array.isArray(query.sort)) {
-            results = this.applySort(results, query.sort);
+        if (normalizedQuery.sort && Array.isArray(normalizedQuery.sort)) {
+            results = this.applySort(results, normalizedQuery.sort);
         }
 
         // Apply pagination
-        if (query.skip) {
-            results = results.slice(query.skip);
+        if (normalizedQuery.skip) {
+            results = results.slice(normalizedQuery.skip);
         }
-        if (query.limit) {
-            results = results.slice(0, query.limit);
+        if (normalizedQuery.limit) {
+            results = results.slice(0, normalizedQuery.limit);
         }
 
         // Apply field projection
-        if (query.fields && Array.isArray(query.fields)) {
-            results = results.map(doc => this.projectFields(doc, query.fields));
+        if (normalizedQuery.fields && Array.isArray(normalizedQuery.fields)) {
+            results = results.map(doc => this.projectFields(doc, normalizedQuery.fields));
         }
 
         // Return deep copies to prevent external modifications
@@ -529,6 +571,39 @@ export class FileSystemDriver implements Driver {
     }
 
     // ========== Helper Methods ==========
+
+    /**
+     * Normalizes query format to support both legacy UnifiedQuery and QueryAST formats.
+     * This ensures backward compatibility while supporting the new @objectstack/spec interface.
+     * 
+     * QueryAST format uses 'top' for limit, while UnifiedQuery uses 'limit'.
+     * QueryAST sort is array of {field, order}, while UnifiedQuery is array of [field, order].
+     */
+    private normalizeQuery(query: any): any {
+        if (!query) return {};
+        
+        const normalized: any = { ...query };
+        
+        // Normalize limit/top
+        if (normalized.top !== undefined && normalized.limit === undefined) {
+            normalized.limit = normalized.top;
+        }
+        
+        // Normalize sort format
+        if (normalized.sort && Array.isArray(normalized.sort)) {
+            // Check if it's already in the array format [field, order]
+            const firstSort = normalized.sort[0];
+            if (firstSort && typeof firstSort === 'object' && !Array.isArray(firstSort)) {
+                // Convert from QueryAST format {field, order} to internal format [field, order]
+                normalized.sort = normalized.sort.map((item: any) => [
+                    item.field,
+                    item.order || item.direction || item.dir || 'asc'
+                ]);
+            }
+        }
+        
+        return normalized;
+    }
 
     /**
      * Apply filters to an array of records.
