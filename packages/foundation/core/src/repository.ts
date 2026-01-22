@@ -11,10 +11,12 @@ import type { ObjectStackKernel } from '@objectstack/runtime';
 import type { QueryAST, FilterNode, SortNode } from '@objectstack/spec';
 import { Validator } from './validator';
 import { FormulaEngine } from './formula-engine';
+import { QueryBuilder } from './query';
 
 export class ObjectRepository {
     private validator: Validator;
     private formulaEngine: FormulaEngine;
+    private queryBuilder: QueryBuilder;
 
     constructor(
         private objectName: string,
@@ -23,6 +25,7 @@ export class ObjectRepository {
     ) {
         this.validator = new Validator();
         this.formulaEngine = new FormulaEngine();
+        this.queryBuilder = new QueryBuilder();
     }
 
     private getDriver(): Driver {
@@ -34,7 +37,7 @@ export class ObjectRepository {
     private getKernel(): ObjectStackKernel {
         return this.app.getKernel();
     }
-    
+
     private getOptions(extra: any = {}) {
         return {
             transaction: this.context.transactionHandle,
@@ -43,187 +46,10 @@ export class ObjectRepository {
     }
 
     /**
-     * Translates ObjectQL Filter (FilterCondition) to ObjectStack FilterNode format
-     * 
-     * Converts modern object-based syntax to legacy array-based syntax:
-     * Input:  { age: { $gte: 18 }, $or: [{ status: "active" }, { role: "admin" }] }
-     * Output: [["age", ">=", 18], "or", [["status", "=", "active"], "or", ["role", "=", "admin"]]]
-     * 
-     * Also supports backward compatibility: if filters is already in array format, pass through.
-     */
-    private translateFilters(filters?: Filter): FilterNode | undefined {
-        if (!filters) {
-            return undefined;
-        }
-
-        // Backward compatibility: if it's already an array (old format), convert to FilterNode
-        // TODO: This uses type assertion because the old code used arrays for filters
-        // but FilterNode is now an object-based AST. This should be properly converted
-        // to build FilterNode objects in a future refactoring.
-        if (Array.isArray(filters)) {
-            return filters as unknown as FilterNode;
-        }
-
-        // If it's an empty object, return undefined
-        if (typeof filters === 'object' && Object.keys(filters).length === 0) {
-            return undefined;
-        }
-
-        return this.convertFilterToNode(filters);
-    }
-
-    /**
-     * Recursively converts FilterCondition to FilterNode array format
-     */
-    private convertFilterToNode(filter: Filter): FilterNode {
-        const nodes: any[] = [];
-        
-        // Process logical operators first
-        if (filter.$and) {
-            const andNodes = filter.$and.map(f => this.convertFilterToNode(f));
-            nodes.push(...this.interleaveWithOperator(andNodes, 'and'));
-        }
-        
-        if (filter.$or) {
-            const orNodes = filter.$or.map(f => this.convertFilterToNode(f));
-            if (nodes.length > 0) {
-                nodes.push('and');
-            }
-            nodes.push(...this.interleaveWithOperator(orNodes, 'or'));
-        }
-        
-        // Note: $not operator is not currently supported in the legacy FilterNode format
-        // Users should use $ne (not equal) instead for negation on specific fields
-        if (filter.$not) {
-            throw new Error('$not operator is not supported. Use $ne for field negation instead.');
-        }
-        
-        // Process field conditions
-        for (const [field, value] of Object.entries(filter)) {
-            if (field.startsWith('$')) {
-                continue; // Skip logical operators (already processed)
-            }
-            
-            if (nodes.length > 0) {
-                nodes.push('and');
-            }
-            
-            // Handle field value
-            if (value === null || value === undefined) {
-                nodes.push([field, '=', value]);
-            } else if (typeof value === 'object' && !Array.isArray(value) && !(value instanceof Date)) {
-                // Explicit operators - multiple operators on same field are AND-ed together
-                const entries = Object.entries(value);
-                for (let i = 0; i < entries.length; i++) {
-                    const [op, opValue] = entries[i];
-                    
-                    // Add 'and' before each operator (except the very first node)
-                    if (nodes.length > 0 || i > 0) {
-                        nodes.push('and');
-                    }
-                    
-                    const legacyOp = this.mapOperatorToLegacy(op);
-                    nodes.push([field, legacyOp, opValue]);
-                }
-            } else {
-                // Implicit equality
-                nodes.push([field, '=', value]);
-            }
-        }
-        
-        // TODO: This returns an array but FilterNode is now an object-based AST.
-        // This type assertion is temporary for backward compatibility. Should be
-        // refactored to build proper FilterNode objects with type/operator/children.
-        return (nodes.length === 1 ? nodes[0] : nodes) as unknown as FilterNode;
-    }
-    
-    /**
-     * Interleaves filter nodes with a logical operator
-     */
-    private interleaveWithOperator(nodes: FilterNode[], operator: string): any[] {
-        if (nodes.length === 0) return [];
-        if (nodes.length === 1) return [nodes[0]];
-        
-        const result: any[] = [nodes[0]];
-        for (let i = 1; i < nodes.length; i++) {
-            result.push(operator, nodes[i]);
-        }
-        return result;
-    }
-    
-    /**
-     * Maps modern $-prefixed operators to legacy format
-     */
-    private mapOperatorToLegacy(operator: string): string {
-        const mapping: Record<string, string> = {
-            '$eq': '=',
-            '$ne': '!=',
-            '$gt': '>',
-            '$gte': '>=',
-            '$lt': '<',
-            '$lte': '<=',
-            '$in': 'in',
-            '$nin': 'nin',
-            '$contains': 'contains',
-            '$startsWith': 'startswith',
-            '$endsWith': 'endswith',
-            '$null': 'is_null',
-            '$exist': 'is_not_null',
-            '$between': 'between',
-        };
-        
-        return mapping[operator] || operator.replace('$', '');
-    }
-
-    /**
      * Translates ObjectQL UnifiedQuery to ObjectStack QueryAST format
      */
     private buildQueryAST(query: UnifiedQuery): QueryAST {
-        const ast: QueryAST = {
-            object: this.objectName,
-        };
-
-        // Map fields
-        if (query.fields) {
-            ast.fields = query.fields;
-        }
-
-        // Map filters
-        if (query.filters) {
-            ast.filters = this.translateFilters(query.filters);
-        }
-
-        // Map sort
-        if (query.sort) {
-            ast.sort = query.sort.map(([field, order]) => ({
-                field,
-                order: order as 'asc' | 'desc'
-            }));
-        }
-
-        // Map pagination
-        if (query.limit !== undefined) {
-            ast.top = query.limit;
-        }
-        if (query.skip !== undefined) {
-            ast.skip = query.skip;
-        }
-
-        // Map aggregations
-        if (query.aggregate) {
-            ast.aggregations = query.aggregate.map(agg => ({
-                function: agg.func as any,
-                field: agg.field,
-                alias: agg.alias || `${agg.func}_${agg.field}`
-            }));
-        }
-
-        // Map groupBy
-        if (query.groupBy) {
-            ast.groupBy = query.groupBy;
-        }
-
-        return ast;
+        return this.queryBuilder.build(this.objectName, query);
     }
 
     getSchema(): ObjectConfig {

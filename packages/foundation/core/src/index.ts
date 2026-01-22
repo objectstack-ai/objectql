@@ -20,6 +20,9 @@ export * from './plugin';
 export * from './validator-plugin';
 export * from './formula-plugin';
 
+// Export query-specific modules (ObjectQL core competency)
+export * from './query';
+
 export * from './action';
 export * from './hook';
 export * from './object';
