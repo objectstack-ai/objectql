@@ -12,6 +12,10 @@
  * This is a reference implementation demonstrating how to create a custom ObjectQL driver.
  * It adapts Redis (a key-value store) to work with ObjectQL's universal data protocol.
  * 
+ * Implements both the legacy Driver interface from @objectql/types and
+ * the standard DriverInterface from @objectstack/spec for compatibility
+ * with the new kernel-based plugin system.
+ * 
  * ⚠️ WARNING: This is an educational example, not production-ready.
  * It uses full key scanning which is inefficient for large datasets.
  * 
@@ -46,6 +50,17 @@ export interface RedisDriverConfig {
  * Example: `users:user-123` → `{"id":"user-123","name":"Alice",...}`
  */
 export class RedisDriver implements Driver {
+    // Driver metadata (ObjectStack-compatible)
+    public readonly name = 'RedisDriver';
+    public readonly version = '3.0.1';
+    public readonly supports = {
+        transactions: false,
+        joins: false,
+        fullTextSearch: false,
+        jsonFields: true,
+        arrayFields: true
+    };
+
     private client: RedisClientType;
     private config: RedisDriverConfig;
     private connected: Promise<void>;
@@ -70,6 +85,19 @@ export class RedisDriver implements Driver {
     }
 
     /**
+     * Check database connection health
+     */
+    async checkHealth(): Promise<boolean> {
+        try {
+            await this.connected;
+            await this.client.ping();
+            return true;
+        } catch (error) {
+            return false;
+        }
+    }
+
+    /**
      * Find multiple records matching the query criteria.
      * 
      * ⚠️ WARNING: This implementation scans ALL keys for the object type.
@@ -77,6 +105,9 @@ export class RedisDriver implements Driver {
      */
     async find(objectName: string, query: any = {}, options?: any): Promise<any[]> {
         await this.connected;
+        
+        // Normalize query to support both legacy and QueryAST formats
+        const normalizedQuery = this.normalizeQuery(query);
         
         // Get all keys for this object type
         const pattern = `${objectName}:*`;
@@ -97,26 +128,26 @@ export class RedisDriver implements Driver {
         }
         
         // Apply filters (in-memory)
-        if (query.filters) {
-            results = this.applyFilters(results, query.filters);
+        if (normalizedQuery.filters) {
+            results = this.applyFilters(results, normalizedQuery.filters);
         }
         
         // Apply sorting (in-memory)
-        if (query.sort && Array.isArray(query.sort)) {
-            results = this.applySort(results, query.sort);
+        if (normalizedQuery.sort && Array.isArray(normalizedQuery.sort)) {
+            results = this.applySort(results, normalizedQuery.sort);
         }
         
         // Apply pagination
-        if (query.skip) {
-            results = results.slice(query.skip);
+        if (normalizedQuery.skip) {
+            results = results.slice(normalizedQuery.skip);
         }
-        if (query.limit) {
-            results = results.slice(0, query.limit);
+        if (normalizedQuery.limit) {
+            results = results.slice(0, normalizedQuery.limit);
         }
         
         // Apply field projection
-        if (query.fields && Array.isArray(query.fields)) {
-            results = results.map(doc => this.projectFields(doc, query.fields));
+        if (normalizedQuery.fields && Array.isArray(normalizedQuery.fields)) {
+            results = results.map(doc => this.projectFields(doc, normalizedQuery.fields));
         }
         
         return results;
@@ -265,6 +296,39 @@ export class RedisDriver implements Driver {
     }
 
     // ========== Helper Methods ==========
+
+    /**
+     * Normalizes query format to support both legacy UnifiedQuery and QueryAST formats.
+     * This ensures backward compatibility while supporting the new @objectstack/spec interface.
+     * 
+     * QueryAST format uses 'top' for limit, while UnifiedQuery uses 'limit'.
+     * QueryAST sort is array of {field, order}, while UnifiedQuery is array of [field, order].
+     */
+    private normalizeQuery(query: any): any {
+        if (!query) return {};
+        
+        const normalized: any = { ...query };
+        
+        // Normalize limit/top
+        if (normalized.top !== undefined && normalized.limit === undefined) {
+            normalized.limit = normalized.top;
+        }
+        
+        // Normalize sort format
+        if (normalized.sort && Array.isArray(normalized.sort)) {
+            // Check if it's already in the array format [field, order]
+            const firstSort = normalized.sort[0];
+            if (firstSort && typeof firstSort === 'object' && !Array.isArray(firstSort)) {
+                // Convert from QueryAST format {field, order} to internal format [field, order]
+                normalized.sort = normalized.sort.map((item: any) => [
+                    item.field,
+                    item.order || item.direction || item.dir || 'asc'
+                ]);
+            }
+        }
+        
+        return normalized;
+    }
 
     /**
      * Apply filters to an array of records (in-memory filtering).
