@@ -313,4 +313,3 @@ export interface PluginDefinition {
     description?: string;
 }
 
-
