@@ -1,0 +1,213 @@
+# MongoDB Driver Migration Guide (Phase 4)
+
+## Overview
+
+The MongoDB driver has been migrated to support the standard `DriverInterface` from `@objectstack/spec` while maintaining full backward compatibility with the existing `Driver` interface from `@objectql/types`.
+
+## What Changed
+
+### 1. Driver Metadata
+
+The driver now exposes metadata for ObjectStack compatibility:
+
+```typescript
+const driver = new MongoDriver(config);
+console.log(driver.name);     // 'MongoDriver'
+console.log(driver.version);  // '3.0.1'
+console.log(driver.supports); // { transactions: true, joins: false, ... }
+```
+
+### 2. Lifecycle Methods
+
+New optional lifecycle methods for DriverInterface compatibility:
+
+```typescript
+// Connect (ensures connection is established)
+await driver.connect();
+
+// Check connection health
+const healthy = await driver.checkHealth(); // true/false
+
+// Disconnect (existing method)
+await driver.disconnect();
+```
+
+### 3. QueryAST Format Support
+
+The driver now supports the new QueryAST format from `@objectstack/spec`:
+
+#### Legacy UnifiedQuery Format (Still Supported)
+```typescript
+const query = {
+    fields: ['name', 'age'],
+    filters: [['age', '>', 18]],
+    sort: [['name', 'asc']],
+    limit: 10,
+    skip: 0
+};
+```
+
+#### New QueryAST Format (Now Supported)
+```typescript
+const query = {
+    object: 'users',
+    fields: ['name', 'age'],
+    filters: [['age', '>', 18]],
+    sort: [{ field: 'name', order: 'asc' }],
+    top: 10,      // Instead of 'limit'
+    skip: 0
+};
+```
+
+### Key Differences
+
+| Aspect | Legacy Format | QueryAST Format |
+|--------|--------------|-----------------|
+| Limit | `limit: 10` | `top: 10` |
+| Sort | `[['field', 'dir']]` | `[{field, order}]` |
+
+## Migration Strategy
+
+The driver uses a **normalization layer** that automatically converts QueryAST format to the internal format:
+
+```typescript
+private normalizeQuery(query: any): any {
+    // Converts 'top' → 'limit'
+    // Handles both sort formats
+}
+```
+
+This means:
+- ✅ Existing code continues to work without changes
+- ✅ New code can use QueryAST format
+- ✅ Both formats work interchangeably
+- ✅ No breaking changes
+
+## Usage Examples
+
+### Using Legacy Format (Unchanged)
+```typescript
+import { MongoDriver } from '@objectql/driver-mongo';
+
+const driver = new MongoDriver({
+    url: 'mongodb://localhost:27017',
+    dbName: 'mydb'
+});
+
+// Works as before
+const results = await driver.find('users', {
+    filters: [['active', '=', true]],
+    sort: [['created_at', 'desc']],
+    limit: 20
+});
+```
+
+### Using QueryAST Format (New)
+```typescript
+import { MongoDriver } from '@objectql/driver-mongo';
+
+const driver = new MongoDriver({
+    url: 'mongodb://localhost:27017',
+    dbName: 'mydb'
+});
+
+// New format
+const results = await driver.find('users', {
+    filters: [['active', '=', true]],
+    sort: [{ field: 'created_at', order: 'desc' }],
+    top: 20
+});
+```
+
+### Using with ObjectStack Kernel
+```typescript
+import { ObjectQL } from '@objectql/core';
+import { MongoDriver } from '@objectql/driver-mongo';
+
+const app = new ObjectQL({
+    datasources: {
+        default: new MongoDriver({
+            url: 'mongodb://localhost:27017',
+            dbName: 'mydb'
+        })
+    }
+});
+
+await app.init();
+
+// The kernel will use QueryAST format internally
+const ctx = app.createContext({ userId: 'user123' });
+const repo = ctx.object('users');
+const users = await repo.find({ filters: [['active', '=', true]] });
+```
+
+## Testing
+
+Comprehensive tests have been added in `test/queryast.test.ts`:
+
+```bash
+npm test -- queryast.test.ts
+```
+
+Test coverage includes:
+- Driver metadata exposure
+- Lifecycle methods (connect, checkHealth, disconnect)
+- QueryAST format with `top` parameter
+- Object-based sort notation
+- Backward compatibility with legacy format
+- Mixed format support
+- Field mapping (id/_id conversion)
+
+## Implementation Details
+
+### Files Changed
+- `package.json`: Added `@objectstack/spec@^0.2.0` dependency
+- `src/index.ts`: 
+  - Added driver metadata properties
+  - Added `normalizeQuery()` method (~45 lines)
+  - Added `connect()` and `checkHealth()` methods (~25 lines)
+  - Updated `find()` to use normalization
+  - Refactored internal `connect()` to `internalConnect()`
+- `test/queryast.test.ts`: New comprehensive test suite (240+ lines)
+
+### Lines of Code
+- **Added**: ~310 lines (including tests and docs)
+- **Modified**: ~15 lines (method signatures and refactoring)
+- **Deleted**: 0 lines
+
+## Driver Capabilities
+
+The MongoDB driver supports:
+- **Transactions**: ✅ Yes
+- **Joins**: ❌ No (MongoDB is document-oriented)
+- **Full-Text Search**: ✅ Yes (MongoDB text search)
+- **JSON Fields**: ✅ Yes (native BSON support)
+- **Array Fields**: ✅ Yes (native array support)
+
+## ID Field Mapping
+
+The driver maintains smart ID mapping:
+- API uses `id` field
+- MongoDB uses `_id` field
+- Automatic bidirectional conversion
+- Both `id` and `_id` can be used in queries for backward compatibility
+
+## Next Steps
+
+With MongoDB driver migration complete, the pattern is established for migrating other drivers:
+
+1. ✅ SQL Driver (completed)
+2. ✅ MongoDB Driver (completed)
+3. 🔜 Memory Driver (recommended next - used for testing)
+4. 🔜 Other drivers (bulk migration)
+
+## Backward Compatibility Guarantee
+
+**100% backward compatible** - all existing code using the MongoDB driver will continue to work without any changes. The QueryAST support is additive, not replacing.
+
+## References
+
+- [ObjectStack Spec Package](https://www.npmjs.com/package/@objectstack/spec)
+- [SQL Driver Migration Guide](../sql/MIGRATION.md)
+- [Runtime Integration Docs](../../foundation/core/RUNTIME_INTEGRATION.md)
+- [Driver Interface Documentation](../../foundation/types/src/driver.ts)
