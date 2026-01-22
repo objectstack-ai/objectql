@@ -243,7 +243,7 @@ export class ObjectRepository {
         const results = kernelResult.value;
         
         // Evaluate formulas for each result
-        const resultsWithFormulas = results.map(record => this.evaluateFormulas(record));
+        const resultsWithFormulas = results.map((record: any) => this.evaluateFormulas(record));
         
         hookCtx.result = resultsWithFormulas;
         await this.app.triggerHook('afterFind', this.objectName, hookCtx);

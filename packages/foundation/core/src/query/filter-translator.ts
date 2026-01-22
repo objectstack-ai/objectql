@@ -49,12 +49,12 @@ export class FilterTranslator {
         
         // Process logical operators first
         if (filter.$and) {
-            const andNodes = filter.$and.map(f => this.convertToNode(f));
+            const andNodes = filter.$and.map((f: Filter) => this.convertToNode(f));
             nodes.push(...this.interleaveWithOperator(andNodes, 'and'));
         }
         
         if (filter.$or) {
-            const orNodes = filter.$or.map(f => this.convertToNode(f));
+            const orNodes = filter.$or.map((f: Filter) => this.convertToNode(f));
             if (nodes.length > 0) {
                 nodes.push('and');
             }
