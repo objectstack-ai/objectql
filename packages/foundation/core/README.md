@@ -1,21 +1,34 @@
 # @objectql/core
 
-The core ORM and runtime engine for ObjectQL. This package handles object querying, CRUD operations, database driver coordination, transaction management, and **metadata-driven validation**.
+The core ORM and runtime engine for ObjectQL. This package handles object querying, CRUD operations, database driver coordination, transaction management, and **metadata-driven validation**. As of version 4.0.0, it wraps the **ObjectStackKernel** for plugin architecture and lifecycle management.
 
 ## Features
 
-- **Unified Query Language**: A generic way to query data across different databases (SQL, Mongo, etc.).
-- **Repository Pattern**: `ObjectRepository` for managing object records.
-- **Driver Agnostic**: Abstraction layer for database drivers.
-- **Dynamic Schema**: Loads object definitions from metadata.
-- **Hooks & Actions**: Runtime logic injection.
-- **Validation Engine**: Metadata-driven validation with field-level, cross-field, and state machine rules.
+- **Plugin Architecture**: Built on top of `@objectstack/runtime` with kernel-based plugin system
+- **Unified Query Language**: A generic way to query data across different databases (SQL, Mongo, etc.)
+- **Repository Pattern**: `ObjectRepository` for managing object records
+- **Driver Agnostic**: Abstraction layer for database drivers
+- **Dynamic Schema**: Loads object definitions from metadata
+- **Hooks & Actions**: Runtime logic injection
+- **Validation Engine**: Metadata-driven validation with field-level, cross-field, and state machine rules
+- **Formula Engine**: Computed fields with dynamic formulas
+- **AI Integration**: Built-in AI agent capabilities
 
 ## Installation
 
 ```bash
-npm install @objectql/core @objectql/types
+npm install @objectql/core @objectql/types @objectstack/runtime @objectstack/spec
 ```
+
+## Architecture
+
+ObjectQL now wraps the `ObjectStackKernel` from `@objectstack/runtime`, providing:
+
+- **Kernel-based lifecycle management**: Initialization, startup, and shutdown
+- **Plugin system**: Extensible architecture with `ObjectQLPlugin`
+- **Enhanced features**: Repository, Validator, Formula, and AI capabilities as plugins
+
+See [RUNTIME_INTEGRATION.md](./RUNTIME_INTEGRATION.md) for detailed architecture documentation.
 
 ## Usage
 
@@ -31,13 +44,22 @@ const objectql = new ObjectQL({
     }
 });
 
-await objectql.init();
+await objectql.init(); // Initializes the kernel and all plugins
 
 // Use context for operations
 const ctx = objectql.createContext({ userId: 'u-1' });
 const projects = await ctx.object('project').find({
     filters: [['status', '=', 'active']]
 });
+```
+
+### Accessing the Kernel
+
+For advanced use cases, you can access the underlying kernel:
+
+```typescript
+const kernel = objectql.getKernel();
+// Use kernel methods if needed
 ```
 
 ### Validation System
