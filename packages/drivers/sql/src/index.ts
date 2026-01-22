@@ -12,10 +12,24 @@ import knex, { Knex } from 'knex';
 /**
  * SQL Driver for ObjectQL
  * 
- * Implements the Driver interface from @objectql/types with optional
- * ObjectStack-compatible properties for integration with @objectstack/objectql.
+ * Implements both the legacy Driver interface from @objectql/types and
+ * the standard DriverInterface from @objectstack/spec for compatibility
+ * with the new kernel-based plugin system.
+ * 
+ * The driver internally converts QueryAST format to Knex query builder calls.
  */
 export class SqlDriver implements Driver {
+    // Driver metadata (ObjectStack-compatible)
+    public readonly name = 'SqlDriver';
+    public readonly version = '3.0.1';
+    public readonly supports = {
+        transactions: true,
+        joins: true,
+        fullTextSearch: false,
+        jsonFields: true,
+        arrayFields: true
+    };
+
     private knex: Knex;
     private config: any;
     private jsonFields: Record<string, string[]> = {};
@@ -107,21 +121,52 @@ export class SqlDriver implements Driver {
         return field;
     }
 
+    /**
+     * Normalizes query format to support both legacy UnifiedQuery and QueryAST formats.
+     * This ensures backward compatibility while supporting the new @objectstack/spec interface.
+     * 
+     * QueryAST format uses 'top' for limit, while UnifiedQuery uses 'limit'.
+     * QueryAST sort is array of {field, order}, while UnifiedQuery is array of [field, order].
+     */
+    private normalizeQuery(query: any): any {
+        if (!query) return {};
+        
+        const normalized: any = { ...query };
+        
+        // Normalize limit/top
+        if (normalized.top !== undefined && normalized.limit === undefined) {
+            normalized.limit = normalized.top;
+        }
+        
+        // Normalize sort format
+        if (normalized.sort && Array.isArray(normalized.sort)) {
+            // Check if it's already in the array format [field, order]
+            const firstSort = normalized.sort[0];
+            if (firstSort && typeof firstSort === 'object' && !Array.isArray(firstSort)) {
+                // Convert from QueryAST format {field, order} to internal format [field, order]
+                // Keep the object format as the applySort logic already handles it
+            }
+        }
+        
+        return normalized;
+    }
+
     async find(objectName: string, query: any, options?: any): Promise<any[]> {
+        const normalizedQuery = this.normalizeQuery(query);
         const builder = this.getBuilder(objectName, options);
         
-        if (query.fields) {
-            builder.select(query.fields.map((f: string) => this.mapSortField(f)));
+        if (normalizedQuery.fields) {
+            builder.select(normalizedQuery.fields.map((f: string) => this.mapSortField(f)));
         } else {
             builder.select('*');
         }
 
-        if (query.filters) {
-            this.applyFilters(builder, query.filters);
+        if (normalizedQuery.filters) {
+            this.applyFilters(builder, normalizedQuery.filters);
         }
 
-        if (query.sort && Array.isArray(query.sort)) {
-            for (const item of query.sort) {
+        if (normalizedQuery.sort && Array.isArray(normalizedQuery.sort)) {
+            for (const item of normalizedQuery.sort) {
                 let field: string | undefined;
                 let dir: string | undefined;
 
@@ -139,8 +184,8 @@ export class SqlDriver implements Driver {
             }
         }
 
-        if (query.skip) builder.offset(query.skip);
-        if (query.limit) builder.limit(query.limit);
+        if (normalizedQuery.skip) builder.offset(normalizedQuery.skip);
+        if (normalizedQuery.limit) builder.limit(normalizedQuery.limit);
 
         const results = await builder;
         
