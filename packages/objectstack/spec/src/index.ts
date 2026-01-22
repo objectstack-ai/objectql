@@ -28,7 +28,7 @@ export interface FilterNode {
     type: 'and' | 'or' | 'not' | 'comparison';
     operator?: string;
     field?: string;
-    value?: any;
+    value?: string | number | boolean | null | Date;
     children?: FilterNode[];
 }
 
@@ -147,7 +147,7 @@ export interface Field {
     /** Whether the field is searchable */
     searchable?: boolean;
     /** Default value */
-    defaultValue?: any;
+    defaultValue?: string | number | boolean | null;
     /** Maximum length for strings */
     maxLength?: number;
     /** Minimum length for strings */
@@ -165,7 +165,7 @@ export interface Field {
     /** Reference to another object (for lookup/master_detail) */
     reference?: string;
     /** Filters for reference field */
-    referenceFilters?: any;
+    referenceFilters?: FilterCondition;
     /** Whether write requires master read permission */
     writeRequiresMasterRead?: boolean;
     /** Summary expression */
@@ -332,9 +332,9 @@ export interface DriverInterface {
  */
 export interface DriverOptions {
     /** Connection string or configuration */
-    connection?: string | any;
+    connection?: string | Record<string, unknown>;
     /** Additional driver-specific options */
-    [key: string]: any;
+    [key: string]: unknown;
 }
 
 /**

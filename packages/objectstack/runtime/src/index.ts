@@ -37,7 +37,7 @@ export interface RuntimePlugin {
  */
 export class ObjectStackKernel {
     /** Query interface (QL) */
-    public ql: any = null;
+    public ql: unknown = null;
 
     constructor(plugins: RuntimePlugin[] = []) {
         // Stub implementation
@@ -59,22 +59,22 @@ export class ObjectStackKernel {
     }
 
     /** Find records */
-    async find(objectName: string, query: any): Promise<{ value: any[]; count: number }> {
+    async find(objectName: string, query: unknown): Promise<{ value: unknown[]; count: number }> {
         return { value: [], count: 0 };
     }
 
     /** Get a single record */
-    async get(objectName: string, id: string): Promise<any> {
+    async get(objectName: string, id: string): Promise<unknown> {
         return {};
     }
 
     /** Create a record */
-    async create(objectName: string, data: any): Promise<any> {
+    async create(objectName: string, data: unknown): Promise<unknown> {
         return data;
     }
 
     /** Update a record */
-    async update(objectName: string, id: string, data: any): Promise<any> {
+    async update(objectName: string, id: string, data: unknown): Promise<unknown> {
         return data;
     }
 
@@ -84,12 +84,12 @@ export class ObjectStackKernel {
     }
 
     /** Get metadata for an object */
-    getMetadata(objectName: string): any {
+    getMetadata(objectName: string): unknown {
         return {};
     }
 
     /** Get view configuration */
-    getView(objectName: string, viewType?: 'list' | 'form'): any {
+    getView(objectName: string, viewType?: 'list' | 'form'): unknown {
         return null;
     }
 }
