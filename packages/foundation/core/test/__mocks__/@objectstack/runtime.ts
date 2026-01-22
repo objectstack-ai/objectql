@@ -5,7 +5,7 @@
  */
 
 export class ObjectStackKernel {
-    public ql: any = null;
+    public ql: unknown = null;
     private plugins: any[] = [];
     
     constructor(plugins: any[] = []) {
