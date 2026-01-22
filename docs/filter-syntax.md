@@ -190,12 +190,20 @@ const results = await repo.find({
 
 ### NOT
 
+> **Note**: The `$not` operator is not currently supported when using the backward-compatible translation layer. Use `$ne` (not equal) for field-level negation instead.
+
 ```typescript
+// ❌ Not supported
 const results = await repo.find({
   filters: {
-    $not: {
-      status: 'deleted'
-    }
+    $not: { status: 'deleted' }
+  }
+});
+
+// ✅ Use $ne instead
+const results = await repo.find({
+  filters: {
+    status: { $ne: 'deleted' }
   }
 });
 ```
@@ -297,7 +305,6 @@ const urgentTasks = await repo.find({
 | `$exist` | Field exists | `{ metadata: { $exist: true } }` |
 | `$and` | Logical AND | `{ $and: [{...}, {...}] }` |
 | `$or` | Logical OR | `{ $or: [{...}, {...}] }` |
-| `$not` | Logical NOT | `{ $not: {...} }` |
 
 ## Migration Guide
 

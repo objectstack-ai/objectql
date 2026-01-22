@@ -89,15 +89,10 @@ export class ObjectRepository {
             nodes.push(...this.interleaveWithOperator(orNodes, 'or'));
         }
         
+        // Note: $not operator is not currently supported in the legacy FilterNode format
+        // Users should use $ne (not equal) instead for negation on specific fields
         if (filter.$not) {
-            // NOT operator: convert to array of negated conditions
-            // This is a simplification - proper implementation would need driver support
-            const notNode = this.convertFilterToNode(filter.$not);
-            if (nodes.length > 0) {
-                nodes.push('and');
-            }
-            // Wrap in array to indicate it's a NOT group
-            nodes.push(['not', notNode]);
+            throw new Error('$not operator is not supported. Use $ne for field negation instead.');
         }
         
         // Process field conditions
