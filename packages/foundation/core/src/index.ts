@@ -17,6 +17,8 @@ export type { DriverInterface, DriverOptions, QueryAST } from '@objectstack/spec
 export * from './repository';
 export * from './app';
 export * from './plugin';
+export * from './validator-plugin';
+export * from './formula-plugin';
 
 export * from './action';
 export * from './hook';
