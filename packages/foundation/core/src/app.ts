@@ -36,11 +36,8 @@ import { convertIntrospectedSchemaToObjects } from './util';
 /**
  * ObjectQL
  * 
- * Enhanced ObjectQL implementation that wraps ObjectStackKernel
- * to provide the plugin architecture while maintaining backward compatibility.
- * 
- * This class acts as a compatibility layer, proxying operations to the kernel
- * while preserving the existing API surface.
+ * ObjectQL implementation that wraps ObjectStackKernel
+ * to provide the plugin architecture.
  */
 export class ObjectQL implements IObjectQL {
     public metadata: MetadataRegistry;
@@ -48,7 +45,6 @@ export class ObjectQL implements IObjectQL {
     private remotes: string[] = [];
     private hooks: Record<string, HookEntry[]> = {};
     private actions: Record<string, ActionEntry> = {};
-    private pluginsList: PluginDefinition[] = [];
     
     // ObjectStack Kernel Integration
     private kernel: ObjectStackKernel | null = null;
@@ -70,7 +66,7 @@ export class ObjectQL implements IObjectQL {
         // Add the ObjectQL plugin to provide enhanced features
         this.kernelPlugins.push(new ObjectQLPlugin());
         
-        // Initialize Plugin List (but don't setup yet)
+        // Add runtime plugins from config
         if (config.plugins) {
             for (const plugin of config.plugins) {
                 if (typeof plugin === 'string') {
@@ -81,10 +77,9 @@ export class ObjectQL implements IObjectQL {
             }
         }
     }
-    use(plugin: PluginDefinition) {
-        this.pluginsList.push(plugin);
-        // Only add to kernelPlugins, not both lists
-        // The kernel will handle RuntimePlugins, legacy plugins stay in pluginsList
+    
+    use(plugin: any) {
+        this.kernelPlugins.push(plugin);
     }
 
     removePackage(name: string) {
@@ -250,132 +245,16 @@ export class ObjectQL implements IObjectQL {
         }
     }
 
-    /**
-     * Create a PluginContext from the current IObjectQL instance.
-     * This adapts the IObjectQL interface to the PluginContext expected by @objectstack/spec plugins.
-     * 
-     * **Current Implementation Status:**
-     * - ✅ ql.object() - Fully functional, provides repository interface for data access
-     * - ❌ ql.query() - Not implemented, throws error with guidance
-     * - ❌ os.getCurrentUser() - Stub, returns null
-     * - ❌ os.getConfig() - Stub, returns null
-     * - ✅ logger - Functional, logs to console with [Plugin] prefix
-     * - ❌ storage - Stub, no persistence implemented
-     * - ✅ i18n - Basic fallback implementation
-     * - ✅ metadata - Direct access to MetadataRegistry
-     * - ❌ events - Empty object, event bus not implemented
-     * - ❌ app.router - Stub methods, no actual routing
-     * - ❌ app.scheduler - Not implemented (optional in spec)
-     * 
-     * @private
-     * @returns Minimal PluginContext adapter for current plugin system capabilities
-     */
-    private createPluginContext(): import('@objectstack/spec').PluginContextData {
-        // TODO: Implement full PluginContext conversion
-        // For now, provide a minimal adapter that maps IObjectQL to PluginContext
-        return {
-            ql: {
-                object: (name: string) => {
-                    // Return a repository-like interface
-                    // Cast to ObjectQL to access createContext
-                    return (this as ObjectQL).createContext({}).object(name);
-                },
-                query: async (soql: string) => {
-                    // TODO: Implement SOQL query execution
-                    // This requires implementing a SOQL parser and converter
-                    // For now, throw a descriptive error to guide users
-                    throw new Error(
-                        'SOQL queries are not yet supported in plugin context adapter. ' +
-                        'Please use context.ql.object(name).find() instead for data access.'
-                    );
-                }
-            },
-            os: {
-                getCurrentUser: async () => {
-                    // TODO: Get from context
-                    return null;
-                },
-                getConfig: async (key: string) => {
-                    // TODO: Implement config access
-                    return null;
-                }
-            },
-            logger: {
-                debug: (...args: any[]) => console.debug('[Plugin]', ...args),
-                info: (...args: any[]) => console.info('[Plugin]', ...args),
-                warn: (...args: any[]) => console.warn('[Plugin]', ...args),
-                error: (...args: any[]) => console.error('[Plugin]', ...args),
-            },
-            storage: {
-                get: async (key: string) => {
-                    // TODO: Implement plugin storage
-                    return null;
-                },
-                set: async (key: string, value: any) => {
-                    // TODO: Implement plugin storage
-                },
-                delete: async (key: string) => {
-                    // TODO: Implement plugin storage
-                }
-            },
-            i18n: {
-                t: (key: string, params?: any) => key, // Fallback: return key
-                getLocale: () => 'en'
-            },
-            metadata: this.metadata,
-            events: {
-                // TODO: Implement event bus
-            },
-            app: {
-                router: {
-                    get: (path: string, handler: (...args: unknown[]) => unknown, ...args: unknown[]) => {
-                        // TODO: Implement router registration
-                    },
-                    post: (path: string, handler: (...args: unknown[]) => unknown, ...args: unknown[]) => {
-                        // TODO: Implement router registration
-                    },
-                    use: (path: string | undefined, handler: (...args: unknown[]) => unknown, ...args: unknown[]) => {
-                        // TODO: Implement middleware registration
-                    }
-                },
-                scheduler: undefined // Optional in spec
-            }
-        };
-    }
-
     async init() {
         console.log('[ObjectQL] Initializing with ObjectStackKernel...');
         
         // Create the kernel instance with all collected plugins
-        // This must be done here, not in constructor, to allow use() to be called after construction
         this.kernel = new ObjectStackKernel(this.kernelPlugins);
         
-        // Start the kernel first - this will install and start all plugins
+        // Start the kernel - this will install and start all plugins
         await this.kernel.start();
-        
-        // 0. Init Legacy Plugins (for backwards compatibility)
-        // Only process plugins that are in pluginsList but NOT runtime plugins
-        // Runtime plugins are already handled by kernel.start()
-        for (const plugin of this.pluginsList) {
-            // Skip if this is a RuntimePlugin (has install or onStart methods)
-            if ('install' in plugin || 'onStart' in plugin) {
-                continue; // Already handled by kernel
-            }
-            
-            const pluginId = plugin.id || 'unknown';
-            console.log(`Initializing legacy plugin '${pluginId}'...`);
-            
-            // Call onEnable hook if it exists (legacy plugin pattern)
-            if (plugin.onEnable) {
-                const context = this.createPluginContext();
-                await plugin.onEnable(context);
-            }
-        }
 
-        // Packages, Presets, Source, Objects loading logic removed from Core.
-        // Use @objectql/platform-node's ObjectLoader or platform-specific loaders.
-        
-        // 3. Load In-Memory Objects (Dynamic Layer)
+        // Load In-Memory Objects (Dynamic Layer)
         if (this.config.objects) {
             for (const [key, obj] of Object.entries(this.config.objects)) {
                 this.registerObject(obj);
@@ -384,7 +263,7 @@ export class ObjectQL implements IObjectQL {
 
         const objects = this.metadata.list<ObjectConfig>('object');
         
-        // 5. Init Datasources
+        // Init Datasources
         // Let's pass all objects to all configured drivers.
         for (const [name, driver] of Object.entries(this.datasources)) {
             if (driver.init) {
@@ -393,7 +272,7 @@ export class ObjectQL implements IObjectQL {
             }
         }
 
-        // 6. Process Initial Data
+        // Process Initial Data
         await this.processInitialData();
         
         console.log('[ObjectQL] Initialization complete');

@@ -6,13 +6,24 @@
 
 export class ObjectStackKernel {
     public ql: any = null;
+    private plugins: any[] = [];
     
     constructor(plugins: any[] = []) {
-        // Mock implementation
+        this.plugins = plugins;
     }
     
     async start(): Promise<void> {
-        // Mock implementation
+        // Mock implementation that calls plugin lifecycle methods
+        for (const plugin of this.plugins) {
+            if (plugin.install) {
+                await plugin.install({ engine: this });
+            }
+        }
+        for (const plugin of this.plugins) {
+            if (plugin.onStart) {
+                await plugin.onStart({ engine: this });
+            }
+        }
     }
     
     async seed(): Promise<void> {

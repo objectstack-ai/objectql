@@ -247,10 +247,11 @@ app.registerDriver('mydb', new MyCustomDriver(), false);
 - Initialization process now calls `kernel.start()` which installs and starts all plugins
 - Dependencies updated to `@objectstack/*@0.2.0`
 - New `getKernel()` method provides access to the underlying kernel
+- **Removed legacy plugin support** - all plugins must now implement the `RuntimePlugin` interface
 
 **Migration Guide:**
 
-Your existing code should continue to work without changes:
+The ObjectQL API remains the same:
 ```typescript
 import { ObjectQL } from '@objectql/core';
 import { MyDriver } from './my-driver';
@@ -261,13 +262,43 @@ const app = new ObjectQL({
     }
 });
 
-await app.init(); // Now calls kernel.start() internally
+await app.init(); // Calls kernel.start() internally
 ```
 
-If you need kernel access:
+Access the kernel for advanced use cases:
 ```typescript
-const kernel = app.getKernel();
-// Use kernel methods if needed
+const kernel = app.getKernel(); // Must call after init()
+```
+
+**Plugin Migration:**
+
+Old plugins with `onEnable` hook are no longer supported. Migrate to `RuntimePlugin`:
+
+```typescript
+// Old (no longer supported)
+const plugin = {
+    id: 'my-plugin',
+    onEnable: async (context) => {
+        // initialization logic
+    }
+};
+
+// New (required)
+import type { RuntimePlugin, RuntimeContext } from '@objectstack/runtime';
+
+class MyPlugin implements RuntimePlugin {
+    name = 'my-plugin';
+    
+    async install(ctx: RuntimeContext): Promise<void> {
+        // installation logic
+    }
+    
+    async onStart(ctx: RuntimeContext): Promise<void> {
+        // startup logic
+    }
+}
+
+const plugin = new MyPlugin();
 ```
 
 ### v3.0.1: Native DriverInterface Adoption
