@@ -48,7 +48,7 @@ import {
     MetadataApiResponse,
     ObjectQLError,
     ApiErrorCode,
-    FilterExpression
+    Filter
 } from '@objectql/types';
 
 /**
@@ -391,7 +391,7 @@ export class DataApiClient implements IDataApiClient {
         );
     }
 
-    async count(objectName: string, filters?: FilterExpression): Promise<DataApiCountResponse> {
+    async count(objectName: string, filters?: Filter): Promise<DataApiCountResponse> {
         return this.request<DataApiCountResponse>(
             'GET',
             `${this.dataPath}/${objectName}`,

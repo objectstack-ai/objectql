@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { ObjectQLContext, IObjectQL, ObjectConfig, Driver, UnifiedQuery, ActionContext, HookAPI, RetrievalHookContext, MutationHookContext, UpdateHookContext, ValidationContext, ValidationError, ValidationRuleResult, FormulaContext, FilterExpression } from '@objectql/types';
+import { ObjectQLContext, IObjectQL, ObjectConfig, Driver, UnifiedQuery, ActionContext, HookAPI, RetrievalHookContext, MutationHookContext, UpdateHookContext, ValidationContext, ValidationError, ValidationRuleResult, FormulaContext, Filter } from '@objectql/types';
 import type { ObjectStackKernel } from '@objectstack/runtime';
 import type { QueryAST, FilterNode, SortNode } from '@objectstack/spec';
 import { Validator } from './validator';
@@ -43,16 +43,119 @@ export class ObjectRepository {
     }
 
     /**
-     * Translates ObjectQL FilterExpression to ObjectStack FilterNode format
+     * Translates ObjectQL Filter (FilterCondition) to ObjectStack FilterNode format
+     * 
+     * Converts modern object-based syntax to legacy array-based syntax:
+     * Input:  { age: { $gte: 18 }, $or: [{ status: "active" }, { role: "admin" }] }
+     * Output: [["age", ">=", 18], "or", [["status", "=", "active"], "or", ["role", "=", "admin"]]]
      */
-    private translateFilters(filters?: FilterExpression[]): FilterNode | undefined {
-        if (!filters || filters.length === 0) {
+    private translateFilters(filters?: Filter): FilterNode | undefined {
+        if (!filters || Object.keys(filters).length === 0) {
             return undefined;
         }
 
-        // FilterExpression[] is already compatible with FilterNode format
-        // Just pass through as-is
-        return filters as FilterNode;
+        return this.convertFilterToNode(filters);
+    }
+
+    /**
+     * Recursively converts FilterCondition to FilterNode array format
+     */
+    private convertFilterToNode(filter: Filter): FilterNode {
+        const nodes: any[] = [];
+        
+        // Process logical operators first
+        if (filter.$and) {
+            const andNodes = filter.$and.map(f => this.convertFilterToNode(f));
+            nodes.push(...this.interleaveWithOperator(andNodes, 'and'));
+        }
+        
+        if (filter.$or) {
+            const orNodes = filter.$or.map(f => this.convertFilterToNode(f));
+            if (nodes.length > 0) {
+                nodes.push('and');
+            }
+            nodes.push(...this.interleaveWithOperator(orNodes, 'or'));
+        }
+        
+        if (filter.$not) {
+            // NOT operator: convert to array of negated conditions
+            // This is a simplification - proper implementation would need driver support
+            const notNode = this.convertFilterToNode(filter.$not);
+            if (nodes.length > 0) {
+                nodes.push('and');
+            }
+            // Wrap in array to indicate it's a NOT group
+            nodes.push(['not', notNode]);
+        }
+        
+        // Process field conditions
+        for (const [field, value] of Object.entries(filter)) {
+            if (field.startsWith('$')) {
+                continue; // Skip logical operators (already processed)
+            }
+            
+            if (nodes.length > 0) {
+                nodes.push('and');
+            }
+            
+            // Handle field value
+            if (value === null || value === undefined) {
+                nodes.push([field, '=', value]);
+            } else if (typeof value === 'object' && !Array.isArray(value) && !(value instanceof Date)) {
+                // Explicit operators
+                for (const [op, opValue] of Object.entries(value)) {
+                    if (nodes.length > 0 && nodes[nodes.length - 1] !== 'and') {
+                        nodes.push('and');
+                    }
+                    
+                    const legacyOp = this.mapOperatorToLegacy(op);
+                    nodes.push([field, legacyOp, opValue]);
+                }
+            } else {
+                // Implicit equality
+                nodes.push([field, '=', value]);
+            }
+        }
+        
+        return nodes.length === 1 ? nodes[0] : nodes;
+    }
+    
+    /**
+     * Interleaves filter nodes with a logical operator
+     */
+    private interleaveWithOperator(nodes: FilterNode[], operator: string): any[] {
+        if (nodes.length === 0) return [];
+        if (nodes.length === 1) return [nodes[0]];
+        
+        const result: any[] = [nodes[0]];
+        for (let i = 1; i < nodes.length; i++) {
+            result.push(operator, nodes[i]);
+        }
+        return result;
+    }
+    
+    /**
+     * Maps modern $-prefixed operators to legacy format
+     */
+    private mapOperatorToLegacy(operator: string): string {
+        const mapping: Record<string, string> = {
+            '$eq': '=',
+            '$ne': '!=',
+            '$gt': '>',
+            '$gte': '>=',
+            '$lt': '<',
+            '$lte': '<=',
+            '$in': 'in',
+            '$nin': 'nin',
+            '$contains': 'contains',
+            '$startsWith': 'startswith',
+            '$endsWith': 'endswith',
+            '$null': 'is_null',
+            '$exist': 'is_not_null',
+            '$between': 'between',
+        };
+        
+        return mapping[operator] || operator.replace('$', '');
     }
 
     /**
