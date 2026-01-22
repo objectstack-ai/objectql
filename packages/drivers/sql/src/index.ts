@@ -261,14 +261,14 @@ export class SqlDriver implements Driver {
     }
 
     async count(objectName: string, filters: any, options?: any): Promise<number> {
-        // Normalize the query to support both QueryAST and legacy formats
-        const normalizedQuery = this.normalizeQuery(filters);
         const builder = this.getBuilder(objectName, options);
         
-        let actualFilters = normalizedQuery;
-        // If filters is a query object with a 'filters' property, use that
-        if (normalizedQuery && !Array.isArray(normalizedQuery) && normalizedQuery.filters) {
-            actualFilters = normalizedQuery.filters;
+        // Handle both filter arrays and query objects
+        let actualFilters = filters;
+        if (filters && !Array.isArray(filters)) {
+            // It's a query object, normalize it and extract filters
+            const normalizedQuery = this.normalizeQuery(filters);
+            actualFilters = normalizedQuery.filters || filters;
         }
 
         if (actualFilters) {
