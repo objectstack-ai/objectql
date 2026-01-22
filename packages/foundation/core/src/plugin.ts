@@ -8,6 +8,8 @@
 
 import type { RuntimePlugin, RuntimeContext } from '@objectstack/runtime';
 import type { ObjectStackKernel } from '@objectstack/runtime';
+import { ValidatorPlugin, ValidatorPluginConfig } from './validator-plugin';
+import { FormulaPlugin, FormulaPluginConfig } from './formula-plugin';
 
 /**
  * Configuration for the ObjectQL Plugin
@@ -26,10 +28,22 @@ export interface ObjectQLPluginConfig {
   enableValidator?: boolean;
   
   /**
+   * Validator plugin configuration
+   * Only used if enableValidator is not false
+   */
+  validatorConfig?: ValidatorPluginConfig;
+  
+  /**
    * Enable formula engine
    * @default true
    */
   enableFormulas?: boolean;
+  
+  /**
+   * Formula plugin configuration
+   * Only used if enableFormulas is not false
+   */
+  formulaConfig?: FormulaPluginConfig;
   
   /**
    * Enable AI integration
@@ -72,12 +86,16 @@ export class ObjectQLPlugin implements RuntimePlugin {
       await this.registerRepository(ctx.engine);
     }
     
+    // Install validator plugin if enabled
     if (this.config.enableValidator !== false) {
-      await this.registerValidator(ctx.engine);
+      const validatorPlugin = new ValidatorPlugin(this.config.validatorConfig || {});
+      await validatorPlugin.install(ctx);
     }
     
+    // Install formula plugin if enabled
     if (this.config.enableFormulas !== false) {
-      await this.registerFormulas(ctx.engine);
+      const formulaPlugin = new FormulaPlugin(this.config.formulaConfig || {});
+      await formulaPlugin.install(ctx);
     }
     
     if (this.config.enableAI !== false) {
@@ -104,26 +122,6 @@ export class ObjectQLPlugin implements RuntimePlugin {
     // TODO: Implement repository registration
     // For now, this is a placeholder to establish the structure
     console.log(`[${this.name}] Repository pattern registered`);
-  }
-  
-  /**
-   * Register the Validator engine
-   * @private
-   */
-  private async registerValidator(kernel: ObjectStackKernel): Promise<void> {
-    // TODO: Implement validator registration
-    // For now, this is a placeholder to establish the structure
-    console.log(`[${this.name}] Validator engine registered`);
-  }
-  
-  /**
-   * Register the Formula engine
-   * @private
-   */
-  private async registerFormulas(kernel: ObjectStackKernel): Promise<void> {
-    // TODO: Implement formula registration
-    // For now, this is a placeholder to establish the structure
-    console.log(`[${this.name}] Formula engine registered`);
   }
   
   /**

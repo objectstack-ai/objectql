@@ -1,0 +1,126 @@
+/**
+ * ObjectQL Validator Plugin Tests
+ * Copyright (c) 2026-present ObjectStack Inc.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+import { ValidatorPlugin } from '../src/validator-plugin';
+import { ObjectStackKernel } from '@objectstack/runtime';
+
+describe('ValidatorPlugin', () => {
+    let plugin: ValidatorPlugin;
+    let mockKernel: any;
+
+    beforeEach(() => {
+        // Create a mock kernel with middleware support
+        mockKernel = {
+            use: jest.fn(),
+        };
+        plugin = new ValidatorPlugin();
+    });
+
+    describe('Plugin Metadata', () => {
+        it('should have correct name and version', () => {
+            expect(plugin.name).toBe('@objectql/validator');
+            expect(plugin.version).toBe('4.0.0');
+        });
+    });
+
+    describe('Constructor', () => {
+        it('should create plugin with default config', () => {
+            const defaultPlugin = new ValidatorPlugin();
+            expect(defaultPlugin).toBeDefined();
+        });
+
+        it('should create plugin with custom config', () => {
+            const customPlugin = new ValidatorPlugin({
+                language: 'zh-CN',
+                enableQueryValidation: false,
+                enableMutationValidation: true,
+            });
+            expect(customPlugin).toBeDefined();
+        });
+
+        it('should accept language options', () => {
+            const customPlugin = new ValidatorPlugin({
+                language: 'fr',
+                languageFallback: ['en', 'zh-CN'],
+            });
+            expect(customPlugin).toBeDefined();
+        });
+    });
+
+    describe('Installation', () => {
+        it('should install successfully with mock kernel', async () => {
+            const ctx = { engine: mockKernel };
+            await plugin.install(ctx);
+            
+            // Verify that middleware hooks were registered
+            expect(mockKernel.use).toHaveBeenCalled();
+        });
+
+        it('should register query validation when enabled', async () => {
+            const pluginWithQuery = new ValidatorPlugin({ enableQueryValidation: true });
+            const ctx = { engine: mockKernel };
+            
+            await pluginWithQuery.install(ctx);
+            
+            // Check that use was called (for query validation)
+            expect(mockKernel.use).toHaveBeenCalledWith('beforeQuery', expect.any(Function));
+        });
+
+        it('should register mutation validation when enabled', async () => {
+            const pluginWithMutation = new ValidatorPlugin({ enableMutationValidation: true });
+            const ctx = { engine: mockKernel };
+            
+            await pluginWithMutation.install(ctx);
+            
+            // Check that use was called (for mutation validation)
+            expect(mockKernel.use).toHaveBeenCalledWith('beforeMutation', expect.any(Function));
+        });
+
+        it('should not register query validation when disabled', async () => {
+            const pluginNoQuery = new ValidatorPlugin({ enableQueryValidation: false });
+            const ctx = { engine: mockKernel };
+            
+            await pluginNoQuery.install(ctx);
+            
+            // Should not have registered beforeQuery hook
+            const beforeQueryCalls = mockKernel.use.mock.calls.filter(
+                (call: any[]) => call[0] === 'beforeQuery'
+            );
+            expect(beforeQueryCalls.length).toBe(0);
+        });
+
+        it('should not register mutation validation when disabled', async () => {
+            const pluginNoMutation = new ValidatorPlugin({ enableMutationValidation: false });
+            const ctx = { engine: mockKernel };
+            
+            await pluginNoMutation.install(ctx);
+            
+            // Should not have registered beforeMutation hook
+            const beforeMutationCalls = mockKernel.use.mock.calls.filter(
+                (call: any[]) => call[0] === 'beforeMutation'
+            );
+            expect(beforeMutationCalls.length).toBe(0);
+        });
+
+        it('should handle kernel without middleware support', async () => {
+            const kernelNoMiddleware = {};
+            const ctx = { engine: kernelNoMiddleware };
+            
+            // Should not throw error
+            await expect(plugin.install(ctx)).resolves.not.toThrow();
+        });
+    });
+
+    describe('Validator Access', () => {
+        it('should expose validator instance', () => {
+            const validator = plugin.getValidator();
+            expect(validator).toBeDefined();
+            expect(typeof validator.validate).toBe('function');
+        });
+    });
+});
