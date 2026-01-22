@@ -18,4 +18,15 @@ module.exports = {
       isolatedModules: true,
     }],
   },
+  transformIgnorePatterns: [
+    'node_modules/(?!(@objectstack))',
+  ],
+  globals: {
+    'ts-jest': {
+      tsconfig: {
+        esModuleInterop: true,
+        allowSyntheticDefaultImports: true,
+      }
+    }
+  }
 };

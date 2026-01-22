@@ -16,6 +16,7 @@ export type { DriverInterface, DriverOptions, QueryAST } from '@objectstack/spec
 // Export our enhanced runtime components (actual implementations)
 export * from './repository';
 export * from './app';
+export * from './plugin';
 
 export * from './action';
 export * from './hook';

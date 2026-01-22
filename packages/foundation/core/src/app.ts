@@ -22,7 +22,9 @@ import {
     LoaderPlugin
 } from '@objectql/types';
 import type { PluginDefinition } from '@objectstack/spec';
+import { ObjectStackKernel } from '@objectstack/runtime';
 import { ObjectRepository } from './repository';
+import { ObjectQLPlugin } from './plugin';
 // import { createDriverFromConnection } from './driver'; // REMOVE THIS
 
 // import { loadRemoteFromUrl } from './remote';
@@ -31,6 +33,15 @@ import { registerHookHelper, triggerHookHelper, HookEntry } from './hook';
 import { registerObjectHelper, getConfigsHelper } from './object';
 import { convertIntrospectedSchemaToObjects } from './util';
 
+/**
+ * ObjectQL
+ * 
+ * Enhanced ObjectQL implementation that wraps ObjectStackKernel
+ * to provide the plugin architecture while maintaining backward compatibility.
+ * 
+ * This class acts as a compatibility layer, proxying operations to the kernel
+ * while preserving the existing API surface.
+ */
 export class ObjectQL implements IObjectQL {
     public metadata: MetadataRegistry;
     private datasources: Record<string, Driver> = {};
@@ -38,6 +49,10 @@ export class ObjectQL implements IObjectQL {
     private hooks: Record<string, HookEntry[]> = {};
     private actions: Record<string, ActionEntry> = {};
     private pluginsList: PluginDefinition[] = [];
+    
+    // ObjectStack Kernel Integration
+    private kernel: ObjectStackKernel;
+    private kernelPlugins: any[] = [];
     
     // Store config for lazy loading in init()
     private config: ObjectQLConfig;
@@ -52,6 +67,13 @@ export class ObjectQL implements IObjectQL {
              throw new Error("Connection strings are not supported in core directly. Use @objectql/platform-node's createDriverFromConnection or pass a driver instance to 'datasources'.");
         }
 
+        // Initialize ObjectStackKernel with plugins
+        // The kernel will be used for lifecycle management and plugin orchestration
+        this.kernelPlugins = [];
+        
+        // Add the ObjectQL plugin to provide enhanced features
+        this.kernelPlugins.push(new ObjectQLPlugin());
+        
         // Initialize Plugin List (but don't setup yet)
         if (config.plugins) {
             for (const plugin of config.plugins) {
@@ -62,9 +84,14 @@ export class ObjectQL implements IObjectQL {
                 }
             }
         }
+        
+        // Create the kernel instance
+        // Note: The kernel expects plugins in its constructor
+        this.kernel = new ObjectStackKernel(this.kernelPlugins);
     }
     use(plugin: PluginDefinition) {
         this.pluginsList.push(plugin);
+        this.kernelPlugins.push(plugin);
     }
 
     removePackage(name: string) {
@@ -141,6 +168,18 @@ export class ObjectQL implements IObjectQL {
             }
         };
         return ctx;
+    }
+
+    /**
+     * Get the underlying ObjectStackKernel instance
+     * 
+     * This provides access to the kernel for advanced usage scenarios
+     * where you need direct access to the plugin architecture.
+     * 
+     * @returns The ObjectStackKernel instance
+     */
+    getKernel(): ObjectStackKernel {
+        return this.kernel;
     }
 
     registerObject(object: ObjectConfig) {
@@ -308,11 +347,17 @@ export class ObjectQL implements IObjectQL {
     }
 
     async init() {
+        console.log('[ObjectQL] Initializing with ObjectStackKernel...');
+        
+        // Start the kernel first - this will install and start all plugins
+        await this.kernel.start();
+        
         // 0. Init Plugins (This allows plugins to register custom loaders)
+        // Legacy plugin support - for plugins not registered with the kernel
         for (const plugin of this.pluginsList) {
             const pluginId = plugin.id || 'unknown';
             
-            console.log(`Initializing plugin '${pluginId}'...`);
+            console.log(`Initializing legacy plugin '${pluginId}'...`);
             
             // Call onEnable hook if it exists
             if (plugin.onEnable) {
@@ -344,6 +389,8 @@ export class ObjectQL implements IObjectQL {
 
         // 6. Process Initial Data
         await this.processInitialData();
+        
+        console.log('[ObjectQL] Initialization complete');
     }
 
     private async processInitialData() {

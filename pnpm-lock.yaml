@@ -465,11 +465,11 @@ importers:
         specifier: workspace:*
         version: link:../types
       '@objectstack/objectql':
-        specifier: ^0.1.1
-        version: 0.1.1
+        specifier: ^0.2.0
+        version: 0.2.0
       '@objectstack/runtime':
-        specifier: ^0.1.1
-        version: 0.1.1
+        specifier: ^0.2.0
+        version: 0.2.0
       '@objectstack/spec':
         specifier: ^0.2.0
         version: 0.2.0
@@ -1921,22 +1921,18 @@ packages:
     engines: {node: '>=10'}
     deprecated: This functionality has been moved to @npmcli/fs
 
-  '@objectstack/objectql@0.1.1':
-    resolution: {integrity: sha512-oVWUOWU7g7j12jY4r8XlLF6yyFf0kiWzSLgm3dRot8/w0/cyLsq9fc+7Dnm/xx9MZwbzXrLBDu9DPxPVVsn3Ng==}
+  '@objectstack/objectql@0.2.0':
+    resolution: {integrity: sha512-LCgCs+K7J4/rOwJZdXFZgm+zVD936ppRgRVwYn3Uc8xP/JZeFg/DDrhW+O1li3Enwbai2eKMCRB6XYinOhoCAg==}
 
-  '@objectstack/runtime@0.1.1':
-    resolution: {integrity: sha512-uTDwIz3JdnOmLNfrrkRYQJSlNoVGZ7e9T6EcvdUzCPA9Y3jZpi3vXQ8Y30HvT6MVFXdm+P1U2XxkidbwHgOKfg==}
-
-  '@objectstack/spec@0.1.2':
-    resolution: {integrity: sha512-xnGZV8ND9YnMKHURV5+iOiUQhqGpll95v5Wz9Kgw0rKGd6V6BlvAcl2S56EF8YIK+khZAqWiE4RqrOIXDKoRCw==}
-    engines: {node: '>=18.0.0'}
+  '@objectstack/runtime@0.2.0':
+    resolution: {integrity: sha512-nKDm3HSbGDkpccGKXDXhOr3nvEOgz6cp1j/z74DoreVD/6gIH6PuWPldHJbOVdR/nhPHNV/ViK7tvGmLML2v1A==}
 
   '@objectstack/spec@0.2.0':
     resolution: {integrity: sha512-y4JALcsTgOeEE0xRJ7Co16beQTIO42c6KngFFcy7QQH0BeN4gKgMoqWGkRxPfOKZnnlUzYo/1hSLxmmUtJMisA==}
     engines: {node: '>=18.0.0'}
 
-  '@objectstack/types@0.1.1':
-    resolution: {integrity: sha512-XGkoSfxZvsa2l3LCSMr6XzN8CuxfotbFhICaMgqY746wF41WajZsYJIlQe/4WC9ob9dhBREVdMVbgZlGlh+zjQ==}
+  '@objectstack/types@0.2.0':
+    resolution: {integrity: sha512-zxZ4vMuVETKgCp19i2lPMP0767fJZ0hXasJbdVrc2RvBa06fCbMCmJWc4bsn21XbyGEMaE/BFlqEXw+F4Gyh9Q==}
 
   '@paralleldrive/cuid2@2.3.1':
     resolution: {integrity: sha512-XO7cAxhnTZl0Yggq6jOgjiOHhbgcO4NqFqwSmQpjK3b6TEE6Uj/jfSk6wzYyemh3+I0sHirKSetjQwn5cZktFw==}
@@ -9657,27 +9653,23 @@ snapshots:
       rimraf: 3.0.2
     optional: true
 
-  '@objectstack/objectql@0.1.1':
+  '@objectstack/objectql@0.2.0':
     dependencies:
-      '@objectstack/spec': 0.1.2
+      '@objectstack/spec': 0.2.0
 
-  '@objectstack/runtime@0.1.1':
+  '@objectstack/runtime@0.2.0':
     dependencies:
-      '@objectstack/objectql': 0.1.1
-      '@objectstack/spec': 0.1.2
-      '@objectstack/types': 0.1.1
-
-  '@objectstack/spec@0.1.2':
-    dependencies:
-      zod: 3.25.76
+      '@objectstack/objectql': 0.2.0
+      '@objectstack/spec': 0.2.0
+      '@objectstack/types': 0.2.0
 
   '@objectstack/spec@0.2.0':
     dependencies:
       zod: 3.25.76
 
-  '@objectstack/types@0.1.1':
+  '@objectstack/types@0.2.0':
     dependencies:
-      '@objectstack/spec': 0.1.2
+      '@objectstack/spec': 0.2.0
 
   '@paralleldrive/cuid2@2.3.1':
     dependencies:
