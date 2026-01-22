@@ -17,17 +17,13 @@ module.exports = {
   transform: {
     '^.+\\.ts$': ['ts-jest', {
       isolatedModules: true,
+      tsconfig: {
+        esModuleInterop: true,
+        allowSyntheticDefaultImports: true,
+      }
     }],
   },
   transformIgnorePatterns: [
     'node_modules/(?!(@objectstack))',
   ],
-  globals: {
-    'ts-jest': {
-      tsconfig: {
-        esModuleInterop: true,
-        allowSyntheticDefaultImports: true,
-      }
-    }
-  }
 };

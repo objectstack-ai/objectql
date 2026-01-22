@@ -51,7 +51,7 @@ export class ObjectQL implements IObjectQL {
     private pluginsList: PluginDefinition[] = [];
     
     // ObjectStack Kernel Integration
-    private kernel: ObjectStackKernel;
+    private kernel: ObjectStackKernel | null = null;
     private kernelPlugins: any[] = [];
     
     // Store config for lazy loading in init()
@@ -67,10 +67,6 @@ export class ObjectQL implements IObjectQL {
              throw new Error("Connection strings are not supported in core directly. Use @objectql/platform-node's createDriverFromConnection or pass a driver instance to 'datasources'.");
         }
 
-        // Initialize ObjectStackKernel with plugins
-        // The kernel will be used for lifecycle management and plugin orchestration
-        this.kernelPlugins = [];
-        
         // Add the ObjectQL plugin to provide enhanced features
         this.kernelPlugins.push(new ObjectQLPlugin());
         
@@ -84,14 +80,11 @@ export class ObjectQL implements IObjectQL {
                 }
             }
         }
-        
-        // Create the kernel instance
-        // Note: The kernel expects plugins in its constructor
-        this.kernel = new ObjectStackKernel(this.kernelPlugins);
     }
     use(plugin: PluginDefinition) {
         this.pluginsList.push(plugin);
-        this.kernelPlugins.push(plugin);
+        // Only add to kernelPlugins, not both lists
+        // The kernel will handle RuntimePlugins, legacy plugins stay in pluginsList
     }
 
     removePackage(name: string) {
@@ -177,8 +170,12 @@ export class ObjectQL implements IObjectQL {
      * where you need direct access to the plugin architecture.
      * 
      * @returns The ObjectStackKernel instance
+     * @throws Error if called before init()
      */
     getKernel(): ObjectStackKernel {
+        if (!this.kernel) {
+            throw new Error('Kernel not initialized. Call init() first.');
+        }
         return this.kernel;
     }
 
@@ -349,17 +346,26 @@ export class ObjectQL implements IObjectQL {
     async init() {
         console.log('[ObjectQL] Initializing with ObjectStackKernel...');
         
+        // Create the kernel instance with all collected plugins
+        // This must be done here, not in constructor, to allow use() to be called after construction
+        this.kernel = new ObjectStackKernel(this.kernelPlugins);
+        
         // Start the kernel first - this will install and start all plugins
         await this.kernel.start();
         
-        // 0. Init Plugins (This allows plugins to register custom loaders)
-        // Legacy plugin support - for plugins not registered with the kernel
+        // 0. Init Legacy Plugins (for backwards compatibility)
+        // Only process plugins that are in pluginsList but NOT runtime plugins
+        // Runtime plugins are already handled by kernel.start()
         for (const plugin of this.pluginsList) {
-            const pluginId = plugin.id || 'unknown';
+            // Skip if this is a RuntimePlugin (has install or onStart methods)
+            if ('install' in plugin || 'onStart' in plugin) {
+                continue; // Already handled by kernel
+            }
             
+            const pluginId = plugin.id || 'unknown';
             console.log(`Initializing legacy plugin '${pluginId}'...`);
             
-            // Call onEnable hook if it exists
+            // Call onEnable hook if it exists (legacy plugin pattern)
             if (plugin.onEnable) {
                 const context = this.createPluginContext();
                 await plugin.onEnable(context);
