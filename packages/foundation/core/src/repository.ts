@@ -56,9 +56,12 @@ export class ObjectRepository {
             return undefined;
         }
 
-        // Backward compatibility: if it's already an array (old format), pass through
+        // Backward compatibility: if it's already an array (old format), convert to FilterNode
+        // TODO: This uses type assertion because the old code used arrays for filters
+        // but FilterNode is now an object-based AST. This should be properly converted
+        // to build FilterNode objects in a future refactoring.
         if (Array.isArray(filters)) {
-            return filters as FilterNode;
+            return filters as unknown as FilterNode;
         }
 
         // If it's an empty object, return undefined
@@ -128,7 +131,10 @@ export class ObjectRepository {
             }
         }
         
-        return nodes.length === 1 ? nodes[0] : nodes;
+        // TODO: This returns an array but FilterNode is now an object-based AST.
+        // This type assertion is temporary for backward compatibility. Should be
+        // refactored to build proper FilterNode objects with type/operator/children.
+        return (nodes.length === 1 ? nodes[0] : nodes) as unknown as FilterNode;
     }
     
     /**

@@ -26,11 +26,13 @@
     "generate:schemas": "node scripts/generate-schemas.js",
     "test": "jest --passWithNoTests"
   },
-  "dependencies": {
+  "peerDependencies": {
     "@objectstack/spec": "^0.2.0",
     "@objectstack/runtime": "^0.2.0"
   },
   "devDependencies": {
+    "@objectstack/spec": "workspace:*",
+    "@objectstack/runtime": "workspace:*",
     "ts-json-schema-generator": "^2.4.0"
   }
 }
