@@ -203,7 +203,8 @@ export class RemoteDriver implements Driver {
     }
 
     async findOne(objectName: string, id: string | number, query?: any, options?: any): Promise<any> {
-        return this.request('findOne', objectName, { id, query }); // Note: args format must match server expectation
+        const normalizedQuery = query ? this.normalizeQuery(query) : undefined;
+        return this.request('findOne', objectName, { id, query: normalizedQuery }); // Note: args format must match server expectation
     }
 
     async create(objectName: string, data: any, options?: any): Promise<any> {
