@@ -6,7 +6,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { ObjectQLContext, IObjectQL, ObjectConfig, Driver, UnifiedQuery, ActionContext, HookAPI, RetrievalHookContext, MutationHookContext, UpdateHookContext, ValidationContext, ValidationError, ValidationRuleResult, FormulaContext } from '@objectql/types';
+import { ObjectQLContext, IObjectQL, ObjectConfig, Driver, UnifiedQuery, ActionContext, HookAPI, RetrievalHookContext, MutationHookContext, UpdateHookContext, ValidationContext, ValidationError, ValidationRuleResult, FormulaContext, FilterExpression } from '@objectql/types';
+import type { ObjectStackKernel } from '@objectstack/runtime';
+import type { QueryAST, FilterNode, SortNode } from '@objectstack/spec';
 import { Validator } from './validator';
 import { FormulaEngine } from './formula-engine';
 
@@ -29,11 +31,79 @@ export class ObjectRepository {
         return this.app.datasource(datasourceName);
     }
     
+    private getKernel(): ObjectStackKernel {
+        return this.app.getKernel();
+    }
+    
     private getOptions(extra: any = {}) {
         return {
             transaction: this.context.transactionHandle,
             ...extra
         };
+    }
+
+    /**
+     * Translates ObjectQL FilterExpression to ObjectStack FilterNode format
+     */
+    private translateFilters(filters?: FilterExpression[]): FilterNode | undefined {
+        if (!filters || filters.length === 0) {
+            return undefined;
+        }
+
+        // FilterExpression[] is already compatible with FilterNode format
+        // Just pass through as-is
+        return filters as FilterNode;
+    }
+
+    /**
+     * Translates ObjectQL UnifiedQuery to ObjectStack QueryAST format
+     */
+    private buildQueryAST(query: UnifiedQuery): QueryAST {
+        const ast: QueryAST = {
+            object: this.objectName,
+        };
+
+        // Map fields
+        if (query.fields) {
+            ast.fields = query.fields;
+        }
+
+        // Map filters
+        if (query.filters) {
+            ast.filters = this.translateFilters(query.filters);
+        }
+
+        // Map sort
+        if (query.sort) {
+            ast.sort = query.sort.map(([field, order]) => ({
+                field,
+                order: order as 'asc' | 'desc'
+            }));
+        }
+
+        // Map pagination
+        if (query.limit !== undefined) {
+            ast.top = query.limit;
+        }
+        if (query.skip !== undefined) {
+            ast.skip = query.skip;
+        }
+
+        // Map aggregations
+        if (query.aggregate) {
+            ast.aggregations = query.aggregate.map(agg => ({
+                function: agg.func as any,
+                field: agg.field,
+                alias: agg.alias || `${agg.func}_${agg.field}`
+            }));
+        }
+
+        // Map groupBy
+        if (query.groupBy) {
+            ast.groupBy = query.groupBy;
+        }
+
+        return ast;
     }
 
     getSchema(): ObjectConfig {
@@ -221,8 +291,10 @@ export class ObjectRepository {
         };
         await this.app.triggerHook('beforeFind', this.objectName, hookCtx);
 
-        // TODO: Apply basic filters like spaceId
-        const results = await this.getDriver().find(this.objectName, hookCtx.query || {}, this.getOptions());
+        // Build QueryAST and execute via kernel
+        const ast = this.buildQueryAST(hookCtx.query || {});
+        const kernelResult = await this.getKernel().find(this.objectName, ast);
+        const results = kernelResult.value;
         
         // Evaluate formulas for each result
         const resultsWithFormulas = results.map(record => this.evaluateFormulas(record));
@@ -246,7 +318,8 @@ export class ObjectRepository {
             };
             await this.app.triggerHook('beforeFind', this.objectName, hookCtx);
             
-            const result = await this.getDriver().findOne(this.objectName, idOrQuery, hookCtx.query, this.getOptions());
+            // Use kernel.get() for direct ID lookup
+            const result = await this.getKernel().get(this.objectName, String(idOrQuery));
 
             // Evaluate formulas if result exists
             const resultWithFormulas = result ? this.evaluateFormulas(result) : result;
@@ -272,7 +345,10 @@ export class ObjectRepository {
         };
         await this.app.triggerHook('beforeCount', this.objectName, hookCtx);
 
-        const result = await this.getDriver().count(this.objectName, hookCtx.query, this.getOptions());
+        // Build QueryAST and execute via kernel to get count
+        const ast = this.buildQueryAST(hookCtx.query || {});
+        const kernelResult = await this.getKernel().find(this.objectName, ast);
+        const result = kernelResult.count;
 
         hookCtx.result = result;
         await this.app.triggerHook('afterCount', this.objectName, hookCtx);
@@ -298,7 +374,8 @@ export class ObjectRepository {
         // Validate the record before creating
         await this.validateRecord('create', finalDoc);
         
-        const result = await this.getDriver().create(this.objectName, finalDoc, this.getOptions());
+        // Execute via kernel
+        const result = await this.getKernel().create(this.objectName, finalDoc);
         
         hookCtx.result = result;
         await this.app.triggerHook('afterCreate', this.objectName, hookCtx);
@@ -324,7 +401,8 @@ export class ObjectRepository {
         // Validate the update
         await this.validateRecord('update', hookCtx.data, previousData);
 
-        const result = await this.getDriver().update(this.objectName, id, hookCtx.data, this.getOptions(options));
+        // Execute via kernel
+        const result = await this.getKernel().update(this.objectName, String(id), hookCtx.data);
 
         hookCtx.result = result;
         await this.app.triggerHook('afterUpdate', this.objectName, hookCtx);
@@ -345,7 +423,8 @@ export class ObjectRepository {
         };
         await this.app.triggerHook('beforeDelete', this.objectName, hookCtx);
 
-        const result = await this.getDriver().delete(this.objectName, id, this.getOptions());
+        // Execute via kernel
+        const result = await this.getKernel().delete(this.objectName, String(id));
 
         hookCtx.result = result;
         await this.app.triggerHook('afterDelete', this.objectName, hookCtx);
