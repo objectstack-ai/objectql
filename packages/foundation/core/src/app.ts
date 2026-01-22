@@ -101,22 +101,26 @@ export class ObjectQL implements IObjectQL {
 
     on(event: HookName, objectName: string, handler: HookHandler, packageName?: string) {
         // Delegate to kernel hook manager
-        this.kernel.hooks.register(event, objectName, handler, packageName);
+        // Note: Type casting needed due to type incompatibility between ObjectQL HookName (includes beforeCount)
+        // and runtime HookName. This is safe as the kernel will accept all hook types.
+        this.kernel.hooks.register(event as any, objectName, handler as any, packageName);
     }
 
     async triggerHook(event: HookName, objectName: string, ctx: HookContext) {
         // Delegate to kernel hook manager
-        await this.kernel.hooks.trigger(event, objectName, ctx);
+        await this.kernel.hooks.trigger(event as any, objectName, ctx as any);
     }
 
     registerAction(objectName: string, actionName: string, handler: ActionHandler, packageName?: string) {
         // Delegate to kernel action manager
-        this.kernel.actions.register(objectName, actionName, handler, packageName);
+        // Note: Type casting needed due to type incompatibility between ObjectQL ActionHandler
+        // (includes input/api fields) and runtime ActionHandler. This is safe as runtime is more permissive.
+        this.kernel.actions.register(objectName, actionName, handler as any, packageName);
     }
 
     async executeAction(objectName: string, actionName: string, ctx: ActionContext) {
         // Delegate to kernel action manager
-        return await this.kernel.actions.execute(objectName, actionName, ctx);
+        return await this.kernel.actions.execute(objectName, actionName, ctx as any);
     }
 
     createContext(options: ObjectQLContextOptions): ObjectQLContext {
@@ -128,7 +132,7 @@ export class ObjectQL implements IObjectQL {
             object: (name: string) => {
                 return new ObjectRepository(name, ctx, this);
             },
-            transaction: async (callback) => {
+            transaction: async (callback: (ctx: ObjectQLContext) => Promise<any>) => {
                  const driver = this.datasources['default'];
                  if (!driver || !driver.beginTransaction) {
                       return callback(ctx);
@@ -144,7 +148,7 @@ export class ObjectQL implements IObjectQL {
                  const trxCtx: ObjectQLContext = {
                      ...ctx,
                      transactionHandle: trx,
-                     transaction: async (cb) => cb(trxCtx)
+                     transaction: async (cb: (ctx: ObjectQLContext) => Promise<any>) => cb(trxCtx)
                  };
 
                  try {
@@ -183,7 +187,7 @@ export class ObjectQL implements IObjectQL {
         // Normalize fields
         if (object.fields) {
             for (const [key, field] of Object.entries(object.fields)) {
-                if (!field.name) {
+                if (field && !field.name) {
                     field.name = key;
                 }
             }
