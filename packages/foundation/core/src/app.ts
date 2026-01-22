@@ -47,7 +47,7 @@ export class ObjectQL implements IObjectQL {
     private actions: Record<string, ActionEntry> = {};
     
     // ObjectStack Kernel Integration
-    private kernel: ObjectStackKernel | null = null;
+    private kernel: ObjectStackKernel;
     private kernelPlugins: any[] = [];
     
     // Store config for lazy loading in init()
