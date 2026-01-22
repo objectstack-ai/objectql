@@ -511,6 +511,9 @@ importers:
 
   packages/foundation/types:
     dependencies:
+      '@objectstack/runtime':
+        specifier: ^0.2.0
+        version: 0.2.0
       '@objectstack/spec':
         specifier: ^0.2.0
         version: 0.2.0

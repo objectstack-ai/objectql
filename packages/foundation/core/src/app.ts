@@ -21,8 +21,7 @@ import {
     ActionContext,
     LoaderPlugin
 } from '@objectql/types';
-import type { PluginDefinition } from '@objectstack/spec';
-import { ObjectStackKernel } from '@objectstack/runtime';
+import { ObjectStackKernel, type RuntimePlugin } from '@objectstack/runtime';
 import { ObjectRepository } from './repository';
 import { ObjectQLPlugin } from './plugin';
 // import { createDriverFromConnection } from './driver'; // REMOVE THIS
@@ -47,8 +46,8 @@ export class ObjectQL implements IObjectQL {
     private actions: Record<string, ActionEntry> = {};
     
     // ObjectStack Kernel Integration
-    private kernel: ObjectStackKernel;
-    private kernelPlugins: any[] = [];
+    private kernel!: ObjectStackKernel;
+    private kernelPlugins: RuntimePlugin[] = [];
     
     // Store config for lazy loading in init()
     private config: ObjectQLConfig;
@@ -78,7 +77,7 @@ export class ObjectQL implements IObjectQL {
         }
     }
     
-    use(plugin: any) {
+    use(plugin: RuntimePlugin) {
         this.kernelPlugins.push(plugin);
     }
 
