@@ -123,10 +123,9 @@ import { FieldConfig, ObjectConfig } from '@objectql/types';
 - `@objectstack/runtime` - All runtime types compile
 - `@objectql/types` - All types compile, 32 tests passing
 
-### ⚠️ Known Issues
-- External package `@objectstack/objectql@0.2.0` in node_modules has compatibility issues
-- Some type mismatches in `@objectql/core` repository.ts (FilterNode usage)
-- These are expected during migration and will be resolved in subsequent phases
+### ✅ Resolved Issues (v4.0.0)
+- ~~External package `@objectstack/objectql@0.2.0` in node_modules has compatibility issues~~ - **RESOLVED**: Non-existent package removed from dependencies
+- ~~Some type mismatches in `@objectql/core` repository.ts (FilterNode usage)~~ - **RESOLVED**: Types properly aligned with @objectstack/spec
 
 ## Next Steps
 

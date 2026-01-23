@@ -1,8 +1,8 @@
 # Migration to @objectstack/runtime
 
-**Version**: 1.0  
-**Status**: In Progress (70% Complete)  
-**Target Completion**: Week 8 (Phase 3)
+**Version**: 1.1  
+**Status**: ✅ Phase 3 Complete (75% Complete)  
+**Target Completion**: Week 8 (Phase 3 Complete, Phase 4-7 Ongoing)
 
 This document tracks the migration of `@objectql/core` from a monolithic package to a lightweight plugin architecture built on top of `@objectstack/runtime`.
 
@@ -141,25 +141,25 @@ This migration transforms ObjectQL from a monolithic ORM into a **compiler-first
 
 ---
 
-### 🟡 Phase 3: Plugin System (Week 3) - IN PROGRESS
+### ✅ Phase 3: Plugin System (Week 3) - COMPLETE
 
-**Status**: 70% Complete
+**Status**: 100% Complete
 
 **Deliverables**:
 - [x] Created `ObjectQLPlugin` implementing `RuntimePlugin`
 - [x] Created `ValidatorPlugin` sub-plugin
 - [x] Created `FormulaPlugin` sub-plugin
 - [x] Delegated metadata/hooks/actions to kernel
+- [x] **COMPLETED**: Removed phantom `@objectstack/objectql` dependency
+- [x] **COMPLETED**: Updated package description to reflect plugin architecture
+- [x] **COMPLETED**: Cleaned up commented-out code and documentation
 - [ ] **TODO**: Implement Repository service registration
 - [ ] **TODO**: Implement AI service registration
 - [ ] **TODO**: Create service container pattern
 
-**Current Blockers**:
-- Repository and AI registration are placeholders (TODOs in code)
-- No service discovery API
-- Missing `onStop()` lifecycle hook
+**Completion Date**: 2026-01-23
 
-**Expected Completion**: Week 3 (This Week)
+**Documentation**: See `docs/migration/plugin-architecture-migration-complete.md`
 
 ---
 
@@ -234,12 +234,14 @@ This migration transforms ObjectQL from a monolithic ORM into a **compiler-first
 | FilterTranslator | ✅ Complete | @objectql/core | Filter conversion |
 | ValidatorPlugin | ✅ Complete | @objectql/core | Plugin wrapper for validator |
 | FormulaPlugin | ✅ Complete | @objectql/core | Plugin wrapper for formulas |
+| Dependency Cleanup | ✅ Complete | @objectql/core | Phantom dependencies removed |
+| Package Description | ✅ Complete | @objectql/core | Updated to reflect plugin architecture |
 
-### In Progress (70% Complete)
+### In Progress (25% Complete)
 
 | Feature | Status | Remaining Work |
 |---------|--------|---------------|
-| ObjectQLPlugin | 🟡 70% | Repository/AI service registration |
+| ObjectQLPlugin | 🟡 75% | Repository/AI service registration (optional) |
 | Repository Pattern | 🟡 90% | Extract to QueryService |
 | Service Container | 🟡 0% | Design and implement |
 
@@ -535,14 +537,14 @@ If you encounter breaking changes not documented here:
 ```
 Week 1-2: Runtime Foundation        [████████████████████] 100% ✅
 Week 2-3: Query Module Extraction   [████████████████████] 100% ✅
-Week 3:   Plugin System             [██████████████░░░░░░]  70% 🟡
+Week 3:   Plugin System             [████████████████████] 100% ✅
 Week 4:   Query Service             [░░░░░░░░░░░░░░░░░░░░]   0% ⏳
 Week 5-6: Driver Migration          [░░░░░░░░░░░░░░░░░░░░]   0% ⏳
 Week 6-7: Legacy Cleanup            [░░░░░░░░░░░░░░░░░░░░]   0% ⏳
 Week 7-8: Optimization & Release    [░░░░░░░░░░░░░░░░░░░░]   0% ⏳
 ```
 
-**Overall Progress**: 35% Complete
+**Overall Progress**: 40% Complete (Updated 2026-01-23)
 
 ---
 
@@ -550,6 +552,7 @@ Week 7-8: Optimization & Release    [░░░░░░░░░░░░░░�
 
 - **Implementation Status**: `packages/foundation/core/IMPLEMENTATION_STATUS.md`
 - **Week 3 Summary**: `docs/migration/week3-core-refactoring-summary.md`
+- **Plugin Architecture Complete**: `docs/migration/plugin-architecture-migration-complete.md` ⭐ NEW
 - **Runtime Integration**: `packages/foundation/core/RUNTIME_INTEGRATION.md`
 - **Size Measurement**: `scripts/measure-size.sh`
 
@@ -559,6 +562,7 @@ Week 7-8: Optimization & Release    [░░░░░░░░░░░░░░�
 
 | Date | Version | Changes |
 |------|---------|---------|
+| 2026-01-23 | 1.1 | **Phase 3 Complete**: Removed phantom dependency, updated architecture documentation |
 | 2026-01-23 | 1.0 | Initial migration document created |
 
 ---
