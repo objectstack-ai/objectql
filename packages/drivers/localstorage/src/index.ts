@@ -32,6 +32,31 @@
  */
 
 import { Driver, ObjectQLError } from '@objectql/types';
+import { DriverInterface, QueryAST, FilterNode, SortNode } from '@objectstack/spec';
+
+/**
+ * Command interface for executeCommand method
+ */
+export interface Command {
+    type: 'create' | 'update' | 'delete' | 'bulkCreate' | 'bulkUpdate' | 'bulkDelete';
+    object: string;
+    data?: any;
+    id?: string | number;
+    ids?: Array<string | number>;
+    records?: any[];
+    updates?: Array<{id: string | number, data: any}>;
+    options?: any;
+}
+
+/**
+ * Command result interface
+ */
+export interface CommandResult {
+    success: boolean;
+    data?: any;
+    affected: number;
+    error?: string;
+}
 
 /**
  * Configuration options for the LocalStorage driver.
@@ -55,10 +80,10 @@ export interface LocalStorageDriverConfig {
  * 
  * Example: `objectql:users:user-123` → `{"id":"user-123","name":"Alice",...}`
  */
-export class LocalStorageDriver implements Driver {
+export class LocalStorageDriver implements Driver, DriverInterface {
     // Driver metadata (ObjectStack-compatible)
     public readonly name = 'LocalStorageDriver';
-    public readonly version = '3.0.1';
+    public readonly version = '4.0.0';
     public readonly supports = {
         transactions: false,
         joins: false,
@@ -536,7 +561,210 @@ export class LocalStorageDriver implements Driver {
         // No-op: LocalStorage driver doesn't need cleanup
     }
 
+    /**
+     * Execute a query using QueryAST (DriverInterface v4.0 method)
+     * 
+     * This method handles all query operations using the standard QueryAST format
+     * from @objectstack/spec. It converts the AST to the legacy query format
+     * and delegates to the existing find() method.
+     * 
+     * @param ast - The query AST to execute
+     * @param options - Optional execution options
+     * @returns Query results with value array and count
+     */
+    async executeQuery(ast: QueryAST, options?: any): Promise<{ value: any[]; count?: number }> {
+        const objectName = ast.object || '';
+        
+        // Convert QueryAST to legacy query format
+        const legacyQuery: any = {
+            fields: ast.fields,
+            filters: this.convertFilterNodeToLegacy(ast.filters),
+            sort: ast.sort?.map((s: SortNode) => [s.field, s.order]),
+            limit: ast.top,
+            skip: ast.skip,
+        };
+        
+        // Use existing find method
+        const results = await this.find(objectName, legacyQuery, options);
+        
+        return {
+            value: results,
+            count: results.length
+        };
+    }
+
+    /**
+     * Execute a command (DriverInterface v4.0 method)
+     * 
+     * This method handles all mutation operations (create, update, delete)
+     * using a unified command interface.
+     * 
+     * @param command - The command to execute
+     * @param options - Optional execution options
+     * @returns Command execution result
+     */
+    async executeCommand(command: Command, options?: any): Promise<CommandResult> {
+        try {
+            const cmdOptions = { ...options, ...command.options };
+            
+            switch (command.type) {
+                case 'create':
+                    if (!command.data) {
+                        throw new Error('Create command requires data');
+                    }
+                    const created = await this.create(command.object, command.data, cmdOptions);
+                    return {
+                        success: true,
+                        data: created,
+                        affected: 1
+                    };
+                
+                case 'update':
+                    if (!command.id || !command.data) {
+                        throw new Error('Update command requires id and data');
+                    }
+                    const updated = await this.update(command.object, command.id, command.data, cmdOptions);
+                    return {
+                        success: true,
+                        data: updated,
+                        affected: 1
+                    };
+                
+                case 'delete':
+                    if (!command.id) {
+                        throw new Error('Delete command requires id');
+                    }
+                    await this.delete(command.object, command.id, cmdOptions);
+                    return {
+                        success: true,
+                        affected: 1
+                    };
+                
+                case 'bulkCreate':
+                    if (!command.records || !Array.isArray(command.records)) {
+                        throw new Error('BulkCreate command requires records array');
+                    }
+                    const bulkCreated = [];
+                    for (const record of command.records) {
+                        const created = await this.create(command.object, record, cmdOptions);
+                        bulkCreated.push(created);
+                    }
+                    return {
+                        success: true,
+                        data: bulkCreated,
+                        affected: command.records.length
+                    };
+                
+                case 'bulkUpdate':
+                    if (!command.updates || !Array.isArray(command.updates)) {
+                        throw new Error('BulkUpdate command requires updates array');
+                    }
+                    const updateResults = [];
+                    for (const update of command.updates) {
+                        const result = await this.update(command.object, update.id, update.data, cmdOptions);
+                        updateResults.push(result);
+                    }
+                    return {
+                        success: true,
+                        data: updateResults,
+                        affected: command.updates.length
+                    };
+                
+                case 'bulkDelete':
+                    if (!command.ids || !Array.isArray(command.ids)) {
+                        throw new Error('BulkDelete command requires ids array');
+                    }
+                    let deleted = 0;
+                    for (const id of command.ids) {
+                        const result = await this.delete(command.object, id, cmdOptions);
+                        if (result) deleted++;
+                    }
+                    return {
+                        success: true,
+                        affected: deleted
+                    };
+                
+                default:
+                    throw new Error(`Unsupported command type: ${(command as any).type}`);
+            }
+        } catch (error: any) {
+            return {
+                success: false,
+                affected: 0,
+                error: error.message || 'Unknown error occurred'
+            };
+        }
+    }
+
+    /**
+     * Execute raw command (for compatibility)
+     * 
+     * @param command - Command string or object
+     * @param parameters - Command parameters
+     * @param options - Execution options
+     */
+    async execute(command: any, parameters?: any[], options?: any): Promise<any> {
+        throw new Error('LocalStorage driver does not support raw command execution. Use executeCommand() instead.');
+    }
+
     // ========== Helper Methods (Same as MemoryDriver) ==========
+
+    /**
+     * Convert FilterNode from QueryAST to legacy filter format.
+     * 
+     * @param node - The FilterNode to convert
+     * @returns Legacy filter array format
+     */
+    private convertFilterNodeToLegacy(node?: FilterNode): any {
+        if (!node) return undefined;
+        
+        switch (node.type) {
+            case 'comparison':
+                // Convert comparison node to [field, operator, value] format
+                const operator = node.operator || '=';
+                return [[node.field, operator, node.value]];
+            
+            case 'and':
+                // Convert AND node to array with 'and' separator
+                if (!node.children || node.children.length === 0) return undefined;
+                const andResults: any[] = [];
+                for (const child of node.children) {
+                    const converted = this.convertFilterNodeToLegacy(child);
+                    if (converted) {
+                        if (andResults.length > 0) {
+                            andResults.push('and');
+                        }
+                        andResults.push(...(Array.isArray(converted) ? converted : [converted]));
+                    }
+                }
+                return andResults.length > 0 ? andResults : undefined;
+            
+            case 'or':
+                // Convert OR node to array with 'or' separator
+                if (!node.children || node.children.length === 0) return undefined;
+                const orResults: any[] = [];
+                for (const child of node.children) {
+                    const converted = this.convertFilterNodeToLegacy(child);
+                    if (converted) {
+                        if (orResults.length > 0) {
+                            orResults.push('or');
+                        }
+                        orResults.push(...(Array.isArray(converted) ? converted : [converted]));
+                    }
+                }
+                return orResults.length > 0 ? orResults : undefined;
+            
+            case 'not':
+                // NOT is complex - we'll just process the first child for now
+                if (node.children && node.children.length > 0) {
+                    return this.convertFilterNodeToLegacy(node.children[0]);
+                }
+                return undefined;
+            
+            default:
+                return undefined;
+        }
+    }
 
     /**
      * Normalizes query format to support both legacy UnifiedQuery and QueryAST formats.

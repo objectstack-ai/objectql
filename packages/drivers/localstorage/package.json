@@ -1,6 +1,6 @@
 {
   "name": "@objectql/driver-localstorage",
-  "version": "3.0.1",
+  "version": "4.0.0",
   "description": "LocalStorage driver for ObjectQL - Browser-based persistent storage",
   "keywords": [
     "objectql",
@@ -20,7 +20,8 @@
     "test": "jest"
   },
   "dependencies": {
-    "@objectql/types": "workspace:*"
+    "@objectql/types": "workspace:*",
+    "@objectstack/spec": "^0.2.0"
   },
   "devDependencies": {
     "@types/jest": "^29.0.0",
