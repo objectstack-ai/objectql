@@ -1,6 +1,4 @@
 import Link from 'next/link';
-import { HomeLayout } from 'fumadocs-ui/home-layout';
-import { baseOptions } from '@/app/layout.config';
 
 function CheckIcon() {
   return (
@@ -40,8 +38,8 @@ function CodeBlock({ title, content, lang = 'yaml' }: { title: string, content: 
 
 export default function HomePage() {
   return (
-    <HomeLayout {...baseOptions}>
-      <main className="flex-1">
+    <>
+      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8">
         {/* --- Hero Section --- */}
         <section className="relative overflow-hidden pt-16 md:pt-24 lg:pt-32 pb-16">
           <div className="container relative z-10 flex flex-col items-center gap-6 text-center">
@@ -297,18 +295,6 @@ export interface Project {
           </div>
         </section>
       </main>
-
-      <footer className="border-t py-6 md:py-12">
-        <div className="container flex flex-col items-center justify-between gap-4 md:flex-row">
-            <p className="text-center text-sm leading-loose text-muted-foreground md:text-left">
-                © 2026 ObjectQL Team. Released under MIT License.
-            </p>
-            <div className="flex gap-4 text-sm text-muted-foreground">
-                <Link href="/docs/guide/license" className="hover:underline">License</Link>
-                <Link href="https://github.com/objectql/objectql" className="hover:underline">GitHub</Link>
-            </div>
-        </div>
-      </footer>
-    </HomeLayout>
+    </>
   );
 }

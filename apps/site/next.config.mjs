@@ -5,9 +5,13 @@ const withMDX = createMDX();
 /** @type {import('next').NextConfig} */
 const config = {
   reactStrictMode: true,
-  typescript: {
-    // Allow building even if some example files or optional packages lack types
-    ignoreBuildErrors: true,
+  async rewrites() {
+    return [
+      {
+        source: '/docs/:path*.mdx',
+        destination: '/llms.mdx/docs/:path*',
+      },
+    ];
   },
 };
 
