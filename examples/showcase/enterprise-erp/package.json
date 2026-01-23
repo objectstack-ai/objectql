@@ -1,6 +1,6 @@
 {
   "name": "@objectql/example-enterprise-erp",
-  "version": "3.0.1",
+  "version": "4.0.0",
   "description": "ObjectQL Enterprise Example - CRM & HR Demo",
   "private": true,
   "keywords": [
