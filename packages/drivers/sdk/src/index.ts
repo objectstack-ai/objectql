@@ -272,36 +272,40 @@ export class RemoteDriver implements Driver, DriverInterface {
         fn: () => Promise<T>,
         attempt: number = 0
     ): Promise<T> {
-        try {
-            return await fn();
-        } catch (error: any) {
-            // Don't retry on client errors (4xx) or if retries are disabled
-            if (!this.enableRetry || attempt >= this.maxRetries) {
-                throw error;
-            }
-
-            // Don't retry on validation or auth errors
-            if (error instanceof ObjectQLError) {
-                const nonRetryableCodes = [
-                    ApiErrorCode.VALIDATION_ERROR,
-                    ApiErrorCode.UNAUTHORIZED,
-                    ApiErrorCode.FORBIDDEN,
-                    ApiErrorCode.NOT_FOUND
-                ];
-                if (nonRetryableCodes.includes(error.code as ApiErrorCode)) {
+        let currentAttempt = attempt;
+        
+        while (true) {
+            try {
+                return await fn();
+            } catch (error: any) {
+                // Don't retry on client errors (4xx) or if retries are disabled
+                if (!this.enableRetry || currentAttempt >= this.maxRetries) {
                     throw error;
                 }
-            }
 
-            // Calculate exponential backoff delay
-            const delay = Math.min(1000 * Math.pow(2, attempt), 10000);
-            
-            if (this.enableLogging) {
-                console.log(`Retry attempt ${attempt + 1}/${this.maxRetries} after ${delay}ms delay`);
-            }
+                // Don't retry on validation or auth errors
+                if (error instanceof ObjectQLError) {
+                    const nonRetryableCodes = [
+                        ApiErrorCode.VALIDATION_ERROR,
+                        ApiErrorCode.UNAUTHORIZED,
+                        ApiErrorCode.FORBIDDEN,
+                        ApiErrorCode.NOT_FOUND
+                    ];
+                    if (nonRetryableCodes.includes(error.code as ApiErrorCode)) {
+                        throw error;
+                    }
+                }
 
-            await new Promise(resolve => setTimeout(resolve, delay));
-            return this.retryWithBackoff(fn, attempt + 1);
+                // Calculate exponential backoff delay
+                const delay = Math.min(1000 * Math.pow(2, currentAttempt), 10000);
+                
+                if (this.enableLogging) {
+                    console.log(`Retry attempt ${currentAttempt + 1}/${this.maxRetries} after ${delay}ms delay`);
+                }
+
+                await new Promise(resolve => setTimeout(resolve, delay));
+                currentAttempt++;
+            }
         }
     }
 
@@ -561,7 +565,7 @@ export class RemoteDriver implements Driver, DriverInterface {
             const response = await fetch(targetEndpoint, {
                 method: 'POST',
                 headers,
-                body: payload ? JSON.stringify(payload) : undefined,
+                body: payload !== undefined ? JSON.stringify(payload) : undefined,
                 signal: createTimeoutSignal(this.timeout)
             });
 
