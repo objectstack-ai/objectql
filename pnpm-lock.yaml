@@ -456,6 +456,9 @@ importers:
       '@objectql/types':
         specifier: workspace:*
         version: link:../../foundation/types
+      '@objectstack/spec':
+        specifier: ^0.2.0
+        version: 0.2.0
     devDependencies:
       typescript:
         specifier: ^5.3.0
