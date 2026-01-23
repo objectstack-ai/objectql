@@ -368,8 +368,8 @@ export class QueryAnalyzer {
         // Suggest adding indexes
         if (query.filters && query.filters.length > 0 && indexes.length === 0) {
             const filterFields = query.filters
-                .filter(f => Array.isArray(f) && f.length >= 1)
-                .map(f => String(f[0]));
+                .filter((f: any) => Array.isArray(f) && f.length >= 1)
+                .map((f: any) => String(f[0]));
             
             if (filterFields.length > 0) {
                 suggestions.push(`Consider adding an index on: ${filterFields.join(', ')}`);
@@ -384,8 +384,8 @@ export class QueryAnalyzer {
         // Suggest composite index for multiple filters
         if (query.filters && query.filters.length > 1 && indexes.length < 2) {
             const filterFields = query.filters
-                .filter(f => Array.isArray(f) && f.length >= 1)
-                .map(f => String(f[0]))
+                .filter((f: any) => Array.isArray(f) && f.length >= 1)
+                .map((f: any) => String(f[0]))
                 .slice(0, 3); // Top 3 fields
             
             if (filterFields.length > 1) {
@@ -411,7 +411,7 @@ export class QueryAnalyzer {
             complexity += query.filters.length * 5;
             
             // Nested filters (OR conditions) add more
-            const hasNestedFilters = query.filters.some(f => 
+            const hasNestedFilters = query.filters.some((f: any) => 
                 Array.isArray(f) && Array.isArray(f[0])
             );
             if (hasNestedFilters) {
