@@ -13,7 +13,7 @@
  * It adapts Redis (a key-value store) to work with ObjectQL's universal data protocol.
  * 
  * Implements both the legacy Driver interface from @objectql/types and
- * the standard DriverInterface from @objectstack/spec for compatibility
+ * the standard DriverInterface from @objectstack/spec for full compatibility
  * with the new kernel-based plugin system.
  * 
  * ⚠️ WARNING: This is an educational example, not production-ready.
@@ -26,10 +26,78 @@
  * 
  * Note: This example implements only the core required methods from the Driver interface.
  * Optional methods like introspectSchema(), aggregate(), transactions, etc. are not implemented.
+ * 
+ * @version 4.0.0 - DriverInterface compliant
  */
 
 import { Driver } from '@objectql/types';
+import { DriverInterface, QueryAST, FilterNode, SortNode } from '@objectstack/spec';
 import { createClient, RedisClientType } from 'redis';
+
+/**
+ * Command interface for executeCommand method
+ * 
+ * This interface defines the structure for all mutation operations
+ * (create, update, delete, and their bulk variants) in the v4.0 DriverInterface.
+ * 
+ * @example
+ * // Create a single record
+ * const cmd: Command = { type: 'create', object: 'users', data: { name: 'Alice' } };
+ * 
+ * @example
+ * // Update a record
+ * const cmd: Command = { type: 'update', object: 'users', id: '123', data: { email: 'new@example.com' } };
+ * 
+ * @example
+ * // Bulk create multiple records
+ * const cmd: Command = { 
+ *   type: 'bulkCreate', 
+ *   object: 'users', 
+ *   records: [{ name: 'Alice' }, { name: 'Bob' }] 
+ * };
+ */
+export interface Command {
+    /** Command type: create, update, delete, or their bulk variants */
+    type: 'create' | 'update' | 'delete' | 'bulkCreate' | 'bulkUpdate' | 'bulkDelete';
+    /** Target object name */
+    object: string;
+    /** Data for create/update operations */
+    data?: any;
+    /** Record ID for single update/delete operations */
+    id?: string | number;
+    /** Array of IDs for bulkDelete operation */
+    ids?: Array<string | number>;
+    /** Array of records for bulkCreate operation */
+    records?: any[];
+    /** Array of updates for bulkUpdate operation */
+    updates?: Array<{id: string | number, data: any}>;
+    /** Additional command-specific options */
+    options?: any;
+}
+
+/**
+ * Command result interface
+ * 
+ * Standardized result format for all executeCommand operations.
+ * 
+ * @example
+ * // Successful create
+ * { success: true, data: { id: '123', name: 'Alice' }, affected: 1 }
+ * 
+ * @example
+ * // Failed operation
+ * { success: false, error: 'Record not found', affected: 0 }
+ */
+export interface CommandResult {
+    /** Whether the command executed successfully */
+    success: boolean;
+    /** The resulting data (for create/update operations) */
+    data?: any;
+    /** Number of records affected by the operation */
+    affected: number;
+    /** Error message if the command failed */
+    error?: string;
+}
 
 /**
  * Configuration options for the Redis driver.
@@ -49,10 +117,10 @@ export interface RedisDriverConfig {
  * 
  * Example: `users:user-123` → `{"id":"user-123","name":"Alice",...}`
  */
-export class RedisDriver implements Driver {
+export class RedisDriver implements Driver, DriverInterface {
     // Driver metadata (ObjectStack-compatible)
     public readonly name = 'RedisDriver';
-    public readonly version = '3.0.1';
+    public readonly version = '4.0.0';
     public readonly supports = {
         transactions: false,
         joins: false,
@@ -161,7 +229,7 @@ export class RedisDriver implements Driver {
         
         // If ID is provided, fetch directly
         if (id) {
-            const key = `${objectName}:${id}`;
+            const key = this.generateRedisKey(objectName, id);
             const data = await this.client.get(key);
             
             if (!data) {
@@ -202,7 +270,7 @@ export class RedisDriver implements Driver {
             updated_at: data.updated_at || now
         };
         
-        const key = `${objectName}:${id}`;
+        const key = this.generateRedisKey(objectName, id);
         await this.client.set(key, JSON.stringify(doc));
         
         return doc;
@@ -214,7 +282,7 @@ export class RedisDriver implements Driver {
     async update(objectName: string, id: string | number, data: any, options?: any): Promise<any> {
         await this.connected;
         
-        const key = `${objectName}:${id}`;
+        const key = this.generateRedisKey(objectName, id);
         const existing = await this.client.get(key);
         
         if (!existing) {
@@ -241,7 +309,7 @@ export class RedisDriver implements Driver {
     async delete(objectName: string, id: string | number, options?: any): Promise<any> {
         await this.connected;
         
-        const key = `${objectName}:${id}`;
+        const key = this.generateRedisKey(objectName, id);
         const result = await this.client.del(key);
         
         return result > 0;
@@ -295,7 +363,370 @@ export class RedisDriver implements Driver {
         await this.client.quit();
     }
 
+    /**
+     * Execute a query (DriverInterface v4.0 method)
+     * 
+     * This method handles all read operations using the QueryAST format from @objectstack/spec.
+     * It provides a standardized query interface that supports:
+     * - Field selection (projection)
+     * - Filter conditions (using FilterNode AST)
+     * - Sorting
+     * - Pagination (skip/top)
+     * - Grouping and aggregations (delegated to find)
+     * 
+     * The method converts the QueryAST format to the legacy query format and delegates
+     * to the existing find() method for backward compatibility.
+     * 
+     * @param ast - The query Abstract Syntax Tree
+     * @param options - Optional execution options
+     * @returns Object containing query results and count
+     * 
+     * @example
+     * // Simple query
+     * const result = await driver.executeQuery({
+     *   object: 'users',
+     *   fields: ['name', 'email']
+     * });
+     * 
+     * @example
+     * // Query with filters and sorting
+     * const result = await driver.executeQuery({
+     *   object: 'users',
+     *   filters: {
+     *     type: 'comparison',
+     *     field: 'age',
+     *     operator: '>',
+     *     value: 18
+     *   },
+     *   sort: [{ field: 'name', order: 'asc' }],
+     *   top: 10
+     * });
+     */
+    async executeQuery(ast: QueryAST, options?: any): Promise<{ value: any[]; count?: number }> {
+        const objectName = ast.object || '';
+        
+        // Convert QueryAST to legacy query format
+        const legacyQuery: any = {
+            fields: ast.fields,
+            filters: this.convertFilterNodeToLegacy(ast.filters),
+            sort: ast.sort?.map((s: SortNode) => [s.field, s.order]),
+            limit: ast.top,
+            skip: ast.skip,
+        };
+        
+        // Use existing find method
+        const results = await this.find(objectName, legacyQuery, options);
+        
+        return {
+            value: results,
+            count: results.length
+        };
+    }
+
+    /**
+     * Execute a command (DriverInterface v4.0 method)
+     * 
+     * This method provides a unified interface for all mutation operations (create, update, delete)
+     * using the Command pattern from @objectstack/spec.
+     * 
+     * Supports both single operations and bulk operations:
+     * - Single: create, update, delete
+     * - Bulk: bulkCreate, bulkUpdate, bulkDelete
+     * 
+     * Bulk operations use Redis PIPELINE for optimal performance, executing multiple
+     * commands in a single round-trip to the server.
+     * 
+     * All operations return a standardized CommandResult with:
+     * - success: boolean indicating operation success/failure
+     * - data: the resulting data (for create/update)
+     * - affected: number of records affected
+     * - error: error message if operation failed
+     * 
+     * @param command - The command to execute (see Command interface)
+     * @param options - Optional execution options
+     * @returns Standardized command execution result
+     * 
+     * @example
+     * // Create a single record
+     * const result = await driver.executeCommand({
+     *   type: 'create',
+     *   object: 'users',
+     *   data: { name: 'Alice', email: 'alice@example.com' }
+     * });
+     * 
+     * @example
+     * // Bulk create multiple records
+     * const result = await driver.executeCommand({
+     *   type: 'bulkCreate',
+     *   object: 'users',
+     *   records: [
+     *     { name: 'Alice' },
+     *     { name: 'Bob' },
+     *     { name: 'Charlie' }
+     *   ]
+     * });
+     * 
+     * @example
+     * // Update a record
+     * const result = await driver.executeCommand({
+     *   type: 'update',
+     *   object: 'users',
+     *   id: 'user-123',
+     *   data: { email: 'newemail@example.com' }
+     * });
+     */
+    async executeCommand(command: Command, options?: any): Promise<CommandResult> {
+        try {
+            await this.connected;
+            const cmdOptions = { ...options, ...command.options };
+            
+            switch (command.type) {
+                case 'create':
+                    if (!command.data) {
+                        throw new Error('Create command requires data');
+                    }
+                    const created = await this.create(command.object, command.data, cmdOptions);
+                    return {
+                        success: true,
+                        data: created,
+                        affected: 1
+                    };
+                
+                case 'update':
+                    if (!command.id || !command.data) {
+                        throw new Error('Update command requires id and data');
+                    }
+                    const updated = await this.update(command.object, command.id, command.data, cmdOptions);
+                    return {
+                        success: true,
+                        data: updated,
+                        affected: 1
+                    };
+                
+                case 'delete':
+                    if (!command.id) {
+                        throw new Error('Delete command requires id');
+                    }
+                    await this.delete(command.object, command.id, cmdOptions);
+                    return {
+                        success: true,
+                        affected: 1
+                    };
+                
+                case 'bulkCreate':
+                    if (!command.records || !Array.isArray(command.records)) {
+                        throw new Error('BulkCreate command requires records array');
+                    }
+                    // Use Redis PIPELINE for batch operations
+                    const pipeline = this.client.multi();
+                    const bulkCreated: any[] = [];
+                    const now = new Date().toISOString();
+                    
+                    for (const record of command.records) {
+                        const id = record.id || this.generateId();
+                        const doc = {
+                            ...record,
+                            id,
+                            created_at: record.created_at || now,
+                            updated_at: record.updated_at || now
+                        };
+                        bulkCreated.push(doc);
+                        const key = this.generateRedisKey(command.object, id);
+                        pipeline.set(key, JSON.stringify(doc));
+                    }
+                    
+                    await pipeline.exec();
+                    
+                    return {
+                        success: true,
+                        data: bulkCreated,
+                        affected: command.records.length
+                    };
+                
+                case 'bulkUpdate':
+                    if (!command.updates || !Array.isArray(command.updates)) {
+                        throw new Error('BulkUpdate command requires updates array');
+                    }
+                    
+                    // First, batch GET all existing records using PIPELINE
+                    const getPipeline = this.client.multi();
+                    for (const update of command.updates) {
+                        const key = this.generateRedisKey(command.object, update.id);
+                        getPipeline.get(key);
+                    }
+                    const getResults = await getPipeline.exec();
+                    
+                    // Then, batch SET updated records using PIPELINE
+                    const setPipeline = this.client.multi();
+                    const updateResults: any[] = [];
+                    const updateTime = new Date().toISOString();
+                    
+                    for (let i = 0; i < command.updates.length; i++) {
+                        const update = command.updates[i];
+                        const result = getResults?.[i] as any;
+                        const existingData = result?.[1];
+                        
+                        if (existingData && typeof existingData === 'string') {
+                            const existingDoc = JSON.parse(existingData);
+                            const doc = {
+                                ...existingDoc,
+                                ...update.data,
+                                id: update.id,
+                                created_at: existingDoc.created_at,
+                                updated_at: updateTime
+                            };
+                            updateResults.push(doc);
+                            const key = this.generateRedisKey(command.object, update.id);
+                            setPipeline.set(key, JSON.stringify(doc));
+                        }
+                    }
+                    
+                    await setPipeline.exec();
+                    
+                    return {
+                        success: true,
+                        data: updateResults,
+                        affected: updateResults.length
+                    };
+                
+                case 'bulkDelete':
+                    if (!command.ids || !Array.isArray(command.ids)) {
+                        throw new Error('BulkDelete command requires ids array');
+                    }
+                    // Use Redis PIPELINE for batch operations
+                    const deletePipeline = this.client.multi();
+                    
+                    for (const id of command.ids) {
+                        const key = this.generateRedisKey(command.object, id);
+                        deletePipeline.del(key);
+                    }
+                    
+                    const deleteResults = await deletePipeline.exec();
+                    const deleted = deleteResults?.filter((r: any) => r && r[1] > 0).length || 0;
+                    
+                    return {
+                        success: true,
+                        affected: deleted
+                    };
+                
+                default:
+                    throw new Error(`Unknown command type: ${(command as any).type}`);
+            }
+        } catch (error: any) {
+            return {
+                success: false,
+                error: error.message || 'Command execution failed',
+                affected: 0
+            };
+        }
+    }
+
     // ========== Helper Methods ==========
+
+    /**
+     * Convert FilterNode (QueryAST format) to legacy filter array format
+     * 
+     * This method bridges the gap between the new QueryAST filter format (tree-based)
+     * and the legacy array-based filter format used internally by the driver.
+     * 
+     * QueryAST FilterNode format:
+     * - type: 'comparison' | 'and' | 'or' | 'not'
+     * - field, operator, value for comparisons
+     * - children for logical operators
+     * 
+     * Legacy format:
+     * - Array of conditions: [field, operator, value]
+     * - String separators: 'and', 'or'
+     * - Example: [['age', '>', 18], 'and', ['role', '=', 'user']]
+     * 
+     * @param node - The FilterNode to convert
+     * @returns Legacy filter array format, or undefined if no filters
+     * @private
+     * 
+     * @example
+     * // Input: { type: 'comparison', field: 'age', operator: '>', value: 18 }
+     * // Output: [['age', '>', 18]]
+     * 
+     * @example
+     * // Input: { type: 'and', children: [...] }
+     * // Output: [['field1', '=', 'val1'], 'and', ['field2', '>', 10]]
+     */
+    private convertFilterNodeToLegacy(node?: FilterNode): any {
+        if (!node) return undefined;
+        
+        switch (node.type) {
+            case 'comparison':
+                // Convert comparison node to [field, operator, value] format
+                if (!node.operator) {
+                    console.warn('[RedisDriver] FilterNode comparison missing operator, defaulting to "="');
+                }
+                const operator = node.operator || '=';
+                return [[node.field, operator, node.value]];
+            
+            case 'and':
+                // Convert AND node to array with 'and' separator
+                if (!node.children || node.children.length === 0) return undefined;
+                const andResults: any[] = [];
+                for (const child of node.children) {
+                    const converted = this.convertFilterNodeToLegacy(child);
+                    if (converted) {
+                        if (andResults.length > 0) {
+                            andResults.push('and');
+                        }
+                        andResults.push(...(Array.isArray(converted) ? converted : [converted]));
+                    }
+                }
+                return andResults.length > 0 ? andResults : undefined;
+            
+            case 'or':
+                // Convert OR node to array with 'or' separator
+                if (!node.children || node.children.length === 0) return undefined;
+                const orResults: any[] = [];
+                for (const child of node.children) {
+                    const converted = this.convertFilterNodeToLegacy(child);
+                    if (converted) {
+                        if (orResults.length > 0) {
+                            orResults.push('or');
+                        }
+                        orResults.push(...(Array.isArray(converted) ? converted : [converted]));
+                    }
+                }
+                return orResults.length > 0 ? orResults : undefined;
+            
+            case 'not':
+                // NOT is not directly supported in legacy format
+                // We could implement it by negating the child operators
+                console.warn('[RedisDriver] NOT operator in filters is not fully supported in legacy format');
+                return undefined;
+            
+            default:
+                return undefined;
+        }
+    }
+
+    /**
+     * Generate Redis key for an object record
+     * 
+     * This method implements the key naming strategy for storing records in Redis.
+     * The strategy uses a simple pattern: `objectName:id`
+     * 
+     * This ensures:
+     * - Easy querying by pattern (e.g., `users:*` to find all user records)
+     * - Clear namespace separation between different object types
+     * - Human-readable keys for debugging
+     * 
+     * @param objectName - The object/collection name
+     * @param id - The record ID
+     * @returns Redis key in format "objectName:id"
+     * @private
+     * 
+     * @example
+     * generateRedisKey('users', '123') // Returns: 'users:123'
+     * generateRedisKey('orders', 'order-456') // Returns: 'orders:order-456'
+     */
+    private generateRedisKey(objectName: string, id: string | number): string {
+        return `${objectName}:${id}`;
+    }
 
     /**
      * Normalizes query format to support both legacy UnifiedQuery and QueryAST formats.
