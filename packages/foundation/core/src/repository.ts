@@ -13,6 +13,15 @@ import { Validator } from './validator';
 import { FormulaEngine } from './formula-engine';
 import { QueryBuilder } from './query';
 
+/**
+ * Extended ObjectStack Kernel with optional ObjectQL plugin capabilities.
+ * These properties are attached by ValidatorPlugin and FormulaPlugin during installation.
+ */
+interface ExtendedKernel extends ObjectStackKernel {
+    validator?: Validator;
+    formulaEngine?: FormulaEngine;
+}
+
 export class ObjectRepository {
     private queryBuilder: QueryBuilder;
 
@@ -29,7 +38,7 @@ export class ObjectRepository {
      * Falls back to creating a new instance if not available
      */
     private getValidator(): Validator {
-        const kernel = this.getKernel() as any;
+        const kernel = this.getKernel() as ExtendedKernel;
         if (kernel.validator) {
             return kernel.validator;
         }
@@ -42,7 +51,7 @@ export class ObjectRepository {
      * Falls back to creating a new instance if not available
      */
     private getFormulaEngine(): FormulaEngine {
-        const kernel = this.getKernel() as any;
+        const kernel = this.getKernel() as ExtendedKernel;
         if (kernel.formulaEngine) {
             return kernel.formulaEngine;
         }

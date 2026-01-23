@@ -10,6 +10,13 @@ import type { RuntimePlugin, RuntimeContext, ObjectStackKernel } from '@objectst
 import { Validator, ValidatorOptions } from './validator';
 
 /**
+ * Extended ObjectStack Kernel with validator capability
+ */
+interface KernelWithValidator extends ObjectStackKernel {
+    validator?: Validator;
+}
+
+/**
  * Configuration for the Validator Plugin
  */
 export interface ValidatorPluginConfig extends ValidatorOptions {
@@ -58,12 +65,12 @@ export class ValidatorPlugin implements RuntimePlugin {
    * Registers validation middleware for queries and mutations
    */
   async install(ctx: RuntimeContext): Promise<void> {
-    const kernel = ctx.engine as ObjectStackKernel;
+    const kernel = ctx.engine as KernelWithValidator;
     
     console.log(`[${this.name}] Installing validator plugin...`);
     
     // Make validator accessible from the kernel for direct usage
-    (kernel as any).validator = this.validator;
+    kernel.validator = this.validator;
     
     // Register validation middleware for queries (if enabled)
     if (this.config.enableQueryValidation !== false) {
@@ -82,7 +89,7 @@ export class ValidatorPlugin implements RuntimePlugin {
    * Register query validation middleware
    * @private
    */
-  private registerQueryValidation(kernel: ObjectStackKernel): void {
+  private registerQueryValidation(kernel: KernelWithValidator): void {
     // Check if kernel supports middleware hooks
     if (typeof (kernel as any).use === 'function') {
       (kernel as any).use('beforeQuery', async (context: any) => {
@@ -104,7 +111,7 @@ export class ValidatorPlugin implements RuntimePlugin {
    * Register mutation validation middleware
    * @private
    */
-  private registerMutationValidation(kernel: ObjectStackKernel): void {
+  private registerMutationValidation(kernel: KernelWithValidator): void {
     // Check if kernel supports middleware hooks
     if (typeof (kernel as any).use === 'function') {
       (kernel as any).use('beforeMutation', async (context: any) => {
