@@ -51,6 +51,8 @@ describe('Node Adapter', () => {
                 }
             }
         });
+        
+        await app.init();
     });
 
     it('should handle find request', async () => {

@@ -146,6 +146,8 @@ describe('GraphQL API Adapter', () => {
                 }
             }
         });
+        
+        await app.init();
 
         // Create handler and server once for all tests
         handler = createGraphQLHandler(app);
