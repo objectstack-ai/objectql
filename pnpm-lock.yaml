@@ -396,6 +396,9 @@ importers:
       '@objectstack/spec':
         specifier: ^0.2.0
         version: 0.2.0
+      mingo:
+        specifier: ^7.1.1
+        version: 7.1.1
     devDependencies:
       '@types/jest':
         specifier: ^29.0.0
@@ -5959,6 +5962,9 @@ packages:
   mimic-response@3.1.0:
     resolution: {integrity: sha512-z0yWI+4FDrrweS8Zmt4Ej5HdJmky15+L2e6Wgn3+iK5fWzb6T3fhNFq2+MeTRb064c6Wr4N/wv0DzQTjNzHNGQ==}
     engines: {node: '>=10'}
+
+  mingo@7.1.1:
+    resolution: {integrity: sha512-YfcRcZ4TRzRw1G3tf8Nu04fIoFr8hVYdTDktXU2ZLXnfn51E8yeUDixOGGQYQLduMjfznsCmEuBwzncw9lGxwA==}
 
   minimatch@10.1.1:
     resolution: {integrity: sha512-enIvLvRAFZYXJzkCYG5RKmPfrFArdLv+R+lbQ53BmIMLIry74bjKzX6iHAm8WYamJkhSSEabrWN5D97XnKObjQ==}
@@ -14694,6 +14700,8 @@ snapshots:
   mimic-function@5.0.1: {}
 
   mimic-response@3.1.0: {}
+
+  mingo@7.1.1: {}
 
   minimatch@10.1.1:
     dependencies:

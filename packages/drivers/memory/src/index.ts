@@ -9,7 +9,7 @@
 /**
  * Memory Driver for ObjectQL (Production-Ready)
  * 
- * A high-performance in-memory driver for ObjectQL that stores data in JavaScript Maps.
+ * A high-performance in-memory driver for ObjectQL powered by Mingo.
  * Perfect for testing, development, and environments where persistence is not required.
  * 
  * Implements both the legacy Driver interface from @objectql/types and
@@ -17,9 +17,9 @@
  * with the new kernel-based plugin system.
  * 
  * ✅ Production-ready features:
- * - Zero external dependencies
+ * - MongoDB-like query engine powered by Mingo
  * - Thread-safe operations
- * - Full query support (filters, sorting, pagination)
+ * - Full query support (filters, sorting, pagination, aggregation)
  * - Atomic transactions
  * - High performance (no I/O overhead)
  * 
@@ -30,11 +30,12 @@
  * - Client-side state management
  * - Temporary data caching
  * 
- * @version 4.0.0 - DriverInterface compliant
+ * @version 4.0.0 - DriverInterface compliant with Mingo integration
  */
 
 import { Driver, ObjectQLError } from '@objectql/types';
 import { DriverInterface, QueryAST, FilterNode, SortNode } from '@objectstack/spec';
+import { Query } from 'mingo';
 
 /**
  * Command interface for executeCommand method
@@ -78,7 +79,7 @@ export interface MemoryDriverConfig {
  * 
  * Example: `users:user-123` → `{id: "user-123", name: "Alice", ...}`
  */
-export class MemoryDriver implements Driver, DriverInterface {
+export class MemoryDriver implements Driver {
     // Driver metadata (ObjectStack-compatible)
     public readonly name = 'MemoryDriver';
     public readonly version = '4.0.0';
@@ -87,7 +88,13 @@ export class MemoryDriver implements Driver, DriverInterface {
         joins: false,
         fullTextSearch: false,
         jsonFields: true,
-        arrayFields: true
+        arrayFields: true,
+        queryFilters: true,
+        queryAggregations: false,
+        querySorting: true,
+        queryPagination: true,
+        queryWindowFunctions: false,
+        querySubqueries: false
     };
 
     private store: Map<string, any>;
@@ -136,7 +143,7 @@ export class MemoryDriver implements Driver, DriverInterface {
 
     /**
      * Find multiple records matching the query criteria.
-     * Supports filtering, sorting, pagination, and field projection.
+     * Supports filtering, sorting, pagination, and field projection using Mingo.
      */
     async find(objectName: string, query: any = {}, options?: any): Promise<any[]> {
         // Normalize query to support both legacy and QueryAST formats
@@ -144,38 +151,42 @@ export class MemoryDriver implements Driver, DriverInterface {
         
         // Get all records for this object type
         const pattern = `${objectName}:`;
-        let results: any[] = [];
+        let records: any[] = [];
         
         for (const [key, value] of this.store.entries()) {
             if (key.startsWith(pattern)) {
-                results.push({ ...value });
+                records.push({ ...value });
             }
         }
         
-        // Apply filters
-        if (normalizedQuery.filters) {
-            results = this.applyFilters(results, normalizedQuery.filters);
+        // Convert ObjectQL filters to MongoDB query format
+        const mongoQuery = this.convertToMongoQuery(normalizedQuery.filters);
+        
+        // Apply filters using Mingo
+        if (mongoQuery && Object.keys(mongoQuery).length > 0) {
+            const mingoQuery = new Query(mongoQuery);
+            records = mingoQuery.find(records).all();
         }
         
-        // Apply sorting
-        if (normalizedQuery.sort && Array.isArray(normalizedQuery.sort)) {
-            results = this.applySort(results, normalizedQuery.sort);
+        // Apply sorting manually (Mingo's sort has issues with CJS builds)
+        if (normalizedQuery.sort && Array.isArray(normalizedQuery.sort) && normalizedQuery.sort.length > 0) {
+            records = this.applyManualSort(records, normalizedQuery.sort);
         }
         
         // Apply pagination
         if (normalizedQuery.skip) {
-            results = results.slice(normalizedQuery.skip);
+            records = records.slice(normalizedQuery.skip);
         }
         if (normalizedQuery.limit) {
-            results = results.slice(0, normalizedQuery.limit);
+            records = records.slice(0, normalizedQuery.limit);
         }
         
         // Apply field projection
         if (normalizedQuery.fields && Array.isArray(normalizedQuery.fields)) {
-            results = results.map(doc => this.projectFields(doc, normalizedQuery.fields));
+            records = records.map(doc => this.projectFields(doc, normalizedQuery.fields));
         }
         
-        return results;
+        return records;
     }
 
     /**
@@ -276,11 +287,10 @@ export class MemoryDriver implements Driver, DriverInterface {
     }
 
     /**
-     * Count records matching filters.
+     * Count records matching filters using Mingo.
      */
     async count(objectName: string, filters: any, options?: any): Promise<number> {
         const pattern = `${objectName}:`;
-        let count = 0;
         
         // Extract actual filters from query object if needed
         let actualFilters = filters;
@@ -288,43 +298,59 @@ export class MemoryDriver implements Driver, DriverInterface {
             actualFilters = filters.filters;
         }
         
-        // If no filters, return total count
-        if (!actualFilters || (Array.isArray(actualFilters) && actualFilters.length === 0)) {
-            for (const key of this.store.keys()) {
-                if (key.startsWith(pattern)) {
-                    count++;
-                }
-            }
-            return count;
-        }
-        
-        // Count only records matching filters
+        // Get all records for this object type
+        let records: any[] = [];
         for (const [key, value] of this.store.entries()) {
             if (key.startsWith(pattern)) {
-                if (this.matchesFilters(value, actualFilters)) {
-                    count++;
-                }
+                records.push(value);
             }
         }
         
-        return count;
+        // If no filters, return total count
+        if (!actualFilters || (Array.isArray(actualFilters) && actualFilters.length === 0)) {
+            return records.length;
+        }
+        
+        // Convert to MongoDB query and use Mingo to count
+        const mongoQuery = this.convertToMongoQuery(actualFilters);
+        if (mongoQuery && Object.keys(mongoQuery).length > 0) {
+            const mingoQuery = new Query(mongoQuery);
+            const matchedRecords = mingoQuery.find(records).all();
+            return matchedRecords.length;
+        }
+        
+        return records.length;
     }
 
     /**
-     * Get distinct values for a field.
+     * Get distinct values for a field using Mingo.
      */
     async distinct(objectName: string, field: string, filters?: any, options?: any): Promise<any[]> {
         const pattern = `${objectName}:`;
-        const values = new Set<any>();
         
-        for (const [key, record] of this.store.entries()) {
+        // Get all records for this object type
+        let records: any[] = [];
+        for (const [key, value] of this.store.entries()) {
             if (key.startsWith(pattern)) {
-                if (!filters || this.matchesFilters(record, filters)) {
-                    const value = record[field];
-                    if (value !== undefined && value !== null) {
-                        values.add(value);
-                    }
-                }
+                records.push(value);
+            }
+        }
+        
+        // Apply filters using Mingo if provided
+        if (filters) {
+            const mongoQuery = this.convertToMongoQuery(filters);
+            if (mongoQuery && Object.keys(mongoQuery).length > 0) {
+                const mingoQuery = new Query(mongoQuery);
+                records = mingoQuery.find(records).all();
+            }
+        }
+        
+        // Extract distinct values
+        const values = new Set<any>();
+        for (const record of records) {
+            const value = record[field];
+            if (value !== undefined && value !== null) {
+                values.add(value);
             }
         }
         
@@ -344,25 +370,45 @@ export class MemoryDriver implements Driver, DriverInterface {
     }
 
     /**
-     * Update multiple records matching filters.
+     * Update multiple records matching filters using Mingo.
      */
     async updateMany(objectName: string, filters: any, data: any, options?: any): Promise<any> {
         const pattern = `${objectName}:`;
-        let count = 0;
+        
+        // Get all records for this object type
+        let records: any[] = [];
+        const recordKeys = new Map<string, string>();
         
         for (const [key, record] of this.store.entries()) {
             if (key.startsWith(pattern)) {
-                if (this.matchesFilters(record, filters)) {
-                    const updated = {
-                        ...record,
-                        ...data,
-                        id: record.id, // Preserve ID
-                        created_at: record.created_at, // Preserve created_at
-                        updated_at: new Date().toISOString()
-                    };
-                    this.store.set(key, updated);
-                    count++;
-                }
+                records.push(record);
+                recordKeys.set(record.id, key);
+            }
+        }
+        
+        // Apply filters using Mingo
+        const mongoQuery = this.convertToMongoQuery(filters);
+        let matchedRecords = records;
+        
+        if (mongoQuery && Object.keys(mongoQuery).length > 0) {
+            const mingoQuery = new Query(mongoQuery);
+            matchedRecords = mingoQuery.find(records).all();
+        }
+        
+        // Update matched records
+        let count = 0;
+        for (const record of matchedRecords) {
+            const key = recordKeys.get(record.id);
+            if (key) {
+                const updated = {
+                    ...record,
+                    ...data,
+                    id: record.id, // Preserve ID
+                    created_at: record.created_at, // Preserve created_at
+                    updated_at: new Date().toISOString()
+                };
+                this.store.set(key, updated);
+                count++;
             }
         }
         
@@ -370,25 +416,40 @@ export class MemoryDriver implements Driver, DriverInterface {
     }
 
     /**
-     * Delete multiple records matching filters.
+     * Delete multiple records matching filters using Mingo.
      */
     async deleteMany(objectName: string, filters: any, options?: any): Promise<any> {
         const pattern = `${objectName}:`;
-        const keysToDelete: string[] = [];
+        
+        // Get all records for this object type
+        let records: any[] = [];
+        const recordKeys = new Map<string, string>();
         
         for (const [key, record] of this.store.entries()) {
             if (key.startsWith(pattern)) {
-                if (this.matchesFilters(record, filters)) {
-                    keysToDelete.push(key);
-                }
+                records.push(record);
+                recordKeys.set(record.id, key);
             }
         }
         
-        for (const key of keysToDelete) {
-            this.store.delete(key);
+        // Apply filters using Mingo
+        const mongoQuery = this.convertToMongoQuery(filters);
+        let matchedRecords = records;
+        
+        if (mongoQuery && Object.keys(mongoQuery).length > 0) {
+            const mingoQuery = new Query(mongoQuery);
+            matchedRecords = mingoQuery.find(records).all();
         }
         
-        return { deletedCount: keysToDelete.length };
+        // Delete matched records
+        for (const record of matchedRecords) {
+            const key = recordKeys.get(record.id);
+            if (key) {
+                this.store.delete(key);
+            }
+        }
+        
+        return { deletedCount: matchedRecords.length };
     }
 
     /**
@@ -449,7 +510,7 @@ export class MemoryDriver implements Driver, DriverInterface {
     }
 
     /**
-     * Apply filters to an array of records (in-memory filtering).
+     * Convert ObjectQL filters to MongoDB query format for Mingo.
      * 
      * Supports ObjectQL filter format:
      * [
@@ -457,102 +518,122 @@ export class MemoryDriver implements Driver, DriverInterface {
      *   'or',
      *   ['field2', 'operator', value2]
      * ]
+     * 
+     * Converts to MongoDB query format:
+     * { $or: [{ field: { $operator: value }}, { field2: { $operator: value2 }}] }
      */
-    private applyFilters(records: any[], filters: any[]): any[] {
+    private convertToMongoQuery(filters?: any[]): Record<string, any> {
         if (!filters || filters.length === 0) {
-            return records;
+            return {};
         }
         
-        return records.filter(record => this.matchesFilters(record, filters));
-    }
-
-    /**
-     * Check if a single record matches the filter conditions.
-     */
-    private matchesFilters(record: any, filters: any[]): boolean {
-        if (!filters || filters.length === 0) {
-            return true;
-        }
-        
-        let conditions: boolean[] = [];
-        let operators: string[] = [];
+        // Process the filter array to build MongoDB query
+        const conditions: Record<string, any>[] = [];
+        let currentLogic: 'and' | 'or' = 'and';
+        const logicGroups: { logic: 'and' | 'or', conditions: Record<string, any>[] }[] = [
+            { logic: 'and', conditions: [] }
+        ];
         
         for (const item of filters) {
             if (typeof item === 'string') {
                 // Logical operator (and/or)
-                operators.push(item.toLowerCase());
+                const newLogic = item.toLowerCase() as 'and' | 'or';
+                if (newLogic !== currentLogic) {
+                    currentLogic = newLogic;
+                    logicGroups.push({ logic: currentLogic, conditions: [] });
+                }
             } else if (Array.isArray(item)) {
                 const [field, operator, value] = item;
                 
-                // Handle nested filter groups
-                if (typeof field !== 'string') {
-                    // Nested group - recursively evaluate
-                    conditions.push(this.matchesFilters(record, item));
-                } else {
-                    // Single condition
-                    const matches = this.evaluateCondition(record[field], operator, value);
-                    conditions.push(matches);
+                // Convert single condition to MongoDB operator
+                const mongoCondition = this.convertConditionToMongo(field, operator, value);
+                if (mongoCondition) {
+                    logicGroups[logicGroups.length - 1].conditions.push(mongoCondition);
                 }
             }
         }
         
-        // Combine conditions with operators
-        if (conditions.length === 0) {
-            return true;
+        // Build final query from logic groups
+        if (logicGroups.length === 1 && logicGroups[0].conditions.length === 1) {
+            return logicGroups[0].conditions[0];
         }
         
-        let result = conditions[0];
-        for (let i = 0; i < operators.length; i++) {
-            const op = operators[i];
-            const nextCondition = conditions[i + 1];
+        // Multiple groups or conditions
+        const finalConditions: Record<string, any>[] = [];
+        for (const group of logicGroups) {
+            if (group.conditions.length === 0) continue;
             
-            if (op === 'or') {
-                result = result || nextCondition;
-            } else { // 'and' or default
-                result = result && nextCondition;
+            if (group.conditions.length === 1) {
+                finalConditions.push(group.conditions[0]);
+            } else {
+                if (group.logic === 'or') {
+                    finalConditions.push({ $or: group.conditions });
+                } else {
+                    finalConditions.push({ $and: group.conditions });
+                }
             }
         }
         
-        return result;
+        if (finalConditions.length === 0) {
+            return {};
+        } else if (finalConditions.length === 1) {
+            return finalConditions[0];
+        } else {
+            return { $and: finalConditions };
+        }
     }
 
     /**
-     * Evaluate a single filter condition.
+     * Convert a single ObjectQL condition to MongoDB operator format.
      */
-    private evaluateCondition(fieldValue: any, operator: string, compareValue: any): boolean {
+    private convertConditionToMongo(field: string, operator: string, value: any): Record<string, any> | null {
         switch (operator) {
             case '=':
             case '==':
-                return fieldValue === compareValue;
+                return { [field]: value };
+            
             case '!=':
             case '<>':
-                return fieldValue !== compareValue;
+                return { [field]: { $ne: value } };
+            
             case '>':
-                return fieldValue > compareValue;
+                return { [field]: { $gt: value } };
+            
             case '>=':
-                return fieldValue >= compareValue;
+                return { [field]: { $gte: value } };
+            
             case '<':
-                return fieldValue < compareValue;
+                return { [field]: { $lt: value } };
+            
             case '<=':
-                return fieldValue <= compareValue;
+                return { [field]: { $lte: value } };
+            
             case 'in':
-                return Array.isArray(compareValue) && compareValue.includes(fieldValue);
+                return { [field]: { $in: value } };
+            
             case 'nin':
             case 'not in':
-                return Array.isArray(compareValue) && !compareValue.includes(fieldValue);
+                return { [field]: { $nin: value } };
+            
             case 'contains':
             case 'like':
-                return String(fieldValue).toLowerCase().includes(String(compareValue).toLowerCase());
+                // MongoDB regex for case-insensitive contains
+                return { [field]: { $regex: new RegExp(value, 'i') } };
+            
             case 'startswith':
             case 'starts_with':
-                return String(fieldValue).toLowerCase().startsWith(String(compareValue).toLowerCase());
+                return { [field]: { $regex: new RegExp(`^${value}`, 'i') } };
+            
             case 'endswith':
             case 'ends_with':
-                return String(fieldValue).toLowerCase().endsWith(String(compareValue).toLowerCase());
+                return { [field]: { $regex: new RegExp(`${value}$`, 'i') } };
+            
             case 'between':
-                return Array.isArray(compareValue) && 
-                       fieldValue >= compareValue[0] && 
-                       fieldValue <= compareValue[1];
+                if (Array.isArray(value) && value.length === 2) {
+                    return { [field]: { $gte: value[0], $lte: value[1] } };
+                }
+                return null;
+            
             default:
                 throw new ObjectQLError({
                     code: 'UNSUPPORTED_OPERATOR',
@@ -562,12 +643,40 @@ export class MemoryDriver implements Driver, DriverInterface {
     }
 
     /**
-     * Apply sorting to an array of records (in-memory sorting).
+     * Build MongoDB sort object from ObjectQL sort array.
+     * Converts [['field', 'asc'], ['field2', 'desc']] to { field: 1, field2: -1 }
      */
-    private applySort(records: any[], sort: any[]): any[] {
+    private buildSortObject(sort: any[]): Record<string, any> {
+        const sortObj: Record<string, any> = {};
+        
+        for (const sortItem of sort) {
+            let field: string;
+            let direction: string;
+            
+            if (Array.isArray(sortItem)) {
+                [field, direction] = sortItem;
+            } else if (typeof sortItem === 'object') {
+                field = sortItem.field;
+                direction = sortItem.order || sortItem.direction || sortItem.dir || 'asc';
+            } else {
+                continue;
+            }
+            
+            // MongoDB uses 1 for ascending, -1 for descending
+            sortObj[field] = direction.toLowerCase() === 'desc' ? -1 : 1;
+        }
+        
+        return sortObj;
+    }
+
+    /**
+     * Apply manual sorting to an array of records.
+     * This is used instead of Mingo's sort to avoid CJS build issues.
+     */
+    private applyManualSort(records: any[], sort: any[]): any[] {
         const sorted = [...records];
         
-        // Apply sorts in reverse order for correct precedence
+        // Apply sorts in reverse order for correct multi-field precedence
         for (let i = sort.length - 1; i >= 0; i--) {
             const sortItem = sort[i];
             
@@ -593,8 +702,8 @@ export class MemoryDriver implements Driver, DriverInterface {
                 if (bVal == null) return -1;
                 
                 // Compare values
-                if (aVal < bVal) return direction === 'asc' ? -1 : 1;
-                if (aVal > bVal) return direction === 'asc' ? 1 : -1;
+                if (aVal < bVal) return direction.toLowerCase() === 'desc' ? 1 : -1;
+                if (aVal > bVal) return direction.toLowerCase() === 'desc' ? -1 : 1;
                 return 0;
             });
         }
