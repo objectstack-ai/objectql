@@ -579,41 +579,28 @@ export class MongoDriver implements Driver, DriverInterface {
                 return [[node.field, operator, node.value]];
             
             case 'and':
-                // Convert AND node to array with 'and' separator
-                if (!node.children || node.children.length === 0) return undefined;
-                const andResults: any[] = [];
-                for (const child of node.children) {
-                    const converted = this.convertFilterNodeToLegacy(child);
-                    if (converted) {
-                        if (andResults.length > 0) {
-                            andResults.push('and');
-                        }
-                        andResults.push(...(Array.isArray(converted) ? converted : [converted]));
-                    }
-                }
-                return andResults.length > 0 ? andResults : undefined;
-            
             case 'or':
-                // Convert OR node to array with 'or' separator
+                // Convert AND/OR node to array with separator
                 if (!node.children || node.children.length === 0) return undefined;
-                const orResults: any[] = [];
+                const results: any[] = [];
+                const separator = node.type; // 'and' or 'or'
+                
                 for (const child of node.children) {
                     const converted = this.convertFilterNodeToLegacy(child);
                     if (converted) {
-                        if (orResults.length > 0) {
-                            orResults.push('or');
+                        if (results.length > 0) {
+                            results.push(separator);
                         }
-                        orResults.push(...(Array.isArray(converted) ? converted : [converted]));
+                        results.push(...(Array.isArray(converted) ? converted : [converted]));
                     }
                 }
-                return orResults.length > 0 ? orResults : undefined;
+                return results.length > 0 ? results : undefined;
             
             case 'not':
-                // NOT is complex - we'll just process the first child for now
-                if (node.children && node.children.length > 0) {
-                    return this.convertFilterNodeToLegacy(node.children[0]);
-                }
-                return undefined;
+                // NOT is not directly supported in the legacy filter format
+                // MongoDB supports $not, but legacy array format doesn't have a NOT operator
+                // We'll throw an error to indicate this limitation
+                throw new Error('NOT filters are not supported in legacy filter format. Use native MongoDB queries with $not operator instead.');
             
             default:
                 return undefined;
