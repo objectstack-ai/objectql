@@ -46,7 +46,7 @@ export interface CommandResult {
 export class MongoDriver implements Driver, DriverInterface {
     // Driver metadata (ObjectStack-compatible)
     public readonly name = 'MongoDriver';
-    public readonly version = '4.0.0';
+    public readonly version = '3.0.1';
     public readonly supports = {
         transactions: true,
         joins: false,
