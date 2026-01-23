@@ -165,10 +165,10 @@ export class QueryAnalyzer {
         // Build the QueryAST (without executing)
         const ast: QueryAST = {
             object: objectName,
-            filters: query.filters,
-            sort: query.sort,
-            limit: query.limit,
-            offset: query.offset,
+            filters: query.filters as any, // FilterCondition is compatible with FilterNode
+            sort: query.sort as any, // Will be converted to SortNode[] format
+            top: query.limit, // Changed from limit to top (QueryAST uses 'top')
+            skip: query.skip,
             fields: query.fields
         };
         
@@ -291,14 +291,34 @@ export class QueryAnalyzer {
         
         // Extract fields used in filters
         const filterFields = new Set<string>();
-        for (const filter of query.filters) {
-            if (Array.isArray(filter) && filter.length >= 1) {
-                filterFields.add(String(filter[0]));
+        
+        // FilterCondition is an object-based filter (e.g., { field: value } or { field: { $eq: value } })
+        // We need to extract field names from the filter object
+        const extractFieldsFromFilter = (filter: any): void => {
+            if (!filter || typeof filter !== 'object') return;
+            
+            for (const key of Object.keys(filter)) {
+                // Skip logical operators
+                if (key.startsWith('$')) {
+                    // Logical operators contain nested filters
+                    if (key === '$and' || key === '$or') {
+                        const nested = filter[key];
+                        if (Array.isArray(nested)) {
+                            nested.forEach(extractFieldsFromFilter);
+                        }
+                    }
+                    continue;
+                }
+                // This is a field name
+                filterFields.add(key);
             }
-        }
+        };
+        
+        extractFieldsFromFilter(query.filters);
         
         // Check which indexes could be used
-        for (const index of schema.indexes) {
+        const indexesArray = Array.isArray(schema.indexes) ? schema.indexes : Object.values(schema.indexes || {});
+        for (const index of indexesArray) {
             const indexFields = Array.isArray(index.fields) 
                 ? index.fields 
                 : [index.fields];

@@ -127,5 +127,33 @@ export interface Driver {
 
     // Connection
     disconnect?(): Promise<void>;
+    
+    // DriverInterface v4.0 methods (for new drivers like driver-sql@4.0, driver-memory@4.0)
+    /**
+     * Execute a query using QueryAST format (DriverInterface v4.0)
+     * @param ast - The QueryAST to execute
+     * @param options - Driver-specific options
+     * @returns Query result with value and optional count
+     */
+    executeQuery?(ast: any, options?: any): Promise<{ value: any[]; count?: number }>;
+    
+    /**
+     * Execute a command using Command format (DriverInterface v4.0)
+     * @param command - The command to execute (create/update/delete/bulk operations)
+     * @param options - Driver-specific options
+     * @returns Command result with success status and affected count
+     */
+    executeCommand?(command: any, options?: any): Promise<{ success: boolean; data?: any; affected: number }>;
+    
+    /**
+     * Alternative method names for findOne (some drivers use 'get')
+     */
+    get?(objectName: string, id: string, options?: any): Promise<any>;
+    
+    /**
+     * Direct query execution (legacy, some drivers)
+     */
+    directQuery?(sql: string, params?: any[]): Promise<any[]>;
+    query?(sql: string, params?: any[]): Promise<any[]>;
 }
 

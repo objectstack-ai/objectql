@@ -30,7 +30,7 @@ export interface Command {
 export interface CommandResult {
     success: boolean;
     data?: any;
-    affected?: number;
+    affected: number; // Required (changed from optional)
     error?: string;
 }
 
@@ -979,11 +979,10 @@ export class SqlDriver implements Driver, DriverInterface {
      * using a unified command interface.
      * 
      * @param command - The command to execute
-     * @param parameters - Optional command parameters (unused in this driver)
      * @param options - Optional execution options
      * @returns Command execution result
      */
-    async executeCommand(command: Command, parameters?: any[], options?: any): Promise<CommandResult> {
+    async executeCommand(command: Command, options?: any): Promise<CommandResult> {
         try {
             const cmdOptions = { ...options, ...command.options };
             
@@ -1141,8 +1140,8 @@ export class SqlDriver implements Driver, DriverInterface {
      */
     async execute(command: any, parameters?: any[], options?: any): Promise<any> {
         const builder = options?.transaction 
-            ? this.knex.raw(command, parameters).transacting(options.transaction)
-            : this.knex.raw(command, parameters);
+            ? this.knex.raw(command, parameters || []).transacting(options.transaction)
+            : this.knex.raw(command, parameters || []);
         
         return await builder;
     }

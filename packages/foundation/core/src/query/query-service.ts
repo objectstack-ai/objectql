@@ -11,7 +11,6 @@ import type {
     ObjectConfig, 
     UnifiedQuery, 
     Filter,
-    AggregateQuery,
     MetadataRegistry
 } from '@objectql/types';
 import type { QueryAST } from '@objectstack/spec';
@@ -175,9 +174,9 @@ export class QueryService {
         
         if (driver.find) {
             // Legacy driver interface
-            const result = await driver.find(objectName, query, driverOptions);
-            results = Array.isArray(result) ? result : result.value || [];
-            count = typeof result === 'object' && result.count !== undefined ? result.count : undefined;
+            const result: any = await driver.find(objectName, query, driverOptions);
+            results = Array.isArray(result) ? result : (result?.value || []);
+            count = (typeof result === 'object' && !Array.isArray(result) && result?.count !== undefined) ? result.count : undefined;
         } else if (driver.executeQuery) {
             // New DriverInterface
             const result = await driver.executeQuery(ast, driverOptions);
@@ -306,13 +305,13 @@ export class QueryService {
      * Execute an aggregate query
      * 
      * @param objectName - The object to query
-     * @param aggregation - The aggregation query
+     * @param query - The aggregation query using UnifiedQuery format
      * @param options - Query execution options
      * @returns Aggregation results
      */
     async aggregate(
         objectName: string, 
-        aggregation: AggregateQuery, 
+        query: UnifiedQuery, 
         options: QueryOptions = {}
     ): Promise<QueryResult<any[]>> {
         const driver = this.getDriver(objectName);
@@ -327,7 +326,7 @@ export class QueryService {
         
         if (driver.aggregate) {
             // Driver supports aggregation
-            results = await driver.aggregate(objectName, aggregation, driverOptions);
+            results = await driver.aggregate(objectName, query, driverOptions);
         } else {
             // Driver doesn't support aggregation
             throw new Error(`Driver does not support aggregate operations. Consider using a driver that supports aggregation.`);
@@ -373,10 +372,10 @@ export class QueryService {
         let results: any;
         
         if (driver.directQuery) {
-            results = await driver.directQuery(queryString, params, driverOptions);
+            results = await driver.directQuery(queryString, params);
         } else if (driver.query) {
             // Alternative method name
-            results = await driver.query(queryString, params, driverOptions);
+            results = await driver.query(queryString, params);
         } else {
             throw new Error(`Driver does not support direct query execution`);
         }

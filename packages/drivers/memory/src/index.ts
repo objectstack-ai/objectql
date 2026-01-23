@@ -56,7 +56,7 @@ export interface Command {
 export interface CommandResult {
     success: boolean;
     data?: any;
-    affected?: number;
+    affected: number; // Required (changed from optional)
     error?: string;
 }
 
@@ -669,7 +669,7 @@ export class MemoryDriver implements Driver, DriverInterface {
      * @param options - Optional execution options
      * @returns Command execution result
      */
-    async executeCommand(command: Command, parameters?: any[], options?: any): Promise<CommandResult> {
+    async executeCommand(command: Command, options?: any): Promise<CommandResult> {
         try {
             const cmdOptions = { ...options, ...command.options };
             
