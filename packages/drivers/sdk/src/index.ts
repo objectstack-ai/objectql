@@ -50,6 +50,63 @@ import {
     ApiErrorCode,
     Filter
 } from '@objectql/types';
+import { DriverInterface, QueryAST } from '@objectstack/spec';
+
+/**
+ * Command interface for executeCommand method
+ * Defines the structure of mutation commands sent to the remote API
+ */
+export interface Command {
+    type: 'create' | 'update' | 'delete' | 'bulkCreate' | 'bulkUpdate' | 'bulkDelete';
+    object: string;
+    data?: any;
+    id?: string | number;
+    ids?: Array<string | number>;
+    records?: any[];
+    updates?: Array<{id: string | number, data: any}>;
+    options?: any;
+}
+
+/**
+ * Command result interface
+ * Standard response format for command execution
+ */
+export interface CommandResult {
+    success: boolean;
+    data?: any;
+    affected: number;
+    error?: string;
+}
+
+/**
+ * SDK Configuration for the RemoteDriver
+ */
+export interface SdkConfig {
+    /** Base URL of the remote ObjectQL server */
+    baseUrl: string;
+    /** RPC endpoint path (default: /api/objectql) */
+    rpcPath?: string;
+    /** Query endpoint path (default: /api/query) */
+    queryPath?: string;
+    /** Command endpoint path (default: /api/command) */
+    commandPath?: string;
+    /** Custom execute endpoint path (default: /api/execute) */
+    executePath?: string;
+    /** Authentication token */
+    token?: string;
+    /** API key for authentication */
+    apiKey?: string;
+    /** Custom headers */
+    headers?: Record<string, string>;
+    /** Request timeout in milliseconds (default: 30000) */
+    timeout?: number;
+    /** Enable retry on failure (default: false) */
+    enableRetry?: boolean;
+    /** Maximum number of retry attempts (default: 3) */
+    maxRetries?: number;
+    /** Enable request/response logging (default: false) */
+    enableLogging?: boolean;
+}
 
 /**
  * Polyfill for AbortSignal.timeout if not available (for older browsers)
@@ -82,11 +139,13 @@ function createTimeoutSignal(ms: number): AbortSignal {
  * Implements both the legacy Driver interface from @objectql/types and
  * the standard DriverInterface from @objectstack/spec for compatibility
  * with the new kernel-based plugin system.
+ * 
+ * @version 4.0.0 - DriverInterface compliant
  */
-export class RemoteDriver implements Driver {
+export class RemoteDriver implements Driver, DriverInterface {
     // Driver metadata (ObjectStack-compatible)
     public readonly name = 'RemoteDriver';
-    public readonly version = '3.0.1';
+    public readonly version = '4.0.0';
     public readonly supports = {
         transactions: false,
         joins: false,
@@ -96,11 +155,164 @@ export class RemoteDriver implements Driver {
     };
 
     private rpcPath: string;
+    private queryPath: string;
+    private commandPath: string;
+    private executePath: string;
     private baseUrl: string;
+    private token?: string;
+    private apiKey?: string;
+    private headers: Record<string, string>;
+    private timeout: number;
+    private enableRetry: boolean;
+    private maxRetries: number;
+    private enableLogging: boolean;
     
-    constructor(baseUrl: string, rpcPath: string = '/api/objectql') {
-        this.baseUrl = baseUrl;
-        this.rpcPath = rpcPath;
+    constructor(baseUrlOrConfig: string | SdkConfig, rpcPath?: string) {
+        if (typeof baseUrlOrConfig === 'string') {
+            // Legacy constructor signature
+            this.baseUrl = baseUrlOrConfig;
+            this.rpcPath = rpcPath || '/api/objectql';
+            this.queryPath = '/api/query';
+            this.commandPath = '/api/command';
+            this.executePath = '/api/execute';
+            this.headers = {};
+            this.timeout = 30000;
+            this.enableRetry = false;
+            this.maxRetries = 3;
+            this.enableLogging = false;
+        } else {
+            // New config-based constructor
+            const config = baseUrlOrConfig;
+            this.baseUrl = config.baseUrl;
+            this.rpcPath = config.rpcPath || '/api/objectql';
+            this.queryPath = config.queryPath || '/api/query';
+            this.commandPath = config.commandPath || '/api/command';
+            this.executePath = config.executePath || '/api/execute';
+            this.token = config.token;
+            this.apiKey = config.apiKey;
+            this.headers = config.headers || {};
+            this.timeout = config.timeout || 30000;
+            this.enableRetry = config.enableRetry || false;
+            this.maxRetries = config.maxRetries || 3;
+            this.enableLogging = config.enableLogging || false;
+        }
+    }
+
+    /**
+     * Build full endpoint URL
+     * @private
+     */
+    private buildEndpoint(path: string): string {
+        return `${this.baseUrl.replace(/\/$/, '')}${path}`;
+    }
+
+    /**
+     * Get authentication headers
+     * @private
+     */
+    private getAuthHeaders(): Record<string, string> {
+        const authHeaders: Record<string, string> = {};
+        
+        if (this.token) {
+            authHeaders['Authorization'] = `Bearer ${this.token}`;
+        }
+        
+        if (this.apiKey) {
+            authHeaders['X-API-Key'] = this.apiKey;
+        }
+        
+        return authHeaders;
+    }
+
+    /**
+     * Handle HTTP errors and convert to ObjectQLError
+     * @private
+     */
+    private async handleHttpError(response: Response): Promise<never> {
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        let errorCode: ApiErrorCode = ApiErrorCode.INTERNAL_ERROR;
+        let errorDetails: any = undefined;
+
+        try {
+            const json = await response.json();
+            if (json.error) {
+                errorMessage = json.error.message || errorMessage;
+                errorCode = json.error.code || errorCode;
+                errorDetails = json.error.details;
+            }
+        } catch {
+            // Could not parse JSON, use default error message
+        }
+
+        // Map HTTP status codes to ObjectQL error codes
+        if (response.status === 401) {
+            errorCode = ApiErrorCode.UNAUTHORIZED;
+        } else if (response.status === 403) {
+            errorCode = ApiErrorCode.FORBIDDEN;
+        } else if (response.status === 404) {
+            errorCode = ApiErrorCode.NOT_FOUND;
+        } else if (response.status === 400) {
+            errorCode = ApiErrorCode.VALIDATION_ERROR;
+        } else if (response.status >= 500) {
+            errorCode = ApiErrorCode.INTERNAL_ERROR;
+        }
+
+        throw new ObjectQLError({
+            code: errorCode,
+            message: errorMessage,
+            details: errorDetails
+        });
+    }
+
+    /**
+     * Retry logic with exponential backoff
+     * @private
+     */
+    private async retryWithBackoff<T>(
+        fn: () => Promise<T>,
+        attempt: number = 0
+    ): Promise<T> {
+        try {
+            return await fn();
+        } catch (error: any) {
+            // Don't retry on client errors (4xx) or if retries are disabled
+            if (!this.enableRetry || attempt >= this.maxRetries) {
+                throw error;
+            }
+
+            // Don't retry on validation or auth errors
+            if (error instanceof ObjectQLError) {
+                const nonRetryableCodes = [
+                    ApiErrorCode.VALIDATION_ERROR,
+                    ApiErrorCode.UNAUTHORIZED,
+                    ApiErrorCode.FORBIDDEN,
+                    ApiErrorCode.NOT_FOUND
+                ];
+                if (nonRetryableCodes.includes(error.code as ApiErrorCode)) {
+                    throw error;
+                }
+            }
+
+            // Calculate exponential backoff delay
+            const delay = Math.min(1000 * Math.pow(2, attempt), 10000);
+            
+            if (this.enableLogging) {
+                console.log(`Retry attempt ${attempt + 1}/${this.maxRetries} after ${delay}ms delay`);
+            }
+
+            await new Promise(resolve => setTimeout(resolve, delay));
+            return this.retryWithBackoff(fn, attempt + 1);
+        }
+    }
+
+    /**
+     * Log request/response if logging is enabled
+     * @private
+     */
+    private log(message: string, data?: any): void {
+        if (this.enableLogging) {
+            console.log(`[RemoteDriver] ${message}`, data || '');
+        }
     }
 
     /**
@@ -136,6 +348,240 @@ export class RemoteDriver implements Driver {
         } catch (error) {
             return false;
         }
+    }
+
+    /**
+     * Execute a query using QueryAST format (DriverInterface v4.0)
+     * 
+     * Sends a QueryAST to the remote server's /api/query endpoint
+     * and returns the query results.
+     * 
+     * @param ast - The QueryAST to execute
+     * @param options - Optional execution options
+     * @returns Query result with value array and optional count
+     * 
+     * @example
+     * ```typescript
+     * const result = await driver.executeQuery({
+     *   object: 'users',
+     *   fields: ['name', 'email'],
+     *   filters: {
+     *     type: 'comparison',
+     *     field: 'status',
+     *     operator: '=',
+     *     value: 'active'
+     *   },
+     *   sort: [{ field: 'created_at', order: 'desc' }],
+     *   top: 10
+     * });
+     * ```
+     */
+    async executeQuery(ast: QueryAST, options?: any): Promise<{ value: any[]; count?: number }> {
+        return this.retryWithBackoff(async () => {
+            const endpoint = this.buildEndpoint(this.queryPath);
+            this.log('executeQuery', { endpoint, ast });
+
+            const headers: Record<string, string> = {
+                'Content-Type': 'application/json',
+                ...this.getAuthHeaders(),
+                ...this.headers
+            };
+
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify(ast),
+                signal: createTimeoutSignal(this.timeout)
+            });
+
+            if (!response.ok) {
+                await this.handleHttpError(response);
+            }
+
+            const json = await response.json();
+            this.log('executeQuery response', json);
+
+            // Handle both direct data response and wrapped response formats
+            if (json.error) {
+                throw new ObjectQLError({
+                    code: json.error.code || ApiErrorCode.INTERNAL_ERROR,
+                    message: json.error.message,
+                    details: json.error.details
+                });
+            }
+
+            // Support multiple response formats
+            if (json.value !== undefined) {
+                return {
+                    value: Array.isArray(json.value) ? json.value : [json.value],
+                    count: json.count
+                };
+            } else if (json.data !== undefined) {
+                return {
+                    value: Array.isArray(json.data) ? json.data : [json.data],
+                    count: json.count || (Array.isArray(json.data) ? json.data.length : 1)
+                };
+            } else if (Array.isArray(json)) {
+                return {
+                    value: json,
+                    count: json.length
+                };
+            } else {
+                return {
+                    value: [json],
+                    count: 1
+                };
+            }
+        });
+    }
+
+    /**
+     * Execute a command using Command format (DriverInterface v4.0)
+     * 
+     * Sends a Command to the remote server's /api/command endpoint
+     * for mutation operations (create, update, delete, bulk operations).
+     * 
+     * @param command - The command to execute
+     * @param options - Optional execution options
+     * @returns Command execution result
+     * 
+     * @example
+     * ```typescript
+     * // Create a record
+     * const result = await driver.executeCommand({
+     *   type: 'create',
+     *   object: 'users',
+     *   data: { name: 'Alice', email: 'alice@example.com' }
+     * });
+     * 
+     * // Bulk update
+     * const bulkResult = await driver.executeCommand({
+     *   type: 'bulkUpdate',
+     *   object: 'users',
+     *   updates: [
+     *     { id: '1', data: { status: 'active' } },
+     *     { id: '2', data: { status: 'inactive' } }
+     *   ]
+     * });
+     * ```
+     */
+    async executeCommand(command: Command, options?: any): Promise<CommandResult> {
+        return this.retryWithBackoff(async () => {
+            const endpoint = this.buildEndpoint(this.commandPath);
+            this.log('executeCommand', { endpoint, command });
+
+            const headers: Record<string, string> = {
+                'Content-Type': 'application/json',
+                ...this.getAuthHeaders(),
+                ...this.headers
+            };
+
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify(command),
+                signal: createTimeoutSignal(this.timeout)
+            });
+
+            if (!response.ok) {
+                await this.handleHttpError(response);
+            }
+
+            const json = await response.json();
+            this.log('executeCommand response', json);
+
+            // Handle error response
+            if (json.error) {
+                return {
+                    success: false,
+                    error: json.error.message || 'Command execution failed',
+                    affected: 0
+                };
+            }
+
+            // Handle standard CommandResult format
+            if (json.success !== undefined) {
+                return {
+                    success: json.success,
+                    data: json.data,
+                    affected: json.affected || 0,
+                    error: json.error
+                };
+            }
+
+            // Handle legacy response formats
+            return {
+                success: true,
+                data: json.data || json,
+                affected: json.affected || 1
+            };
+        });
+    }
+
+    /**
+     * Execute a custom operation on the remote server
+     * 
+     * Allows calling custom HTTP endpoints with flexible parameters.
+     * Useful for custom actions, workflows, or specialized operations.
+     * 
+     * @param endpoint - Optional custom endpoint path (defaults to /api/execute)
+     * @param payload - Request payload
+     * @param options - Optional execution options
+     * @returns Execution result
+     * 
+     * @example
+     * ```typescript
+     * // Execute a custom workflow
+     * const result = await driver.execute('/api/workflows/approve', {
+     *   workflowId: 'wf_123',
+     *   comment: 'Approved'
+     * });
+     * 
+     * // Use default execute endpoint
+     * const result = await driver.execute(undefined, {
+     *   action: 'calculateMetrics',
+     *   params: { year: 2024 }
+     * });
+     * ```
+     */
+    async execute(endpoint?: string, payload?: any, options?: any): Promise<any> {
+        return this.retryWithBackoff(async () => {
+            const targetEndpoint = endpoint 
+                ? this.buildEndpoint(endpoint)
+                : this.buildEndpoint(this.executePath);
+            
+            this.log('execute', { endpoint: targetEndpoint, payload });
+
+            const headers: Record<string, string> = {
+                'Content-Type': 'application/json',
+                ...this.getAuthHeaders(),
+                ...this.headers
+            };
+
+            const response = await fetch(targetEndpoint, {
+                method: 'POST',
+                headers,
+                body: payload ? JSON.stringify(payload) : undefined,
+                signal: createTimeoutSignal(this.timeout)
+            });
+
+            if (!response.ok) {
+                await this.handleHttpError(response);
+            }
+
+            const json = await response.json();
+            this.log('execute response', json);
+
+            if (json.error) {
+                throw new ObjectQLError({
+                    code: json.error.code || ApiErrorCode.INTERNAL_ERROR,
+                    message: json.error.message,
+                    details: json.error.details
+                });
+            }
+
+            return json;
+        });
     }
 
     private async request(op: string, objectName: string, args: any) {
