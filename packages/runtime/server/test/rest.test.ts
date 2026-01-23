@@ -201,6 +201,8 @@ describe('REST API Adapter', () => {
                 }
             }
         });
+        
+        await app.init();
 
         // Create handler and server once for all tests
         handler = createRESTHandler(app);

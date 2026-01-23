@@ -133,6 +133,8 @@ describe('REST API Error Handling & Edge Cases', () => {
                 }
             }
         });
+        
+        await app.init();
 
         handler = createRESTHandler(app);
         server = createServer(handler);

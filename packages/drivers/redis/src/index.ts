@@ -563,8 +563,8 @@ export class RedisDriver implements Driver, DriverInterface {
                     
                     for (let i = 0; i < command.updates.length; i++) {
                         const update = command.updates[i];
-                        const result = getResults?.[i] as any;
-                        const existingData = result?.[1];
+                        // Redis v4 client returns array of results directly, not [error, result] tuples
+                        const existingData = getResults?.[i];
                         
                         if (existingData && typeof existingData === 'string') {
                             const existingDoc = JSON.parse(existingData);
@@ -581,7 +581,10 @@ export class RedisDriver implements Driver, DriverInterface {
                         }
                     }
                     
-                    await setPipeline.exec();
+                    // Only execute pipeline if there are commands to execute
+                    if (updateResults.length > 0) {
+                        await setPipeline.exec();
+                    }
                     
                     return {
                         success: true,
@@ -602,7 +605,9 @@ export class RedisDriver implements Driver, DriverInterface {
                     }
                     
                     const deleteResults = await deletePipeline.exec();
-                    const deleted = deleteResults?.filter((r: any) => r && r[1] > 0).length || 0;
+                    // Redis v4 client returns array of results directly, not [error, result] tuples
+                    // Each DEL returns 1 if key existed and was deleted, 0 if key didn't exist
+                    const deleted = deleteResults?.filter((r: any) => r > 0).length || 0;
                     
                     return {
                         success: true,
