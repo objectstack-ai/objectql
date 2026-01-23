@@ -6,64 +6,22 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+/**
+ * Re-export MetadataRegistry and MetadataItem from @objectstack/runtime
+ * 
+ * As of Week 3 refactoring, metadata management has been moved to the
+ * @objectstack/runtime package to enable sharing across the ecosystem.
+ */
+export { MetadataRegistry, MetadataItem } from '@objectstack/runtime';
+
+/**
+ * Legacy Metadata interface - kept for backward compatibility
+ * @deprecated Use MetadataItem from @objectstack/runtime instead
+ */
 export interface Metadata {
     type: string;
     id: string;
     path?: string;
     package?: string;
-    content: any;
-}
-
-export class MetadataRegistry {
-    // Map<type, Map<id, Metadata>>
-    private store: Map<string, Map<string, Metadata>> = new Map();
-
-    register(type: string, metadata: Metadata) {
-        if (!this.store.has(type)) {
-            this.store.set(type, new Map());
-        }
-        this.store.get(type)!.set(metadata.id, metadata);
-    }
-
-    unregister(type: string, id: string) {
-        const map = this.store.get(type);
-        if (map) {
-            map.delete(id);
-        }
-    }
-    
-    unregisterPackage(packageName: string) {
-        for (const [type, map] of this.store.entries()) {
-            const entriesToDelete: string[] = [];
-            
-            for (const [id, meta] of map.entries()) {
-                if (meta.package === packageName) {
-                    entriesToDelete.push(id);
-                }
-            }
-            
-            // Delete all collected entries
-            for (const id of entriesToDelete) {
-                map.delete(id);
-            }
-        }
-    }
-
-    get<T = any>(type: string, id: string): T | undefined {
-        const map = this.store.get(type);
-        if (!map) return undefined;
-        const entry = map.get(id);
-        return entry ? entry.content as T : undefined;
-    }
-
-    list<T = any>(type: string): T[] {
-        const map = this.store.get(type);
-        if (!map) return [];
-        return Array.from(map.values()).map(m => m.content as T);
-    }
-    
-    getEntry(type: string, id: string): Metadata | undefined {
-        const map = this.store.get(type);
-        return map ? map.get(id) : undefined;
-    }
+    content: unknown;
 }

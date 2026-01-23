@@ -7,7 +7,8 @@
  */
 
 import { 
-    MetadataRegistry, 
+    MetadataRegistry,
+    MetadataItem,
     Driver, 
     ObjectConfig, 
     ObjectQLContext, 
@@ -24,12 +25,6 @@ import {
 import { ObjectStackKernel, type RuntimePlugin } from '@objectstack/runtime';
 import { ObjectRepository } from './repository';
 import { ObjectQLPlugin } from './plugin';
-// import { createDriverFromConnection } from './driver'; // REMOVE THIS
-
-// import { loadRemoteFromUrl } from './remote';
-import { executeActionHelper, registerActionHelper, ActionEntry } from './action';
-import { registerHookHelper, triggerHookHelper, HookEntry } from './hook';
-import { registerObjectHelper, getConfigsHelper } from './object';
 import { convertIntrospectedSchemaToObjects } from './util';
 
 /**
@@ -39,11 +34,13 @@ import { convertIntrospectedSchemaToObjects } from './util';
  * to provide the plugin architecture.
  */
 export class ObjectQL implements IObjectQL {
-    public metadata: MetadataRegistry;
+    // Delegate to kernel for metadata, hooks, and actions
+    public get metadata(): MetadataRegistry {
+        return this.kernel.metadata;
+    }
+    
     private datasources: Record<string, Driver> = {};
     private remotes: string[] = [];
-    private hooks: Record<string, HookEntry[]> = {};
-    private actions: Record<string, ActionEntry> = {};
     
     // ObjectStack Kernel Integration
     private kernel!: ObjectStackKernel;
@@ -54,9 +51,7 @@ export class ObjectQL implements IObjectQL {
 
     constructor(config: ObjectQLConfig) {
         this.config = config;
-        this.metadata = config.registry || new MetadataRegistry();
         this.datasources = config.datasources || {};
-        // this.remotes = config.remotes || [];
         
         if (config.connection) {
              throw new Error("Connection strings are not supported in core directly. Use @objectql/platform-node's createDriverFromConnection or pass a driver instance to 'datasources'.");
@@ -75,6 +70,29 @@ export class ObjectQL implements IObjectQL {
                 }
             }
         }
+        
+        // Create the kernel
+        this.kernel = new ObjectStackKernel(this.kernelPlugins);
+        
+        // Register initial metadata if provided
+        if (config.registry) {
+            // Copy metadata from provided registry to kernel's registry
+            for (const type of config.registry.getTypes()) {
+                const items = config.registry.list(type);
+                for (const item of items) {
+                    // Safely extract the item's id/name
+                    const itemId = typeof item === 'object' && item !== null 
+                        ? (item as { name?: string; id?: string }).name || (item as { name?: string; id?: string }).id || 'unknown'
+                        : 'unknown';
+                    
+                    this.kernel.metadata.register(type, {
+                        type,
+                        id: itemId,
+                        content: item
+                    });
+                }
+            }
+        }
     }
     
     use(plugin: RuntimePlugin) {
@@ -82,35 +100,34 @@ export class ObjectQL implements IObjectQL {
     }
 
     removePackage(name: string) {
-        this.metadata.unregisterPackage(name);
-        
-        // Remove hooks
-        for (const event of Object.keys(this.hooks)) {
-            this.hooks[event] = this.hooks[event].filter(h => h.packageName !== name);
-        }
-        
-        // Remove actions
-        for (const key of Object.keys(this.actions)) {
-            if (this.actions[key].packageName === name) {
-                delete this.actions[key];
-            }
-        }
+        // Delegate to kernel managers
+        this.kernel.metadata.unregisterPackage(name);
+        this.kernel.hooks.removePackage(name);
+        this.kernel.actions.removePackage(name);
     }
 
     on(event: HookName, objectName: string, handler: HookHandler, packageName?: string) {
-        registerHookHelper(this.hooks, event, objectName, handler, packageName);
+        // Delegate to kernel hook manager
+        // Note: Type casting needed due to type incompatibility between ObjectQL HookName (includes beforeCount)
+        // and runtime HookName. This is safe as the kernel will accept all hook types.
+        this.kernel.hooks.register(event as any, objectName, handler as any, packageName);
     }
 
     async triggerHook(event: HookName, objectName: string, ctx: HookContext) {
-        await triggerHookHelper(this.metadata, this.hooks, event, objectName, ctx);
+        // Delegate to kernel hook manager
+        await this.kernel.hooks.trigger(event as any, objectName, ctx as any);
     }
 
     registerAction(objectName: string, actionName: string, handler: ActionHandler, packageName?: string) {
-        registerActionHelper(this.actions, objectName, actionName, handler, packageName);
+        // Delegate to kernel action manager
+        // Note: Type casting needed due to type incompatibility between ObjectQL ActionHandler
+        // (includes input/api fields) and runtime ActionHandler. This is safe as runtime is more permissive.
+        this.kernel.actions.register(objectName, actionName, handler as any, packageName);
     }
 
     async executeAction(objectName: string, actionName: string, ctx: ActionContext) {
-        return await executeActionHelper(this.metadata, this.actions, objectName, actionName, ctx);
+        // Delegate to kernel action manager
+        return await this.kernel.actions.execute(objectName, actionName, ctx as any);
     }
 
     createContext(options: ObjectQLContextOptions): ObjectQLContext {
@@ -122,7 +139,7 @@ export class ObjectQL implements IObjectQL {
             object: (name: string) => {
                 return new ObjectRepository(name, ctx, this);
             },
-            transaction: async (callback) => {
+            transaction: async (callback: (ctx: ObjectQLContext) => Promise<any>) => {
                  const driver = this.datasources['default'];
                  if (!driver || !driver.beginTransaction) {
                       return callback(ctx);
@@ -138,7 +155,7 @@ export class ObjectQL implements IObjectQL {
                  const trxCtx: ObjectQLContext = {
                      ...ctx,
                      transactionHandle: trx,
-                     transaction: async (cb) => cb(trxCtx)
+                     transaction: async (cb: (ctx: ObjectQLContext) => Promise<any>) => cb(trxCtx)
                  };
 
                  try {
@@ -174,19 +191,38 @@ export class ObjectQL implements IObjectQL {
     }
 
     registerObject(object: ObjectConfig) {
-        registerObjectHelper(this.metadata, object);
+        // Normalize fields
+        if (object.fields) {
+            for (const [key, field] of Object.entries(object.fields)) {
+                if (field && !field.name) {
+                    field.name = key;
+                }
+            }
+        }
+        this.kernel.metadata.register('object', {
+            type: 'object',
+            id: object.name,
+            content: object
+        });
     }
 
     unregisterObject(name: string) {
-        this.metadata.unregister('object', name);
+        this.kernel.metadata.unregister('object', name);
     }
 
     getObject(name: string): ObjectConfig | undefined {
-        return this.metadata.get<ObjectConfig>('object', name);
+        const item = this.kernel.metadata.get<MetadataItem>('object', name);
+        return item?.content as ObjectConfig | undefined;
     }
 
     getConfigs(): Record<string, ObjectConfig> {
-        return getConfigsHelper(this.metadata);
+        const result: Record<string, ObjectConfig> = {};
+        const items = this.kernel.metadata.list<MetadataItem>('object');
+        for (const item of items) {
+            const obj = item.content as ObjectConfig;
+            result[obj.name] = obj;
+        }
+        return result;
     }
 
     datasource(name: string): Driver {
@@ -247,8 +283,8 @@ export class ObjectQL implements IObjectQL {
     async init() {
         console.log('[ObjectQL] Initializing with ObjectStackKernel...');
         
-        // Create the kernel instance with all collected plugins
-        this.kernel = new ObjectStackKernel(this.kernelPlugins);
+        // Start the kernel - this will install and start all plugins
+        await this.kernel.start();
         
         // TEMPORARY: Set driver for backward compatibility during migration
         // This allows the kernel mock to delegate to the driver
@@ -258,9 +294,6 @@ export class ObjectQL implements IObjectQL {
                 (this.kernel as any).setDriver(defaultDriver);
             }
         }
-        
-        // Start the kernel - this will install and start all plugins
-        await this.kernel.start();
 
         // Load In-Memory Objects (Dynamic Layer)
         if (this.config.objects) {
@@ -269,7 +302,7 @@ export class ObjectQL implements IObjectQL {
             }
         }
 
-        const objects = this.metadata.list<ObjectConfig>('object');
+        const objects = this.kernel.metadata.list<ObjectConfig>('object');
         
         // Init Datasources
         // Let's pass all objects to all configured drivers.
@@ -287,7 +320,7 @@ export class ObjectQL implements IObjectQL {
     }
 
     private async processInitialData() {
-        const dataEntries = this.metadata.list<any>('data');
+        const dataEntries = this.kernel.metadata.list<any>('data');
         if (dataEntries.length === 0) return;
 
         console.log(`Processing ${dataEntries.length} initial data files...`);

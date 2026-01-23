@@ -8,7 +8,9 @@
 
 // Re-export types from @objectstack packages for API compatibility
 export type { ObjectStackKernel, ObjectStackRuntimeProtocol } from '@objectstack/runtime';
-export type { ObjectQL as ObjectQLEngine, SchemaRegistry } from '@objectstack/objectql';
+// Note: @objectstack/objectql types temporarily commented out due to type incompatibilities
+// in the published package. Will be re-enabled when package is updated.
+// export type { ObjectQL as ObjectQLEngine, SchemaRegistry } from '@objectstack/objectql';
 
 // Export ObjectStack spec types for driver development
 export type { DriverInterface, DriverOptions, QueryAST } from '@objectstack/spec';
@@ -20,9 +22,10 @@ export * from './plugin';
 export * from './validator-plugin';
 export * from './formula-plugin';
 
-export * from './action';
-export * from './hook';
-export * from './object';
+// Export query-specific modules (ObjectQL core competency)
+export * from './query';
+
+// Export utilities
 export * from './validator';
 export * from './util';
 export * from './ai-agent';

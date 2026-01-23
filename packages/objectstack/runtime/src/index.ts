@@ -5,6 +5,16 @@
  * This package defines the runtime types for the ObjectStack ecosystem.
  */
 
+// Import core modules for use in kernel
+import { MetadataRegistry } from './metadata';
+import { HookManager } from './hooks';
+import { ActionManager } from './actions';
+
+// Export core runtime modules
+export * from './metadata';
+export * from './hooks';
+export * from './actions';
+
 /**
  * Runtime Context
  * Provides access to the ObjectStack kernel during plugin execution
@@ -38,19 +48,52 @@ export interface RuntimePlugin {
 export class ObjectStackKernel {
     /** Query interface (QL) */
     public ql: unknown = null;
+    
+    /** Metadata registry */
+    public metadata: MetadataRegistry;
+    
+    /** Hook manager */
+    public hooks: HookManager;
+    
+    /** Action manager */
+    public actions: ActionManager;
+    
+    /** Registered plugins */
+    private plugins: RuntimePlugin[] = [];
 
     constructor(plugins: RuntimePlugin[] = []) {
-        // Stub implementation
+        this.plugins = plugins;
+        this.metadata = new MetadataRegistry();
+        this.hooks = new HookManager();
+        this.actions = new ActionManager();
     }
 
     /** Start the kernel */
     async start(): Promise<void> {
-        // Stub implementation
+        // Install all plugins
+        for (const plugin of this.plugins) {
+            if (plugin.install) {
+                await plugin.install({ engine: this });
+            }
+        }
+        
+        // Start all plugins
+        for (const plugin of this.plugins) {
+            if (plugin.onStart) {
+                await plugin.onStart({ engine: this });
+            }
+        }
     }
 
     /** Stop the kernel */
     async stop(): Promise<void> {
-        // Stub implementation
+        // Stop all plugins in reverse order
+        for (let i = this.plugins.length - 1; i >= 0; i--) {
+            const plugin = this.plugins[i];
+            if (plugin.onStop) {
+                await plugin.onStop({ engine: this });
+            }
+        }
     }
 
     /** Seed initial data */

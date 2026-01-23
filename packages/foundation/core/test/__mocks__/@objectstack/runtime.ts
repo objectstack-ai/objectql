@@ -7,13 +7,124 @@
  * during the migration phase.
  */
 
+// Simple mock implementations of runtime managers
+class MockMetadataRegistry {
+    private store = new Map<string, Map<string, any>>();
+    
+    register(type: string, item: any): void {
+        if (!this.store.has(type)) {
+            this.store.set(type, new Map());
+        }
+        const typeMap = this.store.get(type)!;
+        typeMap.set(item.id || item.name, item);
+    }
+    
+    get<T = any>(type: string, id: string): T | undefined {
+        const typeMap = this.store.get(type);
+        return typeMap?.get(id) as T | undefined;
+    }
+    
+    list<T = any>(type: string): T[] {
+        const typeMap = this.store.get(type);
+        if (!typeMap) return [];
+        return Array.from(typeMap.values()) as T[];
+    }
+    
+    unregister(type: string, id: string): boolean {
+        const typeMap = this.store.get(type);
+        if (!typeMap) return false;
+        return typeMap.delete(id);
+    }
+    
+    getTypes(): string[] {
+        return Array.from(this.store.keys());
+    }
+    
+    unregisterPackage(packageName: string): void {
+        // Simple implementation - in real runtime this would filter by package
+        for (const [type, typeMap] of this.store.entries()) {
+            const toDelete: string[] = [];
+            for (const [id, item] of typeMap.entries()) {
+                if (item.packageName === packageName || item.package === packageName) {
+                    toDelete.push(id);
+                }
+            }
+            toDelete.forEach(id => typeMap.delete(id));
+        }
+    }
+}
+
+class MockHookManager {
+    private hooks = new Map<string, any[]>();
+    
+    register(hookName: string, handler: any, packageName?: string): void {
+        if (!this.hooks.has(hookName)) {
+            this.hooks.set(hookName, []);
+        }
+        this.hooks.get(hookName)!.push({ handler, packageName });
+    }
+    
+    async trigger(hookName: string, context: any): Promise<void> {
+        const handlers = this.hooks.get(hookName) || [];
+        for (const { handler } of handlers) {
+            await handler(context);
+        }
+    }
+    
+    unregisterPackage(packageName: string): void {
+        for (const [hookName, handlers] of this.hooks.entries()) {
+            this.hooks.set(hookName, handlers.filter(h => h.packageName !== packageName));
+        }
+    }
+}
+
+class MockActionManager {
+    private actions = new Map<string, any>();
+    
+    register(objectName: string, actionName: string, handler: any, packageName?: string): void {
+        const key = `${objectName}.${actionName}`;
+        this.actions.set(key, { handler, packageName });
+    }
+    
+    async execute(objectName: string, actionName: string, context: any): Promise<any> {
+        const key = `${objectName}.${actionName}`;
+        const action = this.actions.get(key);
+        if (!action) {
+            throw new Error(`Action ${actionName} not found for object ${objectName}`);
+        }
+        return await action.handler(context);
+    }
+    
+    get(objectName: string, actionName: string): any {
+        const key = `${objectName}.${actionName}`;
+        return this.actions.get(key)?.handler;
+    }
+    
+    unregisterPackage(packageName: string): void {
+        const toDelete: string[] = [];
+        for (const [key, action] of this.actions.entries()) {
+            if (action.packageName === packageName) {
+                toDelete.push(key);
+            }
+        }
+        toDelete.forEach(key => this.actions.delete(key));
+    }
+}
+
 export class ObjectStackKernel {
     public ql: unknown = null;
+    public metadata: MockMetadataRegistry;
+    public hooks: MockHookManager;
+    public actions: MockActionManager;
+    
     private plugins: any[] = [];
     private driver: any = null; // Will be set by the ObjectQL app
     
     constructor(plugins: any[] = []) {
         this.plugins = plugins;
+        this.metadata = new MockMetadataRegistry();
+        this.hooks = new MockHookManager();
+        this.actions = new MockActionManager();
     }
     
     // Method to set the driver for delegation during migration

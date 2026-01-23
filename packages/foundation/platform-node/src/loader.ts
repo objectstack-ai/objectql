@@ -298,7 +298,7 @@ function registerObject(registry: MetadataRegistry, obj: any, file: string, pack
     // Check for existing object to Merge
     const existing = registry.getEntry('object', obj.name);
     if (existing) {
-        const base = existing.content;
+        const base = existing.content as ObjectConfig;
         
         // Merge Fields: New fields overwrite old ones
         if (obj.fields) {

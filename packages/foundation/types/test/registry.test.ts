@@ -283,8 +283,8 @@ describe('MetadataRegistry', () => {
             const objects = registry.list('object');
 
             expect(objects).toHaveLength(2);
-            expect(objects.find(o => o.name === 'user')).toBeDefined();
-            expect(objects.find(o => o.name === 'task')).toBeDefined();
+            expect(objects.find((o: any) => o.name === 'user')).toBeDefined();
+            expect(objects.find((o: any) => o.name === 'task')).toBeDefined();
         });
 
         it('should return empty array for non-existent type', () => {
@@ -430,7 +430,7 @@ describe('MetadataRegistry', () => {
 
             const objects = registry.list('object');
             expect(objects).toHaveLength(50);
-            expect(objects.every(o => o.index % 2 === 1)).toBe(true);
+            expect(objects.every((o: any) => o.index % 2 === 1)).toBe(true);
         });
     });
 });
