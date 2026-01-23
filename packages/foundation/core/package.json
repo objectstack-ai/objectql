@@ -1,7 +1,7 @@
 {
   "name": "@objectql/core",
   "version": "4.0.0",
-  "description": "Universal runtime engine for ObjectQL - AI-native metadata-driven ORM with validation, repository pattern, and driver orchestration",
+  "description": "ObjectQL query plugin for @objectstack/runtime - AI-native query compiler with validation, repository pattern, and driver orchestration",
   "keywords": [
     "objectql",
     "orm",
@@ -25,7 +25,6 @@
     "@objectql/types": "workspace:*",
     "@objectstack/spec": "workspace:*",
     "@objectstack/runtime": "workspace:*",
-    "@objectstack/objectql": "^0.2.0",
     "js-yaml": "^4.1.0",
     "openai": "^4.28.0"
   },

@@ -7,10 +7,7 @@
   "include": ["src/**/*"],
   "exclude": [
     "node_modules", 
-    "dist", 
-    // Exclude external @objectstack/objectql package that has type incompatibilities
-    // with our stub packages during migration phase
-    "../../../node_modules/@objectstack+objectql"
+    "dist"
   ],
   "references": [
     { "path": "../../objectstack/spec" },

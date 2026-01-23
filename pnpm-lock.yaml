@@ -494,9 +494,6 @@ importers:
       '@objectql/types':
         specifier: workspace:*
         version: link:../types
-      '@objectstack/objectql':
-        specifier: ^0.2.0
-        version: 0.2.0
       '@objectstack/runtime':
         specifier: workspace:*
         version: link:../../objectstack/runtime
@@ -1956,9 +1953,6 @@ packages:
     resolution: {integrity: sha512-1SUf/Cg2GzGDyaf15aR9St9TWlb+XvbZXWpDx8YKs7MLzMH/BCeopv+y9vzrzgkfykCGuWOlSu3mZhj2+FQcrg==}
     engines: {node: '>=10'}
     deprecated: This functionality has been moved to @npmcli/fs
-
-  '@objectstack/objectql@0.2.0':
-    resolution: {integrity: sha512-LCgCs+K7J4/rOwJZdXFZgm+zVD936ppRgRVwYn3Uc8xP/JZeFg/DDrhW+O1li3Enwbai2eKMCRB6XYinOhoCAg==}
 
   '@objectstack/spec@0.2.0':
     resolution: {integrity: sha512-y4JALcsTgOeEE0xRJ7Co16beQTIO42c6KngFFcy7QQH0BeN4gKgMoqWGkRxPfOKZnnlUzYo/1hSLxmmUtJMisA==}
@@ -9682,10 +9676,6 @@ snapshots:
       mkdirp: 1.0.4
       rimraf: 3.0.2
     optional: true
-
-  '@objectstack/objectql@0.2.0':
-    dependencies:
-      '@objectstack/spec': 0.2.0
 
   '@objectstack/spec@0.2.0':
     dependencies:
