@@ -12,10 +12,14 @@ The `@objectql/sdk` package provides a type-safe HTTP client for ObjectQL server
 ## ✨ Features
 
 * **🌍 Universal Runtime** - Works in browsers, Node.js, Deno, and edge environments
-* **📦 Zero Dependencies** - Only depends on `@objectql/types` for type definitions
+* **📦 Zero Dependencies** - Only depends on `@objectql/types` and `@objectstack/spec` for type definitions
 * **🔒 Type-Safe** - Full TypeScript support with generics
 * **🚀 Modern APIs** - Uses native `fetch` API available in all modern JavaScript runtimes
 * **🎯 RESTful Interface** - Clean, predictable API design
+* **✅ DriverInterface v4.0** - Fully compliant with ObjectStack protocol specification
+* **🔐 Authentication** - Built-in support for Bearer tokens and API keys
+* **🔄 Retry Logic** - Automatic retry with exponential backoff for network resilience
+* **📊 Request Logging** - Optional request/response logging for debugging
 
 ---
 
@@ -286,6 +290,274 @@ List actions available for an object.
 
 ```typescript
 const actions = await metadataClient.listActions('users');
+```
+
+---
+
+### RemoteDriver (DriverInterface v4.0)
+
+Client for connecting to a remote ObjectQL server via HTTP. Implements the standard `DriverInterface` from `@objectstack/spec`.
+
+#### Constructor
+
+```typescript
+// Legacy constructor
+new RemoteDriver(baseUrl: string, rpcPath?: string)
+
+// New config-based constructor (recommended)
+new RemoteDriver(config: SdkConfig)
+```
+
+**Config Options:**
+* `baseUrl` (string, required) - Base URL of the ObjectQL server
+* `rpcPath` (string, optional) - JSON-RPC endpoint path (default: /api/objectql)
+* `queryPath` (string, optional) - Query endpoint path (default: /api/query)
+* `commandPath` (string, optional) - Command endpoint path (default: /api/command)
+* `executePath` (string, optional) - Custom execute endpoint path (default: /api/execute)
+* `token` (string, optional) - Authentication token (Bearer)
+* `apiKey` (string, optional) - API key for authentication
+* `headers` (Record<string, string>, optional) - Custom HTTP headers
+* `timeout` (number, optional) - Request timeout in milliseconds (default: 30000)
+* `enableRetry` (boolean, optional) - Enable automatic retry on failure (default: false)
+* `maxRetries` (number, optional) - Maximum retry attempts (default: 3)
+* `enableLogging` (boolean, optional) - Enable request/response logging (default: false)
+
+#### Methods
+
+##### `executeQuery(ast: QueryAST, options?: any): Promise<{ value: any[]; count?: number }>`
+
+Execute a query using QueryAST format (DriverInterface v4.0).
+
+```typescript
+import { RemoteDriver } from '@objectql/sdk';
+
+const driver = new RemoteDriver({
+    baseUrl: 'http://localhost:3000',
+    token: 'your-auth-token',
+    enableRetry: true,
+    maxRetries: 3
+});
+
+// Execute a QueryAST
+const result = await driver.executeQuery({
+    object: 'users',
+    fields: ['name', 'email', 'status'],
+    filters: {
+        type: 'comparison',
+        field: 'status',
+        operator: '=',
+        value: 'active'
+    },
+    sort: [{ field: 'created_at', order: 'desc' }],
+    top: 10,
+    skip: 0
+});
+
+console.log(result.value); // Array of users
+console.log(result.count); // Total count
+```
+
+##### `executeCommand(command: Command, options?: any): Promise<CommandResult>`
+
+Execute a command for mutation operations (create, update, delete, bulk operations).
+
+```typescript
+// Create a record
+const createResult = await driver.executeCommand({
+    type: 'create',
+    object: 'users',
+    data: {
+        name: 'Alice',
+        email: 'alice@example.com',
+        status: 'active'
+    }
+});
+
+console.log(createResult.success); // true
+console.log(createResult.data); // Created record
+console.log(createResult.affected); // 1
+
+// Update a record
+const updateResult = await driver.executeCommand({
+    type: 'update',
+    object: 'users',
+    id: 'user_123',
+    data: { status: 'inactive' }
+});
+
+// Delete a record
+const deleteResult = await driver.executeCommand({
+    type: 'delete',
+    object: 'users',
+    id: 'user_123'
+});
+
+// Bulk create
+const bulkCreateResult = await driver.executeCommand({
+    type: 'bulkCreate',
+    object: 'users',
+    records: [
+        { name: 'Bob', email: 'bob@example.com' },
+        { name: 'Charlie', email: 'charlie@example.com' }
+    ]
+});
+
+// Bulk update
+const bulkUpdateResult = await driver.executeCommand({
+    type: 'bulkUpdate',
+    object: 'users',
+    updates: [
+        { id: 'user_1', data: { status: 'active' } },
+        { id: 'user_2', data: { status: 'inactive' } }
+    ]
+});
+
+// Bulk delete
+const bulkDeleteResult = await driver.executeCommand({
+    type: 'bulkDelete',
+    object: 'users',
+    ids: ['user_1', 'user_2', 'user_3']
+});
+```
+
+##### `execute(endpoint?: string, payload?: any, options?: any): Promise<any>`
+
+Execute a custom operation on the remote server.
+
+```typescript
+// Execute a custom workflow
+const workflowResult = await driver.execute('/api/workflows/approve', {
+    workflowId: 'wf_123',
+    comment: 'Approved by manager'
+});
+
+// Use default execute endpoint
+const customResult = await driver.execute(undefined, {
+    action: 'calculateMetrics',
+    params: { year: 2024, quarter: 'Q1' }
+});
+
+// Call a custom action
+const actionResult = await driver.execute('/api/actions/send-email', {
+    to: 'user@example.com',
+    subject: 'Welcome',
+    body: 'Welcome to our platform!'
+});
+```
+
+#### Legacy CRUD Methods
+
+The RemoteDriver also supports legacy CRUD methods for backward compatibility:
+
+```typescript
+// Find records
+const users = await driver.find('users', {
+    filters: [['status', '=', 'active']],
+    sort: [['name', 'asc']],
+    limit: 10
+});
+
+// Find one record
+const user = await driver.findOne('users', 'user_123');
+
+// Create a record
+const newUser = await driver.create('users', {
+    name: 'Alice',
+    email: 'alice@example.com'
+});
+
+// Update a record
+const updated = await driver.update('users', 'user_123', {
+    status: 'inactive'
+});
+
+// Delete a record
+await driver.delete('users', 'user_123');
+
+// Count records
+const count = await driver.count('users', {
+    filters: [['status', '=', 'active']]
+});
+```
+
+### Authentication Examples
+
+```typescript
+// Bearer token authentication
+const driverWithToken = new RemoteDriver({
+    baseUrl: 'http://localhost:3000',
+    token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+});
+
+// API key authentication
+const driverWithApiKey = new RemoteDriver({
+    baseUrl: 'http://localhost:3000',
+    apiKey: 'sk-1234567890abcdef'
+});
+
+// Both token and API key
+const driverWithBoth = new RemoteDriver({
+    baseUrl: 'http://localhost:3000',
+    token: 'jwt-token',
+    apiKey: 'api-key'
+});
+
+// Custom headers
+const driverWithHeaders = new RemoteDriver({
+    baseUrl: 'http://localhost:3000',
+    headers: {
+        'X-Tenant-ID': 'tenant_123',
+        'X-Request-ID': crypto.randomUUID()
+    }
+});
+```
+
+### Error Handling and Retry
+
+```typescript
+import { ObjectQLError, ApiErrorCode } from '@objectql/types';
+
+// Enable retry with exponential backoff
+const driver = new RemoteDriver({
+    baseUrl: 'http://localhost:3000',
+    enableRetry: true,
+    maxRetries: 3,
+    timeout: 10000
+});
+
+try {
+    const result = await driver.executeQuery({ object: 'users' });
+} catch (error) {
+    if (error instanceof ObjectQLError) {
+        switch (error.code) {
+            case ApiErrorCode.UNAUTHORIZED:
+                console.error('Authentication required');
+                break;
+            case ApiErrorCode.VALIDATION_ERROR:
+                console.error('Validation failed:', error.details);
+                break;
+            case ApiErrorCode.NOT_FOUND:
+                console.error('Resource not found');
+                break;
+            default:
+                console.error('API error:', error.message);
+        }
+    }
+}
+```
+
+### Request Logging
+
+```typescript
+// Enable logging for debugging
+const driver = new RemoteDriver({
+    baseUrl: 'http://localhost:3000',
+    enableLogging: true
+});
+
+// Logs will be printed to console:
+// [RemoteDriver] executeQuery { endpoint: '...', ast: {...} }
+// [RemoteDriver] executeQuery response { value: [...], count: 10 }
 ```
 
 ---

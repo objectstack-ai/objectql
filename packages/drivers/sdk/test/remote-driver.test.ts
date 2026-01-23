@@ -446,4 +446,450 @@ describe('RemoteDriver', () => {
             );
         });
     });
+
+    describe('executeQuery', () => {
+        it('should execute a QueryAST and return results', async () => {
+            const queryAST = {
+                object: 'users',
+                fields: ['name', 'email'],
+                filters: {
+                    type: 'comparison' as const,
+                    field: 'status',
+                    operator: '=',
+                    value: 'active'
+                },
+                sort: [{ field: 'created_at', order: 'desc' as const }],
+                top: 10
+            };
+
+            const mockResponse = {
+                value: [
+                    { name: 'Alice', email: 'alice@example.com' },
+                    { name: 'Bob', email: 'bob@example.com' }
+                ],
+                count: 2
+            };
+
+            (global.fetch as jest.Mock).mockResolvedValueOnce({
+                ok: true,
+                json: async () => mockResponse
+            });
+
+            const result = await driver.executeQuery(queryAST);
+
+            expect(global.fetch).toHaveBeenCalledWith(
+                'http://localhost:3000/api/query',
+                expect.objectContaining({
+                    method: 'POST',
+                    headers: expect.objectContaining({
+                        'Content-Type': 'application/json'
+                    }),
+                    body: JSON.stringify(queryAST)
+                })
+            );
+            expect(result).toEqual(mockResponse);
+        });
+
+        it('should handle authentication headers in executeQuery', async () => {
+            const driverWithAuth = new RemoteDriver({
+                baseUrl: 'http://localhost:3000',
+                token: 'test-token',
+                apiKey: 'test-api-key'
+            });
+
+            const queryAST = {
+                object: 'users',
+                fields: ['name']
+            };
+
+            (global.fetch as jest.Mock).mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({ value: [], count: 0 })
+            });
+
+            await driverWithAuth.executeQuery(queryAST);
+
+            expect(global.fetch).toHaveBeenCalledWith(
+                'http://localhost:3000/api/query',
+                expect.objectContaining({
+                    headers: expect.objectContaining({
+                        'Authorization': 'Bearer test-token',
+                        'X-API-Key': 'test-api-key'
+                    })
+                })
+            );
+        });
+
+        it('should handle different response formats in executeQuery', async () => {
+            const queryAST = { object: 'users' };
+
+            // Test data response format
+            (global.fetch as jest.Mock).mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({ data: [{ id: 1 }] })
+            });
+
+            let result = await driver.executeQuery(queryAST);
+            expect(result.value).toEqual([{ id: 1 }]);
+
+            // Test direct array response
+            (global.fetch as jest.Mock).mockResolvedValueOnce({
+                ok: true,
+                json: async () => [{ id: 2 }]
+            });
+
+            result = await driver.executeQuery(queryAST);
+            expect(result.value).toEqual([{ id: 2 }]);
+        });
+
+        it('should handle errors in executeQuery', async () => {
+            const queryAST = { object: 'users' };
+
+            (global.fetch as jest.Mock).mockResolvedValueOnce({
+                ok: false,
+                status: 404,
+                statusText: 'Not Found',
+                json: async () => ({
+                    error: {
+                        code: 'NOT_FOUND',
+                        message: 'Object not found'
+                    }
+                })
+            });
+
+            await expect(driver.executeQuery(queryAST))
+                .rejects
+                .toThrow('Object not found');
+        });
+    });
+
+    describe('executeCommand', () => {
+        it('should execute a create command', async () => {
+            const command = {
+                type: 'create' as const,
+                object: 'users',
+                data: { name: 'Alice', email: 'alice@example.com' }
+            };
+
+            const mockResponse = {
+                success: true,
+                data: { id: '1', name: 'Alice', email: 'alice@example.com' },
+                affected: 1
+            };
+
+            (global.fetch as jest.Mock).mockResolvedValueOnce({
+                ok: true,
+                json: async () => mockResponse
+            });
+
+            const result = await driver.executeCommand(command);
+
+            expect(global.fetch).toHaveBeenCalledWith(
+                'http://localhost:3000/api/command',
+                expect.objectContaining({
+                    method: 'POST',
+                    headers: expect.objectContaining({
+                        'Content-Type': 'application/json'
+                    }),
+                    body: JSON.stringify(command)
+                })
+            );
+            expect(result).toEqual(mockResponse);
+        });
+
+        it('should execute a bulkUpdate command', async () => {
+            const command = {
+                type: 'bulkUpdate' as const,
+                object: 'users',
+                updates: [
+                    { id: '1', data: { status: 'active' } },
+                    { id: '2', data: { status: 'inactive' } }
+                ]
+            };
+
+            const mockResponse = {
+                success: true,
+                affected: 2
+            };
+
+            (global.fetch as jest.Mock).mockResolvedValueOnce({
+                ok: true,
+                json: async () => mockResponse
+            });
+
+            const result = await driver.executeCommand(command);
+
+            expect(result.success).toBe(true);
+            expect(result.affected).toBe(2);
+        });
+
+        it('should handle command errors', async () => {
+            const command = {
+                type: 'create' as const,
+                object: 'users',
+                data: { name: 'Test' }
+            };
+
+            (global.fetch as jest.Mock).mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({
+                    error: {
+                        message: 'Validation failed',
+                        code: 'VALIDATION_ERROR'
+                    }
+                })
+            });
+
+            const result = await driver.executeCommand(command);
+
+            expect(result.success).toBe(false);
+            expect(result.error).toContain('Validation failed');
+        });
+
+        it('should handle HTTP errors in executeCommand', async () => {
+            const command = {
+                type: 'delete' as const,
+                object: 'users',
+                id: '999'
+            };
+
+            (global.fetch as jest.Mock).mockResolvedValueOnce({
+                ok: false,
+                status: 404,
+                statusText: 'Not Found',
+                json: async () => ({
+                    error: {
+                        code: 'NOT_FOUND',
+                        message: 'Record not found'
+                    }
+                })
+            });
+
+            await expect(driver.executeCommand(command))
+                .rejects
+                .toThrow('Record not found');
+        });
+    });
+
+    describe('execute', () => {
+        it('should execute custom endpoint', async () => {
+            const payload = {
+                action: 'calculateMetrics',
+                params: { year: 2024 }
+            };
+
+            const mockResponse = {
+                result: { total: 1000 }
+            };
+
+            (global.fetch as jest.Mock).mockResolvedValueOnce({
+                ok: true,
+                json: async () => mockResponse
+            });
+
+            const result = await driver.execute('/api/custom', payload);
+
+            expect(global.fetch).toHaveBeenCalledWith(
+                'http://localhost:3000/api/custom',
+                expect.objectContaining({
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                })
+            );
+            expect(result).toEqual(mockResponse);
+        });
+
+        it('should use default execute endpoint when not specified', async () => {
+            const payload = { action: 'test' };
+
+            (global.fetch as jest.Mock).mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({ success: true })
+            });
+
+            await driver.execute(undefined, payload);
+
+            expect(global.fetch).toHaveBeenCalledWith(
+                'http://localhost:3000/api/execute',
+                expect.any(Object)
+            );
+        });
+
+        it('should handle errors in execute', async () => {
+            (global.fetch as jest.Mock).mockResolvedValueOnce({
+                ok: false,
+                status: 500,
+                statusText: 'Internal Server Error',
+                json: async () => ({
+                    error: {
+                        code: 'INTERNAL_ERROR',
+                        message: 'Server error'
+                    }
+                })
+            });
+
+            await expect(driver.execute('/api/test', {}))
+                .rejects
+                .toThrow('Server error');
+        });
+    });
+
+    describe('Authentication', () => {
+        it('should support token-based authentication', async () => {
+            const driverWithToken = new RemoteDriver({
+                baseUrl: 'http://localhost:3000',
+                token: 'my-secret-token'
+            });
+
+            (global.fetch as jest.Mock).mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({ value: [], count: 0 })
+            });
+
+            await driverWithToken.executeQuery({ object: 'users' });
+
+            expect(global.fetch).toHaveBeenCalledWith(
+                expect.any(String),
+                expect.objectContaining({
+                    headers: expect.objectContaining({
+                        'Authorization': 'Bearer my-secret-token'
+                    })
+                })
+            );
+        });
+
+        it('should support API key authentication', async () => {
+            const driverWithApiKey = new RemoteDriver({
+                baseUrl: 'http://localhost:3000',
+                apiKey: 'my-api-key'
+            });
+
+            (global.fetch as jest.Mock).mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({ value: [], count: 0 })
+            });
+
+            await driverWithApiKey.executeQuery({ object: 'users' });
+
+            expect(global.fetch).toHaveBeenCalledWith(
+                expect.any(String),
+                expect.objectContaining({
+                    headers: expect.objectContaining({
+                        'X-API-Key': 'my-api-key'
+                    })
+                })
+            );
+        });
+
+        it('should support both token and API key', async () => {
+            const driverWithBoth = new RemoteDriver({
+                baseUrl: 'http://localhost:3000',
+                token: 'my-token',
+                apiKey: 'my-api-key'
+            });
+
+            (global.fetch as jest.Mock).mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({ value: [], count: 0 })
+            });
+
+            await driverWithBoth.executeQuery({ object: 'users' });
+
+            expect(global.fetch).toHaveBeenCalledWith(
+                expect.any(String),
+                expect.objectContaining({
+                    headers: expect.objectContaining({
+                        'Authorization': 'Bearer my-token',
+                        'X-API-Key': 'my-api-key'
+                    })
+                })
+            );
+        });
+    });
+
+    describe('Retry Logic', () => {
+        beforeEach(() => {
+            jest.useFakeTimers();
+        });
+
+        afterEach(() => {
+            jest.useRealTimers();
+        });
+
+        it('should retry on network errors when enabled', async () => {
+            const driverWithRetry = new RemoteDriver({
+                baseUrl: 'http://localhost:3000',
+                enableRetry: true,
+                maxRetries: 2
+            });
+
+            // First two attempts fail, third succeeds
+            (global.fetch as jest.Mock)
+                .mockRejectedValueOnce(new Error('Network error'))
+                .mockRejectedValueOnce(new Error('Network error'))
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => ({ value: [], count: 0 })
+                });
+
+            const promise = driverWithRetry.executeQuery({ object: 'users' });
+            
+            // Fast-forward through retries
+            await jest.runAllTimersAsync();
+            
+            const result = await promise;
+
+            expect(result.value).toEqual([]);
+            expect(global.fetch).toHaveBeenCalledTimes(3);
+        });
+
+        it('should not retry on validation errors', async () => {
+            const driverWithRetry = new RemoteDriver({
+                baseUrl: 'http://localhost:3000',
+                enableRetry: true,
+                maxRetries: 3
+            });
+
+            (global.fetch as jest.Mock).mockResolvedValueOnce({
+                ok: false,
+                status: 400,
+                statusText: 'Bad Request',
+                json: async () => ({
+                    error: {
+                        code: 'VALIDATION_ERROR',
+                        message: 'Invalid data'
+                    }
+                })
+            });
+
+            await expect(driverWithRetry.executeQuery({ object: 'users' }))
+                .rejects
+                .toThrow('Invalid data');
+
+            // Should only be called once, no retries
+            expect(global.fetch).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe('Config-based Constructor', () => {
+        it('should accept config object', () => {
+            const driver = new RemoteDriver({
+                baseUrl: 'http://localhost:3000',
+                queryPath: '/custom/query',
+                commandPath: '/custom/command',
+                timeout: 60000
+            });
+
+            expect(driver).toBeDefined();
+            expect(driver.version).toBe('4.0.0');
+        });
+
+        it('should use default paths when not specified', () => {
+            const driver = new RemoteDriver({
+                baseUrl: 'http://localhost:3000'
+            });
+
+            expect(driver).toBeDefined();
+        });
+    });
 });
