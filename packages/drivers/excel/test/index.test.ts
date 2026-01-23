@@ -571,4 +571,180 @@ describe('ExcelDriver', () => {
             expect(deleted).toBeNull();
         });
     });
+
+    describe('DriverInterface v4.0 Methods', () => {
+        describe('executeQuery', () => {
+            it('should execute query with QueryAST format', async () => {
+                await driver.create(TEST_OBJECT, { name: 'Alice', age: 30 });
+                await driver.create(TEST_OBJECT, { name: 'Bob', age: 25 });
+                await driver.create(TEST_OBJECT, { name: 'Charlie', age: 35 });
+
+                const result = await driver.executeQuery({
+                    object: TEST_OBJECT,
+                    fields: ['name', 'age'],
+                    filters: {
+                        type: 'comparison',
+                        field: 'age',
+                        operator: '>',
+                        value: 25
+                    },
+                    sort: [{ field: 'age', order: 'asc' }],
+                    top: 10,
+                    skip: 0
+                });
+
+                expect(result.value).toHaveLength(2);
+                expect(result.value[0].name).toBe('Alice');
+                expect(result.value[1].name).toBe('Charlie');
+                expect(result.count).toBe(2);
+            });
+
+            it('should handle AND filters', async () => {
+                await driver.create(TEST_OBJECT, { name: 'Alice', age: 30, city: 'NYC' });
+                await driver.create(TEST_OBJECT, { name: 'Bob', age: 25, city: 'LA' });
+                await driver.create(TEST_OBJECT, { name: 'Charlie', age: 35, city: 'NYC' });
+
+                const result = await driver.executeQuery({
+                    object: TEST_OBJECT,
+                    filters: {
+                        type: 'and',
+                        children: [
+                            { type: 'comparison', field: 'age', operator: '>', value: 25 },
+                            { type: 'comparison', field: 'city', operator: '=', value: 'NYC' }
+                        ]
+                    }
+                });
+
+                expect(result.value).toHaveLength(2);
+                expect(result.value.every((u: any) => u.city === 'NYC')).toBe(true);
+            });
+
+            it('should handle pagination with skip and top', async () => {
+                await driver.create(TEST_OBJECT, { name: 'Alice', age: 30 });
+                await driver.create(TEST_OBJECT, { name: 'Bob', age: 25 });
+                await driver.create(TEST_OBJECT, { name: 'Charlie', age: 35 });
+
+                const result = await driver.executeQuery({
+                    object: TEST_OBJECT,
+                    sort: [{ field: 'name', order: 'asc' }],
+                    skip: 1,
+                    top: 1
+                });
+
+                expect(result.value).toHaveLength(1);
+                expect(result.value[0].name).toBe('Bob');
+            });
+        });
+
+        describe('executeCommand', () => {
+            it('should execute create command', async () => {
+                const result = await driver.executeCommand({
+                    type: 'create',
+                    object: TEST_OBJECT,
+                    data: { name: 'Alice', email: 'alice@test.com' }
+                });
+
+                expect(result.success).toBe(true);
+                expect(result.affected).toBe(1);
+                expect(result.data).toHaveProperty('id');
+                expect(result.data.name).toBe('Alice');
+            });
+
+            it('should execute update command', async () => {
+                const created = await driver.create(TEST_OBJECT, { name: 'Alice', age: 30 });
+
+                const result = await driver.executeCommand({
+                    type: 'update',
+                    object: TEST_OBJECT,
+                    id: created.id,
+                    data: { age: 31 }
+                });
+
+                expect(result.success).toBe(true);
+                expect(result.affected).toBe(1);
+                expect(result.data.age).toBe(31);
+            });
+
+            it('should execute delete command', async () => {
+                const created = await driver.create(TEST_OBJECT, { name: 'Alice' });
+
+                const result = await driver.executeCommand({
+                    type: 'delete',
+                    object: TEST_OBJECT,
+                    id: created.id
+                });
+
+                expect(result.success).toBe(true);
+                expect(result.affected).toBe(1);
+
+                const remaining = await driver.find(TEST_OBJECT, {});
+                expect(remaining).toHaveLength(0);
+            });
+
+            it('should execute bulkCreate command', async () => {
+                const result = await driver.executeCommand({
+                    type: 'bulkCreate',
+                    object: TEST_OBJECT,
+                    records: [
+                        { name: 'Alice', age: 30 },
+                        { name: 'Bob', age: 25 },
+                        { name: 'Charlie', age: 35 }
+                    ]
+                });
+
+                expect(result.success).toBe(true);
+                expect(result.affected).toBe(3);
+                expect(result.data).toHaveLength(3);
+            });
+
+            it('should execute bulkUpdate command', async () => {
+                const user1 = await driver.create(TEST_OBJECT, { name: 'Alice', age: 30 });
+                const user2 = await driver.create(TEST_OBJECT, { name: 'Bob', age: 25 });
+
+                const result = await driver.executeCommand({
+                    type: 'bulkUpdate',
+                    object: TEST_OBJECT,
+                    updates: [
+                        { id: user1.id, data: { age: 31 } },
+                        { id: user2.id, data: { age: 26 } }
+                    ]
+                });
+
+                expect(result.success).toBe(true);
+                expect(result.affected).toBe(2);
+                expect(result.data).toHaveLength(2);
+            });
+
+            it('should execute bulkDelete command', async () => {
+                const user1 = await driver.create(TEST_OBJECT, { name: 'Alice' });
+                const user2 = await driver.create(TEST_OBJECT, { name: 'Bob' });
+                const user3 = await driver.create(TEST_OBJECT, { name: 'Charlie' });
+
+                const result = await driver.executeCommand({
+                    type: 'bulkDelete',
+                    object: TEST_OBJECT,
+                    ids: [user1.id, user2.id]
+                });
+
+                expect(result.success).toBe(true);
+                expect(result.affected).toBe(2);
+
+                const remaining = await driver.find(TEST_OBJECT, {});
+                expect(remaining).toHaveLength(1);
+                expect(remaining[0].name).toBe('Charlie');
+            });
+
+            it('should return error for invalid command', async () => {
+                const result = await driver.executeCommand({
+                    type: 'create',
+                    object: TEST_OBJECT
+                    // Missing data
+                } as any);
+
+                expect(result.success).toBe(false);
+                expect(result.affected).toBe(0);
+                expect(result.error).toBeDefined();
+            });
+        });
+    });
 });
