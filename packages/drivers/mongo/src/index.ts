@@ -552,7 +552,8 @@ export class MongoDriver implements Driver, DriverInterface {
                     };
                 
                 default:
-                    throw new Error(`Unknown command type: ${(command as any).type}`);
+                    const validTypes = ['create', 'update', 'delete', 'bulkCreate', 'bulkUpdate', 'bulkDelete'];
+                    throw new Error(`Unknown command type: ${(command as any).type}. Valid types are: ${validTypes.join(', ')}`);
             }
         } catch (error: any) {
             return {
@@ -599,8 +600,13 @@ export class MongoDriver implements Driver, DriverInterface {
             case 'not':
                 // NOT is not directly supported in the legacy filter format
                 // MongoDB supports $not, but legacy array format doesn't have a NOT operator
-                // We'll throw an error to indicate this limitation
-                throw new Error('NOT filters are not supported in legacy filter format. Use native MongoDB queries with $not operator instead.');
+                // Use native MongoDB queries with $not instead:
+                // Example: { field: { $not: { $eq: value } } }
+                throw new Error(
+                    'NOT filters are not supported in legacy filter format. ' +
+                    'Use native MongoDB queries with $not operator instead. ' +
+                    'Example: { field: { $not: { $eq: value } } }'
+                );
             
             default:
                 return undefined;
@@ -616,8 +622,13 @@ export class MongoDriver implements Driver, DriverInterface {
      */
     async execute(command: any, parameters?: any[], options?: any): Promise<any> {
         // MongoDB driver doesn't support raw command execution in the traditional SQL sense
-        // This method is here for DriverInterface compatibility
-        throw new Error('MongoDB driver does not support raw command execution. Use executeCommand() instead.');
+        // Use executeCommand() instead for mutations (create/update/delete)
+        // Example: await driver.executeCommand({ type: 'create', object: 'users', data: {...} })
+        throw new Error(
+            'MongoDB driver does not support raw command execution. ' +
+            'Use executeCommand() for mutations or aggregate() for complex queries. ' +
+            'Example: driver.executeCommand({ type: "create", object: "users", data: {...} })'
+        );
     }
 }
 
