@@ -2,18 +2,35 @@
 
 ## Overview
 
-The Memory driver has been migrated to support the standard `DriverInterface` from `@objectstack/spec` while maintaining full backward compatibility with the existing `Driver` interface from `@objectql/types`.
+The Memory driver has been refactored to use **Mingo** (MongoDB query engine for in-memory objects) for query processing, while maintaining full backward compatibility with the existing `Driver` interface from `@objectql/types`. This brings MongoDB-like query capabilities to the in-memory driver.
 
-**Package Version**: 3.0.1 (maintained for changeset compatibility)  
+**Package Version**: 4.0.0  
 **DriverInterface Version**: v4.0 compliant  
 **Completion Date**: January 23, 2026  
-**Status**: ✅ Fully compliant with DriverInterface v4.0
+**Status**: ✅ Fully compliant with DriverInterface v4.0 and Mingo-powered
 
-**Note**: The driver implements DriverInterface v4.0 specification, but the package version remains at 3.0.1 due to changeset fixed group constraints.
+## Key Changes
 
-## What Changed
+### 1. Mingo Integration
 
-### 1. Driver Metadata
+The driver now uses **Mingo** for query processing, which provides:
+
+- **MongoDB Query Operators**: Full support for MongoDB query syntax
+- **High Performance**: Optimized query execution for in-memory data
+- **Standard Compliance**: MongoDB-compatible query semantics
+
+#### What is Mingo?
+
+Mingo is a MongoDB query language for in-memory JavaScript objects. It brings the power of MongoDB queries to client-side and server-side JavaScript applications without requiring a MongoDB server.
+
+#### Benefits
+
+- **Consistency**: Same query syntax as MongoDB
+- **Expressiveness**: Rich query operators ($gt, $lt, $in, $regex, etc.)
+- **Reliability**: Well-tested MongoDB query semantics
+- **Performance**: Optimized for in-memory operations
+
+### 2. Driver Metadata
 
 The driver now exposes metadata for ObjectStack compatibility:
 
