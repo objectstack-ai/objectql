@@ -12,8 +12,8 @@
  * A high-performance in-memory driver for ObjectQL powered by Mingo.
  * Perfect for testing, development, and environments where persistence is not required.
  * 
- * Implements both the legacy Driver interface from @objectql/types and
- * the standard DriverInterface from @objectstack/spec for full compatibility
+ * Implements the Driver interface from @objectql/types which includes all methods
+ * from the standard DriverInterface from @objectstack/spec for full compatibility
  * with the new kernel-based plugin system.
  * 
  * ✅ Production-ready features:
