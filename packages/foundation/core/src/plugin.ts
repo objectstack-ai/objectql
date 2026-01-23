@@ -10,6 +10,17 @@ import type { RuntimePlugin, RuntimeContext } from '@objectstack/runtime';
 import type { ObjectStackKernel } from '@objectstack/runtime';
 import { ValidatorPlugin, ValidatorPluginConfig } from './validator-plugin';
 import { FormulaPlugin, FormulaPluginConfig } from './formula-plugin';
+import { QueryService } from './query/query-service';
+import { QueryAnalyzer } from './query/query-analyzer';
+import type { Driver } from '@objectql/types';
+
+/**
+ * Extended ObjectStack Kernel with ObjectQL services
+ */
+interface ExtendedKernel extends ObjectStackKernel {
+    queryService?: QueryService;
+    queryAnalyzer?: QueryAnalyzer;
+}
 
 /**
  * Configuration for the ObjectQL Plugin
@@ -50,6 +61,18 @@ export interface ObjectQLPluginConfig {
    * @default true
    */
   enableAI?: boolean;
+  
+  /**
+   * Enable query service and analyzer
+   * @default true
+   */
+  enableQueryService?: boolean;
+  
+  /**
+   * Datasources for query service
+   * Required if enableQueryService is true
+   */
+  datasources?: Record<string, Driver>;
 }
 
 /**
@@ -70,6 +93,7 @@ export class ObjectQLPlugin implements RuntimePlugin {
       enableValidator: true,
       enableFormulas: true,
       enableAI: true,
+      enableQueryService: true,
       ...config
     };
   }
@@ -80,6 +104,25 @@ export class ObjectQLPlugin implements RuntimePlugin {
    */
   async install(ctx: RuntimeContext): Promise<void> {
     console.log(`[${this.name}] Installing plugin...`);
+    
+    const kernel = ctx.engine as ExtendedKernel;
+    
+    // Register QueryService and QueryAnalyzer if enabled
+    if (this.config.enableQueryService !== false && this.config.datasources) {
+      const queryService = new QueryService(
+        this.config.datasources,
+        kernel.metadata
+      );
+      kernel.queryService = queryService;
+      
+      const queryAnalyzer = new QueryAnalyzer(
+        queryService,
+        kernel.metadata
+      );
+      kernel.queryAnalyzer = queryAnalyzer;
+      
+      console.log(`[${this.name}] QueryService and QueryAnalyzer registered`);
+    }
     
     // Register components based on configuration
     if (this.config.enableRepository !== false) {

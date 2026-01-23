@@ -12,9 +12,13 @@
  * This module contains ObjectQL's query-specific functionality:
  * - FilterTranslator: Converts ObjectQL filters to ObjectStack FilterNode
  * - QueryBuilder: Builds ObjectStack QueryAST from ObjectQL UnifiedQuery
+ * - QueryService: Executes queries via drivers with profiling support
+ * - QueryAnalyzer: Provides query performance analysis and optimization suggestions
  * 
  * These are the core components that differentiate ObjectQL from generic runtime systems.
  */
 
 export * from './filter-translator';
 export * from './query-builder';
+export * from './query-service';
+export * from './query-analyzer';

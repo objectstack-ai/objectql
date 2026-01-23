@@ -399,6 +399,9 @@ importers:
       '@objectql/types':
         specifier: workspace:*
         version: link:../../foundation/types
+      '@objectstack/spec':
+        specifier: ^0.2.0
+        version: 0.2.0
     devDependencies:
       '@types/jest':
         specifier: ^29.0.0
