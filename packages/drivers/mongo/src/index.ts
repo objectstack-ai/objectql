@@ -7,7 +7,32 @@
  */
 
 import { Driver } from '@objectql/types';
+import { DriverInterface, QueryAST, FilterNode, SortNode } from '@objectstack/spec';
 import { MongoClient, Db, Filter, ObjectId, FindOptions } from 'mongodb';
+
+/**
+ * Command interface for executeCommand method
+ */
+export interface Command {
+    type: 'create' | 'update' | 'delete' | 'bulkCreate' | 'bulkUpdate' | 'bulkDelete';
+    object: string;
+    data?: any;
+    id?: string | number;
+    ids?: Array<string | number>;
+    records?: any[];
+    updates?: Array<{id: string | number, data: any}>;
+    options?: any;
+}
+
+/**
+ * Command result interface
+ */
+export interface CommandResult {
+    success: boolean;
+    data?: any;
+    affected: number;
+    error?: string;
+}
 
 /**
  * MongoDB Driver for ObjectQL
@@ -18,10 +43,10 @@ import { MongoClient, Db, Filter, ObjectId, FindOptions } from 'mongodb';
  * 
  * The driver internally converts QueryAST format to MongoDB query format.
  */
-export class MongoDriver implements Driver {
+export class MongoDriver implements Driver, DriverInterface {
     // Driver metadata (ObjectStack-compatible)
     public readonly name = 'MongoDriver';
-    public readonly version = '3.0.1';
+    public readonly version = '4.0.0';
     public readonly supports = {
         transactions: true,
         joins: false,
@@ -404,6 +429,208 @@ export class MongoDriver implements Driver {
         if (this.client) {
             await this.client.close();
         }
+    }
+
+    /**
+     * Execute a query using QueryAST (DriverInterface v4.0 method)
+     * 
+     * This is the new standard method for query execution using the
+     * ObjectStack QueryAST format.
+     * 
+     * @param ast - The QueryAST representing the query
+     * @param options - Optional execution options
+     * @returns Query results with value and count
+     */
+    async executeQuery(ast: QueryAST, options?: any): Promise<{ value: any[]; count?: number }> {
+        const objectName = ast.object || '';
+        
+        // Convert QueryAST to legacy query format
+        const legacyQuery: any = {
+            fields: ast.fields,
+            filters: this.convertFilterNodeToLegacy(ast.filters),
+            sort: ast.sort?.map((s: SortNode) => [s.field, s.order]),
+            limit: ast.top,
+            skip: ast.skip,
+        };
+        
+        // Use existing find method
+        const results = await this.find(objectName, legacyQuery, options);
+        
+        return {
+            value: results,
+            count: results.length
+        };
+    }
+
+    /**
+     * Execute a command (DriverInterface v4.0 method)
+     * 
+     * This method handles all mutation operations (create, update, delete)
+     * using a unified command interface.
+     * 
+     * @param command - The command to execute
+     * @param options - Optional execution options
+     * @returns Command execution result
+     */
+    async executeCommand(command: Command, options?: any): Promise<CommandResult> {
+        try {
+            const cmdOptions = { ...options, ...command.options };
+            
+            switch (command.type) {
+                case 'create':
+                    if (!command.data) {
+                        throw new Error('Create command requires data');
+                    }
+                    const created = await this.create(command.object, command.data, cmdOptions);
+                    return {
+                        success: true,
+                        data: created,
+                        affected: 1
+                    };
+                
+                case 'update':
+                    if (!command.id || !command.data) {
+                        throw new Error('Update command requires id and data');
+                    }
+                    const updated = await this.update(command.object, command.id, command.data, cmdOptions);
+                    return {
+                        success: true,
+                        data: updated,
+                        affected: updated ? 1 : 0
+                    };
+                
+                case 'delete':
+                    if (!command.id) {
+                        throw new Error('Delete command requires id');
+                    }
+                    const deleteCount = await this.delete(command.object, command.id, cmdOptions);
+                    return {
+                        success: true,
+                        affected: deleteCount
+                    };
+                
+                case 'bulkCreate':
+                    if (!command.records || !Array.isArray(command.records)) {
+                        throw new Error('BulkCreate command requires records array');
+                    }
+                    const bulkCreated = await this.createMany(command.object, command.records, cmdOptions);
+                    return {
+                        success: true,
+                        data: bulkCreated,
+                        affected: command.records.length
+                    };
+                
+                case 'bulkUpdate':
+                    if (!command.updates || !Array.isArray(command.updates)) {
+                        throw new Error('BulkUpdate command requires updates array');
+                    }
+                    let updateCount = 0;
+                    const updateResults = [];
+                    for (const update of command.updates) {
+                        const result = await this.update(command.object, update.id, update.data, cmdOptions);
+                        updateResults.push(result);
+                        if (result) updateCount++;
+                    }
+                    return {
+                        success: true,
+                        data: updateResults,
+                        affected: updateCount
+                    };
+                
+                case 'bulkDelete':
+                    if (!command.ids || !Array.isArray(command.ids)) {
+                        throw new Error('BulkDelete command requires ids array');
+                    }
+                    let deleted = 0;
+                    for (const id of command.ids) {
+                        const result = await this.delete(command.object, id, cmdOptions);
+                        deleted += result;
+                    }
+                    return {
+                        success: true,
+                        affected: deleted
+                    };
+                
+                default:
+                    throw new Error(`Unknown command type: ${(command as any).type}`);
+            }
+        } catch (error: any) {
+            return {
+                success: false,
+                error: error.message || 'Command execution failed',
+                affected: 0
+            };
+        }
+    }
+
+    /**
+     * Convert FilterNode (QueryAST format) to legacy filter array format
+     * This allows reuse of existing filter logic while supporting new QueryAST
+     * 
+     * @private
+     */
+    private convertFilterNodeToLegacy(node?: FilterNode): any {
+        if (!node) return undefined;
+        
+        switch (node.type) {
+            case 'comparison':
+                // Convert comparison node to [field, operator, value] format
+                const operator = node.operator || '=';
+                return [[node.field, operator, node.value]];
+            
+            case 'and':
+                // Convert AND node to array with 'and' separator
+                if (!node.children || node.children.length === 0) return undefined;
+                const andResults: any[] = [];
+                for (const child of node.children) {
+                    const converted = this.convertFilterNodeToLegacy(child);
+                    if (converted) {
+                        if (andResults.length > 0) {
+                            andResults.push('and');
+                        }
+                        andResults.push(...(Array.isArray(converted) ? converted : [converted]));
+                    }
+                }
+                return andResults.length > 0 ? andResults : undefined;
+            
+            case 'or':
+                // Convert OR node to array with 'or' separator
+                if (!node.children || node.children.length === 0) return undefined;
+                const orResults: any[] = [];
+                for (const child of node.children) {
+                    const converted = this.convertFilterNodeToLegacy(child);
+                    if (converted) {
+                        if (orResults.length > 0) {
+                            orResults.push('or');
+                        }
+                        orResults.push(...(Array.isArray(converted) ? converted : [converted]));
+                    }
+                }
+                return orResults.length > 0 ? orResults : undefined;
+            
+            case 'not':
+                // NOT is complex - we'll just process the first child for now
+                if (node.children && node.children.length > 0) {
+                    return this.convertFilterNodeToLegacy(node.children[0]);
+                }
+                return undefined;
+            
+            default:
+                return undefined;
+        }
+    }
+
+    /**
+     * Execute command (alternative signature for compatibility)
+     * 
+     * @param command - Command string or object
+     * @param parameters - Command parameters
+     * @param options - Execution options
+     */
+    async execute(command: any, parameters?: any[], options?: any): Promise<any> {
+        // MongoDB driver doesn't support raw command execution in the traditional SQL sense
+        // This method is here for DriverInterface compatibility
+        throw new Error('MongoDB driver does not support raw command execution. Use executeCommand() instead.');
     }
 }
 
