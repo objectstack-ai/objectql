@@ -7,13 +7,92 @@
  * during the migration phase.
  */
 
+// Simple mock implementations of runtime managers
+class MockMetadataRegistry {
+    private store = new Map<string, Map<string, any>>();
+    
+    register(type: string, item: any): void {
+        if (!this.store.has(type)) {
+            this.store.set(type, new Map());
+        }
+        const typeMap = this.store.get(type)!;
+        typeMap.set(item.id || item.name, item);
+    }
+    
+    get<T = any>(type: string, id: string): T | undefined {
+        const typeMap = this.store.get(type);
+        const item = typeMap?.get(id);
+        return item?.content as T;
+    }
+    
+    list<T = any>(type: string): T[] {
+        const typeMap = this.store.get(type);
+        if (!typeMap) return [];
+        return Array.from(typeMap.values()).map(item => item.content as T);
+    }
+    
+    unregister(type: string, id: string): boolean {
+        const typeMap = this.store.get(type);
+        if (!typeMap) return false;
+        return typeMap.delete(id);
+    }
+    
+    getTypes(): string[] {
+        return Array.from(this.store.keys());
+    }
+    
+    getEntry(type: string, id: string): any | undefined {
+        const typeMap = this.store.get(type);
+        return typeMap ? typeMap.get(id) : undefined;
+    }
+    
+    unregisterPackage(packageName: string): void {
+        // Simple implementation - in real runtime this would filter by package
+        for (const [type, typeMap] of this.store.entries()) {
+            const toDelete: string[] = [];
+            for (const [id, item] of typeMap.entries()) {
+                if (item.packageName === packageName || item.package === packageName) {
+                    toDelete.push(id);
+                }
+            }
+            toDelete.forEach(id => typeMap.delete(id));
+        }
+    }
+}
+
+class MockHookManager {
+    removePackage(packageName: string): void {
+        // Mock implementation
+    }
+    
+    clear(): void {
+        // Mock implementation
+    }
+}
+
+class MockActionManager {
+    removePackage(packageName: string): void {
+        // Mock implementation
+    }
+    
+    clear(): void {
+        // Mock implementation
+    }
+}
+
 export class ObjectStackKernel {
     public ql: unknown = null;
+    public metadata: MockMetadataRegistry;
+    public hooks: MockHookManager;
+    public actions: MockActionManager;
     private plugins: any[] = [];
     private driver: any = null; // Will be set by the ObjectQL app
     
     constructor(plugins: any[] = []) {
         this.plugins = plugins;
+        this.metadata = new MockMetadataRegistry();
+        this.hooks = new MockHookManager();
+        this.actions = new MockActionManager();
     }
     
     // Method to set the driver for delegation during migration
@@ -129,4 +208,16 @@ export interface RuntimePlugin {
     name: string;
     install?: (ctx: RuntimeContext) => void | Promise<void>;
     onStart?: (ctx: RuntimeContext) => void | Promise<void>;
+}
+
+// Export MetadataRegistry
+export { MockMetadataRegistry as MetadataRegistry };
+
+export interface MetadataItem {
+    type: string;
+    id: string;
+    content: unknown;
+    packageName?: string;
+    path?: string;
+    package?: string;
 }
