@@ -7,7 +7,8 @@
  */
 
 import { 
-    MetadataRegistry, 
+    MetadataRegistry,
+    MetadataItem,
     Driver, 
     ObjectConfig, 
     ObjectQLContext, 
@@ -210,13 +211,15 @@ export class ObjectQL implements IObjectQL {
     }
 
     getObject(name: string): ObjectConfig | undefined {
-        return this.kernel.metadata.get<ObjectConfig>('object', name);
+        const item = this.kernel.metadata.get<MetadataItem>('object', name);
+        return item?.content as ObjectConfig | undefined;
     }
 
     getConfigs(): Record<string, ObjectConfig> {
         const result: Record<string, ObjectConfig> = {};
-        const objects = this.kernel.metadata.list<ObjectConfig>('object');
-        for (const obj of objects) {
+        const items = this.kernel.metadata.list<MetadataItem>('object');
+        for (const item of items) {
+            const obj = item.content as ObjectConfig;
             result[obj.name] = obj;
         }
         return result;
