@@ -343,14 +343,14 @@ ObjectQL aims to be the **Standard Protocol for AI Software Generation** by prov
 **Completed Drivers**:
 
 1. ✅ **driver-sql** (Week 5 - Pilot)
-   - Version: 4.0.0
+   - Package Version: 3.0.1 (DriverInterface v4.0 compliant)
    - Status: Fully compliant with DriverInterface
    - Features: executeQuery(), executeCommand(), QueryAST support
    - Documentation: MIGRATION_V4.md created
    - Tests: All passing (85% coverage)
 
 2. ✅ **driver-memory** (Week 6)
-   - Version: 4.0.0
+   - Package Version: 3.0.1 (DriverInterface v4.0 compliant)
    - Status: Fully compliant with DriverInterface
    - Features: executeQuery(), executeCommand(), zero dependencies
    - Documentation: MIGRATION.md created (detailed guide)
@@ -358,12 +358,14 @@ ObjectQL aims to be the **Standard Protocol for AI Software Generation** by prov
    - Highlights: Perfect for testing, prototyping, edge environments
 
 3. ✅ **driver-mongo** (Week 7)
-   - Version: 4.0.0
+   - Package Version: 3.0.1 (DriverInterface v4.0 compliant)
    - Status: Fully compliant with DriverInterface
    - Features: executeQuery(), executeCommand(), NoSQL QueryAST translation
    - Documentation: MIGRATION.md updated
    - Tests: All passing (80% coverage)
    - Highlights: FilterNode → MongoDB query conversion, smart ID mapping
+
+**Note**: All packages maintain version 3.0.1 due to changeset fixed group constraints. The v4.0 designation refers to DriverInterface specification compliance.
 
 **Remaining Drivers** (5):
 

@@ -1,12 +1,15 @@
-# Memory Driver Migration Guide (v4.0.0)
+# Memory Driver Migration Guide (DriverInterface v4.0)
 
 ## Overview
 
 The Memory driver has been migrated to support the standard `DriverInterface` from `@objectstack/spec` while maintaining full backward compatibility with the existing `Driver` interface from `@objectql/types`.
 
-**Version**: 4.0.0 (upgraded from 3.0.1)  
+**Package Version**: 3.0.1 (maintained for changeset compatibility)  
+**DriverInterface Version**: v4.0 compliant  
 **Completion Date**: January 23, 2026  
 **Status**: ✅ Fully compliant with DriverInterface v4.0
+
+**Note**: The driver implements DriverInterface v4.0 specification, but the package version remains at 3.0.1 due to changeset fixed group constraints.
 
 ## What Changed
 
@@ -17,7 +20,7 @@ The driver now exposes metadata for ObjectStack compatibility:
 ```typescript
 const driver = new MemoryDriver(config);
 console.log(driver.name);     // 'MemoryDriver'
-console.log(driver.version);  // '4.0.0'
+console.log(driver.version);  // '3.0.1'
 console.log(driver.supports); // { transactions: false, joins: false, ... }
 ```
 
@@ -284,7 +287,7 @@ Test coverage includes:
 ## Implementation Details
 
 ### Files Changed
-- `package.json`: Added `@objectstack/spec@^0.2.0` dependency, bumped version to 4.0.0
+- `package.json`: Added `@objectstack/spec@^0.2.0` dependency
 - `src/index.ts`: 
   - Added DriverInterface implementation
   - Added `executeQuery()` method (~35 lines)
@@ -335,17 +338,17 @@ The Memory driver is perfect for:
 
 ### Compatibility Matrix
 
-| Feature | v3.0.1 | v4.0.0 | Notes |
-|---------|--------|--------|-------|
+| Feature | v3.0.1 (before) | v3.0.1 (current) | Notes |
+|---------|-----------------|------------------|-------|
 | Legacy find() | ✅ | ✅ | Unchanged |
 | Legacy create() | ✅ | ✅ | Unchanged |
 | Legacy update() | ✅ | ✅ | Unchanged |
 | Legacy delete() | ✅ | ✅ | Unchanged |
-| executeQuery() | ❌ | ✅ | New in v4.0 |
-| executeCommand() | ❌ | ✅ | New in v4.0 |
-| QueryAST support | ❌ | ✅ | New in v4.0 |
+| executeQuery() | ❌ | ✅ | New - DriverInterface v4.0 |
+| executeCommand() | ❌ | ✅ | New - DriverInterface v4.0 |
+| QueryAST support | ❌ | ✅ | New - DriverInterface v4.0 |
 
-## Migration from v3.0.1 to v4.0.0
+## Migration from v3.0.1 (before) to v3.0.1 (DriverInterface v4.0)
 
 ### Option 1: No Changes Required (Recommended)
 
@@ -354,7 +357,7 @@ Simply update your `package.json`:
 ```json
 {
   "dependencies": {
-    "@objectql/driver-memory": "^4.0.0"
+    "@objectql/driver-memory": "^3.0.1"
   }
 }
 ```
@@ -366,13 +369,13 @@ All existing code will continue to work.
 If you want to use the new features:
 
 ```typescript
-// Before (v3.0.1)
+// Before (legacy API - still works)
 const users = await driver.find('users', {
     filters: [['active', '=', true]],
     limit: 10
 });
 
-// After (v4.0.0) - Using executeQuery
+// After (DriverInterface v4.0) - Using executeQuery
 const result = await driver.executeQuery({
     object: 'users',
     filters: {
@@ -411,16 +414,18 @@ npm install
 
 ## Next Steps
 
-With Memory driver v4.0 complete, the migration pattern is established for other drivers:
+With Memory driver DriverInterface v4.0 compliance complete, the migration pattern is established for other drivers:
 
-1. ✅ SQL Driver (completed - v4.0.0)
-2. ✅ Memory Driver (completed - v4.0.0)
-3. ✅ MongoDB Driver (completed - v4.0.0)
+1. ✅ SQL Driver (completed - DriverInterface v4.0)
+2. ✅ Memory Driver (completed - DriverInterface v4.0)
+3. ✅ MongoDB Driver (completed - DriverInterface v4.0)
 4. 🔜 Redis Driver
 5. 🔜 FS Driver
 6. 🔜 LocalStorage Driver
 7. 🔜 Excel Driver
 8. 🔜 SDK Driver
+
+**Note**: All drivers maintain package version 3.0.1 due to changeset fixed group constraints.
 
 ## References
 
@@ -441,5 +446,6 @@ For questions or issues:
 ---
 
 **Last Updated**: January 23, 2026  
-**Driver Version**: 4.0.0  
+**Package Version**: 3.0.1  
+**DriverInterface Version**: v4.0 compliant  
 **Specification**: @objectstack/spec@0.2.0

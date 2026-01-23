@@ -5,6 +5,8 @@
 **Drivers Migrated**: 3 of 8 (SQL, Memory, MongoDB)  
 **Status**: 37.5% Complete, Ahead of Schedule  
 
+**Important Note on Versioning**: All driver packages remain at version 3.0.1 due to changeset fixed group constraints. The "v4.0" designation refers to DriverInterface specification compliance, not package version numbers.
+
 ---
 
 ## Executive Summary
@@ -244,12 +246,13 @@ For each driver, follow this sequence:
 - [ ] Add `convertFilterNodeToLegacy()` helper
 - [ ] Add `normalizeQuery()` helper (if needed)
 - [ ] Add Command and CommandResult interfaces
-- [ ] Update version to 4.0.0
 - [ ] Build and verify no TypeScript errors
 - [ ] Run existing tests (ensure backward compatibility)
 - [ ] Add new tests for executeQuery/executeCommand
 - [ ] Create or update MIGRATION.md
 - [ ] Update DRIVER_COMPLIANCE_MATRIX.md
+
+**Note**: Package version remains at 3.0.1 due to changeset fixed group.
 
 **Time per driver**: 6-8 hours (including testing and docs)
 

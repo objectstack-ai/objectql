@@ -47,7 +47,7 @@ For a driver to be fully compliant with the v4.0 standard, it must:
 
 ### 1. @objectql/driver-sql (SQL Databases via Knex)
 
-**Status**: ✅ **FULLY COMPLIANT** - Pilot driver complete (v4.0.0)
+**Status**: ✅ **FULLY COMPLIANT** - Pilot driver complete (DriverInterface v4.0)
 
 | Criterion | Status | Details |
 |-----------|--------|---------|
@@ -69,11 +69,11 @@ For a driver to be fully compliant with the v4.0 standard, it must:
 - ✅ 100% backward compatibility maintained
 - ✅ Comprehensive migration documentation
 
-**Version**: 4.0.0 (upgraded from 3.0.1)
+**Package Version**: 3.0.1 (maintained for changeset compatibility)  
+**DriverInterface Version**: v4.0 compliant
 
 **Files Modified**:
 - `packages/drivers/sql/src/index.ts` - Added DriverInterface methods (+220 LOC)
-- `packages/drivers/sql/package.json` - Version bump to 4.0.0
 - `packages/drivers/sql/MIGRATION_V4.md` - Complete migration guide (NEW, 11.5KB)
 
 **Implementation Highlights**:
@@ -88,7 +88,7 @@ For a driver to be fully compliant with the v4.0 standard, it must:
 
 ### 2. @objectql/driver-mongo (MongoDB)
 
-**Status**: ✅ **FULLY COMPLIANT** - Week 7 complete (v4.0.0)
+**Status**: ✅ **FULLY COMPLIANT** - Week 7 complete (DriverInterface v4.0)
 
 | Criterion | Status | Details |
 |-----------|--------|---------|
@@ -111,11 +111,11 @@ For a driver to be fully compliant with the v4.0 standard, it must:
 - ✅ Supports NoSQL patterns with aggregation pipeline
 - ✅ Smart ID mapping (API 'id' ↔ MongoDB '_id')
 
-**Version**: 4.0.0 (upgraded from 3.0.1)
+**Package Version**: 3.0.1 (maintained for changeset compatibility)  
+**DriverInterface Version**: v4.0 compliant
 
 **Files Modified**:
 - `packages/drivers/mongo/src/index.ts` - Added DriverInterface methods (+230 LOC)
-- `packages/drivers/mongo/package.json` - Version bump to 4.0.0
 
 **Implementation Highlights**:
 1. **executeQuery()**: Converts QueryAST FilterNode to MongoDB query format, reusing existing logic
@@ -136,7 +136,7 @@ For a driver to be fully compliant with the v4.0 standard, it must:
 
 ### 3. @objectql/driver-memory (In-Memory Store)
 
-**Status**: ✅ **FULLY COMPLIANT** - Week 7 complete (v4.0.0)
+**Status**: ✅ **FULLY COMPLIANT** - Week 7 complete (DriverInterface v4.0)
 
 | Criterion | Status | Details |
 |-----------|--------|---------|
@@ -159,11 +159,12 @@ For a driver to be fully compliant with the v4.0 standard, it must:
 - ✅ Zero external dependencies (except @objectstack/spec for types)
 - ✅ Perfect for testing and development
 
-**Version**: 4.0.0 (upgraded from 3.0.1)
+**Package Version**: 3.0.1 (maintained for changeset compatibility)  
+**DriverInterface Version**: v4.0 compliant
 
 **Files Modified**:
 - `packages/drivers/memory/src/index.ts` - Added DriverInterface methods (+200 LOC)
-- `packages/drivers/memory/package.json` - Version bump to 4.0.0, added spec dependency
+- `packages/drivers/memory/package.json` - Added spec dependency
 
 **Implementation Highlights**:
 1. **executeQuery()**: Converts QueryAST FilterNode to legacy filters, reusing existing logic
@@ -443,10 +444,12 @@ Migration Guides:           50% (4/8 have v4 guides)
 | Week 7-8 | 8 drivers (all) | 3 drivers | ✅ Ahead of Schedule | 37.5% complete, 5 remaining |
 
 **Current Status**: Week 7 in progress  
-**Drivers Complete**: ✅ driver-sql v4.0.0, ✅ driver-memory v4.0.0, ✅ driver-mongo v4.0.0  
+**Drivers Complete**: ✅ driver-sql (DriverInterface v4.0), ✅ driver-memory (DriverInterface v4.0), ✅ driver-mongo (DriverInterface v4.0)  
 **Next Targets**: driver-redis, driver-fs, driver-localstorage, driver-excel, driver-sdk
 
 **Achievement**: 37.5% of drivers migrated, significantly ahead of original Week 6-7 schedule!
+
+**Note**: All drivers remain at package version 3.0.1 due to changeset fixed group constraints. The v4.0 designation refers to DriverInterface specification compliance, not package version.
 
 ---
 
