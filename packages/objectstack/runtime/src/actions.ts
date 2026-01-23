@@ -19,20 +19,61 @@ export class RuntimeError extends Error {
 /**
  * Action Context
  * Context passed to action handlers
+ * 
+ * Extended to support ObjectQL's rich context requirements including:
+ * - Database API access for performing operations
+ * - User session information
+ * - Validated input parameters
+ * - Record ID for record-level actions
  */
 export interface ActionContext {
     /** Object name */
     objectName: string;
+    
     /** Action name */
     actionName: string;
-    /** Input data */
+    
+    /** Input data (legacy field, prefer 'input' for ObjectQL) */
     data?: any;
-    /** Record IDs (for record-level actions) */
+    
+    /** Record IDs (for record-level actions, legacy array form) */
     ids?: string[];
+    
     /** User context */
-    user?: any;
+    user?: {
+        id: string | number;
+        [key: string]: any;
+    };
+    
     /** Additional metadata */
     metadata?: any;
+    
+    /** 
+     * The ID of the record being acted upon (ObjectQL extension)
+     * Only available if type is 'record'
+     */
+    id?: string | number;
+    
+    /**
+     * The validated input arguments (ObjectQL extension)
+     * Prefer this over 'data' for typed action inputs
+     */
+    input?: any;
+    
+    /**
+     * Database Access API (ObjectQL extension)
+     * Same interface as used in hooks
+     */
+    api?: {
+        find(objectName: string, query?: any): Promise<any[]>;
+        findOne(objectName: string, id: string | number): Promise<any>;
+        count(objectName: string, query?: any): Promise<number>;
+        create(objectName: string, data: any): Promise<any>;
+        update(objectName: string, id: string | number, data: any): Promise<any>;
+        delete(objectName: string, id: string | number): Promise<any>;
+    };
+    
+    /** Allow additional properties for extensibility */
     [key: string]: any;
 }
 
