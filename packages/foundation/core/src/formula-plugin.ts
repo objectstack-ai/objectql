@@ -11,6 +11,13 @@ import { FormulaEngine } from './formula-engine';
 import type { FormulaEngineConfig } from '@objectql/types';
 
 /**
+ * Extended ObjectStack Kernel with formula engine capability
+ */
+interface KernelWithFormulas extends ObjectStackKernel {
+    formulaEngine?: FormulaEngine;
+}
+
+/**
  * Configuration for the Formula Plugin
  */
 export interface FormulaPluginConfig extends FormulaEngineConfig {
@@ -49,9 +56,12 @@ export class FormulaPlugin implements RuntimePlugin {
    * Registers formula evaluation capabilities
    */
   async install(ctx: RuntimeContext): Promise<void> {
-    const kernel = ctx.engine as ObjectStackKernel;
+    const kernel = ctx.engine as KernelWithFormulas;
     
     console.log(`[${this.name}] Installing formula plugin...`);
+    
+    // Make formula engine accessible from the kernel for direct usage
+    kernel.formulaEngine = this.engine;
     
     // Register formula provider if the kernel supports it
     this.registerFormulaProvider(kernel);
@@ -68,13 +78,10 @@ export class FormulaPlugin implements RuntimePlugin {
    * Register the formula provider with the kernel
    * @private
    */
-  private registerFormulaProvider(kernel: ObjectStackKernel): void {
+  private registerFormulaProvider(kernel: KernelWithFormulas): void {
     // Check if kernel supports formula provider registration
-    // Note: Using type assertion since registerFormulaProvider may not be in the interface
-    const kernelWithFormulas = kernel as any;
-    
-    if (typeof kernelWithFormulas.registerFormulaProvider === 'function') {
-      kernelWithFormulas.registerFormulaProvider({
+    if (typeof (kernel as any).registerFormulaProvider === 'function') {
+      (kernel as any).registerFormulaProvider({
         evaluate: (formula: string, context: any) => {
           // Delegate to the formula engine
           // Note: In a real implementation, we would need to properly construct
@@ -93,24 +100,19 @@ export class FormulaPlugin implements RuntimePlugin {
           return this.engine.extractMetadata(fieldName, expression, dataType);
         }
       });
-    } else {
-      // If the kernel doesn't support formula provider registration yet,
-      // we still register the engine for direct access
-      kernelWithFormulas.formulaEngine = this.engine;
     }
+    // Note: formulaEngine is already registered in install() method above
   }
   
   /**
    * Register formula evaluation middleware
    * @private
    */
-  private registerFormulaMiddleware(kernel: ObjectStackKernel): void {
+  private registerFormulaMiddleware(kernel: KernelWithFormulas): void {
     // Check if kernel supports middleware hooks
-    const kernelWithHooks = kernel as any;
-    
-    if (typeof kernelWithHooks.use === 'function') {
+    if (typeof (kernel as any).use === 'function') {
       // Register middleware to evaluate formulas after queries
-      kernelWithHooks.use('afterQuery', async (context: any) => {
+      (kernel as any).use('afterQuery', async (context: any) => {
         // Formula evaluation logic would go here
         // This would automatically compute formula fields after data is retrieved
         if (context.results && context.metadata?.fields) {

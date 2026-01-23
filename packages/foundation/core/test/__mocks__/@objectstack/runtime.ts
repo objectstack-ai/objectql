@@ -21,13 +21,14 @@ class MockMetadataRegistry {
     
     get<T = any>(type: string, id: string): T | undefined {
         const typeMap = this.store.get(type);
-        return typeMap?.get(id) as T | undefined;
+        const item = typeMap?.get(id);
+        return item?.content as T;
     }
     
     list<T = any>(type: string): T[] {
         const typeMap = this.store.get(type);
         if (!typeMap) return [];
-        return Array.from(typeMap.values()) as T[];
+        return Array.from(typeMap.values()).map(item => item.content as T);
     }
     
     unregister(type: string, id: string): boolean {
@@ -57,24 +58,31 @@ class MockMetadataRegistry {
 class MockHookManager {
     private hooks = new Map<string, any[]>();
     
-    register(hookName: string, handler: any, packageName?: string): void {
+    register(hookName: string, objectName: string, handler: any, packageName?: string): void {
         if (!this.hooks.has(hookName)) {
             this.hooks.set(hookName, []);
         }
-        this.hooks.get(hookName)!.push({ handler, packageName });
+        this.hooks.get(hookName)!.push({ objectName, handler, packageName });
     }
     
-    async trigger(hookName: string, context: any): Promise<void> {
+    async trigger(hookName: string, objectName: string, context: any): Promise<void> {
         const handlers = this.hooks.get(hookName) || [];
-        for (const { handler } of handlers) {
-            await handler(context);
+        for (const entry of handlers) {
+            // Match on wildcard '*' or specific object name
+            if (entry.objectName === '*' || entry.objectName === objectName) {
+                await entry.handler(context);
+            }
         }
     }
     
-    unregisterPackage(packageName: string): void {
+    removePackage(packageName: string): void {
         for (const [hookName, handlers] of this.hooks.entries()) {
             this.hooks.set(hookName, handlers.filter(h => h.packageName !== packageName));
         }
+    }
+    
+    clear(): void {
+        this.hooks.clear();
     }
 }
 
@@ -100,7 +108,7 @@ class MockActionManager {
         return this.actions.get(key)?.handler;
     }
     
-    unregisterPackage(packageName: string): void {
+    removePackage(packageName: string): void {
         const toDelete: string[] = [];
         for (const [key, action] of this.actions.entries()) {
             if (action.packageName === packageName) {
@@ -108,6 +116,10 @@ class MockActionManager {
             }
         }
         toDelete.forEach(key => this.actions.delete(key));
+    }
+    
+    clear(): void {
+        this.actions.clear();
     }
 }
 

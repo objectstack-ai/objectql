@@ -108,26 +108,30 @@ export class ObjectQL implements IObjectQL {
 
     on(event: HookName, objectName: string, handler: HookHandler, packageName?: string) {
         // Delegate to kernel hook manager
-        // Note: Type casting needed due to type incompatibility between ObjectQL HookName (includes beforeCount)
-        // and runtime HookName. This is safe as the kernel will accept all hook types.
-        this.kernel.hooks.register(event as any, objectName, handler as any, packageName);
+        // We wrap the handler to bridge ObjectQL's rich context types with runtime's base types
+        // The runtime HookContext supports all fields via index signature, so this is safe
+        const wrappedHandler = handler as unknown as import('@objectstack/runtime').HookHandler;
+        this.kernel.hooks.register(event, objectName, wrappedHandler, packageName);
     }
 
     async triggerHook(event: HookName, objectName: string, ctx: HookContext) {
         // Delegate to kernel hook manager
-        await this.kernel.hooks.trigger(event as any, objectName, ctx as any);
+        // Runtime HookContext supports ObjectQL-specific fields via index signature
+        await this.kernel.hooks.trigger(event, objectName, ctx);
     }
 
     registerAction(objectName: string, actionName: string, handler: ActionHandler, packageName?: string) {
         // Delegate to kernel action manager
-        // Note: Type casting needed due to type incompatibility between ObjectQL ActionHandler
-        // (includes input/api fields) and runtime ActionHandler. This is safe as runtime is more permissive.
-        this.kernel.actions.register(objectName, actionName, handler as any, packageName);
+        // We wrap the handler to bridge ObjectQL's rich context types with runtime's base types
+        // The runtime ActionContext supports all fields via index signature, so this is safe
+        const wrappedHandler = handler as unknown as import('@objectstack/runtime').ActionHandler;
+        this.kernel.actions.register(objectName, actionName, wrappedHandler, packageName);
     }
 
     async executeAction(objectName: string, actionName: string, ctx: ActionContext) {
         // Delegate to kernel action manager
-        return await this.kernel.actions.execute(objectName, actionName, ctx as any);
+        // Runtime ActionContext supports ObjectQL-specific fields via index signature
+        return await this.kernel.actions.execute(objectName, actionName, ctx);
     }
 
     createContext(options: ObjectQLContextOptions): ObjectQLContext {
@@ -211,16 +215,14 @@ export class ObjectQL implements IObjectQL {
     }
 
     getObject(name: string): ObjectConfig | undefined {
-        const item = this.kernel.metadata.get<MetadataItem>('object', name);
-        return item?.content as ObjectConfig | undefined;
+        return this.kernel.metadata.get<ObjectConfig>('object', name);
     }
 
     getConfigs(): Record<string, ObjectConfig> {
         const result: Record<string, ObjectConfig> = {};
-        const items = this.kernel.metadata.list<MetadataItem>('object');
+        const items = this.kernel.metadata.list<ObjectConfig>('object');
         for (const item of items) {
-            const obj = item.content as ObjectConfig;
-            result[obj.name] = obj;
+            result[item.name] = item;
         }
         return result;
     }

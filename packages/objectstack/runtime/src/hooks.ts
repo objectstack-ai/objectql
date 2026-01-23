@@ -8,6 +8,8 @@
 export type HookName = 
     | 'beforeFind'
     | 'afterFind'
+    | 'beforeCount'
+    | 'afterCount'
     | 'beforeCreate'
     | 'afterCreate'
     | 'beforeUpdate'
@@ -18,20 +20,74 @@ export type HookName =
     | 'afterValidate';
 
 /**
+ * HookAPI - Minimal API surface exposed to hooks for performing side-effects or checks
+ * Allows hooks to perform database operations without circular dependencies
+ */
+export interface HookAPI {
+    find(objectName: string, query?: any): Promise<any[]>;
+    findOne(objectName: string, id: string | number): Promise<any>;
+    count(objectName: string, query?: any): Promise<number>;
+    create(objectName: string, data: any): Promise<any>;
+    update(objectName: string, id: string | number, data: any): Promise<any>;
+    delete(objectName: string, id: string | number): Promise<any>;
+}
+
+/**
  * Hook Context
  * Context passed to hook handlers
+ * 
+ * Extended to support ObjectQL's rich context requirements including:
+ * - Database API access for cross-object operations
+ * - User session information
+ * - Shared state between before/after hooks
+ * - Operation type tracking
+ * - Query/result data for retrieval operations
+ * - Record data for mutation operations
  */
 export interface HookContext {
     /** Object name */
     objectName: string;
-    /** Current data */
+    
+    /** Current data (for create/update operations) */
     data?: any;
+    
     /** Original data (for updates) */
     originalData?: any;
+    
     /** User context */
-    user?: any;
+    user?: {
+        id: string | number;
+        [key: string]: any;
+    };
+    
     /** Additional metadata */
     metadata?: any;
+    
+    /** The triggering operation (ObjectQL extension) */
+    operation?: 'find' | 'count' | 'create' | 'update' | 'delete';
+    
+    /** Access to the database/engine to perform extra queries (ObjectQL extension) */
+    api?: HookAPI;
+    
+    /** 
+     * Shared state for passing data between matching 'before' and 'after' hooks (ObjectQL extension)
+     * e.g. Calculate a diff in 'beforeUpdate' and read it in 'afterUpdate'
+     */
+    state?: Record<string, any>;
+    
+    /** The query criteria being executed (for retrieval operations, ObjectQL extension) */
+    query?: any;
+    
+    /** The result of the query/operation (available in 'after' hooks, ObjectQL extension) */
+    result?: any;
+    
+    /** The record ID (for update/delete operations, ObjectQL extension) */
+    id?: string | number;
+    
+    /** The existing record fetched from DB before operation (ObjectQL extension) */
+    previousData?: any;
+    
+    /** Allow additional properties for extensibility */
     [key: string]: any;
 }
 
