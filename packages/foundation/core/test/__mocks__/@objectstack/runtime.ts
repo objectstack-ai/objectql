@@ -21,13 +21,14 @@ class MockMetadataRegistry {
     
     get<T = any>(type: string, id: string): T | undefined {
         const typeMap = this.store.get(type);
-        return typeMap?.get(id) as T | undefined;
+        const item = typeMap?.get(id);
+        return item?.content as T;
     }
     
     list<T = any>(type: string): T[] {
         const typeMap = this.store.get(type);
         if (!typeMap) return [];
-        return Array.from(typeMap.values()) as T[];
+        return Array.from(typeMap.values()).map(item => item.content as T);
     }
     
     unregister(type: string, id: string): boolean {
