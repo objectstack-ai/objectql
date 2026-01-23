@@ -698,7 +698,7 @@ rules:
     validator: |
       async function validate(record, context) {
         const inventory = await context.api.findOne('inventory', {
-          filters: [['sku', '=', record.sku]]
+          filters: { sku: record.sku }
         });
         
         return inventory.available_quantity >= record.quantity;
@@ -822,7 +822,7 @@ rules:
         // Validate multiple records in one query
         const skus = records.map(r => r.sku);
         const inventory = await context.api.find('inventory', {
-          filters: [['sku', 'in', skus]]
+          filters: { sku: { $in: skus } }
         });
         
         // Return validation result for each record

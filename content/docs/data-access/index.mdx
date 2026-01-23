@@ -61,11 +61,10 @@ const ctx = app.createContext({ isSystem: true });
 // Query data with filters
 const products = await ctx.object('product').find({
   fields: ['name', 'price', 'category'],
-  filters: [
-    ['category', '=', 'electronics'],
-    'and',
-    ['price', '<', 1000]
-  ],
+  filters: {
+    category: 'electronics',
+    price: { $lt: 1000 }
+  },
   sort: [['price', 'asc']],
   top: 10
 });

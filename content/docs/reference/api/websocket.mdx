@@ -22,7 +22,7 @@ ws.onopen = () => {
   ws.send(JSON.stringify({
     type: 'subscribe',
     object: 'orders',
-    filters: [["status", "=", "pending"]]
+    filters: { status: 'pending' }
   }));
 };
 
