@@ -434,6 +434,9 @@ importers:
       '@objectql/types':
         specifier: workspace:*
         version: link:../../foundation/types
+      '@objectstack/spec':
+        specifier: ^0.2.0
+        version: 0.2.0
       redis:
         specifier: ^4.6.0
         version: 4.7.1

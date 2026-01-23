@@ -1,7 +1,7 @@
 {
   "name": "@objectql/driver-redis",
-  "version": "3.0.1",
-  "description": "Redis driver for ObjectQL - Example implementation for key-value storage",
+  "version": "4.0.0",
+  "description": "Redis driver for ObjectQL - Example implementation for key-value storage with DriverInterface v4.0 compliance",
   "keywords": [
     "objectql",
     "driver",
@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "@objectql/types": "workspace:*",
+    "@objectstack/spec": "^0.2.0",
     "redis": "^4.6.0"
   },
   "devDependencies": {
