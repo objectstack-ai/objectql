@@ -40,11 +40,10 @@ The **JSON-DSL** is ObjectQL's core query language - a structured JSON represent
 ```typescript
 const tasks = await app.object('task').find({
   fields: ['name', 'status', 'due_date'],
-  filters: [
-    ['status', '=', 'active'],
-    'and',
-    ['priority', '>=', 3]
-  ],
+  filters: {
+    status: 'active',
+    priority: { $gte: 3 }
+  },
   sort: [['due_date', 'asc']],
   skip: 0,
   limit: 20
@@ -59,7 +58,7 @@ const tasks = await app.object('task').find({
 ```typescript
 // Returns ALL fields (inefficient)
 await app.object('user').find({
-  filters: [['status', '=', 'active']]
+  filters: { status: 'active' }
 });
 ```
 
@@ -68,7 +67,7 @@ await app.object('user').find({
 // Returns only needed fields (efficient)
 await app.object('user').find({
   fields: ['id', 'name', 'email'],
-  filters: [['status', '=', 'active']]
+  filters: { status: 'active' }
 });
 ```
 
@@ -79,17 +78,16 @@ await app.object('user').find({
 **Bad:**
 ```typescript
 // Filters on non-indexed field
-filters: [['description', 'contains', 'urgent']]
+filters: { description: { $contains: 'urgent' } }
 ```
 
 **Good:**
 ```typescript
 // Filters on indexed field first, then post-filter if needed
-filters: [
-  ['status', '=', 'open'],        // Indexed
-  'and',
-  ['priority', '=', 'high']       // Indexed
-]
+filters: {
+  status: 'open',        // Indexed
+  priority: 'high'       // Indexed
+}
 ```
 
 **Impact:** Can improve query speed by 10-100x depending on dataset size.
@@ -100,7 +98,7 @@ filters: [
 ```typescript
 // Returns all records (dangerous)
 await app.object('order').find({
-  filters: [['year', '=', 2024]]
+  filters: { year: 2024 }
 });
 ```
 
@@ -108,7 +106,7 @@ await app.object('order').find({
 ```typescript
 // Paginated results (safe and fast)
 await app.object('order').find({
-  filters: [['year', '=', 2024]],
+  filters: { year: 2024 },
   limit: 50,
   skip: page * 50,
   sort: [['created_at', 'desc']]
@@ -431,7 +429,7 @@ const tasksWithAssignee = await Promise.all(
 const tasks = await taskRepo.find();
 const userIds = tasks.map(t => t.assignee_id);
 const users = await userRepo.find({
-  filters: [['id', 'in', userIds]]
+  filters: { id: { $in: userIds } }
 });
 const userMap = new Map(users.map(u => [u.id, u]));
 const tasksWithAssigneeBatched = tasks.map((task) => ({
@@ -516,7 +514,7 @@ query Dashboard {
 // Hook: Automatically assign to least-busy team member
 async function autoAssign(task: any) {
   const members = await app.object('user').aggregate({
-    filters: [['team_id', '=', task.team_id]],
+    filters: { team_id: task.team_id },
     groupBy: ['id', 'name'],
     aggregate: [
       { func: 'count', field: 'tasks.id', alias: 'task_count' }
@@ -581,7 +579,7 @@ AND priority = 'high' AND invalid_function(status);
 **Bad (Application-level aggregation):**
 ```typescript
 const orders = await app.object('order').find({
-  filters: [['status', '=', 'paid']]
+  filters: { status: 'paid' }
 });
 
 // Slow: Iterating in application code
@@ -594,7 +592,7 @@ for (const order of orders) {
 **Good (Database-level aggregation):**
 ```typescript
 const stats = await app.object('order').aggregate({
-  filters: [['status', '=', 'paid']],
+  filters: { status: 'paid' },
   groupBy: ['customer_id'],
   aggregate: [
     { func: 'sum', field: 'amount', alias: 'total_revenue' },
@@ -620,7 +618,7 @@ const uniqueCustomers = [...new Set(orders.map(o => o.customer_id))];
 **Good:**
 ```typescript
 const uniqueCustomers = await app.object('order').distinct('customer_id', {
-  filters: [['year', '=', 2024]]
+  filters: { year: 2024 }
 });
 ```
 
@@ -661,18 +659,19 @@ indexes:
 
 **Bad (OR requires multiple index scans):**
 ```typescript
-filters: [
-  ['status', '=', 'pending'],
-  'or',
-  ['status', '=', 'active']
-]
+filters: {
+  $or: [
+    { status: 'pending' },
+    { status: 'active' }
+  ]
+}
 ```
 
 **Good (IN uses single index scan):**
 ```typescript
-filters: [
-  ['status', 'in', ['pending', 'active']]
-]
+filters: {
+  status: { $in: ['pending', 'active'] }
+}
 ```
 
 **Impact:** 2-5x faster for large tables.
@@ -693,7 +692,7 @@ await app.object('order').find({
 **Good (Cursor pagination using last ID):**
 ```typescript
 await app.object('order').find({
-  filters: [['id', '>', lastSeenId]],
+  filters: { id: { $gt: lastSeenId } },
   limit: 50,
   sort: [['id', 'asc']]
 });
@@ -754,7 +753,7 @@ GET /api/data/tasks?status=active&limit=20
 **After:**
 ```typescript
 await app.object('task').find({
-  filters: [['status', '=', 'active']],
+  filters: { status: 'active' },
   limit: 20
 });
 ```
@@ -764,7 +763,7 @@ await app.object('task').find({
 **Before:**
 ```typescript
 const tasks = await app.object('task').find({
-  filters: [['status', '=', 'active']],
+  filters: { status: 'active' },
   expand: {
     assignee: { fields: ['name', 'email'] }
   }
