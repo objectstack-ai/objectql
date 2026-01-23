@@ -28,11 +28,11 @@
   },
   "peerDependencies": {
     "@objectstack/spec": "^0.2.0",
-    "@objectstack/runtime": "^0.2.0"
+    "@objectql/runtime": "^0.2.0"
   },
   "devDependencies": {
     "@objectstack/spec": "workspace:*",
-    "@objectstack/runtime": "workspace:*",
+    "@objectql/runtime": "workspace:*",
     "ts-json-schema-generator": "^2.4.0"
   }
 }

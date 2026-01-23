@@ -7,7 +7,7 @@
  */
 
 import { FormulaPlugin } from '../src/formula-plugin';
-import { ObjectStackKernel } from '@objectstack/runtime';
+import { ObjectStackKernel } from '@objectql/runtime';
 
 describe('FormulaPlugin', () => {
     let plugin: FormulaPlugin;

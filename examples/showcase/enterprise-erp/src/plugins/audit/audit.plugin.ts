@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-// Import RuntimePlugin types from @objectql/core instead of @objectstack/runtime
+// Import RuntimePlugin types from @objectql/core instead of @objectql/runtime
 // to avoid ESM/CJS compatibility issues
 interface RuntimeContext {
     engine: any; // ObjectStackKernel

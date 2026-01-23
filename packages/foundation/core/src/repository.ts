@@ -7,7 +7,7 @@
  */
 
 import { ObjectQLContext, IObjectQL, ObjectConfig, Driver, UnifiedQuery, ActionContext, HookAPI, RetrievalHookContext, MutationHookContext, UpdateHookContext, ValidationContext, ValidationError, ValidationRuleResult, FormulaContext, Filter } from '@objectql/types';
-import type { ObjectStackKernel } from '@objectstack/runtime';
+import type { ObjectStackKernel } from '@objectql/runtime';
 import type { QueryAST, FilterNode, SortNode } from '@objectstack/spec';
 import { Validator } from './validator';
 import { FormulaEngine } from './formula-engine';

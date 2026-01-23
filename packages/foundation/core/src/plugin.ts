@@ -6,8 +6,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import type { RuntimePlugin, RuntimeContext } from '@objectstack/runtime';
-import type { ObjectStackKernel } from '@objectstack/runtime';
+import type { RuntimePlugin, RuntimeContext } from '@objectql/runtime';
+import type { ObjectStackKernel } from '@objectql/runtime';
 import { ValidatorPlugin, ValidatorPluginConfig } from './validator-plugin';
 import { FormulaPlugin, FormulaPluginConfig } from './formula-plugin';
 import { QueryService } from './query/query-service';
@@ -78,7 +78,7 @@ export interface ObjectQLPluginConfig {
 /**
  * ObjectQL Plugin
  * 
- * Implements the RuntimePlugin interface from @objectstack/runtime
+ * Implements the RuntimePlugin interface from @objectql/runtime
  * to provide ObjectQL's enhanced features (Repository, Validator, Formula, AI)
  * on top of the ObjectStack kernel.
  */

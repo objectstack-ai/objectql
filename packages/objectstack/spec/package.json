@@ -1,5 +1,5 @@
 {
-  "name": "@objectstack/spec",
+  "name": "@objectql/spec",
   "version": "0.2.0",
   "description": "ObjectStack Protocol Specification - Type Definitions",
   "keywords": [

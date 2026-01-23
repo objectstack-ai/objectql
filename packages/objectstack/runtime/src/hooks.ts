@@ -1,5 +1,5 @@
 /**
- * @objectstack/runtime
+ * @objectql/runtime
  * Hook System - Event lifecycle management
  * 
  * Provides a generic hook system for lifecycle events (before/after CRUD operations)

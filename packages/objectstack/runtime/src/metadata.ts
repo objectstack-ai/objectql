@@ -1,5 +1,5 @@
 /**
- * @objectstack/runtime
+ * @objectql/runtime
  * Metadata Registry - Core metadata management for ObjectStack
  * 
  * This module provides the foundational metadata registry that manages

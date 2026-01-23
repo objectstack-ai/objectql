@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import type { RuntimePlugin, RuntimeContext, ObjectStackKernel } from '@objectstack/runtime';
+import type { RuntimePlugin, RuntimeContext, ObjectStackKernel } from '@objectql/runtime';
 import { Validator, ValidatorOptions } from './validator';
 
 /**

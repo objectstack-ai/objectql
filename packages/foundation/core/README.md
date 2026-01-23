@@ -4,7 +4,7 @@ The core ORM and runtime engine for ObjectQL. This package handles object queryi
 
 ## Features
 
-- **Plugin Architecture**: Built on top of `@objectstack/runtime` with kernel-based plugin system
+- **Plugin Architecture**: Built on top of `@objectql/runtime` with kernel-based plugin system
 - **Unified Query Language**: A generic way to query data across different databases (SQL, Mongo, etc.)
 - **Repository Pattern**: `ObjectRepository` for managing object records
 - **Driver Agnostic**: Abstraction layer for database drivers
@@ -17,12 +17,12 @@ The core ORM and runtime engine for ObjectQL. This package handles object queryi
 ## Installation
 
 ```bash
-npm install @objectql/core @objectql/types @objectstack/runtime @objectstack/spec
+npm install @objectql/core @objectql/types @objectql/runtime @objectstack/spec
 ```
 
 ## Architecture
 
-ObjectQL now wraps the `ObjectStackKernel` from `@objectstack/runtime`, providing:
+ObjectQL now wraps the `ObjectStackKernel` from `@objectql/runtime`, providing:
 
 - **Kernel-based lifecycle management**: Initialization, startup, and shutdown
 - **Plugin system**: Extensible architecture with `ObjectQLPlugin`

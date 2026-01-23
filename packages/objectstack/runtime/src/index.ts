@@ -1,5 +1,5 @@
 /**
- * @objectstack/runtime
+ * @objectql/runtime
  * ObjectStack Runtime Types
  * 
  * This package defines the runtime types for the ObjectStack ecosystem.

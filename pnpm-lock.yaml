@@ -476,12 +476,12 @@ importers:
 
   packages/foundation/core:
     dependencies:
+      '@objectql/runtime':
+        specifier: workspace:*
+        version: link:../../objectstack/runtime
       '@objectql/types':
         specifier: workspace:*
         version: link:../types
-      '@objectstack/runtime':
-        specifier: workspace:*
-        version: link:../../objectstack/runtime
       '@objectstack/spec':
         specifier: workspace:*
         version: link:../../objectstack/spec
@@ -523,7 +523,7 @@ importers:
 
   packages/foundation/types:
     devDependencies:
-      '@objectstack/runtime':
+      '@objectql/runtime':
         specifier: workspace:*
         version: link:../../objectstack/runtime
       '@objectstack/spec':

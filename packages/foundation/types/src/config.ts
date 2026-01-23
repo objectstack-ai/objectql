@@ -9,7 +9,7 @@
 import { MetadataRegistry } from "./registry";
 import { Driver } from "./driver";
 import { ObjectConfig } from "./object";
-import type { RuntimePlugin } from "@objectstack/runtime";
+import type { RuntimePlugin } from "../../../objectstack/runtime/dist";
 
 export interface ObjectQLConfig {
     registry?: MetadataRegistry;
@@ -39,7 +39,7 @@ export interface ObjectQLConfig {
     modules?: string[];
     /**
      * List of plugins to load. 
-     * Must implement the RuntimePlugin interface from @objectstack/runtime.
+     * Must implement the RuntimePlugin interface from @objectql/runtime.
      * String plugins (package names) are not supported in core.
      */
     plugins?: (RuntimePlugin | string)[];

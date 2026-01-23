@@ -1,5 +1,5 @@
 /**
- * @objectstack/runtime
+ * @objectql/runtime
  * Action System - Custom action management
  * 
  * Provides a system for registering and executing custom actions on objects

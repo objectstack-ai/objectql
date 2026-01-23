@@ -22,7 +22,7 @@ import {
     ActionContext,
     LoaderPlugin
 } from '@objectql/types';
-import { ObjectStackKernel, type RuntimePlugin } from '@objectstack/runtime';
+import { ObjectStackKernel, type RuntimePlugin } from '@objectql/runtime';
 import { ObjectRepository } from './repository';
 import { ObjectQLPlugin } from './plugin';
 import { convertIntrospectedSchemaToObjects } from './util';
@@ -112,7 +112,7 @@ export class ObjectQL implements IObjectQL {
         // Delegate to kernel hook manager
         // We wrap the handler to bridge ObjectQL's rich context types with runtime's base types
         // The runtime HookContext supports all fields via index signature, so this is safe
-        const wrappedHandler = handler as unknown as import('@objectstack/runtime').HookHandler;
+        const wrappedHandler = handler as unknown as import('../../../objectstack/runtime/dist').HookHandler;
         this.kernel.hooks.register(event, objectName, wrappedHandler, packageName);
     }
 
@@ -126,7 +126,7 @@ export class ObjectQL implements IObjectQL {
         // Delegate to kernel action manager
         // We wrap the handler to bridge ObjectQL's rich context types with runtime's base types
         // The runtime ActionContext supports all fields via index signature, so this is safe
-        const wrappedHandler = handler as unknown as import('@objectstack/runtime').ActionHandler;
+        const wrappedHandler = handler as unknown as import('../../../objectstack/runtime/dist').ActionHandler;
         this.kernel.actions.register(objectName, actionName, wrappedHandler, packageName);
     }
 

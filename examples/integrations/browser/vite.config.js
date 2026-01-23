@@ -17,7 +17,7 @@ export default defineConfig({
       '@objectql/driver-localstorage': resolve(__dirname, '../../../packages/drivers/localstorage/src/index.ts'),
       '@objectql/driver-memory': resolve(__dirname, '../../../packages/drivers/memory/src/index.ts'),
       '@objectql/types': resolve(__dirname, '../../../packages/foundation/types/src/index.ts'),
-      '@objectstack/runtime': resolve(__dirname, '../../../packages/objectstack/runtime/src/index.ts'),
+      '@objectql/runtime': resolve(__dirname, '../../../packages/objectstack/runtime/src/index.ts'),
       '@objectstack/spec': resolve(__dirname, '../../../packages/objectstack/spec/src/index.ts')
     }
   },

@@ -12,7 +12,7 @@ module.exports = {
   testMatch: ['**/test/**/*.test.ts'],
   moduleNameMapper: {
     '^@objectql/(.*)$': '<rootDir>/../$1/src',
-    '^@objectstack/runtime$': '<rootDir>/test/__mocks__/@objectstack/runtime.ts',
+    '^@objectql/runtime$': '<rootDir>/test/__mocks__/@objectql/runtime.ts',
   },
   transform: {
     '^.+\\.ts$': ['ts-jest', {
