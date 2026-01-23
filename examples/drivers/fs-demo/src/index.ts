@@ -127,21 +127,21 @@ async function main() {
 
     // Find high priority projects
     const highPriority = await projects.find({
-        filters: [['priority', '=', 'high']]
+        filters: { priority: 'high' }
     });
     console.log(`🔥 High priority projects: ${highPriority.length}`);
     highPriority.forEach(p => console.log(`   - ${p.name}`));
 
     // Find in-progress projects
     const inProgress = await projects.find({
-        filters: [['status', '=', 'in_progress']]
+        filters: { status: 'in_progress' }
     });
     console.log(`\n⚡ In-progress projects: ${inProgress.length}`);
     inProgress.forEach(p => console.log(`   - ${p.name}`));
 
     // Find projects with budget > 40000
     const largeBudget = await projects.find({
-        filters: [['budget', '>', 40000]]
+        filters: { budget: { $gt: 40000 } }
     });
     console.log(`\n💰 Projects with budget > $40,000: ${largeBudget.length}`);
     largeBudget.forEach(p => console.log(`   - ${p.name}: $${p.budget.toLocaleString()}`));
@@ -163,7 +163,7 @@ async function main() {
     console.log(`\n📊 Aggregate Operations:\n`);
 
     const statusCount = await projects.count({
-        filters: [['status', '=', 'in_progress']]
+        filters: { status: 'in_progress' }
     });
     console.log(`In-progress projects: ${statusCount}`);
 

@@ -213,7 +213,7 @@ describe('Data API', () => {
                         op: 'find',
                         object: 'task',
                         args: {
-                            filters: [['status', '=', 'pending']]
+                            filters: { status: 'pending' }
                         }
                     })
                     .set('Accept', 'application/json');
