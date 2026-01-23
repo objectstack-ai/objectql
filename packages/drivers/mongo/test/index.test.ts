@@ -17,6 +17,10 @@ const mockCollection = {
     toArray: jest.fn().mockResolvedValue([]),
     findOne: jest.fn().mockResolvedValue(null),
     insertOne: jest.fn().mockResolvedValue({ insertedId: '123' }),
+    insertMany: jest.fn().mockResolvedValue({ 
+        insertedIds: { 0: 'id1', 1: 'id2' },
+        insertedCount: 2
+    }),
     updateOne: jest.fn().mockResolvedValue({ modifiedCount: 1 }),
     deleteOne: jest.fn().mockResolvedValue({ deletedCount: 1 }),
     countDocuments: jest.fn().mockResolvedValue(10)
@@ -34,7 +38,10 @@ const mockClient = {
 jest.mock('mongodb', () => {
     return {
         MongoClient: jest.fn().mockImplementation(() => mockClient),
-        ObjectId: jest.fn(id => id) 
+        ObjectId: jest.fn().mockImplementation((id?: string) => ({
+            toHexString: () => id || 'generated-object-id',
+            toString: () => id || 'generated-object-id'
+        }))
     };
 });
 
@@ -326,6 +333,248 @@ describe('MongoDriver', () => {
             },
             expect.any(Object)
         );
+    });
+
+    describe('DriverInterface v4.0 methods', () => {
+        describe('executeQuery', () => {
+            it('should execute a simple QueryAST query', async () => {
+                const ast = {
+                    object: 'users',
+                    fields: ['name', 'email'],
+                    filters: {
+                        type: 'comparison' as const,
+                        field: 'status',
+                        operator: '=',
+                        value: 'active'
+                    },
+                    top: 10,
+                    skip: 0
+                };
+
+                mockCollection.toArray.mockResolvedValue([
+                    { name: 'User 1', email: 'user1@example.com' },
+                    { name: 'User 2', email: 'user2@example.com' }
+                ]);
+
+                const result = await driver.executeQuery(ast);
+
+                expect(result.value).toHaveLength(2);
+                expect(result.count).toBe(2);
+                expect(mockCollection.find).toHaveBeenCalled();
+            });
+
+            it('should handle complex QueryAST with AND filters', async () => {
+                const ast = {
+                    object: 'users',
+                    filters: {
+                        type: 'and' as const,
+                        children: [
+                            {
+                                type: 'comparison' as const,
+                                field: 'status',
+                                operator: '=',
+                                value: 'active'
+                            },
+                            {
+                                type: 'comparison' as const,
+                                field: 'age',
+                                operator: '>',
+                                value: 18
+                            }
+                        ]
+                    }
+                };
+
+                mockCollection.toArray.mockResolvedValue([]);
+
+                const result = await driver.executeQuery(ast);
+
+                expect(result.value).toEqual([]);
+                expect(mockCollection.find).toHaveBeenCalled();
+            });
+
+            it('should handle QueryAST with sort', async () => {
+                const ast = {
+                    object: 'users',
+                    sort: [
+                        { field: 'name', order: 'asc' as const }
+                    ]
+                };
+
+                mockCollection.toArray.mockResolvedValue([]);
+
+                await driver.executeQuery(ast);
+
+                expect(mockCollection.find).toHaveBeenCalledWith(
+                    {},
+                    expect.objectContaining({
+                        sort: { name: 1 }
+                    })
+                );
+            });
+        });
+
+        describe('executeCommand', () => {
+            it('should execute create command', async () => {
+                const command = {
+                    type: 'create' as const,
+                    object: 'users',
+                    data: { name: 'New User', email: 'new@example.com' }
+                };
+
+                mockCollection.insertOne.mockResolvedValue({ 
+                    insertedId: 'new123',
+                    acknowledged: true
+                } as any);
+
+                const result = await driver.executeCommand(command);
+
+                expect(result.success).toBe(true);
+                expect(result.affected).toBe(1);
+                expect(result.data).toBeDefined();
+                expect(mockCollection.insertOne).toHaveBeenCalled();
+            });
+
+            it('should execute update command', async () => {
+                const command = {
+                    type: 'update' as const,
+                    object: 'users',
+                    id: '123',
+                    data: { name: 'Updated User' }
+                };
+
+                mockCollection.updateOne.mockResolvedValue({ 
+                    modifiedCount: 1,
+                    acknowledged: true
+                } as any);
+                mockCollection.findOne.mockResolvedValue({ 
+                    _id: '123', 
+                    name: 'Updated User' 
+                });
+
+                const result = await driver.executeCommand(command);
+
+                expect(result.success).toBe(true);
+                expect(result.affected).toBe(1);
+                expect(mockCollection.updateOne).toHaveBeenCalled();
+            });
+
+            it('should execute delete command', async () => {
+                const command = {
+                    type: 'delete' as const,
+                    object: 'users',
+                    id: '123'
+                };
+
+                mockCollection.deleteOne.mockResolvedValue({ 
+                    deletedCount: 1,
+                    acknowledged: true
+                } as any);
+
+                const result = await driver.executeCommand(command);
+
+                expect(result.success).toBe(true);
+                expect(result.affected).toBe(1);
+                expect(mockCollection.deleteOne).toHaveBeenCalled();
+            });
+
+            it('should execute bulkCreate command', async () => {
+                const command = {
+                    type: 'bulkCreate' as const,
+                    object: 'users',
+                    records: [
+                        { name: 'User 1', email: 'user1@example.com' },
+                        { name: 'User 2', email: 'user2@example.com' }
+                    ]
+                };
+
+                mockCollection.insertOne.mockResolvedValue({ 
+                    insertedId: 'id1',
+                    acknowledged: true
+                } as any);
+
+                const result = await driver.executeCommand(command);
+
+                expect(result.success).toBe(true);
+                expect(result.affected).toBe(2);
+                expect(result.data).toHaveLength(2);
+            });
+
+            it('should execute bulkUpdate command', async () => {
+                const command = {
+                    type: 'bulkUpdate' as const,
+                    object: 'users',
+                    updates: [
+                        { id: '1', data: { name: 'Updated 1' } },
+                        { id: '2', data: { name: 'Updated 2' } }
+                    ]
+                };
+
+                mockCollection.updateOne.mockResolvedValue({ 
+                    modifiedCount: 1,
+                    acknowledged: true
+                } as any);
+                mockCollection.findOne.mockResolvedValue({ _id: '1', name: 'Updated 1' });
+
+                const result = await driver.executeCommand(command);
+
+                expect(result.success).toBe(true);
+                expect(result.affected).toBe(2);
+            });
+
+            it('should execute bulkDelete command', async () => {
+                const command = {
+                    type: 'bulkDelete' as const,
+                    object: 'users',
+                    ids: ['1', '2', '3']
+                };
+
+                mockCollection.deleteOne.mockResolvedValue({ 
+                    deletedCount: 1,
+                    acknowledged: true
+                } as any);
+
+                const result = await driver.executeCommand(command);
+
+                expect(result.success).toBe(true);
+                expect(result.affected).toBe(3);
+            });
+
+            it('should handle command errors gracefully', async () => {
+                const command = {
+                    type: 'create' as const,
+                    object: 'users',
+                    data: undefined // Invalid data
+                };
+
+                const result = await driver.executeCommand(command);
+
+                expect(result.success).toBe(false);
+                expect(result.error).toBeDefined();
+                expect(result.affected).toBe(0);
+            });
+
+            it('should reject unknown command types', async () => {
+                const command = {
+                    type: 'invalidCommand' as any,
+                    object: 'users'
+                };
+
+                const result = await driver.executeCommand(command);
+
+                expect(result.success).toBe(false);
+                expect(result.error).toContain('Unknown command type');
+                expect(result.error).toContain('Valid types are');
+            });
+        });
+
+        describe('execute', () => {
+            it('should throw error as MongoDB does not support raw command execution', async () => {
+                await expect(driver.execute('SELECT * FROM users')).rejects.toThrow(
+                    'MongoDB driver does not support raw command execution'
+                );
+            });
+        });
     });
 
 });
