@@ -547,17 +547,27 @@ export class RedisDriver implements Driver, DriverInterface {
                     if (!command.updates || !Array.isArray(command.updates)) {
                         throw new Error('BulkUpdate command requires updates array');
                     }
-                    // Use Redis PIPELINE for batch operations
-                    const updatePipeline = this.client.multi();
+                    
+                    // First, batch GET all existing records using PIPELINE
+                    const getPipeline = this.client.multi();
+                    for (const update of command.updates) {
+                        const key = this.generateRedisKey(command.object, update.id);
+                        getPipeline.get(key);
+                    }
+                    const getResults = await getPipeline.exec();
+                    
+                    // Then, batch SET updated records using PIPELINE
+                    const setPipeline = this.client.multi();
                     const updateResults: any[] = [];
                     const updateTime = new Date().toISOString();
                     
-                    for (const update of command.updates) {
-                        const key = this.generateRedisKey(command.object, update.id);
-                        const existing = await this.client.get(key);
+                    for (let i = 0; i < command.updates.length; i++) {
+                        const update = command.updates[i];
+                        const result = getResults?.[i] as any;
+                        const existingData = result?.[1];
                         
-                        if (existing) {
-                            const existingDoc = JSON.parse(existing);
+                        if (existingData && typeof existingData === 'string') {
+                            const existingDoc = JSON.parse(existingData);
                             const doc = {
                                 ...existingDoc,
                                 ...update.data,
@@ -566,11 +576,12 @@ export class RedisDriver implements Driver, DriverInterface {
                                 updated_at: updateTime
                             };
                             updateResults.push(doc);
-                            updatePipeline.set(key, JSON.stringify(doc));
+                            const key = this.generateRedisKey(command.object, update.id);
+                            setPipeline.set(key, JSON.stringify(doc));
                         }
                     }
                     
-                    await updatePipeline.exec();
+                    await setPipeline.exec();
                     
                     return {
                         success: true,
@@ -646,6 +657,9 @@ export class RedisDriver implements Driver, DriverInterface {
         switch (node.type) {
             case 'comparison':
                 // Convert comparison node to [field, operator, value] format
+                if (!node.operator) {
+                    console.warn('[RedisDriver] FilterNode comparison missing operator, defaulting to "="');
+                }
                 const operator = node.operator || '=';
                 return [[node.field, operator, node.value]];
             
