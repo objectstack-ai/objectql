@@ -1,6 +1,6 @@
 {
   "name": "@objectql/driver-fs",
-  "version": "3.0.1",
+  "version": "4.0.0",
   "description": "File system driver for ObjectQL - JSON file-based storage with one file per table",
   "keywords": [
     "objectql",
@@ -25,7 +25,8 @@
     "test": "jest"
   },
   "dependencies": {
-    "@objectql/types": "workspace:*"
+    "@objectql/types": "workspace:*",
+    "@objectstack/spec": "^0.2.0"
   },
   "devDependencies": {
     "@types/jest": "^29.0.0",
