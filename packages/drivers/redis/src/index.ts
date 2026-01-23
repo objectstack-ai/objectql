@@ -36,25 +36,66 @@ import { createClient, RedisClientType } from 'redis';
 
 /**
  * Command interface for executeCommand method
+ * 
+ * This interface defines the structure for all mutation operations
+ * (create, update, delete, and their bulk variants) in the v4.0 DriverInterface.
+ * 
+ * @example
+ * // Create a single record
+ * const cmd: Command = { type: 'create', object: 'users', data: { name: 'Alice' } };
+ * 
+ * @example
+ * // Update a record
+ * const cmd: Command = { type: 'update', object: 'users', id: '123', data: { email: 'new@example.com' } };
+ * 
+ * @example
+ * // Bulk create multiple records
+ * const cmd: Command = { 
+ *   type: 'bulkCreate', 
+ *   object: 'users', 
+ *   records: [{ name: 'Alice' }, { name: 'Bob' }] 
+ * };
  */
 export interface Command {
+    /** Command type: create, update, delete, or their bulk variants */
     type: 'create' | 'update' | 'delete' | 'bulkCreate' | 'bulkUpdate' | 'bulkDelete';
+    /** Target object name */
     object: string;
+    /** Data for create/update operations */
     data?: any;
+    /** Record ID for single update/delete operations */
     id?: string | number;
+    /** Array of IDs for bulkDelete operation */
     ids?: Array<string | number>;
+    /** Array of records for bulkCreate operation */
     records?: any[];
+    /** Array of updates for bulkUpdate operation */
     updates?: Array<{id: string | number, data: any}>;
+    /** Additional command-specific options */
     options?: any;
 }
 
 /**
  * Command result interface
+ * 
+ * Standardized result format for all executeCommand operations.
+ * 
+ * @example
+ * // Successful create
+ * { success: true, data: { id: '123', name: 'Alice' }, affected: 1 }
+ * 
+ * @example
+ * // Failed operation
+ * { success: false, error: 'Record not found', affected: 0 }
  */
 export interface CommandResult {
+    /** Whether the command executed successfully */
     success: boolean;
+    /** The resulting data (for create/update operations) */
     data?: any;
+    /** Number of records affected by the operation */
     affected: number;
+    /** Error message if the command failed */
     error?: string;
 }
 
@@ -325,12 +366,41 @@ export class RedisDriver implements Driver, DriverInterface {
     /**
      * Execute a query (DriverInterface v4.0 method)
      * 
-     * This method handles all read operations using the QueryAST format.
-     * Converts QueryAST to legacy query format and delegates to find().
+     * This method handles all read operations using the QueryAST format from @objectstack/spec.
+     * It provides a standardized query interface that supports:
+     * - Field selection (projection)
+     * - Filter conditions (using FilterNode AST)
+     * - Sorting
+     * - Pagination (skip/top)
+     * - Grouping and aggregations (delegated to find)
      * 
-     * @param ast - The query AST
+     * The method converts the QueryAST format to the legacy query format and delegates
+     * to the existing find() method for backward compatibility.
+     * 
+     * @param ast - The query Abstract Syntax Tree
      * @param options - Optional execution options
-     * @returns Query results with count
+     * @returns Object containing query results and count
+     * 
+     * @example
+     * // Simple query
+     * const result = await driver.executeQuery({
+     *   object: 'users',
+     *   fields: ['name', 'email']
+     * });
+     * 
+     * @example
+     * // Query with filters and sorting
+     * const result = await driver.executeQuery({
+     *   object: 'users',
+     *   filters: {
+     *     type: 'comparison',
+     *     field: 'age',
+     *     operator: '>',
+     *     value: 18
+     *   },
+     *   sort: [{ field: 'name', order: 'asc' }],
+     *   top: 10
+     * });
      */
     async executeQuery(ast: QueryAST, options?: any): Promise<{ value: any[]; count?: number }> {
         const objectName = ast.object || '';
@@ -356,16 +426,54 @@ export class RedisDriver implements Driver, DriverInterface {
     /**
      * Execute a command (DriverInterface v4.0 method)
      * 
-     * This method handles all mutation operations (create, update, delete)
-     * using a unified command interface.
+     * This method provides a unified interface for all mutation operations (create, update, delete)
+     * using the Command pattern from @objectstack/spec.
      * 
-     * Supports both single operations and bulk operations using Redis PIPELINE
-     * for optimal performance.
+     * Supports both single operations and bulk operations:
+     * - Single: create, update, delete
+     * - Bulk: bulkCreate, bulkUpdate, bulkDelete
      * 
-     * @param command - The command to execute
-     * @param parameters - Optional command parameters (unused in this driver)
+     * Bulk operations use Redis PIPELINE for optimal performance, executing multiple
+     * commands in a single round-trip to the server.
+     * 
+     * All operations return a standardized CommandResult with:
+     * - success: boolean indicating operation success/failure
+     * - data: the resulting data (for create/update)
+     * - affected: number of records affected
+     * - error: error message if operation failed
+     * 
+     * @param command - The command to execute (see Command interface)
      * @param options - Optional execution options
-     * @returns Command execution result
+     * @returns Standardized command execution result
+     * 
+     * @example
+     * // Create a single record
+     * const result = await driver.executeCommand({
+     *   type: 'create',
+     *   object: 'users',
+     *   data: { name: 'Alice', email: 'alice@example.com' }
+     * });
+     * 
+     * @example
+     * // Bulk create multiple records
+     * const result = await driver.executeCommand({
+     *   type: 'bulkCreate',
+     *   object: 'users',
+     *   records: [
+     *     { name: 'Alice' },
+     *     { name: 'Bob' },
+     *     { name: 'Charlie' }
+     *   ]
+     * });
+     * 
+     * @example
+     * // Update a record
+     * const result = await driver.executeCommand({
+     *   type: 'update',
+     *   object: 'users',
+     *   id: 'user-123',
+     *   data: { email: 'newemail@example.com' }
+     * });
      */
     async executeCommand(command: Command, options?: any): Promise<CommandResult> {
         try {
@@ -506,9 +614,31 @@ export class RedisDriver implements Driver, DriverInterface {
 
     /**
      * Convert FilterNode (QueryAST format) to legacy filter array format
-     * This allows reuse of existing filter logic while supporting new QueryAST
      * 
+     * This method bridges the gap between the new QueryAST filter format (tree-based)
+     * and the legacy array-based filter format used internally by the driver.
+     * 
+     * QueryAST FilterNode format:
+     * - type: 'comparison' | 'and' | 'or' | 'not'
+     * - field, operator, value for comparisons
+     * - children for logical operators
+     * 
+     * Legacy format:
+     * - Array of conditions: [field, operator, value]
+     * - String separators: 'and', 'or'
+     * - Example: [['age', '>', 18], 'and', ['role', '=', 'user']]
+     * 
+     * @param node - The FilterNode to convert
+     * @returns Legacy filter array format, or undefined if no filters
      * @private
+     * 
+     * @example
+     * // Input: { type: 'comparison', field: 'age', operator: '>', value: 18 }
+     * // Output: [['age', '>', 18]]
+     * 
+     * @example
+     * // Input: { type: 'and', children: [...] }
+     * // Output: [['field1', '=', 'val1'], 'and', ['field2', '>', 10]]
      */
     private convertFilterNodeToLegacy(node?: FilterNode): any {
         if (!node) return undefined;
@@ -563,10 +693,22 @@ export class RedisDriver implements Driver, DriverInterface {
     /**
      * Generate Redis key for an object record
      * 
-     * Strategy: objectName:id
-     * Example: users:user-123
+     * This method implements the key naming strategy for storing records in Redis.
+     * The strategy uses a simple pattern: `objectName:id`
      * 
+     * This ensures:
+     * - Easy querying by pattern (e.g., `users:*` to find all user records)
+     * - Clear namespace separation between different object types
+     * - Human-readable keys for debugging
+     * 
+     * @param objectName - The object/collection name
+     * @param id - The record ID
+     * @returns Redis key in format "objectName:id"
      * @private
+     * 
+     * @example
+     * generateRedisKey('users', '123') // Returns: 'users:123'
+     * generateRedisKey('orders', 'order-456') // Returns: 'orders:order-456'
      */
     private generateRedisKey(objectName: string, id: string | number): string {
         return `${objectName}:${id}`;

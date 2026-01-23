@@ -2,13 +2,20 @@
 
 > ⚠️ **Note**: This is an **example/template implementation** to demonstrate how to create custom ObjectQL drivers. It is not production-ready and serves as a reference for driver development.
 
+**Version 4.0.0** - Now compliant with DriverInterface from @objectstack/spec
+
 ## Overview
 
 The Redis Driver is a reference implementation showing how to adapt a key-value store (Redis) to work with ObjectQL's universal data protocol. While Redis is primarily designed for caching and simple key-value operations, this driver demonstrates how to map ObjectQL's rich query interface to a simpler database model.
 
+This driver implements both the legacy Driver interface from @objectql/types and the standard DriverInterface from @objectstack/spec for full compatibility with the new kernel-based plugin system.
+
 ## Features
 
 - ✅ Basic CRUD operations (Create, Read, Update, Delete)
+- ✅ **v4.0**: executeQuery() with QueryAST support
+- ✅ **v4.0**: executeCommand() with unified command interface
+- ✅ **v4.0**: Bulk operations (bulkCreate, bulkUpdate, bulkDelete) using Redis PIPELINE
 - ✅ Query filtering (in-memory)
 - ✅ Sorting (in-memory)
 - ✅ Pagination (skip/limit)
@@ -136,6 +143,7 @@ new RedisDriver(config: RedisDriverConfig)
 
 All standard Driver interface methods are implemented:
 
+**Legacy Driver Interface:**
 - `find(objectName, query, options)` - Query multiple records
 - `findOne(objectName, id, query, options)` - Get single record by ID
 - `create(objectName, data, options)` - Create new record
@@ -143,6 +151,110 @@ All standard Driver interface methods are implemented:
 - `delete(objectName, id, options)` - Delete record
 - `count(objectName, filters, options)` - Count matching records
 - `disconnect()` - Close Redis connection
+
+**DriverInterface v4.0 Methods:**
+- `executeQuery(ast, options)` - Execute queries using QueryAST format
+- `executeCommand(command, options)` - Execute commands (create, update, delete, bulk operations)
+
+### executeQuery Examples
+
+The new `executeQuery` method uses the QueryAST format from @objectstack/spec:
+
+```typescript
+// Basic query
+const result = await driver.executeQuery({
+  object: 'users',
+  fields: ['name', 'email']
+});
+console.log(result.value); // Array of users
+console.log(result.count); // Number of results
+
+// Query with filters
+const result = await driver.executeQuery({
+  object: 'users',
+  filters: {
+    type: 'comparison',
+    field: 'age',
+    operator: '>',
+    value: 18
+  },
+  sort: [{ field: 'name', order: 'asc' }],
+  top: 10,
+  skip: 0
+});
+
+// Complex filters (AND/OR)
+const result = await driver.executeQuery({
+  object: 'users',
+  filters: {
+    type: 'and',
+    children: [
+      { type: 'comparison', field: 'role', operator: '=', value: 'user' },
+      { type: 'comparison', field: 'age', operator: '>', value: 30 }
+    ]
+  }
+});
+```
+
+### executeCommand Examples
+
+The new `executeCommand` method provides a unified interface for mutations:
+
+```typescript
+// Create a record
+const result = await driver.executeCommand({
+  type: 'create',
+  object: 'users',
+  data: { name: 'Alice', email: 'alice@example.com' }
+});
+console.log(result.success); // true
+console.log(result.data); // Created user object
+console.log(result.affected); // 1
+
+// Update a record
+const result = await driver.executeCommand({
+  type: 'update',
+  object: 'users',
+  id: 'user-123',
+  data: { email: 'newemail@example.com' }
+});
+
+// Delete a record
+const result = await driver.executeCommand({
+  type: 'delete',
+  object: 'users',
+  id: 'user-123'
+});
+
+// Bulk create (uses Redis PIPELINE for performance)
+const result = await driver.executeCommand({
+  type: 'bulkCreate',
+  object: 'users',
+  records: [
+    { name: 'Alice', age: 30 },
+    { name: 'Bob', age: 25 },
+    { name: 'Charlie', age: 35 }
+  ]
+});
+console.log(result.affected); // 3
+
+// Bulk update
+const result = await driver.executeCommand({
+  type: 'bulkUpdate',
+  object: 'users',
+  updates: [
+    { id: 'user-1', data: { age: 31 } },
+    { id: 'user-2', data: { age: 26 } }
+  ]
+});
+
+// Bulk delete
+const result = await driver.executeCommand({
+  type: 'bulkDelete',
+  object: 'users',
+  ids: ['user-1', 'user-2', 'user-3']
+});
+```
 
 ## Example: Using as Cache Layer
 
