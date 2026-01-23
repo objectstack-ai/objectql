@@ -53,6 +53,9 @@ export class FormulaPlugin implements RuntimePlugin {
     
     console.log(`[${this.name}] Installing formula plugin...`);
     
+    // Make formula engine accessible from the kernel for direct usage
+    (kernel as any).formulaEngine = this.engine;
+    
     // Register formula provider if the kernel supports it
     this.registerFormulaProvider(kernel);
     

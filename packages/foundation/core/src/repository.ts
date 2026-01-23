@@ -14,8 +14,6 @@ import { FormulaEngine } from './formula-engine';
 import { QueryBuilder } from './query';
 
 export class ObjectRepository {
-    private validator: Validator;
-    private formulaEngine: FormulaEngine;
     private queryBuilder: QueryBuilder;
 
     constructor(
@@ -23,9 +21,33 @@ export class ObjectRepository {
         private context: ObjectQLContext,
         private app: IObjectQL
     ) {
-        this.validator = new Validator();
-        this.formulaEngine = new FormulaEngine();
         this.queryBuilder = new QueryBuilder();
+    }
+    
+    /**
+     * Get validator instance from kernel (via plugin)
+     * Falls back to creating a new instance if not available
+     */
+    private getValidator(): Validator {
+        const kernel = this.getKernel() as any;
+        if (kernel.validator) {
+            return kernel.validator;
+        }
+        // Fallback for backward compatibility
+        return new Validator();
+    }
+    
+    /**
+     * Get formula engine instance from kernel (via plugin)
+     * Falls back to creating a new instance if not available
+     */
+    private getFormulaEngine(): FormulaEngine {
+        const kernel = this.getKernel() as any;
+        if (kernel.formulaEngine) {
+            return kernel.formulaEngine;
+        }
+        // Fallback for backward compatibility
+        return new FormulaEngine();
     }
 
     private getDriver(): Driver {
@@ -106,7 +128,7 @@ export class ObjectRepository {
             }
             
             const value = record[fieldName];
-            const fieldResults = await this.validator.validateField(
+            const fieldResults = await this.getValidator().validateField(
                 fieldName,
                 fieldConfig,
                 value,
@@ -145,7 +167,7 @@ export class ObjectRepository {
                 changedFields,
             };
 
-            const result = await this.validator.validate(schema.validation.rules, validationContext);
+            const result = await this.getValidator().validate(schema.validation.rules, validationContext);
             allResults.push(...result.results);
         }
 
@@ -192,7 +214,7 @@ export class ObjectRepository {
         // Evaluate each formula field
         for (const [fieldName, fieldConfig] of Object.entries(schema.fields)) {
             if (fieldConfig.type === 'formula' && fieldConfig.formula) {
-                const result = this.formulaEngine.evaluate(
+                const result = this.getFormulaEngine().evaluate(
                     fieldConfig.formula,
                     formulaContext,
                     fieldConfig.data_type || 'text',

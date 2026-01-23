@@ -62,6 +62,9 @@ export class ValidatorPlugin implements RuntimePlugin {
     
     console.log(`[${this.name}] Installing validator plugin...`);
     
+    // Make validator accessible from the kernel for direct usage
+    (kernel as any).validator = this.validator;
+    
     // Register validation middleware for queries (if enabled)
     if (this.config.enableQueryValidation !== false) {
       this.registerQueryValidation(kernel);
