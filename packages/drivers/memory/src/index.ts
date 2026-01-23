@@ -618,15 +618,16 @@ export class MemoryDriver implements Driver {
             case 'contains':
             case 'like':
                 // MongoDB regex for case-insensitive contains
-                return { [field]: { $regex: new RegExp(value, 'i') } };
+                // Escape special regex characters to prevent ReDoS and ensure literal matching
+                return { [field]: { $regex: new RegExp(this.escapeRegex(value), 'i') } };
             
             case 'startswith':
             case 'starts_with':
-                return { [field]: { $regex: new RegExp(`^${value}`, 'i') } };
+                return { [field]: { $regex: new RegExp(`^${this.escapeRegex(value)}`, 'i') } };
             
             case 'endswith':
             case 'ends_with':
-                return { [field]: { $regex: new RegExp(`${value}$`, 'i') } };
+                return { [field]: { $regex: new RegExp(`${this.escapeRegex(value)}$`, 'i') } };
             
             case 'between':
                 if (Array.isArray(value) && value.length === 2) {
@@ -643,30 +644,11 @@ export class MemoryDriver implements Driver {
     }
 
     /**
-     * Build MongoDB sort object from ObjectQL sort array.
-     * Converts [['field', 'asc'], ['field2', 'desc']] to { field: 1, field2: -1 }
+     * Escape special regex characters to prevent ReDoS and ensure literal matching.
+     * This is crucial for security when using user input in regex patterns.
      */
-    private buildSortObject(sort: any[]): Record<string, any> {
-        const sortObj: Record<string, any> = {};
-        
-        for (const sortItem of sort) {
-            let field: string;
-            let direction: string;
-            
-            if (Array.isArray(sortItem)) {
-                [field, direction] = sortItem;
-            } else if (typeof sortItem === 'object') {
-                field = sortItem.field;
-                direction = sortItem.order || sortItem.direction || sortItem.dir || 'asc';
-            } else {
-                continue;
-            }
-            
-            // MongoDB uses 1 for ascending, -1 for descending
-            sortObj[field] = direction.toLowerCase() === 'desc' ? -1 : 1;
-        }
-        
-        return sortObj;
+    private escapeRegex(str: string): string {
+        return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     }
 
     /**
