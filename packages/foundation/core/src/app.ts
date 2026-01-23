@@ -58,7 +58,9 @@ export class ObjectQL implements IObjectQL {
         }
 
         // Add the ObjectQL plugin to provide enhanced features
-        this.kernelPlugins.push(new ObjectQLPlugin());
+        this.kernelPlugins.push(new ObjectQLPlugin({
+            datasources: this.datasources
+        }));
         
         // Add runtime plugins from config
         if (config.plugins) {
