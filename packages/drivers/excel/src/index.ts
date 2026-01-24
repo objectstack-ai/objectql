@@ -106,7 +106,7 @@ export interface ExcelDriverConfig {
  * the standard DriverInterface from @objectstack/spec for compatibility
  * with the new kernel-based plugin system.
  */
-export class ExcelDriver implements Driver, DriverInterface {
+export class ExcelDriver implements Driver {
     // Driver metadata (ObjectStack-compatible)
     public readonly name = 'ExcelDriver';
     public readonly version = '4.0.0';
@@ -115,7 +115,13 @@ export class ExcelDriver implements Driver, DriverInterface {
         joins: false,
         fullTextSearch: false,
         jsonFields: true,
-        arrayFields: true
+        arrayFields: true,
+        queryFilters: true,
+        queryAggregations: false,
+        querySorting: true,
+        queryPagination: true,
+        queryWindowFunctions: false,
+        querySubqueries: false
     };
 
     private config: ExcelDriverConfig;
