@@ -1,6 +1,6 @@
 {
   "name": "@objectql/driver-sql",
-  "version": "4.0.0",
+  "version": "4.0.1",
   "description": "SQL database driver for ObjectQL - Supports PostgreSQL, MySQL, SQLite via Knex with DriverInterface v4.0 compliance",
   "keywords": [
     "objectql",
@@ -24,7 +24,8 @@
   "dependencies": {
     "@objectql/types": "workspace:*",
     "@objectstack/spec": "^0.3.1",
-    "knex": "^3.1.0"
+    "knex": "^3.1.0",
+    "nanoid": "^3.3.11"
   },
   "devDependencies": {
     "sqlite3": "^5.1.7"

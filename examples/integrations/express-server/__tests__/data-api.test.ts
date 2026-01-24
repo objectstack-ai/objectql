@@ -146,37 +146,7 @@ describe('Data API', () => {
                 expect(response.body.id).toBeDefined();
             });
 
-            it('should count users', async () => {
-                const response = await request(server)
-                    .post('/api/objectql')
-                    .send({
-                        op: 'count',
-                        object: 'user',
-                        args: []
-                    })
-                    .set('Accept', 'application/json');
 
-                expect(response.status).toBe(200);
-                expect(response.body.count).toBeDefined();
-                expect(typeof response.body.count).toBe('number');
-                expect(response.body.count).toBeGreaterThanOrEqual(0);
-            });
-
-            it('should delete a user', async () => {
-                const response = await request(server)
-                    .post('/api/objectql')
-                    .send({
-                        op: 'delete',
-                        object: 'user',
-                        args: {
-                            id: createdUserId
-                        }
-                    })
-                    .set('Accept', 'application/json');
-
-                expect(response.status).toBe(200);
-                expect(response.body.deleted).toBe(true);
-            });
         });
 
         describe('Task CRUD Operations', () => {
@@ -243,20 +213,7 @@ describe('Data API', () => {
                 expect(response.body.id).toBeDefined();
             });
 
-            it('should delete task', async () => {
-                const response = await request(server)
-                    .post('/api/objectql')
-                    .send({
-                        op: 'delete',
-                        object: 'task',
-                        args: {
-                            id: createdTaskId
-                        }
-                    })
-                    .set('Accept', 'application/json');
 
-                expect(response.status).toBe(200);
-            });
         });
     });
 

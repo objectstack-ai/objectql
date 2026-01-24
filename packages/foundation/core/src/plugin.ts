@@ -162,8 +162,53 @@ export class ObjectQLPlugin implements RuntimePlugin {
    * @private
    */
   private async registerRepository(kernel: ObjectStackKernel): Promise<void> {
-    // TODO: Implement repository registration
-    // For now, this is a placeholder to establish the structure
+    if (!this.config.datasources) {
+      console.log(`[${this.name}] No datasources configured, skipping repository registration`);
+      return;
+    }
+
+    const datasources = this.config.datasources;
+
+    // Helper function to get the driver for an object
+    const getDriver = (objectName: string): Driver => {
+      const objectConfig = kernel.metadata.get<any>('object', objectName);
+      const datasourceName = objectConfig?.datasource || 'default';
+      const driver = datasources[datasourceName];
+      if (!driver) {
+        throw new Error(`Datasource '${datasourceName}' not found for object '${objectName}'`);
+      }
+      return driver;
+    };
+
+    // Override kernel CRUD methods to use drivers
+    kernel.create = async (objectName: string, data: any): Promise<any> => {
+      const driver = getDriver(objectName);
+      return await driver.create(objectName, data, {});
+    };
+
+    kernel.update = async (objectName: string, id: string, data: any): Promise<any> => {
+      const driver = getDriver(objectName);
+      return await driver.update(objectName, id, data, {});
+    };
+
+    kernel.delete = async (objectName: string, id: string): Promise<boolean> => {
+      const driver = getDriver(objectName);
+      const result = await driver.delete(objectName, id, {});
+      return !!result;
+    };
+
+    kernel.find = async (objectName: string, query: any): Promise<{ value: any[]; count: number }> => {
+      const driver = getDriver(objectName);
+      const value = await driver.find(objectName, query);
+      const count = value.length;
+      return { value, count };
+    };
+
+    kernel.get = async (objectName: string, id: string): Promise<any> => {
+      const driver = getDriver(objectName);
+      return await driver.findOne(objectName, id);
+    };
+
     console.log(`[${this.name}] Repository pattern registered`);
   }
   

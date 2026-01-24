@@ -29,8 +29,8 @@ describe('Project Hooks - Comprehensive Examples', () => {
                 default: {
                     find: jest.fn().mockResolvedValue([]),
                     findOne: jest.fn().mockResolvedValue(null),
-                    create: jest.fn((obj, data) => ({ ...data, _id: 'test-id' })),
-                    update: jest.fn((obj, id, data) => data),
+                    create: jest.fn((obj, data, ctx) => ({ ...data, _id: 'test-id' })),
+                    update: jest.fn((obj, id, data, ctx) => data),
                     delete: jest.fn().mockResolvedValue(true),
                     count: jest.fn().mockResolvedValue(0)
                 } as any

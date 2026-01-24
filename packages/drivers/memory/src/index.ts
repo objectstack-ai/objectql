@@ -562,28 +562,44 @@ export class MemoryDriver implements Driver {
             return logicGroups[0].conditions[0];
         }
         
-        // Multiple groups or conditions
-        const finalConditions: Record<string, any>[] = [];
+        // If there's only one group with multiple conditions, use its logic operator
+        if (logicGroups.length === 1) {
+            const group = logicGroups[0];
+            if (group.logic === 'or') {
+                return { $or: group.conditions };
+            } else {
+                return { $and: group.conditions };
+            }
+        }
+        
+        // Multiple groups - flatten all conditions and determine the top-level operator
+        const allConditions: Record<string, any>[] = [];
         for (const group of logicGroups) {
             if (group.conditions.length === 0) continue;
             
             if (group.conditions.length === 1) {
-                finalConditions.push(group.conditions[0]);
+                allConditions.push(group.conditions[0]);
             } else {
                 if (group.logic === 'or') {
-                    finalConditions.push({ $or: group.conditions });
+                    allConditions.push({ $or: group.conditions });
                 } else {
-                    finalConditions.push({ $and: group.conditions });
+                    allConditions.push({ $and: group.conditions });
                 }
             }
         }
         
-        if (finalConditions.length === 0) {
+        if (allConditions.length === 0) {
             return {};
-        } else if (finalConditions.length === 1) {
-            return finalConditions[0];
+        } else if (allConditions.length === 1) {
+            return allConditions[0];
         } else {
-            return { $and: finalConditions };
+            // Determine top-level operator: use OR if any non-empty group has OR logic
+            const hasOrLogic = logicGroups.some(g => g.logic === 'or' && g.conditions.length > 0);
+            if (hasOrLogic) {
+                return { $or: allConditions };
+            } else {
+                return { $and: allConditions };
+            }
         }
     }
 

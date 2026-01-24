@@ -13,6 +13,12 @@ type DriverInterface = System.DriverInterface;
 
 import { Driver, IntrospectedSchema, IntrospectedTable, IntrospectedColumn, IntrospectedForeignKey } from '@objectql/types';
 import knex, { Knex } from 'knex';
+import { nanoid } from 'nanoid';
+
+/**
+ * Default ID length for auto-generated IDs
+ */
+const DEFAULT_ID_LENGTH = 16;
 
 /**
  * Command interface for executeCommand method
@@ -271,8 +277,9 @@ export class SqlDriver implements Driver {
         // If _id exists and id doesn't, map _id to id
         if (_id !== undefined && toInsert.id === undefined) {
              toInsert.id = _id;
-        } else if (toInsert.id !== undefined) {
-            // normal case
+        } else if (toInsert.id === undefined) {
+            // Auto-generate ID if not provided
+            toInsert.id = nanoid(DEFAULT_ID_LENGTH);
         }
         
         // Knex insert returns Result array (e.g. ids)
@@ -290,7 +297,10 @@ export class SqlDriver implements Driver {
         const builder = this.getBuilder(objectName, options);
         const formatted = this.formatInput(objectName, data);
         await builder.where('id', id).update(formatted);
-        return { id, ...data }; 
+        
+        // Fetch and return the updated record
+        const updated = await this.findOne(objectName, id, undefined, options);
+        return updated;
     }
 
     async delete(objectName: string, id: string | number, options?: any) {

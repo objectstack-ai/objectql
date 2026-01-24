@@ -41,12 +41,12 @@ class MockDriver implements Driver {
             }
         }
         
-        // Apply skip and limit
+        // Apply skip and top/limit (QueryAST uses 'top' for limit)
         if (query?.skip) {
             items = items.slice(query.skip);
         }
-        if (query?.limit) {
-            items = items.slice(0, query.limit);
+        if (query?.top || query?.limit) {
+            items = items.slice(0, query.top || query.limit);
         }
         
         return items;
@@ -87,7 +87,12 @@ class MockDriver implements Driver {
     }
     
     async count(objectName: string, query: any) {
-        const items = await this.find(objectName, query);
+        // Count should not apply skip/limit, only filters
+        const countQuery = { ...query };
+        delete countQuery.skip;
+        delete countQuery.top;
+        delete countQuery.limit;
+        const items = await this.find(objectName, countQuery);
         return items.length;
     }
     
