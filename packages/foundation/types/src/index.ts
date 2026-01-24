@@ -37,4 +37,20 @@ export * from './workflow';
 export * from './report';
 export * from './form';
 export * from './formula';
-export * from './trigger.zod';
+
+/**
+ * Trigger schemas from @objectstack/spec
+ * 
+ * Re-exports trigger validation schemas directly from the protocol specification.
+ */
+import { Data } from '@objectstack/spec';
+
+export const TriggerAction = Data.TriggerAction;
+export const TriggerTiming = Data.TriggerTiming;
+export const TriggerContextSchema = Data.TriggerContextSchema;
+export const TriggerSchema = Data.TriggerSchema;
+
+export type TriggerActionType = Data.TriggerAction;
+export type TriggerTimingType = Data.TriggerTiming;
+export type TriggerContext = Data.TriggerContext;
+export type Trigger = Data.Trigger;

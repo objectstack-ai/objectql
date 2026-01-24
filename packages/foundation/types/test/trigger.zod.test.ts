@@ -15,7 +15,7 @@ import {
     type TriggerTimingType,
     type TriggerContext,
     type Trigger
-} from '../src/trigger.zod';
+} from '../src/index';
 
 describe('Trigger Zod Schemas', () => {
     describe('TriggerAction', () => {
