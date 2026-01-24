@@ -528,17 +528,13 @@ importers:
         version: 5.9.3
 
   packages/foundation/types:
-    dependencies:
-      zod:
-        specifier: ^3.22.4
-        version: 3.25.76
     devDependencies:
       '@objectql/runtime':
         specifier: workspace:*
         version: link:../../objectstack/runtime
       '@objectstack/spec':
-        specifier: ^0.3.1
-        version: 0.3.1
+        specifier: ^0.3.2
+        version: 0.3.2
       ts-json-schema-generator:
         specifier: ^2.4.0
         version: 2.4.0
@@ -1932,6 +1928,10 @@ packages:
 
   '@objectstack/spec@0.3.1':
     resolution: {integrity: sha512-MK/8x2jpdS6PllxadVALK7cKqa6nfwtjzZ1WRKpZwdbJnAUTKZlt6P3h/LSif8gxq78KiYLdWmHjtjoTXPruJQ==}
+    engines: {node: '>=18.0.0'}
+
+  '@objectstack/spec@0.3.2':
+    resolution: {integrity: sha512-X4tmUZLz2eQ88ZqQv02NF/ObkGN8TdaT5K9A11aGRUyeFy3X3LBfC+FYxBgmcUbTIXm4W6RLYkYFvn2s/6JKHg==}
     engines: {node: '>=18.0.0'}
 
   '@orama/orama@3.1.18':
@@ -9475,6 +9475,10 @@ snapshots:
     optional: true
 
   '@objectstack/spec@0.3.1':
+    dependencies:
+      zod: 3.25.76
+
+  '@objectstack/spec@0.3.2':
     dependencies:
       zod: 3.25.76
 
