@@ -24,7 +24,7 @@ async function copyTemplates() {
     
     // Directory exclusions
     if (stats.isDirectory()) {
-      return !['node_modules', 'dist', '.turbo', '.git'].includes(filename);
+      return !['node_modules', 'dist', '.turbo', '.git', '__tests__'].includes(filename);
     }
     // File exclusions
     return !['.DS_Store', 'pnpm-lock.yaml', 'yarn.lock', 'package-lock.json'].includes(filename);
