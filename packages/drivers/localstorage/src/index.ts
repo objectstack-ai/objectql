@@ -1,3 +1,8 @@
+import { Data, System } from '@objectstack/spec';
+type QueryAST = Data.QueryAST;
+type FilterNode = Data.FilterNode;
+type SortNode = Data.SortNode;
+type DriverInterface = System.DriverInterface;
 /**
  * ObjectQL
  * Copyright (c) 2026-present ObjectStack Inc.
@@ -32,7 +37,6 @@
  */
 
 import { Driver, ObjectQLError } from '@objectql/types';
-import { DriverInterface, QueryAST, FilterNode, SortNode } from '@objectstack/spec';
 
 /**
  * Command interface for executeCommand method
@@ -80,7 +84,7 @@ export interface LocalStorageDriverConfig {
  * 
  * Example: `objectql:users:user-123` → `{"id":"user-123","name":"Alice",...}`
  */
-export class LocalStorageDriver implements Driver, DriverInterface {
+export class LocalStorageDriver implements Driver {
     // Driver metadata (ObjectStack-compatible)
     public readonly name = 'LocalStorageDriver';
     public readonly version = '4.0.0';
@@ -89,7 +93,13 @@ export class LocalStorageDriver implements Driver, DriverInterface {
         joins: false,
         fullTextSearch: false,
         jsonFields: true,
-        arrayFields: true
+        arrayFields: true,
+        queryFilters: true,
+        queryAggregations: false,
+        querySorting: true,
+        queryPagination: true,
+        queryWindowFunctions: false,
+        querySubqueries: false
     };
 
     private config: LocalStorageDriverConfig;

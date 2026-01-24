@@ -1,3 +1,8 @@
+import { Data, System } from '@objectstack/spec';
+type QueryAST = Data.QueryAST;
+type FilterNode = Data.FilterNode;
+type SortNode = Data.SortNode;
+type DriverInterface = System.DriverInterface;
 /**
  * ObjectQL
  * Copyright (c) 2026-present ObjectStack Inc.
@@ -50,7 +55,6 @@ import {
     ApiErrorCode,
     Filter
 } from '@objectql/types';
-import { DriverInterface, QueryAST } from '@objectstack/spec';
 
 /**
  * Command interface for executeCommand method

@@ -1,3 +1,8 @@
+import { Data, System } from '@objectstack/spec';
+type QueryAST = Data.QueryAST;
+type FilterNode = Data.FilterNode;
+type SortNode = Data.SortNode;
+type DriverInterface = System.DriverInterface;
 /**
  * ObjectQL
  * Copyright (c) 2026-present ObjectStack Inc.
@@ -30,7 +35,6 @@
  */
 
 import { Driver, ObjectQLError } from '@objectql/types';
-import { DriverInterface, QueryAST, FilterNode, SortNode } from '@objectstack/spec';
 import * as ExcelJS from 'exceljs';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -102,7 +106,7 @@ export interface ExcelDriverConfig {
  * the standard DriverInterface from @objectstack/spec for compatibility
  * with the new kernel-based plugin system.
  */
-export class ExcelDriver implements Driver, DriverInterface {
+export class ExcelDriver implements Driver {
     // Driver metadata (ObjectStack-compatible)
     public readonly name = 'ExcelDriver';
     public readonly version = '4.0.0';
@@ -111,7 +115,13 @@ export class ExcelDriver implements Driver, DriverInterface {
         joins: false,
         fullTextSearch: false,
         jsonFields: true,
-        arrayFields: true
+        arrayFields: true,
+        queryFilters: true,
+        queryAggregations: false,
+        querySorting: true,
+        queryPagination: true,
+        queryWindowFunctions: false,
+        querySubqueries: false
     };
 
     private config: ExcelDriverConfig;

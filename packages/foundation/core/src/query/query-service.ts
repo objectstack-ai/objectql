@@ -13,7 +13,8 @@ import type {
     Filter,
     MetadataRegistry
 } from '@objectql/types';
-import type { QueryAST } from '@objectstack/spec';
+import { Data } from '@objectstack/spec';
+type QueryAST = Data.QueryAST;
 import { QueryBuilder } from './query-builder';
 
 /**

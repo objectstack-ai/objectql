@@ -1,3 +1,8 @@
+import { Data, System } from '@objectstack/spec';
+type QueryAST = Data.QueryAST;
+type FilterNode = Data.FilterNode;
+type SortNode = Data.SortNode;
+type DriverInterface = System.DriverInterface;
 /**
  * ObjectQL
  * Copyright (c) 2026-present ObjectStack Inc.
@@ -35,7 +40,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { Driver, ObjectQLError } from '@objectql/types';
-import { DriverInterface, QueryAST, FilterNode, SortNode } from '@objectstack/spec';
 
 /**
  * Command interface for executeCommand method
@@ -84,7 +88,7 @@ export interface FileSystemDriverConfig {
  * - File: `{dataDir}/{objectName}.json`
  * - Content: Array of records `[{id: "1", ...}, {id: "2", ...}]`
  */
-export class FileSystemDriver implements Driver, DriverInterface {
+export class FileSystemDriver implements Driver {
     // Driver metadata (ObjectStack-compatible)
     public readonly name = 'FileSystemDriver';
     public readonly version = '4.0.0';
@@ -93,7 +97,13 @@ export class FileSystemDriver implements Driver, DriverInterface {
         joins: false,
         fullTextSearch: false,
         jsonFields: true,
-        arrayFields: true
+        arrayFields: true,
+        queryFilters: true,
+        queryAggregations: false,
+        querySorting: true,
+        queryPagination: true,
+        queryWindowFunctions: false,
+        querySubqueries: false
     };
 
     private config: FileSystemDriverConfig;

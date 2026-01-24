@@ -1,7 +1,6 @@
 {
   "files": [],
   "references": [
-    { "path": "./packages/objectstack/spec" },
     { "path": "./packages/objectstack/runtime" },
     { "path": "./packages/foundation/types" },
     { "path": "./packages/foundation/core" },

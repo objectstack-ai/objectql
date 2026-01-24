@@ -6,7 +6,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import type { PluginDefinition } from '@objectstack/spec';
+import { System } from '@objectstack/spec';
+type PluginDefinition = System.PluginDefinition;
 
 export function loadPlugin(packageName: string): PluginDefinition {
     let mod: any;

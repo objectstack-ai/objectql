@@ -1,3 +1,8 @@
+import { Data, System } from '@objectstack/spec';
+type QueryAST = Data.QueryAST;
+type FilterNode = Data.FilterNode;
+type SortNode = Data.SortNode;
+type DriverInterface = System.DriverInterface;
 /**
  * ObjectQL
  * Copyright (c) 2026-present ObjectStack Inc.
@@ -31,7 +36,6 @@
  */
 
 import { Driver } from '@objectql/types';
-import { DriverInterface, QueryAST, FilterNode, SortNode } from '@objectstack/spec';
 import { createClient, RedisClientType } from 'redis';
 
 /**
@@ -117,7 +121,7 @@ export interface RedisDriverConfig {
  * 
  * Example: `users:user-123` → `{"id":"user-123","name":"Alice",...}`
  */
-export class RedisDriver implements Driver, DriverInterface {
+export class RedisDriver implements Driver {
     // Driver metadata (ObjectStack-compatible)
     public readonly name = 'RedisDriver';
     public readonly version = '4.0.0';
@@ -126,7 +130,13 @@ export class RedisDriver implements Driver, DriverInterface {
         joins: false,
         fullTextSearch: false,
         jsonFields: true,
-        arrayFields: true
+        arrayFields: true,
+        queryFilters: true,
+        queryAggregations: false,
+        querySorting: true,
+        queryPagination: true,
+        queryWindowFunctions: false,
+        querySubqueries: false
     };
 
     private client: RedisClientType;
