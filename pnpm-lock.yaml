@@ -528,6 +528,10 @@ importers:
         version: 5.9.3
 
   packages/foundation/types:
+    dependencies:
+      zod:
+        specifier: ^3.22.4
+        version: 3.25.76
     devDependencies:
       '@objectql/runtime':
         specifier: workspace:*
