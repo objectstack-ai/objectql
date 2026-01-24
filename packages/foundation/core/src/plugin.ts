@@ -183,17 +183,17 @@ export class ObjectQLPlugin implements RuntimePlugin {
     // Override kernel CRUD methods to use drivers
     kernel.create = async (objectName: string, data: any): Promise<any> => {
       const driver = getDriver(objectName);
-      return await driver.create(objectName, data);
+      return await driver.create(objectName, data, {});
     };
 
     kernel.update = async (objectName: string, id: string, data: any): Promise<any> => {
       const driver = getDriver(objectName);
-      return await driver.update(objectName, id, data);
+      return await driver.update(objectName, id, data, {});
     };
 
     kernel.delete = async (objectName: string, id: string): Promise<boolean> => {
       const driver = getDriver(objectName);
-      const result = await driver.delete(objectName, id);
+      const result = await driver.delete(objectName, id, {});
       return !!result;
     };
 
