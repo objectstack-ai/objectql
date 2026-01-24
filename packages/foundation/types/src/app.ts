@@ -9,7 +9,7 @@
 import { ObjectConfig } from "./object";
 import { Driver } from "./driver";
 import { MetadataRegistry } from "./registry";
-import { HookName, HookHandler, HookContext } from "./hook";
+import { Trigger, TriggerContext } from "./index";
 import { ActionHandler, ActionContext } from "./action";
 import { LoaderPlugin } from "./loader";
 
@@ -24,8 +24,8 @@ export interface IObjectQL {
 
     registerObject(object: ObjectConfig): void;
 
-    on(event: HookName, objectName: string, handler: HookHandler): void;
-    triggerHook(event: HookName, objectName: string, ctx: HookContext): Promise<void>;
+    registerTrigger(objectName: string, trigger: Trigger, packageName?: string): void;
+    executeTrigger(objectName: string, operation: 'create' | 'update' | 'delete', timing: 'before' | 'after', context: Omit<TriggerContext, 'action' | 'timing'>): Promise<void>;
 
     registerAction(objectName: string, actionName: string, handler: ActionHandler): void;
     executeAction(objectName: string, actionName: string, ctx: ActionContext): Promise<any>;

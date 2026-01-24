@@ -15,9 +15,8 @@ import {
     ObjectQLContextOptions, 
     IObjectQL, 
     ObjectQLConfig,
-    HookName,
-    HookHandler,
-    HookContext,
+    TriggerContext,
+    Trigger,
     ActionHandler,
     ActionContext,
     LoaderPlugin
@@ -26,6 +25,7 @@ import { ObjectStackKernel, type RuntimePlugin } from '@objectql/runtime';
 import { ObjectRepository } from './repository';
 import { ObjectQLPlugin } from './plugin';
 import { convertIntrospectedSchemaToObjects } from './util';
+import { TriggerEngine } from './trigger-engine';
 
 /**
  * ObjectQL
@@ -34,7 +34,7 @@ import { convertIntrospectedSchemaToObjects } from './util';
  * to provide the plugin architecture.
  */
 export class ObjectQL implements IObjectQL {
-    // Delegate to kernel for metadata, hooks, and actions
+    // Delegate to kernel for metadata
     public get metadata(): MetadataRegistry {
         return this.kernel.metadata;
     }
@@ -45,6 +45,9 @@ export class ObjectQL implements IObjectQL {
     // ObjectStack Kernel Integration
     private kernel!: ObjectStackKernel;
     private kernelPlugins: RuntimePlugin[] = [];
+    
+    // Trigger Engine for database triggers
+    private triggerEngine: TriggerEngine = new TriggerEngine();
     
     // Store config for lazy loading in init()
     private config: ObjectQLConfig;
@@ -102,24 +105,29 @@ export class ObjectQL implements IObjectQL {
     }
 
     removePackage(name: string) {
-        // Delegate to kernel managers
+        // Delegate to kernel managers and trigger engine
         this.kernel.metadata.unregisterPackage(name);
-        this.kernel.hooks.removePackage(name);
         this.kernel.actions.removePackage(name);
+        this.triggerEngine.removePackage(name);
     }
 
-    on(event: HookName, objectName: string, handler: HookHandler, packageName?: string) {
-        // Delegate to kernel hook manager
-        // We wrap the handler to bridge ObjectQL's rich context types with runtime's base types
-        // The runtime HookContext supports all fields via index signature, so this is safe
-        const wrappedHandler = handler as unknown as import('../../../objectstack/runtime/dist').HookHandler;
-        this.kernel.hooks.register(event, objectName, wrappedHandler, packageName);
+    /**
+     * Register a trigger for an object
+     */
+    registerTrigger(objectName: string, trigger: Trigger, packageName?: string): void {
+        this.triggerEngine.register(objectName, trigger, packageName);
     }
 
-    async triggerHook(event: HookName, objectName: string, ctx: HookContext) {
-        // Delegate to kernel hook manager
-        // Runtime HookContext supports ObjectQL-specific fields via index signature
-        await this.kernel.hooks.trigger(event, objectName, ctx);
+    /**
+     * Execute triggers for a specific operation
+     */
+    async executeTrigger(
+        objectName: string,
+        operation: 'create' | 'update' | 'delete',
+        timing: 'before' | 'after',
+        context: Omit<TriggerContext, 'action' | 'timing'>
+    ): Promise<void> {
+        await this.triggerEngine.execute(objectName, operation, timing, context);
     }
 
     registerAction(objectName: string, actionName: string, handler: ActionHandler, packageName?: string) {

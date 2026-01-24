@@ -94,14 +94,24 @@ export class ObjectRepository {
         return obj;
     }
 
-    private getHookAPI(): HookAPI {
+    private getTriggerAPI(): any {
         return {
-            find: (obj, q) => this.context.object(obj).find(q),
-            findOne: (obj, id) => this.context.object(obj).findOne(id),
-            count: (obj, q) => this.context.object(obj).count(q),
-            create: (obj, data) => this.context.object(obj).create(data),
-            update: (obj, id, data) => this.context.object(obj).update(id, data),
-            delete: (obj, id) => this.context.object(obj).delete(id)
+            find: (obj: string, q?: any) => this.context.object(obj).find(q),
+            findOne: (obj: string, id: string | number) => this.context.object(obj).findOne(id),
+            count: (obj: string, q?: any) => this.context.object(obj).count(q),
+            create: (obj: string, data: any) => this.context.object(obj).create(data),
+            update: (obj: string, id: string | number, data: any) => this.context.object(obj).update(id, data),
+            delete: (obj: string, id: string | number) => this.context.object(obj).delete(id)
+        };
+    }
+
+    private getLogger(): any {
+        // Simple logger implementation - can be enhanced later
+        return {
+            info: (...args: any[]) => console.log('[INFO]', ...args),
+            error: (...args: any[]) => console.error('[ERROR]', ...args),
+            warn: (...args: any[]) => console.warn('[WARN]', ...args),
+            debug: (...args: any[]) => console.debug('[DEBUG]', ...args)
         };
     }
 
@@ -149,7 +159,7 @@ export class ObjectRepository {
                     previousRecord,
                     operation,
                     user: this.getUserFromContext(),
-                    api: this.getHookAPI(),
+                    api: this.getTriggerAPI(),
                 }
             );
             allResults.push(...fieldResults);
@@ -175,7 +185,7 @@ export class ObjectRepository {
                 previousRecord,
                 operation,
                 user: this.getUserFromContext(),
-                api: this.getHookAPI(),
+                api: this.getTriggerAPI(),
                 changedFields,
             };
 
@@ -260,53 +270,26 @@ export class ObjectRepository {
     }
 
     async find(query: UnifiedQuery = {}): Promise<any[]> {
-        const hookCtx: RetrievalHookContext = {
-            ...this.context,
-            objectName: this.objectName,
-            operation: 'find',
-            api: this.getHookAPI(),
-            user: this.getUserFromContext(),
-            state: {},
-            query
-        };
-        await this.app.triggerHook('beforeFind', this.objectName, hookCtx);
-
         // Build QueryAST and execute via kernel
-        const ast = this.buildQueryAST(hookCtx.query || {});
+        const ast = this.buildQueryAST(query);
         const kernelResult = await this.getKernel().find(this.objectName, ast);
         const results = kernelResult.value;
         
         // Evaluate formulas for each result
         const resultsWithFormulas = results.map((record: any) => this.evaluateFormulas(record));
-        
-        hookCtx.result = resultsWithFormulas;
-        await this.app.triggerHook('afterFind', this.objectName, hookCtx);
 
-        return hookCtx.result as any[];
+        return resultsWithFormulas;
     }
 
     async findOne(idOrQuery: string | number | UnifiedQuery): Promise<any> {
         if (typeof idOrQuery === 'string' || typeof idOrQuery === 'number') {
-            const hookCtx: RetrievalHookContext = {
-                ...this.context,
-                objectName: this.objectName,
-                operation: 'find',
-                api: this.getHookAPI(),
-                user: this.getUserFromContext(),
-                state: {},
-                query: { _id: idOrQuery }
-            };
-            await this.app.triggerHook('beforeFind', this.objectName, hookCtx);
-            
             // Use kernel.get() for direct ID lookup
             const result = await this.getKernel().get(this.objectName, String(idOrQuery));
 
             // Evaluate formulas if result exists
             const resultWithFormulas = result ? this.evaluateFormulas(result) : result;
 
-            hookCtx.result = resultWithFormulas;
-            await this.app.triggerHook('afterFind', this.objectName, hookCtx);
-            return hookCtx.result;
+            return resultWithFormulas;
         } else {
             const results = await this.find(idOrQuery);
             return results[0] || null;
@@ -330,40 +313,40 @@ export class ObjectRepository {
             query = {};
         }
 
-        const hookCtx: RetrievalHookContext = {
-            ...this.context,
-            objectName: this.objectName,
-            operation: 'count',
-            api: this.getHookAPI(),
-            user: this.getUserFromContext(),
-            state: {},
-            query
-        };
-        await this.app.triggerHook('beforeCount', this.objectName, hookCtx);
-
         // Build QueryAST and execute via kernel to get count
-        const ast = this.buildQueryAST(hookCtx.query || {});
+        const ast = this.buildQueryAST(query || {});
         const kernelResult = await this.getKernel().find(this.objectName, ast);
         const result = kernelResult.count;
 
-        hookCtx.result = result;
-        await this.app.triggerHook('afterCount', this.objectName, hookCtx);
-        return hookCtx.result as number;
+        return result;
     }
 
     async create(doc: any): Promise<any> {
-        const hookCtx: MutationHookContext = {
-            ...this.context,
-            objectName: this.objectName,
-            operation: 'create',
-            state: {},
-            api: this.getHookAPI(),
-            user: this.getUserFromContext(),
-            data: doc
+        // Build trigger context for before-insert trigger
+        const errors: string[] = [];
+        const triggerContext: Omit<TriggerContext, 'action' | 'timing'> = {
+            doc: { ...doc },
+            userId: this.context.userId || '',
+            user: this.getUserFromContext() || { id: '' },
+            ql: this.getTriggerAPI(),
+            logger: this.getLogger(),
+            addError: (message: string, field?: string) => {
+                errors.push(field ? `${field}: ${message}` : message);
+            },
+            getOldValue: (fieldName: string) => undefined // No old values for insert
         };
-        await this.app.triggerHook('beforeCreate', this.objectName, hookCtx);
-        const finalDoc = hookCtx.data || doc;
 
+        // Execute before-insert trigger
+        await this.app.executeTrigger(this.objectName, 'create', 'before', triggerContext);
+        
+        // Check for trigger errors
+        if (errors.length > 0) {
+            throw new Error(`Trigger validation failed: ${errors.join('; ')}`);
+        }
+
+        // Use modified doc from trigger context
+        const finalDoc = triggerContext.doc;
+        
         if (this.context.userId) finalDoc.created_by = this.context.userId;
         if (this.context.spaceId) finalDoc.space_id = this.context.spaceId;
         
@@ -373,58 +356,89 @@ export class ObjectRepository {
         // Execute via kernel
         const result = await this.getKernel().create(this.objectName, finalDoc);
         
-        hookCtx.result = result;
-        await this.app.triggerHook('afterCreate', this.objectName, hookCtx);
-        return hookCtx.result;
+        // Update context with result for after trigger
+        triggerContext.doc = result as Record<string, any>;
+        
+        // Execute after-insert trigger
+        await this.app.executeTrigger(this.objectName, 'create', 'after', triggerContext);
+        
+        return triggerContext.doc as any;
     }
 
     async update(id: string | number, doc: any, options?: any): Promise<any> {
         const previousData = await this.findOne(id);
-        const hookCtx: UpdateHookContext = {
-            ...this.context,
-            objectName: this.objectName,
-            operation: 'update',
-            state: {},
-            api: this.getHookAPI(),
-            user: this.getUserFromContext(),
-            id,
-            data: doc,
-            previousData,
-            isModified: (field) => hookCtx.data ? Object.prototype.hasOwnProperty.call(hookCtx.data, field) : false
+        
+        // Build trigger context for before-update trigger
+        const errors: string[] = [];
+        const triggerContext: Omit<TriggerContext, 'action' | 'timing'> = {
+            doc: { ...doc },
+            previousDoc: previousData,
+            userId: this.context.userId || '',
+            user: this.getUserFromContext() || { id: '' },
+            ql: this.getTriggerAPI(),
+            logger: this.getLogger(),
+            addError: (message: string, field?: string) => {
+                errors.push(field ? `${field}: ${message}` : message);
+            },
+            getOldValue: (fieldName: string) => previousData ? previousData[fieldName] : undefined
         };
-        await this.app.triggerHook('beforeUpdate', this.objectName, hookCtx);
+
+        // Execute before-update trigger
+        await this.app.executeTrigger(this.objectName, 'update', 'before', triggerContext);
+        
+        // Check for trigger errors
+        if (errors.length > 0) {
+            throw new Error(`Trigger validation failed: ${errors.join('; ')}`);
+        }
 
         // Validate the update
-        await this.validateRecord('update', hookCtx.data, previousData);
+        await this.validateRecord('update', triggerContext.doc, previousData);
 
         // Execute via kernel
-        const result = await this.getKernel().update(this.objectName, String(id), hookCtx.data);
+        const result = await this.getKernel().update(this.objectName, String(id), triggerContext.doc);
 
-        hookCtx.result = result;
-        await this.app.triggerHook('afterUpdate', this.objectName, hookCtx);
-        return hookCtx.result;
+        // Update context with result for after trigger
+        triggerContext.doc = result as Record<string, any>;
+        
+        // Execute after-update trigger
+        await this.app.executeTrigger(this.objectName, 'update', 'after', triggerContext);
+        
+        return triggerContext.doc as any;
     }
 
     async delete(id: string | number): Promise<any> {
         const previousData = await this.findOne(id);
-        const hookCtx: MutationHookContext = {
-            ...this.context,
-            objectName: this.objectName,
-            operation: 'delete',
-            state: {},
-            api: this.getHookAPI(),
-            user: this.getUserFromContext(),
-            id,
-            previousData
+        
+        // Build trigger context for before-delete trigger
+        const errors: string[] = [];
+        const triggerContext: Omit<TriggerContext, 'action' | 'timing'> = {
+            doc: previousData || {},
+            previousDoc: previousData,
+            userId: this.context.userId || '',
+            user: this.getUserFromContext() || { id: '' },
+            ql: this.getTriggerAPI(),
+            logger: this.getLogger(),
+            addError: (message: string, field?: string) => {
+                errors.push(field ? `${field}: ${message}` : message);
+            },
+            getOldValue: (fieldName: string) => previousData ? previousData[fieldName] : undefined
         };
-        await this.app.triggerHook('beforeDelete', this.objectName, hookCtx);
+
+        // Execute before-delete trigger
+        await this.app.executeTrigger(this.objectName, 'delete', 'before', triggerContext);
+        
+        // Check for trigger errors
+        if (errors.length > 0) {
+            throw new Error(`Trigger validation failed: ${errors.join('; ')}`);
+        }
 
         // Execute via kernel
         const result = await this.getKernel().delete(this.objectName, String(id));
 
-        hookCtx.result = result;
-        await this.app.triggerHook('afterDelete', this.objectName, hookCtx);
-        return hookCtx.result;
+        // Execute after-delete trigger
+        await this.app.executeTrigger(this.objectName, 'delete', 'after', triggerContext);
+        
+        return result;
     }
 
     async aggregate(query: any): Promise<any> {
@@ -489,14 +503,7 @@ export class ObjectRepository {
     }
 
     async execute(actionName: string, id: string | number | undefined, params: any): Promise<any> {
-        const api: HookAPI = {
-            find: (obj, q) => this.context.object(obj).find(q),
-            findOne: (obj, id) => this.context.object(obj).findOne(id),
-            count: (obj, q) => this.context.object(obj).count(q),
-            create: (obj, data) => this.context.object(obj).create(data),
-            update: (obj, id, data) => this.context.object(obj).update(id, data),
-            delete: (obj, id) => this.context.object(obj).delete(id)
-        };
+        const api = this.getTriggerAPI();
 
         const ctx: ActionContext = {
             ...this.context,

@@ -33,3 +33,4 @@ export * from './validator';
 export * from './util';
 export * from './ai-agent';
 export * from './formula-engine';
+export * from './trigger-engine';

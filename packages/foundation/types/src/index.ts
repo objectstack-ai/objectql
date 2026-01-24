@@ -44,11 +44,12 @@ export * from './formula';
  * Re-exports trigger validation schemas directly from the protocol specification.
  */
 import { Data } from '@objectstack/spec';
+import type { z } from 'zod';
 
-export const TriggerAction = Data.TriggerAction;
-export const TriggerTiming = Data.TriggerTiming;
-export const TriggerContextSchema = Data.TriggerContextSchema;
-export const TriggerSchema = Data.TriggerSchema;
+export const TriggerAction: z.ZodEnum<["insert", "update", "delete"]> = Data.TriggerAction;
+export const TriggerTiming: z.ZodEnum<["before", "after"]> = Data.TriggerTiming;
+export const TriggerContextSchema: z.ZodObject<any> = Data.TriggerContextSchema;
+export const TriggerSchema: z.ZodObject<any> = Data.TriggerSchema;
 
 export type TriggerActionType = Data.TriggerAction;
 export type TriggerTimingType = Data.TriggerTiming;
