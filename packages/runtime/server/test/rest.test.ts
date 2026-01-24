@@ -45,6 +45,15 @@ class MockDriver implements Driver {
         return items;
     }
 
+    /**
+     * Matches an item against a filter condition
+     * @param item - The data item to test
+     * @param filter - The filter in FilterNode array format or simple object format
+     *                 FilterNode format: [field, op, value] for single condition
+     *                 Complex filters: [[field, op, value], 'and', [field2, op2, value2]]
+     *                 Simple format: { field: value }
+     * @returns true if item matches the filter
+     */
     private matchesFilter(item: any, filter: any): boolean {
         if (!filter) return true;
         
@@ -88,6 +97,14 @@ class MockDriver implements Driver {
         return true;
     }
 
+    /**
+     * Evaluates a single filter condition
+     * @param item - The data item to test
+     * @param field - The field name
+     * @param op - The operator: '=', '!=', '>', '>=', '<', '<=', 'in'
+     * @param value - The value to compare against
+     * @returns true if the condition is satisfied
+     */
     private evaluateCondition(item: any, field: string, op: string, value: any): boolean {
         const fieldValue = item[field];
         switch (op) {
@@ -97,7 +114,7 @@ class MockDriver implements Driver {
             case '>=': return fieldValue >= value;
             case '<': return fieldValue < value;
             case '<=': return fieldValue <= value;
-            case 'in': return Array.isArray(value) && value.includes(fieldValue);
+            case 'in': return Array.isArray(value) ? value.includes(fieldValue) : false;
             default: return true;
         }
     }
