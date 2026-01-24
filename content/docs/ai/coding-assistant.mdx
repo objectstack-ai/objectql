@@ -21,7 +21,7 @@ Without this prompt, Copilot assumes you are using a generic ORM (like TypeORM) 
 With the System Prompt, it understands the **Context + Repository** pattern:
 
 > ✅ **Good AI Output:**
-> `await ctx.object('todo').find({ filters: [['priority', '=', 'high']] })`
+> `await ctx.object('todo').find({ filters: { priority: 'high' } })`
 
 ### 2. Prompting Strategy
 
@@ -103,10 +103,10 @@ Use the standard generic CRUD API via a context.
 const ctx = app.createContext({});
 
 const todos = await ctx.object('todo').find({
-    filters: [
-        ['completed', '=', false],
-        ['priority', '=', 'high']
-    ],
+    filters: {
+        completed: false,
+        priority: 'high'
+    },
     fields: ['title', 'owner.name'], // Select specific fields & relations
     sort: [['created_at', 'desc']], 
     skip: 0,

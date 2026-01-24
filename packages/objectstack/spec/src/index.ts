@@ -287,6 +287,12 @@ export interface DriverInterface {
         fullTextSearch?: boolean;
         jsonFields?: boolean;
         arrayFields?: boolean;
+        queryFilters?: boolean;
+        queryAggregations?: boolean;
+        querySorting?: boolean;
+        queryPagination?: boolean;
+        queryWindowFunctions?: boolean;
+        querySubqueries?: boolean;
     };
     /** Connect to the database */
     connect?(): Promise<void>;

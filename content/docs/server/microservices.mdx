@@ -52,7 +52,7 @@ Once initialized, the Gateway behaves exactly like a monolith.
 // Code running on Gateway
 // Transparently forwards request to User Service via HTTP
 const users = await app.object('user').find({
-    filters: [['status', '=', 'active']]
+    filters: { status: 'active' }
 });
 ```
 

@@ -385,10 +385,10 @@ rules:
     validator: |
       async function validate(record, context) {
         const customer = await context.api.findOne('customers', record.customer_id);
-        const totalOrders = await context.api.sum('orders', 'amount', [
-          ['customer_id', '=', record.customer_id],
-          ['status', 'in', ['pending', 'processing']]
-        ]);
+        const totalOrders = await context.api.sum('orders', 'amount', {
+          customer_id: record.customer_id,
+          status: { $in: ['pending', 'processing'] }
+        });
         
         return (totalOrders + record.amount) <= customer.credit_limit;
       }
@@ -546,33 +546,31 @@ condition:
 Used in query language for filtering records:
 
 ```javascript
-// Basic filter - [field, operator, value]
-["status", "=", "active"]
+// Basic filter - object with implicit equality
+{ status: 'active' }
 
-// Multiple filters with AND
-[
-  ["status", "=", "active"],
-  "and",
-  ["amount", ">", 1000]
-]
+// Multiple filters with AND (implicit)
+{
+  status: 'active',
+  amount: { $gt: 1000 }
+}
 
 // Multiple filters with OR
-[
-  ["priority", "=", "high"],
-  "or",
-  ["amount", ">", 50000]
-]
+{
+  $or: [
+    { priority: 'high' },
+    { amount: { $gt: 50000 } }
+  ]
+}
 
 // Complex nested conditions
-[
-  ["status", "=", "active"],
-  "and",
-  [
-    ["priority", "=", "high"],
-    "or",
-    ["amount", ">", 10000]
+{
+  status: 'active',
+  $or: [
+    { priority: 'high' },
+    { amount: { $gt: 10000 } }
   ]
-]
+}
 ```
 
 ## Best Practices
@@ -665,7 +663,7 @@ rules:
       async function validateBatch(records, context) {
         const skus = records.map(r => r.sku);
         const inventory = await context.api.find('inventory', {
-          filters: [['sku', 'in', skus]]
+          filters: { sku: { $in: skus } }
         });
         
         return records.map(record => {

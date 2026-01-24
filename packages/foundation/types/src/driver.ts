@@ -72,6 +72,12 @@ export interface Driver {
         fullTextSearch?: boolean;
         jsonFields?: boolean;
         arrayFields?: boolean;
+        queryFilters?: boolean;
+        queryAggregations?: boolean;
+        querySorting?: boolean;
+        queryPagination?: boolean;
+        queryWindowFunctions?: boolean;
+        querySubqueries?: boolean;
     };
     
     // Core CRUD methods (existing)

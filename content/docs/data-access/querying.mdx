@@ -15,10 +15,10 @@ The `find` method recovers a list of records matching specific criteria.
 
 ```typescript
 const products = await app.object('product').find({
-    filters: [
-        ['category', '=', 'electronics'],
-        ['price', '>', 500]
-    ],
+    filters: {
+        category: 'electronics',
+        price: { $gt: 500 }
+    },
     fields: ['name', 'price', 'category'],
     sort: ['-price'], // Descending
     skip: 0,
@@ -28,19 +28,26 @@ const products = await app.object('product').find({
 
 ### Filters
 
-Filters are defined as a 2D array: `[[ field, operator, value ]]`.
+Filters use an object-based syntax with implicit equality and operator objects.
 
 **Implicit AND**:
 ```typescript
-filters: [
-    ['status', '=', 'active'],
-    ['stock', '>', 0]
-]
+filters: {
+    status: 'active',
+    stock: { $gt: 0 }
+}
 // SQL: WHERE status = 'active' AND stock > 0
 ```
 
 **Explicit OR**:
-Use the `_or` special operator in complex filters (see advanced docs).
+```typescript
+filters: {
+    $or: [
+        { status: 'active' },
+        { featured: true }
+    ]
+}
+```
 
 ### Sorting
 
@@ -66,13 +73,13 @@ Updates are always bulk operations targeted by `filters`. To update a single rec
 ```typescript
 // Update specific record
 await app.object('user').update(
-    { filters: [['_id', '=', '123']] }, // Target
+    { filters: { _id: '123' } }, // Target
     { doc: { status: 'active' } }       // Change
 );
 
 // Bulk update
 await app.object('product').update(
-    { filters: [['stock', '=', 0]] },
+    { filters: { stock: 0 } },
     { doc: { status: 'out_of_stock' } }
 );
 ```
@@ -82,7 +89,7 @@ await app.object('product').update(
 ```typescript
 // Delete specific record
 await app.object('user').delete({
-    filters: [['_id', '=', '123']]
+    filters: { _id: '123' }
 });
 ```
 
@@ -141,9 +148,9 @@ There are two ways to filter based on relationships:
 Find tasks where the *project's status* is active.
 *(Note: Requires a driver that supports SQL Joins)*
 ```typescript
-filters: [
-    ['project.status', '=', 'active']
-]
+filters: {
+    'project.status': 'active'
+}
 ```
 
 **B. Filter the Expanded List**
@@ -152,7 +159,7 @@ Find projects, but only include *completed* tasks in the expansion.
 app.object('project').find({
     expand: {
         tasks: {
-            filters: [['status', '=', 'completed']]
+            filters: { status: 'completed' }
         }
     }
 })
@@ -165,7 +172,7 @@ ObjectQL supports SQL-like aggregation via the `aggregate()` method on the repos
 ```typescript
 const stats = await app.object('order').aggregate({
     // 1. Filter first
-    filters: [['status', '=', 'paid']],
+    filters: { status: 'paid' },
     
     // 2. Group by specific fields
     groupBy: ['customer_id'],

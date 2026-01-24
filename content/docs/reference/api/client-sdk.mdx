@@ -127,7 +127,7 @@ console.log(updated.updated_at); // New timestamp
 
 ```typescript
 const result = await dataClient.updateMany('users', {
-  filters: [['status', '=', 'pending']],
+  filters: { status: 'pending' },
   data: { status: 'active' }
 });
 ```
@@ -143,7 +143,7 @@ console.log(result.success);
 
 ```typescript
 const result = await dataClient.deleteMany('users', {
-  filters: [['created_at', '<', '2023-01-01']]
+  filters: { created_at: { $lt: '2023-01-01' } }
 });
 
 console.log(result.deleted_count);
@@ -152,9 +152,9 @@ console.log(result.deleted_count);
 ### Count Records
 
 ```typescript
-const countResult = await dataClient.count('users', [
-  ['status', '=', 'active']
-]);
+const countResult = await dataClient.count('users', {
+  status: 'active'
+});
 
 console.log(countResult.count);
 ```

@@ -28,7 +28,7 @@ The MongoDB driver now automatically maps between `id` (API) and `_id` (database
 ```typescript
 // MongoDB-specific code
 const query = {
-  filters: [['_id', '=', 'user-123']]
+  filters: { _id: 'user-123' }
 };
 ```
 
@@ -36,7 +36,7 @@ const query = {
 ```typescript
 // Works with both MongoDB and SQL
 const query = {
-  filters: [['id', '=', 'user-123']]
+  filters: { id: 'user-123' }
 };
 ```
 
@@ -147,7 +147,7 @@ The MongoDB driver maintains **full backward compatibility** for `_id` usage:
 ```typescript
 // Legacy code - fully supported for backward compatibility
 const query = {
-  filters: [['_id', '=', 'user-123']],
+  filters: { _id: 'user-123' },
   sort: [['_id', 'desc']],
   fields: ['_id', 'name', 'email']
 };
@@ -196,7 +196,7 @@ assert(user._id === undefined); // Should not have _id
 ### 2. Find Operations
 ```typescript
 const users = await app.find('users', {
-  filters: [['id', '=', 'test-123']]
+  filters: { id: 'test-123' }
 });
 assert(users[0].id === 'test-123');
 ```

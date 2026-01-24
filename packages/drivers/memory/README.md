@@ -1,14 +1,14 @@
 # Memory Driver for ObjectQL
 
-> ✅ **Production-Ready** - A high-performance in-memory driver for testing, development, and edge environments.
+> ✅ **Production-Ready** - A high-performance in-memory driver powered by Mingo for testing, development, and edge environments.
 
 ## Overview
 
-The Memory Driver is a zero-dependency, production-ready implementation of the ObjectQL Driver interface that stores data in JavaScript Maps. It provides full query support with high performance, making it ideal for scenarios where persistence is not required.
+The Memory Driver is a production-ready implementation of the ObjectQL Driver interface that stores data in JavaScript Maps and uses **Mingo** (MongoDB query engine for in-memory objects) for query processing. It provides full MongoDB-like query support with high performance, making it ideal for scenarios where persistence is not required.
 
 ## Features
 
-- ✅ **Zero Dependencies** - No external packages required
+- ✅ **MongoDB Query Engine** - Powered by Mingo for MongoDB-compatible queries
 - ✅ **Full Query Support** - Filters, sorting, pagination, field projection
 - ✅ **High Performance** - No I/O overhead, all operations in-memory
 - ✅ **Bulk Operations** - createMany, updateMany, deleteMany
