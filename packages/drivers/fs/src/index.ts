@@ -88,7 +88,7 @@ export interface FileSystemDriverConfig {
  * - File: `{dataDir}/{objectName}.json`
  * - Content: Array of records `[{id: "1", ...}, {id: "2", ...}]`
  */
-export class FileSystemDriver implements Driver, DriverInterface {
+export class FileSystemDriver implements Driver {
     // Driver metadata (ObjectStack-compatible)
     public readonly name = 'FileSystemDriver';
     public readonly version = '4.0.0';
@@ -97,7 +97,13 @@ export class FileSystemDriver implements Driver, DriverInterface {
         joins: false,
         fullTextSearch: false,
         jsonFields: true,
-        arrayFields: true
+        arrayFields: true,
+        queryFilters: true,
+        queryAggregations: false,
+        querySorting: true,
+        queryPagination: true,
+        queryWindowFunctions: false,
+        querySubqueries: false
     };
 
     private config: FileSystemDriverConfig;

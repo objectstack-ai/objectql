@@ -121,7 +121,7 @@ export interface RedisDriverConfig {
  * 
  * Example: `users:user-123` → `{"id":"user-123","name":"Alice",...}`
  */
-export class RedisDriver implements Driver, DriverInterface {
+export class RedisDriver implements Driver {
     // Driver metadata (ObjectStack-compatible)
     public readonly name = 'RedisDriver';
     public readonly version = '4.0.0';
@@ -130,7 +130,13 @@ export class RedisDriver implements Driver, DriverInterface {
         joins: false,
         fullTextSearch: false,
         jsonFields: true,
-        arrayFields: true
+        arrayFields: true,
+        queryFilters: true,
+        queryAggregations: false,
+        querySorting: true,
+        queryPagination: true,
+        queryWindowFunctions: false,
+        querySubqueries: false
     };
 
     private client: RedisClientType;
