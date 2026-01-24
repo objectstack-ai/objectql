@@ -182,8 +182,11 @@ export class ObjectQLServer {
             const skip = args.skip || 0;
             const limit = args.limit || items.length;
             
-            // Get total count - use the same arguments as the query to ensure consistency
-            const total = await repo.count(args || {});
+            // Get total count - exclude limit/skip to count all matching records
+            const countArgs: any = {};
+            if (args.filters) countArgs.filters = args.filters;
+            if (args.expand) countArgs.expand = args.expand;
+            const total = await repo.count(countArgs);
             
             const size = limit;
             const page = limit > 0 ? Math.floor(skip / limit) + 1 : 1;

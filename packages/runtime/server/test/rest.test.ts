@@ -27,37 +27,80 @@ class MockDriver implements Driver {
     async find(objectName: string, query: any) {
         let items = this.data[objectName] || [];
         
-        // Apply filters if provided
+        // Apply filters if provided (supports FilterNode array format)
         if (query && query.filters) {
-            const filters = query.filters;
-            if (typeof filters === 'object') {
-                const filterKeys = Object.keys(filters);
-                if (filterKeys.length > 0) {
-                    items = items.filter(item => {
-                        for (const [key, value] of Object.entries(filters)) {
-                            if (item[key] !== value) {
-                                return false;
-                            }
-                        }
-                        return true;
-                    });
-                }
-            }
+            items = items.filter(item => this.matchesFilter(item, query.filters));
         }
         
-        // Apply skip and limit if provided
+        // Apply skip and top/limit if provided (QueryAST uses 'top' for limit)
         if (query) {
             if (query.skip) {
                 items = items.slice(query.skip);
             }
-            if (query.limit) {
-                items = items.slice(0, query.limit);
+            if (query.top || query.limit) {
+                items = items.slice(0, query.top || query.limit);
             }
         }
         
         return items;
     }
-    
+
+    private matchesFilter(item: any, filter: any): boolean {
+        if (!filter) return true;
+        
+        // Handle FilterNode array format: [[field, op, value]] or [[field, op, value], 'and', [field2, op2, value2]]
+        if (Array.isArray(filter)) {
+            // Single condition: [field, op, value]
+            if (filter.length === 3 && typeof filter[0] === 'string') {
+                const [field, op, value] = filter;
+                return this.evaluateCondition(item, field, op, value);
+            }
+            
+            // Multiple conditions with logical operators
+            let result = true;
+            let currentOp = 'and';
+            for (let i = 0; i < filter.length; i++) {
+                const element = filter[i];
+                if (typeof element === 'string') {
+                    currentOp = element; // 'and' or 'or'
+                } else if (Array.isArray(element)) {
+                    const conditionResult = this.matchesFilter(item, element);
+                    if (currentOp === 'and') {
+                        result = result && conditionResult;
+                    } else if (currentOp === 'or') {
+                        result = result || conditionResult;
+                    }
+                }
+            }
+            return result;
+        }
+        
+        // Handle simple object format: { field: value }
+        if (typeof filter === 'object') {
+            for (const [key, value] of Object.entries(filter)) {
+                if (item[key] !== value) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        
+        return true;
+    }
+
+    private evaluateCondition(item: any, field: string, op: string, value: any): boolean {
+        const fieldValue = item[field];
+        switch (op) {
+            case '=': return fieldValue === value;
+            case '!=': return fieldValue !== value;
+            case '>': return fieldValue > value;
+            case '>=': return fieldValue >= value;
+            case '<': return fieldValue < value;
+            case '<=': return fieldValue <= value;
+            case 'in': return Array.isArray(value) && value.includes(fieldValue);
+            default: return true;
+        }
+    }
     async findOne(objectName: string, id: string | number, query?: any, options?: any) {
         const items = this.data[objectName] || [];
         if (id !== undefined && id !== null) {
@@ -97,7 +140,13 @@ class MockDriver implements Driver {
     }
     
     async count(objectName: string, query: any) {
-        return (this.data[objectName] || []).length;
+        // Count should apply filters but not skip/limit
+        const countQuery = { ...query };
+        delete countQuery.skip;
+        delete countQuery.top;
+        delete countQuery.limit;
+        const items = await this.find(objectName, countQuery);
+        return items.length;
     }
     
     async createMany(objectName: string, data: any[]) {
