@@ -43,7 +43,7 @@ export interface CommandResult {
  * 
  * The driver internally converts QueryAST format to MongoDB query format.
  */
-export class MongoDriver implements Driver, DriverInterface {
+export class MongoDriver implements Driver {
     // Driver metadata (ObjectStack-compatible)
     public readonly name = 'MongoDriver';
     public readonly version = '3.0.1';
@@ -52,7 +52,13 @@ export class MongoDriver implements Driver, DriverInterface {
         joins: false,
         fullTextSearch: true,
         jsonFields: true,
-        arrayFields: true
+        arrayFields: true,
+        queryFilters: true,
+        queryAggregations: true,
+        querySorting: true,
+        queryPagination: true,
+        queryWindowFunctions: false,
+        querySubqueries: false
     };
 
     private client: MongoClient;

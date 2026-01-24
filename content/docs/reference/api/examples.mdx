@@ -66,11 +66,10 @@ const response = await fetch('/api/objectql', {
         { func: 'count', field: 'id', alias: 'order_count' },
         { func: 'avg', field: 'amount', alias: 'avg_order_value' }
       ],
-      filters: [
-        ['status', '=', 'paid'],
-        'and',
-        ['created_at', '>=', '2024-01-01']
-      ],
+      filters: {
+        status: 'paid',
+        created_at: { $gte: '2024-01-01' }
+      },
       sort: [['month', 'asc'], ['revenue', 'desc']]
     }
   })
@@ -99,19 +98,17 @@ const response = await fetch('/api/objectql', {
     object: 'customers',
     args: {
       fields: ['name', 'email', 'vip_level', 'total_spent'],
-      filters: [
-        ['vip_level', '>=', 'gold'],
-        'and',
-        ['is_active', '=', true]
-      ],
+      filters: {
+        vip_level: { $gte: 'gold' },
+        is_active: true
+      },
       expand: {
         orders: {
           fields: ['order_no', 'amount', 'status'],
-          filters: [
-            ['created_at', '>', '2024-01-01'],
-            'and',
-            ['amount', '>', 1000]
-          ],
+          filters: {
+            created_at: { $gt: '2024-01-01' },
+            amount: { $gt: 1000 }
+          },
           sort: [['created_at', 'desc']],
           top: 5
         }

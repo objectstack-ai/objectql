@@ -138,25 +138,25 @@ async function demoSingleFileMode() {
 
     // Filter by role
     const admins = await driver.find('users', {
-        filters: [['role', '=', 'admin']]
+        filters: { role: 'admin' }
     });
     console.log(`✓ Found ${admins.length} admin(s):`, admins.map(u => u.name).join(', '));
 
     // Filter by age
     const youngUsers = await driver.find('users', {
-        filters: [['age', '<', 30]]
+        filters: { age: { $lt: 30 } }
     });
     console.log(`✓ Found ${youngUsers.length} user(s) under 30:`, youngUsers.map(u => u.name).join(', '));
 
     // Filter by department
     const engineers = await driver.find('users', {
-        filters: [['department', '=', 'Engineering']]
+        filters: { department: 'Engineering' }
     });
     console.log(`✓ Found ${engineers.length} engineer(s):`, engineers.map(u => u.name).join(', '));
 
     // Search by name
     const searchResults = await driver.find('users', {
-        filters: [['name', 'contains', 'li']]
+        filters: { name: { $contains: 'li' } }
     });
     console.log(`✓ Search "li" found ${searchResults.length} user(s):`, searchResults.map(u => u.name).join(', '));
 
@@ -193,7 +193,7 @@ async function demoSingleFileMode() {
     // Update many
     const updateResult = await driver.updateMany(
         'users',
-        [['department', '=', 'Engineering']],
+        { department: 'Engineering' },
         { department: 'Tech' }
     );
     console.log(`✓ Updated ${updateResult.modifiedCount} user(s) department to Tech`);
@@ -204,7 +204,7 @@ async function demoSingleFileMode() {
     console.log(`✓ ${updatedUser1.name}: age=${updatedUser1.age}, email=${updatedUser1.email}`);
 
     const techUsers = await driver.find('users', {
-        filters: [['department', '=', 'Tech']]
+        filters: { department: 'Tech' }
     });
     console.log(`✓ Users in Tech: ${techUsers.map(u => u.name).join(', ')}`);
 
