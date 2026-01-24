@@ -593,7 +593,7 @@ export class MemoryDriver implements Driver {
         } else if (allConditions.length === 1) {
             return allConditions[0];
         } else {
-            // Determine top-level operator: use OR if any group has OR logic
+            // Determine top-level operator: use OR if any non-empty group has OR logic
             const hasOrLogic = logicGroups.some(g => g.logic === 'or' && g.conditions.length > 0);
             if (hasOrLogic) {
                 return { $or: allConditions };
