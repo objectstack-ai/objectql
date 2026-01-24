@@ -1,5 +1,23 @@
 # @objectql/server
 
+## 4.0.1
+
+### Patch Changes
+
+- **Release Version 4.0.1**
+
+  This patch release includes the latest repository improvements and infrastructure updates:
+  - Added comprehensive GitHub workflows for CI/CD, testing, and quality assurance
+  - Enhanced documentation and developer experience
+  - Improved build and release processes with Changesets
+  - Added Excel driver for reading/writing Excel files as data sources
+  - Repository structure and tooling improvements
+  - Bug fixes and stability enhancements
+
+- Updated dependencies
+  - @objectql/core@4.0.1
+  - @objectql/types@4.0.1
+
 ## 3.0.1
 
 ### Patch Changes
@@ -7,7 +25,6 @@
 - 79d04e1: Patch release for January 2026 updates
 
   This patch includes minor improvements and maintenance updates:
-
   - Enhanced type safety across core packages
   - Improved error handling in drivers
   - Documentation updates
@@ -31,7 +48,6 @@
   This is a coordinated major release that unifies all ObjectQL packages to version 2.0.0, establishing a synchronized versioning strategy across the entire ecosystem.
 
   ### 🎯 Key Changes
-
   - **Unified Versioning**: All core packages now share the same version number (2.0.0)
   - **Fixed Group Management**: Updated changeset configuration to include all @objectql packages in the fixed versioning group
   - **Simplified Maintenance**: Future releases will automatically maintain version consistency across the entire monorepo
@@ -39,7 +55,6 @@
   ### 📦 Packages Included
 
   All ObjectQL packages are now synchronized at version 2.0.0:
-
   - Foundation: `@objectql/types`, `@objectql/core`, `@objectql/platform-node`
   - Drivers: `@objectql/driver-sql`, `@objectql/driver-mongo`, `@objectql/driver-redis`, `@objectql/driver-fs`, `@objectql/driver-memory`, `@objectql/driver-localstorage`, `@objectql/driver-excel`, `@objectql/sdk`
   - Runtime: `@objectql/server`

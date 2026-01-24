@@ -1,6 +1,6 @@
 {
   "name": "@objectql/driver-memory",
-  "version": "4.0.0",
+  "version": "4.0.1",
   "description": "In-memory driver for ObjectQL - Fast MongoDB-like query engine powered by Mingo with DriverInterface v4.0 compliance",
   "keywords": [
     "objectql",
