@@ -6,7 +6,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import type { FilterCondition } from '@objectstack/spec/data';
+import { Data } from '@objectstack/spec';
+type FilterCondition = Data.FilterCondition;
 
 /**
  * Modern Query Filter using @objectstack/spec FilterCondition

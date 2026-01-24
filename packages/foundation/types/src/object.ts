@@ -7,7 +7,8 @@
  */
 
 // Import protocol types from @objectstack/spec
-import type { ServiceObject } from '@objectstack/spec/data';
+import { Data } from '@objectstack/spec';
+type ServiceObject = Data.ServiceObject;
 
 // Extract IndexSchema type from ServiceObject
 type IndexSchema = NonNullable<ServiceObject['indexes']>[number];

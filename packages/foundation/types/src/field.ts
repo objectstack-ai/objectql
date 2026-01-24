@@ -7,11 +7,10 @@
  */
 
 // Import protocol types from @objectstack/spec
-import type { 
-    FieldType as ProtocolFieldType, 
-    Field, 
-    SelectOption as SpecSelectOption 
-} from '@objectstack/spec/data';
+import { Data } from '@objectstack/spec';
+type ProtocolFieldType = Data.FieldType;
+type Field = Data.Field;
+type SpecSelectOption = Data.SelectOption;
 
 /**
  * Re-export Protocol Types from the Constitution
