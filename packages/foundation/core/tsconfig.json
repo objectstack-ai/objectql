@@ -13,7 +13,6 @@
     "../../../node_modules/@objectstack+objectql"
   ],
   "references": [
-    { "path": "../../objectstack/spec" },
     { "path": "../../objectstack/runtime" },
     { "path": "../types" }
   ]

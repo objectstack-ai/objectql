@@ -7,7 +7,7 @@
  */
 
 import type { Filter } from '@objectql/types';
-import type { FilterNode } from '@objectstack/spec';
+import type { FilterNode } from '@objectstack/spec/data';
 import { ObjectQLError } from '@objectql/types';
 
 /**

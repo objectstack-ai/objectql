@@ -7,7 +7,7 @@
  */
 
 import type { UnifiedQuery, ObjectConfig, MetadataRegistry } from '@objectql/types';
-import type { QueryAST, FilterNode } from '@objectstack/spec';
+import type { QueryAST, FilterNode } from '@objectstack/spec/data';
 import { QueryService, QueryOptions } from './query-service';
 
 /**

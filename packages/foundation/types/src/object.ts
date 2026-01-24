@@ -7,7 +7,10 @@
  */
 
 // Import protocol types from @objectstack/spec
-import type { ServiceObject, IndexSchema } from '@objectstack/spec';
+import type { ServiceObject } from '@objectstack/spec/data';
+
+// Extract IndexSchema type from ServiceObject
+type IndexSchema = NonNullable<ServiceObject['indexes']>[number];
 import { FieldConfig } from './field';
 import { ActionConfig } from './action';
 import { AnyValidationRule } from './validation';

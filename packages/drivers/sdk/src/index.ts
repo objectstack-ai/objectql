@@ -50,7 +50,8 @@ import {
     ApiErrorCode,
     Filter
 } from '@objectql/types';
-import { DriverInterface, QueryAST } from '@objectstack/spec';
+import { QueryAST } from '@objectstack/spec/data';
+import { DriverInterface } from '@objectstack/spec/system';
 
 /**
  * Command interface for executeCommand method

@@ -31,7 +31,8 @@
  */
 
 import { Driver } from '@objectql/types';
-import { DriverInterface, QueryAST, FilterNode, SortNode } from '@objectstack/spec';
+import { QueryAST, FilterNode, SortNode } from '@objectstack/spec/data';
+import { DriverInterface } from '@objectstack/spec/system';
 import { createClient, RedisClientType } from 'redis';
 
 /**

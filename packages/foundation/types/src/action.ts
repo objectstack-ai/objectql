@@ -7,7 +7,7 @@
  */
 
 // Import protocol types from @objectstack/spec
-import type { Action } from '@objectstack/spec';
+import type { Action } from '@objectstack/spec/ui';
 import { FieldConfig } from "./field";
 import { HookAPI } from "./hook"; // Reuse the restricted API interface
 

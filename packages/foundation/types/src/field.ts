@@ -11,7 +11,7 @@ import type {
     FieldType as ProtocolFieldType, 
     Field, 
     SelectOption as SpecSelectOption 
-} from '@objectstack/spec';
+} from '@objectstack/spec/data';
 
 /**
  * Re-export Protocol Types from the Constitution

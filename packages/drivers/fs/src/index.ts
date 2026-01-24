@@ -35,7 +35,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { Driver, ObjectQLError } from '@objectql/types';
-import { DriverInterface, QueryAST, FilterNode, SortNode } from '@objectstack/spec';
+import { QueryAST, FilterNode, SortNode } from '@objectstack/spec/data';
+import { DriverInterface } from '@objectstack/spec/system';
 
 /**
  * Command interface for executeCommand method

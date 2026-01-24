@@ -7,7 +7,7 @@
  */
 
 import type { UnifiedQuery } from '@objectql/types';
-import type { QueryAST } from '@objectstack/spec';
+import type { QueryAST } from '@objectstack/spec/data';
 import { FilterTranslator } from './filter-translator';
 
 /**
