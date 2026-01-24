@@ -16,6 +16,11 @@ import knex, { Knex } from 'knex';
 import { nanoid } from 'nanoid';
 
 /**
+ * Default ID length for auto-generated IDs
+ */
+const DEFAULT_ID_LENGTH = 16;
+
+/**
  * Command interface for executeCommand method
  */
 export interface Command {
@@ -274,7 +279,7 @@ export class SqlDriver implements Driver {
              toInsert.id = _id;
         } else if (toInsert.id === undefined) {
             // Auto-generate ID if not provided
-            toInsert.id = nanoid(16);
+            toInsert.id = nanoid(DEFAULT_ID_LENGTH);
         }
         
         // Knex insert returns Result array (e.g. ids)

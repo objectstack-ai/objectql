@@ -315,12 +315,19 @@ export class ObjectRepository {
 
     async count(filters: any): Promise<number> {
         // Normalize filters to UnifiedQuery format
-        // If filters is an array or Filter object, wrap it in a query object
+        // If filters is an array, wrap it in a query object
+        // If filters is already a UnifiedQuery (has UnifiedQuery-specific properties), use it as-is
         let query: UnifiedQuery;
-        if (Array.isArray(filters) || (filters && typeof filters === 'object' && !filters.fields && !filters.sort && !filters.limit)) {
+        if (Array.isArray(filters)) {
+            query = { filters };
+        } else if (filters && typeof filters === 'object' && (filters.fields || filters.sort || filters.limit !== undefined || filters.skip !== undefined)) {
+            // It's already a UnifiedQuery object
+            query = filters;
+        } else if (filters) {
+            // It's a raw filter object, wrap it
             query = { filters };
         } else {
-            query = filters || {};
+            query = {};
         }
 
         const hookCtx: RetrievalHookContext = {
