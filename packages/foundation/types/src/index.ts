@@ -19,6 +19,7 @@ export * from './driver';
 export * from './query';
 export * from './registry';
 export * from './hook';
+export * from './hook.zod';
 export * from './action';
 export * from './repository';
 export * from './app';
