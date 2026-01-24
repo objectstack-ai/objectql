@@ -83,7 +83,6 @@ describe('Project Hooks - Comprehensive Examples', () => {
             await repo.create({ name: 'Test Project' });
             
             const driver = app.datasource('default');
-            console.log('driver.create calls:', JSON.stringify(driver.create.mock.calls));
             expect(driver.create).toHaveBeenCalledWith(
                 'projects',
                 expect.objectContaining({
