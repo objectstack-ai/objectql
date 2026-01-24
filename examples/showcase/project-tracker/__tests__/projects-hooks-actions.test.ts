@@ -29,8 +29,8 @@ describe('Project Hooks - Comprehensive Examples', () => {
                 default: {
                     find: jest.fn().mockResolvedValue([]),
                     findOne: jest.fn().mockResolvedValue(null),
-                    create: jest.fn((obj, data) => ({ ...data, _id: 'test-id' })),
-                    update: jest.fn((obj, id, data) => data),
+                    create: jest.fn((obj, data, ctx) => ({ ...data, _id: 'test-id' })),
+                    update: jest.fn((obj, id, data, ctx) => data),
                     delete: jest.fn().mockResolvedValue(true),
                     count: jest.fn().mockResolvedValue(0)
                 } as any
@@ -83,6 +83,7 @@ describe('Project Hooks - Comprehensive Examples', () => {
             await repo.create({ name: 'Test Project' });
             
             const driver = app.datasource('default');
+            console.log('driver.create calls:', JSON.stringify(driver.create.mock.calls));
             expect(driver.create).toHaveBeenCalledWith(
                 'projects',
                 expect.objectContaining({
