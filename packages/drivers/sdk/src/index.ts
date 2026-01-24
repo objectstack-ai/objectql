@@ -142,7 +142,7 @@ function createTimeoutSignal(ms: number): AbortSignal {
  * 
  * @version 4.0.0 - DriverInterface compliant
  */
-export class RemoteDriver implements Driver, DriverInterface {
+export class RemoteDriver implements Driver {
     // Driver metadata (ObjectStack-compatible)
     public readonly name = 'RemoteDriver';
     public readonly version = '4.0.0';
@@ -151,7 +151,13 @@ export class RemoteDriver implements Driver, DriverInterface {
         joins: false,
         fullTextSearch: false,
         jsonFields: true,
-        arrayFields: true
+        arrayFields: true,
+        queryFilters: true,
+        queryAggregations: true,
+        querySorting: true,
+        queryPagination: true,
+        queryWindowFunctions: false,
+        querySubqueries: false
     };
 
     private rpcPath: string;

@@ -46,7 +46,7 @@ export interface CommandResult {
  * 
  * @version 4.0.0 - DriverInterface compliant
  */
-export class SqlDriver implements Driver, DriverInterface {
+export class SqlDriver implements Driver {
     // Driver metadata (ObjectStack-compatible)
     public readonly name = 'SqlDriver';
     public readonly version = '4.0.0';
@@ -55,7 +55,13 @@ export class SqlDriver implements Driver, DriverInterface {
         joins: true,
         fullTextSearch: false,
         jsonFields: true,
-        arrayFields: true
+        arrayFields: true,
+        queryFilters: true,
+        queryAggregations: true,
+        querySorting: true,
+        queryPagination: true,
+        queryWindowFunctions: true,
+        querySubqueries: true
     };
 
     private knex: Knex;
