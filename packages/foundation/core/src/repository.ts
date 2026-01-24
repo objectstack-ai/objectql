@@ -314,6 +314,15 @@ export class ObjectRepository {
     }
 
     async count(filters: any): Promise<number> {
+        // Normalize filters to UnifiedQuery format
+        // If filters is an array or Filter object, wrap it in a query object
+        let query: UnifiedQuery;
+        if (Array.isArray(filters) || (filters && typeof filters === 'object' && !filters.fields && !filters.sort && !filters.limit)) {
+            query = { filters };
+        } else {
+            query = filters || {};
+        }
+
         const hookCtx: RetrievalHookContext = {
             ...this.context,
             objectName: this.objectName,
@@ -321,7 +330,7 @@ export class ObjectRepository {
             api: this.getHookAPI(),
             user: this.getUserFromContext(),
             state: {},
-            query: filters
+            query
         };
         await this.app.triggerHook('beforeCount', this.objectName, hookCtx);
 
