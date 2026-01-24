@@ -16,10 +16,6 @@ import { ObjectQL } from '@objectql/core';
 import { SqlDriver } from '@objectql/driver-sql';
 import { ObjectLoader } from '@objectql/platform-node';
 import * as path from 'path';
-import { nanoid } from 'nanoid';
-
-// Helper to generate IDs since SQL driver doesn't auto-generate them
-const generateId = () => nanoid(16);
 
 describe('Enterprise Data API', () => {
     let app: ObjectQL;
@@ -62,7 +58,7 @@ describe('Enterprise Data API', () => {
             it('should create a user', async () => {
                 const ctx = app.createContext({ isSystem: true });
                 const result = await ctx.object('user').create({
-                    id: generateId(), // Provide ID manually
+                    
                     name: 'John Doe',
                     email: 'john@example.com',
                     username: 'johndoe'
@@ -193,7 +189,7 @@ describe('Enterprise Data API', () => {
                 const ctx = app.createContext({ isSystem: true });
                 // First create an account (required for contact)
                 const account = await ctx.object('crm_account').create({
-                    id: generateId(),
+                    
                     name: 'Contact Test Company',
                     account_number: 'CTC001'
                 });
@@ -238,7 +234,7 @@ describe('Enterprise Data API', () => {
                 const ctx = app.createContext({ isSystem: true });
                 // Create required department and position first
                 const dept = await ctx.object('hr_department').create({
-                    id: generateId(),
+                    
                     name: 'Engineering Dept',
                     code: 'ENGD'
                 });
@@ -249,7 +245,7 @@ describe('Enterprise Data API', () => {
                 expect(dept.id).not.toBeNull();
                 
                 const pos = await ctx.object('hr_position').create({
-                    id: generateId(),
+                    
                     title: 'Software Engineer', // Position uses 'title', not 'name'
                     code: 'SWE'
                 });
@@ -260,7 +256,7 @@ describe('Enterprise Data API', () => {
                 expect(pos.id).not.toBeNull();
                 
                 const result = await ctx.object('hr_employee').create({
-                    id: generateId(),
+                    
                     first_name: 'Alice',
                     last_name: 'Brown',
                     employee_number: 'EMP001',
@@ -298,7 +294,7 @@ describe('Enterprise Data API', () => {
             it('should create an HR department', async () => {
                 const ctx = app.createContext({ isSystem: true });
                 const result = await ctx.object('hr_department').create({
-                    id: generateId(),
+                    
                     name: 'Sales Department',
                     code: 'SALES' // Use unique code
                 });
@@ -318,7 +314,7 @@ describe('Enterprise Data API', () => {
                 const ctx = app.createContext({ isSystem: true });
                 // Create a user first (required as project owner)
                 const user = await ctx.object('user').create({
-                    id: generateId(),
+                    
                     name: 'Project Manager',
                     email: 'pm@example.com',
                     username: 'pmuser'
@@ -329,7 +325,7 @@ describe('Enterprise Data API', () => {
                 expect(user.id).toBeDefined();
                 
                 const result = await ctx.object('project_project').create({
-                    id: generateId(),
+                    
                     name: 'Website Redesign',
                     code: 'WEB-001',
                     status: 'planning', // Required field
@@ -363,7 +359,7 @@ describe('Enterprise Data API', () => {
                 const ctx = app.createContext({ isSystem: true });
                 // Create a user and project first (required for task)
                 const user = await ctx.object('user').create({
-                    id: generateId(),
+                    
                     name: 'Task Owner',
                     email: 'taskowner@example.com',
                     username: 'taskuser'
@@ -373,7 +369,7 @@ describe('Enterprise Data API', () => {
                 expect(user.id).toBeDefined();
                 
                 const project = await ctx.object('project_project').create({
-                    id: generateId(),
+                    
                     name: 'Test Project',
                     code: 'TEST-001',
                     status: 'planning',
@@ -385,7 +381,7 @@ describe('Enterprise Data API', () => {
                 expect(project.id).toBeDefined();
                 
                 const result = await ctx.object('project_task').create({
-                    id: generateId(),
+                    
                     name: 'Design mockups',
                     description: 'Create initial design mockups',
                     project: project.id, // Required field
@@ -405,7 +401,7 @@ describe('Enterprise Data API', () => {
                 const ctx = app.createContext({ isSystem: true });
                 // Create an account first (required for invoice)
                 const account = await ctx.object('crm_account').create({
-                    id: generateId(),
+                    
                     name: 'Invoice Test Company',
                     account_number: 'ITC001'
                 });
@@ -414,7 +410,7 @@ describe('Enterprise Data API', () => {
                 expect(account.id).toBeDefined();
                 
                 const result = await ctx.object('finance_invoice').create({
-                    id: generateId(),
+                    
                     invoice_number: 'INV-001',
                     total_amount: 1000,
                     account: account.id, // Required
@@ -435,7 +431,7 @@ describe('Enterprise Data API', () => {
                 const ctx = app.createContext({ isSystem: true });
                 // Create an account first (required for payment)
                 const account = await ctx.object('crm_account').create({
-                    id: generateId(),
+                    
                     name: 'Payment Test Company',
                     account_number: 'PTC001'
                 });
@@ -444,7 +440,7 @@ describe('Enterprise Data API', () => {
                 expect(account.id).toBeDefined();
                 
                 const result = await ctx.object('finance_payment').create({
-                    id: generateId(),
+                    
                     payment_number: 'PAY-001', // Required
                     amount: 500,
                     payment_method: 'bank_transfer', // Use underscore format
@@ -466,7 +462,7 @@ describe('Enterprise Data API', () => {
 
             // Create records in different modules
             const account = await ctx.object('crm_account').create({
-                id: generateId(),
+                
                 name: 'Multi-Module Test',
                 account_number: 'MMT001'
             });
@@ -476,7 +472,7 @@ describe('Enterprise Data API', () => {
 
             // Create required department and position first
             const dept = await ctx.object('hr_department').create({
-                id: generateId(),
+                
                 name: 'Cross Test Dept',
                 code: 'CTD'
             });
@@ -485,7 +481,7 @@ describe('Enterprise Data API', () => {
             expect(dept.id).toBeDefined();
             
             const pos = await ctx.object('hr_position').create({
-                id: generateId(),
+                
                 title: 'Cross Test Position', // Position uses 'title', not 'name'
                 code: 'CTP'
             });
@@ -494,7 +490,7 @@ describe('Enterprise Data API', () => {
             expect(pos.id).toBeDefined();
 
             const employee = await ctx.object('hr_employee').create({
-                id: generateId(),
+                
                 first_name: 'Test',
                 last_name: 'Employee',
                 employee_number: 'TEST001',
@@ -511,7 +507,7 @@ describe('Enterprise Data API', () => {
             
             // Create a user for project owner
             const user = await ctx.object('user').create({
-                id: generateId(),
+                
                 name: 'Cross Test User',
                 email: 'crosstest@example.com',
                 username: 'crosstestuser'
@@ -521,7 +517,7 @@ describe('Enterprise Data API', () => {
             expect(user.id).toBeDefined();
 
             const project = await ctx.object('project_project').create({
-                id: generateId(),
+                
                 name: 'Cross-Module Project',
                 code: 'CROSS-001',
                 status: 'planning',
