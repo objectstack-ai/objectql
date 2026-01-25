@@ -291,8 +291,9 @@ describe('REST API Adapter', () => {
             .set('Accept', 'application/json');
 
         expect(response.status).toBe(200);
-        expect(response.body.name).toBe('Alice');
-        expect(response.body['@type']).toBe('user');
+        expect(response.body.data).toBeDefined();
+        expect(response.body.data.name).toBe('Alice');
+        expect(response.body.data['@type']).toBe('user');
     });
 
     it('should handle POST /api/data/:object - Create record', async () => {
@@ -302,9 +303,10 @@ describe('REST API Adapter', () => {
             .set('Accept', 'application/json');
 
         expect(response.status).toBe(201);
-        expect(response.body.name).toBe('Charlie');
-        expect(response.body._id).toBeDefined();
-        expect(response.body['@type']).toBe('user');
+        expect(response.body.data).toBeDefined();
+        expect(response.body.data.name).toBe('Charlie');
+        expect(response.body.data._id).toBeDefined();
+        expect(response.body.data['@type']).toBe('user');
     });
 
     it('should handle PUT /api/data/:object/:id - Update record', async () => {
@@ -322,8 +324,9 @@ describe('REST API Adapter', () => {
             .set('Accept', 'application/json');
 
         expect(response.status).toBe(200);
-        expect(response.body.deleted).toBe(true);
-        expect(response.body['@type']).toBe('user');
+        expect(response.body.data).toBeDefined();
+        expect(response.body.data.deleted).toBe(true);
+        expect(response.body.data['@type']).toBe('user');
     });
 
     it('should return 404 for non-existent object', async () => {
@@ -510,7 +513,8 @@ describe('REST API Adapter', () => {
 
             // Should still work as single create
             expect(response.status).toBe(201);
-            expect(response.body._id).toBeDefined();
+            expect(response.body.data).toBeDefined();
+            expect(response.body.data._id).toBeDefined();
         });
     });
 });

@@ -291,7 +291,8 @@ describe('REST API Error Handling & Edge Cases', () => {
                 .set('Accept', 'application/json');
 
             expect(response.status).toBe(200);
-            expect(response.body['@type']).toBe('task');
+            expect(response.body.data).toBeDefined();
+            expect(response.body.data['@type']).toBe('task');
         });
 
         it('should include @type in created record response', async () => {
@@ -301,7 +302,8 @@ describe('REST API Error Handling & Edge Cases', () => {
                 .set('Accept', 'application/json');
 
             expect(response.status).toBe(201);
-            expect(response.body['@type']).toBe('task');
+            expect(response.body.data).toBeDefined();
+            expect(response.body.data['@type']).toBe('task');
         });
 
         it('should return items array for list endpoint', async () => {

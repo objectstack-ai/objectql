@@ -87,12 +87,12 @@ describe('Data API', () => {
                     .set('Accept', 'application/json');
 
                 expect(response.status).toBe(200);
-                expect(response.body.id).toBeDefined();
-                expect(response.body.name).toBe('John Doe');
-                expect(response.body.email).toBe('john@example.com');
-                expect(response.body.id).toBeDefined();
+                expect(response.body.data).toBeDefined();
+                expect(response.body.data.id).toBeDefined();
+                expect(response.body.data.name).toBe('John Doe');
+                expect(response.body.data.email).toBe('john@example.com');
                 
-                createdUserId = response.body.id;
+                createdUserId = response.body.data.id;
             });
 
             it('should find all users', async () => {
@@ -122,9 +122,10 @@ describe('Data API', () => {
                     .set('Accept', 'application/json');
 
                 expect(response.status).toBe(200);
-                expect(response.body.id).toBeDefined();
-                expect(response.body.id).toBe(createdUserId);
-                expect(response.body.name).toBe('John Doe');
+                expect(response.body.data).toBeDefined();
+                expect(response.body.data.id).toBeDefined();
+                expect(response.body.data.id).toBe(createdUserId);
+                expect(response.body.data.name).toBe('John Doe');
             });
 
             it('should update a user', async () => {
@@ -143,7 +144,8 @@ describe('Data API', () => {
                     .set('Accept', 'application/json');
 
                 expect(response.status).toBe(200);
-                expect(response.body.id).toBeDefined();
+                expect(response.body.data).toBeDefined();
+                expect(response.body.data.id).toBeDefined();
             });
 
 
@@ -169,11 +171,11 @@ describe('Data API', () => {
                     .set('Accept', 'application/json');
 
                 expect(response.status).toBe(200);
-                expect(response.body.id).toBeDefined();
-                expect(response.body.title).toBe('Test Task');
-                expect(response.body.id).toBeDefined();
+                expect(response.body.data).toBeDefined();
+                expect(response.body.data.id).toBeDefined();
+                expect(response.body.data.title).toBe('Test Task');
                 
-                createdTaskId = response.body.id;
+                createdTaskId = response.body.data.id;
             });
 
             it('should find tasks with filter', async () => {
@@ -210,7 +212,8 @@ describe('Data API', () => {
                     .set('Accept', 'application/json');
 
                 expect(response.status).toBe(200);
-                expect(response.body.id).toBeDefined();
+                expect(response.body.data).toBeDefined();
+                expect(response.body.data.id).toBeDefined();
             });
 
 
@@ -233,11 +236,11 @@ describe('Data API', () => {
                     .set('Accept', 'application/json');
 
                 expect(response.status).toBe(201);
-                expect(response.body.id).toBeDefined();
-                expect(response.body.id).toBeDefined();
-                expect(response.body.name).toBe('Jane Smith');
+                expect(response.body.data).toBeDefined();
+                expect(response.body.data.id).toBeDefined();
+                expect(response.body.data.name).toBe('Jane Smith');
                 
-                userId = response.body.id;
+                userId = response.body.data.id;
             });
 
             it('should list users via GET /api/data/user', async () => {
@@ -267,7 +270,8 @@ describe('Data API', () => {
                     .set('Accept', 'application/json');
 
                 expect(response.status).toBe(200);
-                expect(response.body.id).toBeDefined();
+                expect(response.body.data).toBeDefined();
+                expect(response.body.data.id).toBeDefined();
             });
 
             it('should delete user via DELETE /api/data/user/:id', async () => {
@@ -290,10 +294,11 @@ describe('Data API', () => {
                     .set('Accept', 'application/json');
 
                 expect(response.status).toBe(201);
-                expect(response.body.id).toBeDefined();
-                expect(response.body.title).toBe('REST API Task');
+                expect(response.body.data).toBeDefined();
+                expect(response.body.data.id).toBeDefined();
+                expect(response.body.data.title).toBe('REST API Task');
                 
-                taskId = response.body.id;
+                taskId = response.body.data.id;
             });
 
             it('should list tasks via GET /api/data/task', async () => {
@@ -315,7 +320,8 @@ describe('Data API', () => {
                     .set('Accept', 'application/json');
 
                 expect(response.status).toBe(200);
-                expect(response.body.id).toBeDefined();
+                expect(response.body.data).toBeDefined();
+                expect(response.body.data.id).toBeDefined();
             });
 
             it('should delete task via DELETE /api/data/task/:id', async () => {

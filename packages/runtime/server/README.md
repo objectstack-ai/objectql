@@ -93,17 +93,20 @@ List operations return data in an `items` array with optional pagination metadat
 
 ### Single Item Operations (findOne, create, update, delete)
 
-Single item operations return data in a `data` field:
+Single item operations return data in a `data` field with an `@type` identifier:
 
 ```json
 {
   "data": {
-    "id": "1001",
+    "_id": "1001",
     "name": "Contract A",
-    "amount": 5000
+    "amount": 5000,
+    "@type": "contract"
   }
 }
 ```
+
+**Note:** The `@type` field indicates the object type, and `_id` is the unique identifier.
 
 ### Error Responses
 

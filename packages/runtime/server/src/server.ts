@@ -72,21 +72,21 @@ export class ObjectQLServer {
                     // Support both string ID and query object
                     result = await repo.findOne(req.args);
                     if (result) {
-                        return { ...result, '@type': req.object };
+                        return { data: { ...result, '@type': req.object } };
                     }
-                    return result;
+                    return { data: null };
                 case 'create':
                     result = await repo.create(req.args);
                     if (result) {
-                        return { ...result, '@type': req.object };
+                        return { data: { ...result, '@type': req.object } };
                     }
-                    return result;
+                    return { data: null };
                 case 'update':
                     result = await repo.update(req.args.id, req.args.data);
                     if (result) {
-                        return { ...result, '@type': req.object };
+                        return { data: { ...result, '@type': req.object } };
                     }
-                    return result;
+                    return { data: null };
                 case 'delete':
                     result = await repo.delete(req.args.id);
                     if (!result) {
@@ -95,11 +95,13 @@ export class ObjectQLServer {
                             `Record with id '${req.args.id}' not found for delete`
                         );
                     }
-                    // Return standardized delete response with object type
+                    // Return standardized delete response with data wrapper
                     return { 
-                        id: req.args.id,
-                        deleted: true,
-                        '@type': req.object
+                        data: {
+                            id: req.args.id,
+                            deleted: true,
+                            '@type': req.object
+                        }
                     };
                 case 'count':
                     result = await repo.count(req.args);

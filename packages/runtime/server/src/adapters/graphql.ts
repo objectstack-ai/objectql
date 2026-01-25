@@ -240,7 +240,8 @@ export function generateGraphQLSchema(app: IObjectQL): GraphQLSchema {
                     throw new Error(result.error.message);
                 }
                 
-                return normalizeId(result);
+                // Extract data from the response wrapper
+                return normalizeId(result.data);
             }
         };
         
@@ -322,7 +323,8 @@ export function generateGraphQLSchema(app: IObjectQL): GraphQLSchema {
                     throw new Error(result.error.message);
                 }
                 
-                return normalizeId(result);
+                // Extract data from the response wrapper
+                return normalizeId(result.data);
             }
         };
         
@@ -347,7 +349,8 @@ export function generateGraphQLSchema(app: IObjectQL): GraphQLSchema {
                     throw new Error(result.error.message);
                 }
                 
-                return normalizeId(result);
+                // Extract data from the response wrapper
+                return normalizeId(result.data);
             }
         };
         
@@ -368,7 +371,8 @@ export function generateGraphQLSchema(app: IObjectQL): GraphQLSchema {
                     throw new Error(result.error.message);
                 }
                 
-                return result;
+                // Extract data from the response wrapper for delete
+                return result.data;
             }
         };
     }

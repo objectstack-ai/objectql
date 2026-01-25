@@ -88,9 +88,11 @@ describe('Node Adapter', () => {
 
         expect(response.status).toBe(200);
         expect(response.body).toEqual({
-            id: 2,
-            name: 'Bob',
-            '@type': 'user'
+            data: {
+                id: 2,
+                name: 'Bob',
+                '@type': 'user'
+            }
         });
     });
 

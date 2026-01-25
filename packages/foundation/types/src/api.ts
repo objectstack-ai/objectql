@@ -126,16 +126,22 @@ export interface DataApiListResponse<T = unknown> extends DataApiResponse<T> {
 
 /**
  * Response for single item operations (findOne, create, update)
+ * Single item operations wrap the data in a 'data' field
  */
 export interface DataApiItemResponse<T = unknown> extends DataApiResponse<T> {
-    /** The item ID */
-    _id?: string | number;
-    /** Object type identifier */
-    '@type'?: string;
-    /** Timestamp when created */
-    created_at?: string | Date;
-    /** Timestamp when last updated */
-    updated_at?: string | Date;
+    /** The returned item data */
+    data?: T & {
+        /** The item ID */
+        _id?: string | number;
+        /** Object type identifier */
+        '@type'?: string;
+        /** Timestamp when created */
+        created_at?: string | Date;
+        /** Timestamp when last updated */
+        updated_at?: string | Date;
+        /** Additional item fields */
+        [key: string]: unknown;
+    };
 }
 
 /**
