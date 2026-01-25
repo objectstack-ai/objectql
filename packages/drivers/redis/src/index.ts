@@ -378,9 +378,9 @@ export class RedisDriver implements Driver {
      * This method handles all read operations using the QueryAST format from @objectstack/spec.
      * It provides a standardized query interface that supports:
      * - Field selection (projection)
-     * - Filter conditions (using FilterNode AST)
+     * - Filter conditions (using FilterCondition format)
      * - Sorting
-     * - Pagination (skip/top)
+     * - Pagination (offset/limit)
      * - Grouping and aggregations (delegated to find)
      * 
      * The method converts the QueryAST format to the legacy query format and delegates
@@ -639,22 +639,22 @@ export class RedisDriver implements Driver {
     // ========== Helper Methods ==========
 
     /**
-     * Convert FilterNode (QueryAST format) to legacy filter array format
+     * Convert FilterCondition (MongoDB-like format) to legacy filter array format
      * 
-     * This method bridges the gap between the new QueryAST filter format (tree-based)
+     * This method bridges the gap between the new FilterCondition format (MongoDB-style)
      * and the legacy array-based filter format used internally by the driver.
      * 
-     * QueryAST FilterNode format:
-     * - type: 'comparison' | 'and' | 'or' | 'not'
-     * - field, operator, value for comparisons
-     * - children for logical operators
+     * FilterCondition format (MongoDB-like):
+     * - Field-level operators: { field: { $eq: value }, field2: { $gt: value } }
+     * - Logical operators: { $and: [...], $or: [...], $not: {...} }
+     * - Examples: { age: { $gt: 18 } }, { $and: [{ age: { $gt: 18 }}, { role: { $eq: 'user' }}] }
      * 
      * Legacy format:
      * - Array of conditions: [field, operator, value]
      * - String separators: 'and', 'or'
      * - Example: [['age', '>', 18], 'and', ['role', '=', 'user']]
      * 
-     * @param node - The FilterNode to convert
+     * @param condition - The FilterCondition to convert (object or legacy array)
      * @returns Legacy filter array format, or undefined if no filters
      * @private
      * 
