@@ -1,6 +1,17 @@
+# File: finance_invoice.object.yml
+# Object name is inferred from filename as 'finance_invoice'
 label: Invoice
 description: Customer invoice
 icon: file-text-line
+
+ai_context:
+  intent: "Manage customer invoices and payment tracking"
+  domain: financial_management
+  aliases: [invoice, bill, statement]
+  common_queries:
+    - "Show unpaid invoices"
+    - "Find overdue invoices by customer"
+    - "List invoices by status and due date"
 
 fields:
   invoice_number:
@@ -16,6 +27,9 @@ fields:
     label: Customer Account
     required: true
     index: true
+    ai_context:
+      intent: "Customer being invoiced"
+      semantic_type: association
   
   invoice_date:
     type: date
@@ -61,36 +75,67 @@ fields:
   status:
     type: select
     options:
-      - draft
-      - sent
-      - partial_paid
-      - paid
-      - overdue
-      - cancelled
+      - label: Draft
+        value: draft
+      - label: Sent
+        value: sent
+      - label: Partially Paid
+        value: partial_paid
+      - label: Paid
+        value: paid
+      - label: Overdue
+        value: overdue
+      - label: Cancelled
+        value: cancelled
     defaultValue: draft
     required: true
     index: true
+    ai_context:
+      intent: "Current payment and delivery status"
+      is_state_machine: true
+      transitions:
+        draft: [sent, cancelled]
+        sent: [partial_paid, paid, overdue, cancelled]
+        partial_paid: [paid, overdue]
+        paid: []
+        overdue: [partial_paid, paid]
+        cancelled: []
   
   payment_terms:
     type: select
     options:
-      - net_15
-      - net_30
-      - net_60
-      - net_90
-      - due_on_receipt
+      - label: Net 15
+        value: net_15
+      - label: Net 30
+        value: net_30
+      - label: Net 60
+        value: net_60
+      - label: Net 90
+        value: net_90
+      - label: Due on Receipt
+        value: due_on_receipt
     label: Payment Terms
+    ai_context:
+      intent: "Payment due date terms"
+      selection_guidance: "Net 30 is standard; adjust based on customer agreement"
   
   currency:
     type: select
     options:
-      - USD
-      - EUR
-      - GBP
-      - CNY
-      - JPY
+      - label: USD
+        value: USD
+      - label: EUR
+        value: EUR
+      - label: GBP
+        value: GBP
+      - label: CNY
+        value: CNY
+      - label: JPY
+        value: JPY
     defaultValue: USD
     index: true
+    ai_context:
+      intent: "Invoice currency for international transactions"
   
   billing_address:
     type: textarea

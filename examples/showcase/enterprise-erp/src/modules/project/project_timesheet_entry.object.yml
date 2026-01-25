@@ -1,6 +1,17 @@
+# File: project_timesheet_entry.object.yml
+# Object name is inferred from filename as 'project_timesheet_entry'
 label: Timesheet Entry
 description: Time entry for project tasks
 icon: time-line
+
+ai_context:
+  intent: "Track time spent on project tasks for billing and productivity"
+  domain: project_management
+  aliases: [time entry, timesheet, time log]
+  common_queries:
+    - "Show time entries by project"
+    - "Find billable hours by employee"
+    - "List time entries for approval"
 
 fields:
   employee:
@@ -9,6 +20,9 @@ fields:
     label: Employee
     required: true
     index: true
+    ai_context:
+      intent: "Employee who performed the work"
+      semantic_type: association
   
   project:
     type: lookup
@@ -16,12 +30,18 @@ fields:
     label: Project
     required: true
     index: true
+    ai_context:
+      intent: "Project this time is charged to"
+      semantic_type: hierarchy
   
   task:
     type: lookup
     reference_to: project_task
     label: Task
     index: true
+    ai_context:
+      intent: "Specific task this time is charged to"
+      semantic_type: association
   
   work_date:
     type: date
@@ -50,17 +70,32 @@ fields:
   status:
     type: select
     options:
-      - draft
-      - submitted
-      - approved
-      - rejected
+      - label: Draft
+        value: draft
+      - label: Submitted
+        value: submitted
+      - label: Approved
+        value: approved
+      - label: Rejected
+        value: rejected
     defaultValue: draft
     index: true
+    ai_context:
+      intent: "Approval workflow state"
+      is_state_machine: true
+      transitions:
+        draft: [submitted]
+        submitted: [approved, rejected]
+        approved: []
+        rejected: [draft]
   
   approved_by:
     type: lookup
     reference_to: user
     label: Approved By
+    ai_context:
+      intent: "Manager who approved this time entry"
+      semantic_type: association
   
   approved_at:
     type: datetime

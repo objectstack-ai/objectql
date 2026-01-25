@@ -1,49 +1,108 @@
+# File: projects.object.yml
+# Object name is inferred from filename as 'projects'
 label: Project
 icon: building-line
+
+ai_context:
+  intent: "Track and manage software development projects"
+  domain: project_management
+  aliases: [project, initiative]
+  common_queries:
+    - "Find active projects"
+    - "Show projects by priority"
+    - "List projects with high budget"
+
 fields:
   name:
     type: text
     required: true
+    label: Project Name
     index: true # Field-level index
+    ai_context:
+      intent: "Primary identifier for the project"
+      examples: ["Website Redesign", "Mobile App v2.0"]
 
   status:
+    type: select
+    label: Project Status
     options:
-      - planned
-      - in_progress
-      - completed
+      - label: Planned
+        value: planned
+      - label: In Progress
+        value: in_progress
+      - label: Completed
+        value: completed
     defaultValue: planned
     index: true
+    ai_context:
+      intent: "Track project lifecycle stage"
+      is_state_machine: true
+      transitions:
+        planned: [in_progress, completed]
+        in_progress: [completed, planned]
+        completed: []
 
   priority:
+    type: select
+    label: Priority Level
     options:
-      - low
-      - normal
-      - high
+      - label: Low
+        value: low
+      - label: Normal
+        value: normal
+      - label: High
+        value: high
     defaultValue: normal
+    ai_context:
+      intent: "Prioritize project execution order"
+      selection_guidance: "High priority for urgent or critical projects"
 
   description:
     type: textarea
+    label: Project Description
+    ai_context:
+      intent: "Detailed project overview and objectives"
 
   owner:
     type: text
+    label: Project Owner
+    ai_context:
+      intent: "Person responsible for project success"
+      semantic_type: ownership
 
   budget:
     type: currency
+    label: Project Budget
+    ai_context:
+      intent: "Allocated financial resources"
+      validation_notes: "Must be non-negative; >$10k requires detailed description"
 
   start_date:
     type: date
+    label: Start Date
+    ai_context:
+      intent: "Project commencement date"
 
   end_date:
     type: date
+    label: End Date
+    ai_context:
+      intent: "Target completion date"
+      validation_notes: "Must be on or after start_date"
   
   approved_by:
     type: text
+    label: Approved By
+    ai_context:
+      intent: "Approver identity for audit trail"
   
   approved_at:
     type: datetime
+    label: Approval Timestamp
   
   approval_comment:
     type: textarea
+    label: Approval Comment
 
 indexes:
   # Composite index for reporting

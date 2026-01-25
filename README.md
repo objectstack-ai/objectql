@@ -91,21 +91,32 @@ For the best experience, install the official extension. It provides **Intellige
 
 ObjectQL uses **YAML** as the source of truth. Create a file `src/objects/story.object.yml`:
 
+**Key Convention (v4.0+):** The object `name` is **inferred from the filename** - no redundant `name:` field needed!
+
 ```yaml
-name: story
+# File: story.object.yml
+# Object name is automatically inferred as 'story' ✅
 label: User Story
 fields:
   title:
     type: text
     required: true
+    label: Story Title
   status:
     type: select
-    options: [draft, active, done]
-    default: draft
+    options:
+      - label: Draft
+        value: draft
+      - label: Active
+        value: active
+      - label: Done
+        value: done
+    defaultValue: draft
   points:
     type: number
     scale: 0
-    default: 1
+    defaultValue: 1
+    label: Story Points
 ```
 
 ### 4. Run & Play
@@ -174,11 +185,21 @@ import { MemoryDriver } from '@objectql/driver-memory';
 const driver = new MemoryDriver();
 const app = new ObjectQL({ datasources: { default: driver } });
 
+// Define object following latest ObjectStack specification
 app.registerObject({
-  name: 'tasks',
+  name: 'tasks',  // Required for programmatic registration
+  label: 'Tasks',
   fields: {
-    title: { type: 'text', required: true },
-    completed: { type: 'boolean', defaultValue: false }
+    title: { 
+      type: 'text', 
+      required: true,
+      label: 'Task Title'
+    },
+    completed: { 
+      type: 'boolean', 
+      defaultValue: false,
+      label: 'Completed'
+    }
   }
 });
 

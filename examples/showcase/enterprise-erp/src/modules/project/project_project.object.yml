@@ -1,6 +1,17 @@
+# File: project_project.object.yml
+# Object name is inferred from filename as 'project_project'
 label: Project
 description: Project or initiative
 icon: folder-line
+
+ai_context:
+  intent: "Manage projects and track execution from planning to completion"
+  domain: project_management
+  aliases: [project, initiative, program]
+  common_queries:
+    - "Show active projects by priority"
+    - "Find projects by manager"
+    - "List projects by status and department"
 
 fields:
   name:
@@ -8,6 +19,8 @@ fields:
     required: true
     label: Project Name
     index: true
+    ai_context:
+      intent: "Descriptive project name"
   
   code:
     type: text
@@ -22,40 +35,72 @@ fields:
   
   status:
     type: select
+    label: Project Status
     options:
-      - planning
-      - active
-      - on_hold
-      - completed
-      - cancelled
+      - label: Planning
+        value: planning
+      - label: Active
+        value: active
+      - label: On Hold
+        value: on_hold
+      - label: Completed
+        value: completed
+      - label: Cancelled
+        value: cancelled
     defaultValue: planning
     required: true
     index: true
+    ai_context:
+      intent: "Current project lifecycle stage"
+      is_state_machine: true
+      transitions:
+        planning: [active, cancelled]
+        active: [on_hold, completed, cancelled]
+        on_hold: [active, cancelled]
+        completed: []
+        cancelled: []
   
   priority:
     type: select
     options:
-      - low
-      - medium
-      - high
-      - critical
+      - label: Low
+        value: low
+      - label: Medium
+        value: medium
+      - label: High
+        value: high
+      - label: Critical
+        value: critical
     defaultValue: medium
     index: true
+    ai_context:
+      intent: "Project urgency and business impact"
+      selection_guidance: "Critical for strategic initiatives; High for important projects"
   
   type:
     type: select
     options:
-      - internal
-      - customer
-      - research
-      - maintenance
+      - label: Internal
+        value: internal
+      - label: Customer
+        value: customer
+      - label: Research
+        value: research
+      - label: Maintenance
+        value: maintenance
     index: true
+    ai_context:
+      intent: "Project category for resource allocation"
+      selection_guidance: "Customer for client projects; Internal for company initiatives"
   
   account:
     type: lookup
     reference_to: crm_account
     label: Customer Account
     index: true
+    ai_context:
+      intent: "Customer for external projects"
+      semantic_type: association
   
   owner:
     type: lookup
@@ -63,12 +108,18 @@ fields:
     label: Project Manager
     required: true
     index: true
+    ai_context:
+      intent: "Project manager responsible for delivery"
+      semantic_type: ownership
   
   department:
     type: lookup
     reference_to: hr_department
     label: Department
     index: true
+    ai_context:
+      intent: "Department owning this project"
+      semantic_type: association
   
   start_date:
     type: date

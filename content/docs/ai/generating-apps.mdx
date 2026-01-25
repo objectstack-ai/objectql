@@ -41,42 +41,65 @@ To get the best results, use a prompt that enforces the ObjectQL schema format.
 
 ```yaml
 # agent.object.yml
-name: agent
+# Object name inferred as 'agent'
+label: Real Estate Agent
 fields:
   name:
     type: text
     required: true
+    label: Agent Name
   email:
     type: email
     required: true
+    label: Email Address
   phone:
     type: phone
+    label: Phone Number
   license_number:
     type: text
+    label: License Number
   status:
     type: select
-    options: [active, inactive]
+    label: Status
+    options:
+      - label: Active
+        value: active
+      - label: Inactive
+        value: inactive
 ```
 
 ```yaml
 # property.object.yml
-name: property
+# Object name inferred as 'property'
+label: Property
 fields:
   address:
     type: textarea
     required: true
+    label: Property Address
   price:
     type: currency
+    label: Listing Price
   bedrooms:
     type: number
+    label: Number of Bedrooms
   bathrooms:
     type: number
+    label: Number of Bathrooms
   listing_agent:
     type: lookup
     reference_to: agent
+    label: Listing Agent
   status:
     type: select
-    options: [for_sale, sold, pending]
+    label: Listing Status
+    options:
+      - label: For Sale
+        value: for_sale
+      - label: Sold
+        value: sold
+      - label: Pending
+        value: pending
 ```
 
 ## Automating the Process

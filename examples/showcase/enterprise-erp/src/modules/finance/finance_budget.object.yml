@@ -1,6 +1,17 @@
+# File: finance_budget.object.yml
+# Object name is inferred from filename as 'finance_budget'
 label: Budget
 description: Department or project budget
 icon: pie-chart-line
+
+ai_context:
+  intent: "Track and manage departmental and project budgets"
+  domain: financial_management
+  aliases: [budget, allocation, financial plan]
+  common_queries:
+    - "Show budgets by fiscal year"
+    - "Find department budgets with remaining balance"
+    - "List active budgets by category"
 
 fields:
   name:
@@ -8,6 +19,8 @@ fields:
     required: true
     label: Budget Name
     index: true
+    ai_context:
+      intent: "Descriptive name of the budget"
   
   fiscal_year:
     type: number
@@ -18,38 +31,63 @@ fields:
   period:
     type: select
     options:
-      - annual
-      - quarterly
-      - monthly
+      - label: Annual
+        value: annual
+      - label: Quarterly
+        value: quarterly
+      - label: Monthly
+        value: monthly
     defaultValue: annual
     index: true
+    ai_context:
+      intent: "Budget period duration for planning cycles"
+      selection_guidance: "Annual for yearly planning; Quarterly for shorter cycles"
   
   department:
     type: lookup
     reference_to: hr_department
     label: Department
     index: true
+    ai_context:
+      intent: "Department this budget is allocated to"
+      semantic_type: association
   
   project:
     type: lookup
     reference_to: project_project
     label: Project
     index: true
+    ai_context:
+      intent: "Project this budget is allocated to"
+      semantic_type: association
   
   category:
     type: select
     options:
-      - travel
-      - meals
-      - office_supplies
-      - software
-      - marketing
-      - utilities
-      - rent
-      - training
-      - salaries
-      - other
+      - label: Travel
+        value: travel
+      - label: Meals
+        value: meals
+      - label: Office Supplies
+        value: office_supplies
+      - label: Software
+        value: software
+      - label: Marketing
+        value: marketing
+      - label: Utilities
+        value: utilities
+      - label: Rent
+        value: rent
+      - label: Training
+        value: training
+      - label: Salaries
+        value: salaries
+      - label: Other
+        value: other
     index: true
+    ai_context:
+      intent: "Expense category for budget allocation"
+      selection_guidance: "Match to common expense categories for tracking"
   
   allocated_amount:
     type: currency
@@ -79,16 +117,29 @@ fields:
   status:
     type: select
     options:
-      - draft
-      - active
-      - closed
+      - label: Draft
+        value: draft
+      - label: Active
+        value: active
+      - label: Closed
+        value: closed
     defaultValue: draft
     index: true
+    ai_context:
+      intent: "Current state of budget lifecycle"
+      is_state_machine: true
+      transitions:
+        draft: [active]
+        active: [closed]
+        closed: []
   
   owner:
     type: lookup
     reference_to: user
     label: Budget Owner
+    ai_context:
+      intent: "Person responsible for managing this budget"
+      semantic_type: ownership
   
   notes:
     type: textarea

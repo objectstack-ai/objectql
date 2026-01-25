@@ -1,6 +1,17 @@
+# File: finance_payment.object.yml
+# Object name is inferred from filename as 'finance_payment'
 label: Payment
 description: Payment transaction record
 icon: money-dollar-circle-line
+
+ai_context:
+  intent: "Track customer payments and payment processing"
+  domain: financial_management
+  aliases: [payment, transaction, remittance]
+  common_queries:
+    - "Show payments by date"
+    - "Find pending payments"
+    - "List payments by method and status"
 
 fields:
   payment_number:
@@ -15,6 +26,9 @@ fields:
     reference_to: finance_invoice
     label: Related Invoice
     index: true
+    ai_context:
+      intent: "Invoice this payment applies to"
+      semantic_type: association
   
   account:
     type: lookup
@@ -22,6 +36,9 @@ fields:
     label: Customer Account
     required: true
     index: true
+    ai_context:
+      intent: "Customer making the payment"
+      semantic_type: association
   
   payment_date:
     type: date
@@ -37,25 +54,42 @@ fields:
   payment_method:
     type: select
     options:
-      - bank_transfer
-      - credit_card
-      - debit_card
-      - check
-      - cash
-      - paypal
-      - other
+      - label: Bank Transfer
+        value: bank_transfer
+      - label: Credit Card
+        value: credit_card
+      - label: Debit Card
+        value: debit_card
+      - label: Check
+        value: check
+      - label: Cash
+        value: cash
+      - label: PayPal
+        value: paypal
+      - label: Other
+        value: other
     required: true
     index: true
+    ai_context:
+      intent: "Payment method for processing and reconciliation"
+      selection_guidance: "Bank transfer for large amounts; Card for smaller transactions"
   
   currency:
     type: select
     options:
-      - USD
-      - EUR
-      - GBP
-      - CNY
-      - JPY
+      - label: USD
+        value: USD
+      - label: EUR
+        value: EUR
+      - label: GBP
+        value: GBP
+      - label: CNY
+        value: CNY
+      - label: JPY
+        value: JPY
     defaultValue: USD
+    ai_context:
+      intent: "Payment currency for foreign exchange handling"
   
   reference_number:
     type: text
@@ -65,18 +99,33 @@ fields:
   status:
     type: select
     options:
-      - pending
-      - completed
-      - failed
-      - refunded
+      - label: Pending
+        value: pending
+      - label: Completed
+        value: completed
+      - label: Failed
+        value: failed
+      - label: Refunded
+        value: refunded
     defaultValue: pending
     required: true
     index: true
+    ai_context:
+      intent: "Current processing state of payment"
+      is_state_machine: true
+      transitions:
+        pending: [completed, failed]
+        completed: [refunded]
+        failed: [pending]
+        refunded: []
   
   processed_by:
     type: lookup
     reference_to: user
     label: Processed By
+    ai_context:
+      intent: "User who processed this payment"
+      semantic_type: association
   
   notes:
     type: textarea

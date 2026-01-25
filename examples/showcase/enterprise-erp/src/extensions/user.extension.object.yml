@@ -1,6 +1,12 @@
-name: user
+# File: user.extension.object.yml
+# Object name is inferred from filename as 'user'
 # This extends the core user object with company-specific fields
 label: System User (Extended)
+
+ai_context:
+  intent: "Extend base user with enterprise-specific fields"
+  extends: user
+  domain: hr_management
 
 fields:
   # Add employee link
@@ -9,6 +15,9 @@ fields:
     reference_to: hr_employee
     label: Employee Record
     unique: true
+    ai_context:
+      intent: "Link user account to HR employee record"
+      semantic_type: association
   
   # Override email to make it required and unique
   email:
@@ -21,22 +30,35 @@ fields:
     label: Employee ID
     unique: true
     index: true
+    ai_context:
+      intent: "Corporate employee identifier"
   
   department:
     type: lookup
     reference_to: hr_department
     label: Department
+    ai_context:
+      intent: "User's organizational department"
+      semantic_type: hierarchy
   
   office_location:
     type: select
-    options:
-      - headquarters
-      - branch_office_a
-      - branch_office_b
-      - remote
     label: Office Location
+    options:
+      - label: Headquarters
+        value: headquarters
+      - label: Branch Office A
+        value: branch_office_a
+      - label: Branch Office B
+        value: branch_office_b
+      - label: Remote
+        value: remote
+    ai_context:
+      intent: "Physical or remote work location"
   
   two_factor_enabled:
     type: boolean
     defaultValue: false
     label: Two-Factor Auth Enabled
+    ai_context:
+      intent: "Security enhancement status"

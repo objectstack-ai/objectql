@@ -1,6 +1,17 @@
+# File: crm_lead.object.yml
+# Object name is inferred from filename as 'crm_lead'
 label: Lead
 description: Potential sales lead
 icon: user-add-line
+
+ai_context:
+  intent: "Track and qualify potential sales opportunities from new prospects"
+  domain: customer_relationship_management
+  aliases: [lead, prospect, sales lead]
+  common_queries:
+    - "Show new leads by source"
+    - "Find qualified leads by industry"
+    - "List hot leads for my team"
 
 fields:
   first_name:
@@ -36,54 +47,95 @@ fields:
   
   status:
     type: select
+    label: Lead Status
     options:
-      - new
-      - contacted
-      - qualified
-      - unqualified
-      - converted
+      - label: New
+        value: new
+      - label: Contacted
+        value: contacted
+      - label: Qualified
+        value: qualified
+      - label: Unqualified
+        value: unqualified
+      - label: Converted
+        value: converted
     defaultValue: new
     required: true
     index: true
+    ai_context:
+      intent: "Current stage in lead qualification process"
+      is_state_machine: true
+      transitions:
+        new: [contacted, unqualified]
+        contacted: [qualified, unqualified]
+        qualified: [converted, unqualified]
+        unqualified: [contacted]
+        converted: []
   
   lead_source:
     type: select
     options:
-      - web
-      - referral
-      - trade_show
-      - partner
-      - advertisement
-      - other
+      - label: Web
+        value: web
+      - label: Referral
+        value: referral
+      - label: Trade Show
+        value: trade_show
+      - label: Partner
+        value: partner
+      - label: Advertisement
+        value: advertisement
+      - label: Other
+        value: other
     label: Lead Source
     index: true
+    ai_context:
+      intent: "Original source of the lead for campaign attribution"
   
   rating:
     type: select
     options:
-      - hot
-      - warm
-      - cold
+      - label: Hot
+        value: hot
+      - label: Warm
+        value: warm
+      - label: Cold
+        value: cold
     label: Lead Rating
     index: true
+    ai_context:
+      intent: "Engagement level and conversion potential"
+      selection_guidance: "Hot for high-interest prospects; Warm for engaged; Cold for low priority"
   
   owner:
     type: lookup
     reference_to: user
     label: Lead Owner
     index: true
+    ai_context:
+      intent: "Sales representative responsible for qualifying this lead"
+      semantic_type: ownership
   
   industry:
     type: select
     options:
-      - technology
-      - finance
-      - healthcare
-      - manufacturing
-      - retail
-      - education
-      - other
+      - label: Technology
+        value: technology
+      - label: Finance
+        value: finance
+      - label: Healthcare
+        value: healthcare
+      - label: Manufacturing
+        value: manufacturing
+      - label: Retail
+        value: retail
+      - label: Education
+        value: education
+      - label: Other
+        value: other
     label: Industry
+    ai_context:
+      intent: "Industry sector for lead segmentation"
   
   annual_revenue:
     type: currency
@@ -105,16 +157,25 @@ fields:
     type: lookup
     reference_to: crm_account
     label: Converted Account
+    ai_context:
+      intent: "Account created from lead conversion"
+      semantic_type: association
   
   converted_contact:
     type: lookup
     reference_to: crm_contact
     label: Converted Contact
+    ai_context:
+      intent: "Contact created from lead conversion"
+      semantic_type: association
   
   converted_opportunity:
     type: lookup
     reference_to: crm_opportunity
     label: Converted Opportunity
+    ai_context:
+      intent: "Opportunity created from lead conversion"
+      semantic_type: association
 
 indexes:
   # For lead pipeline

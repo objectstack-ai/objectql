@@ -1,6 +1,17 @@
+# File: hr_department.object.yml
+# Object name is inferred from filename as 'hr_department'
 label: Department
 description: Organizational department
 icon: building-line
+
+ai_context:
+  intent: "Manage organizational structure and departments"
+  domain: human_resources
+  aliases: [department, org unit, division]
+  common_queries:
+    - "Show department hierarchy"
+    - "Find departments by manager"
+    - "List active departments by cost center"
 
 fields:
   name:
@@ -9,6 +20,8 @@ fields:
     label: Department Name
     unique: true
     index: true
+    ai_context:
+      intent: "Official department name"
   
   code:
     type: text
@@ -22,11 +35,17 @@ fields:
     reference_to: hr_department
     label: Parent Department
     index: true
+    ai_context:
+      intent: "Parent department for organizational hierarchy"
+      semantic_type: hierarchy
   
   manager:
     type: lookup
     reference_to: hr_employee
     label: Department Manager
+    ai_context:
+      intent: "Employee managing this department"
+      semantic_type: ownership
   
   cost_center:
     type: text
@@ -44,10 +63,18 @@ fields:
   status:
     type: select
     options:
-      - active
-      - inactive
+      - label: Active
+        value: active
+      - label: Inactive
+        value: inactive
     defaultValue: active
     index: true
+    ai_context:
+      intent: "Current operational status"
+      is_state_machine: true
+      transitions:
+        active: [inactive]
+        inactive: [active]
 
 indexes:
   # For org tree

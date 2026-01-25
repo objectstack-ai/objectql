@@ -1,6 +1,17 @@
+# File: hr_employee.object.yml
+# Object name is inferred from filename as 'hr_employee'
 label: Employee
 description: Company employee record
 icon: user-line
+
+ai_context:
+  intent: "Manage employee records and organizational relationships"
+  domain: human_resources
+  aliases: [employee, staff, team member]
+  common_queries:
+    - "Show employees by department"
+    - "Find employees by manager"
+    - "List active employees by position"
 
 fields:
   employee_number:
@@ -15,6 +26,9 @@ fields:
     reference_to: user
     label: System User Account
     unique: true
+    ai_context:
+      intent: "Link to system user account for access control"
+      semantic_type: association
   
   first_name:
     type: text
@@ -54,6 +68,9 @@ fields:
     label: Department
     required: true
     index: true
+    ai_context:
+      intent: "Department where employee works"
+      semantic_type: hierarchy
   
   position:
     type: lookup
@@ -61,12 +78,18 @@ fields:
     label: Position
     required: true
     index: true
+    ai_context:
+      intent: "Employee's job position and role"
+      semantic_type: association
   
   manager:
     type: lookup
     reference_to: hr_employee
     label: Direct Manager
     index: true
+    ai_context:
+      intent: "Employee's direct supervisor for reporting structure"
+      semantic_type: hierarchy
   
   hire_date:
     type: date
@@ -81,22 +104,39 @@ fields:
   employment_type:
     type: select
     options:
-      - full_time
-      - part_time
-      - contract
-      - intern
+      - label: Full Time
+        value: full_time
+      - label: Part Time
+        value: part_time
+      - label: Contract
+        value: contract
+      - label: Intern
+        value: intern
     defaultValue: full_time
     index: true
+    ai_context:
+      intent: "Employment classification for benefits and payroll"
+      selection_guidance: "Full Time for regular employees; Contract for consultants"
   
   status:
     type: select
     options:
-      - active
-      - on_leave
-      - terminated
+      - label: Active
+        value: active
+      - label: On Leave
+        value: on_leave
+      - label: Terminated
+        value: terminated
     defaultValue: active
     required: true
     index: true
+    ai_context:
+      intent: "Current employment status"
+      is_state_machine: true
+      transitions:
+        active: [on_leave, terminated]
+        on_leave: [active, terminated]
+        terminated: []
   
   salary:
     type: currency

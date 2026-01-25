@@ -1,24 +1,71 @@
+# File: task.object.yml
+# Object name is inferred from filename as 'task'
 label: Tasks
+
+ai_context:
+  intent: "Track individual tasks and their completion status"
+  domain: task_management
+  common_queries:
+    - "Find pending tasks"
+    - "Show overdue tasks"
+    - "List tasks by priority"
+
 fields:
   title:
-    type: string
+    type: text
     label: Title
     required: true
+    ai_context:
+      intent: "Brief description of the task"
   description:
-    type: text
+    type: textarea
     label: Description
+    ai_context:
+      intent: "Detailed task information"
   status:
-    type: string
+    type: select
     label: Status
+    options:
+      - label: Pending
+        value: pending
+      - label: In Progress
+        value: in_progress
+      - label: Completed
+        value: completed
+      - label: Cancelled
+        value: cancelled
     defaultValue: pending
+    ai_context:
+      intent: "Current state of the task"
+      is_state_machine: true
+      transitions:
+        pending: [in_progress, cancelled]
+        in_progress: [completed, pending, cancelled]
+        completed: []
+        cancelled: [pending]
   priority:
-    type: string
+    type: select
     label: Priority
+    options:
+      - label: Low
+        value: low
+      - label: Medium
+        value: medium
+      - label: High
+        value: high
+      - label: Urgent
+        value: urgent
     defaultValue: medium
+    ai_context:
+      intent: "Task urgency level"
   due_date:
     type: date
     label: Due Date
+    ai_context:
+      intent: "Deadline for task completion"
   completed:
     type: boolean
     label: Completed
     defaultValue: false
+    ai_context:
+      intent: "Quick completion flag"

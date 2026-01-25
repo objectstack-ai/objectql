@@ -26,14 +26,26 @@ async function main() {
     }
   });
   
-  // 3. Define Metadata Inline
+  // 3. Define Metadata Inline (Following Latest ObjectStack Specification)
+  // Note: When using registerObject(), the 'name' is required in code
+  // When using YAML files, the name is inferred from filename (e.g., deal.object.yml)
   app.registerObject({
-    name: 'deal',
+    name: 'deal',  // Required for programmatic registration
+    label: 'Deal',  // Human-readable label
     fields: {
-      title: { type: 'text', required: true },
-      amount: { type: 'currency' },
+      title: { 
+        type: 'text', 
+        required: true,
+        label: 'Deal Title'
+      },
+      amount: { 
+        type: 'currency',
+        label: 'Deal Amount'
+      },
       stage: { 
-        type: 'select', 
+        type: 'select',
+        label: 'Deal Stage',
+        // Options use label/value format (ObjectStack spec v4.0+)
         options: [
             { label: 'New', value: 'new' },
             { label: 'Negotiation', value: 'negotiation' },
