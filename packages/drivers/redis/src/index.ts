@@ -701,7 +701,9 @@ export class RedisDriver implements Driver {
             } else if (condition.type === 'not') {
                 // Handle NOT filter: { type: 'not', child: {...} }
                 console.warn('[RedisDriver] NOT operator in filters is not fully supported in legacy format');
-                return this.convertFilterConditionToArray(condition.child);
+                if (condition.child) {
+                    return this.convertFilterConditionToArray(condition.child);
+                }
             }
         }
         
