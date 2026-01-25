@@ -1,6 +1,7 @@
-# File: user.extension.object.yml
-# Object name is inferred from filename as 'user'
+# File: user_extension.object.yml
+# Explicitly set name to 'user' to extend the core user object
 # This extends the core user object with company-specific fields
+name: user
 label: System User (Extended)
 
 ai_context:
