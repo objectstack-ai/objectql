@@ -33,6 +33,7 @@
   "devDependencies": {
     "@objectstack/spec": "^0.3.3",
     "@objectql/runtime": "workspace:*",
-    "ts-json-schema-generator": "^2.4.0"
+    "ts-json-schema-generator": "^2.4.0",
+    "zod": "^3.23.8"
   }
 }
