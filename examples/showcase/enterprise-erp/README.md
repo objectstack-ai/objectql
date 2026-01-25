@@ -81,7 +81,7 @@ src/
 │       └── index.ts
 │
 ├── extensions/               # Custom Extensions/Overrides
-│   ├── user.extension.object.yml
+│   ├── user_extension.object.yml
 │   └── README.md
 │
 ├── shared/                   # Shared Utilities
@@ -251,7 +251,7 @@ fields:
   email: { type: text }
 ```
 
-**Extension** (`extensions/user.extension.object.yml`):
+**Extension** (`extensions/user_extension.object.yml`):
 ```yaml
 name: user  # Same name triggers merge
 fields:

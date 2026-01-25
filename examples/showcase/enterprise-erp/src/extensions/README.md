@@ -8,7 +8,7 @@ Extensions use ObjectQL's **Schema Merging** feature. When you define an object 
 
 ## Example: Extending the User Object
 
-The `user.extension.object.yml` file extends the core `user` object with company-specific customizations:
+The `user_extension.object.yml` file extends the core `user` object with company-specific customizations:
 
 1. **Adding fields** - Links to employee record, office location
 2. **Overriding properties** - Making email required and unique
@@ -30,12 +30,12 @@ The `user.extension.object.yml` file extends the core `user` object with company
 ## File Naming Convention
 
 ```
-[object_name].extension.object.yml
+[object_name]_extension.object.yml
 ```
 
 Examples:
-- `user.extension.object.yml` - Extends the `user` object
-- `organization.extension.object.yml` - Extends the `organization` object
+- `user_extension.object.yml` - Extends the `user` object
+- `organization_extension.object.yml` - Extends the `organization` object
 
 ## Loading Order
 
