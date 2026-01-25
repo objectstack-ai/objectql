@@ -90,7 +90,6 @@ class MockDriver implements Driver {
         // Count should not apply offset/limit, only filters
         const countQuery = { ...query };
         delete countQuery.offset;
-        delete countQuery.skip;
         delete countQuery.top;
         delete countQuery.limit;
         const items = await this.find(objectName, countQuery);
