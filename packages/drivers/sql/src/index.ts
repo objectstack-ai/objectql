@@ -979,7 +979,7 @@ export class SqlDriver implements Driver {
             filters: this.convertFilterNodeToLegacy(ast.where),
             sort: ast.orderBy?.map(s => [s.field, s.order]),
             limit: ast.limit,
-            offset: ast.offset,
+            skip: ast.offset,
         };
         
         // Use existing find method for execution
