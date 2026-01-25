@@ -26,7 +26,7 @@
   },
   "dependencies": {
     "@objectql/types": "workspace:*",
-    "@objectstack/spec": "^0.3.1"
+    "@objectstack/spec": "^0.3.3"
   },
   "devDependencies": {
     "@types/jest": "^29.0.0",
