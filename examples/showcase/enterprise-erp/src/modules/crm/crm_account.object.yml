@@ -1,6 +1,17 @@
+# File: crm_account.object.yml
+# Object name is inferred from filename as 'crm_account'
 label: Account
 description: Customer company or organization
 icon: briefcase-line
+
+ai_context:
+  intent: "Manage customer and prospect organizations"
+  domain: customer_relationship_management
+  aliases: [account, organization, company, customer]
+  common_queries:
+    - "Show active accounts by revenue"
+    - "Find accounts by industry"
+    - "List customer accounts with opportunities"
 
 fields:
   name:
@@ -8,6 +19,8 @@ fields:
     required: true
     label: Account Name
     index: true
+    ai_context:
+      intent: "Company or organization name"
   
   account_number:
     type: text
@@ -17,26 +30,43 @@ fields:
   
   type:
     type: select
+    label: Account Type
     options:
-      - customer
-      - prospect
-      - partner
-      - competitor
+      - label: Customer
+        value: customer
+      - label: Prospect
+        value: prospect
+      - label: Partner
+        value: partner
+      - label: Competitor
+        value: competitor
     defaultValue: prospect
     index: true
+    ai_context:
+      intent: "Categorize relationship type with the organization"
+      selection_guidance: "Customer for active clients; Prospect for potential customers"
   
   industry:
     type: select
     options:
-      - technology
-      - finance
-      - healthcare
-      - manufacturing
-      - retail
-      - education
-      - other
+      - label: Technology
+        value: technology
+      - label: Finance
+        value: finance
+      - label: Healthcare
+        value: healthcare
+      - label: Manufacturing
+        value: manufacturing
+      - label: Retail
+        value: retail
+      - label: Education
+        value: education
+      - label: Other
+        value: other
     label: Industry
     index: true
+    ai_context:
+      intent: "Primary industry sector for segmentation and analysis"
   
   annual_revenue:
     type: currency
@@ -67,11 +97,17 @@ fields:
     reference_to: user
     label: Account Owner
     index: true
+    ai_context:
+      intent: "Primary sales representative managing this account"
+      semantic_type: ownership
   
   parent_account:
     type: lookup
     reference_to: crm_account
     label: Parent Account
+    ai_context:
+      intent: "Parent organization for corporate hierarchies"
+      semantic_type: hierarchy
   
   description:
     type: textarea
@@ -80,10 +116,18 @@ fields:
   status:
     type: select
     options:
-      - active
-      - inactive
+      - label: Active
+        value: active
+      - label: Inactive
+        value: inactive
     defaultValue: active
     index: true
+    ai_context:
+      intent: "Current operational status of the account"
+      is_state_machine: true
+      transitions:
+        active: [inactive]
+        inactive: [active]
 
 indexes:
   # For account owner queries

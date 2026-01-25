@@ -1,6 +1,17 @@
+# File: hr_position.object.yml
+# Object name is inferred from filename as 'hr_position'
 label: Position
 description: Job position or role
 icon: briefcase-line
+
+ai_context:
+  intent: "Define job positions and career levels in the organization"
+  domain: human_resources
+  aliases: [position, job role, title]
+  common_queries:
+    - "Show positions by department"
+    - "Find positions by level"
+    - "List active positions with salary ranges"
 
 fields:
   title:
@@ -19,27 +30,44 @@ fields:
   level:
     type: select
     options:
-      - entry
-      - junior
-      - mid
-      - senior
-      - lead
-      - manager
-      - director
-      - executive
+      - label: Entry
+        value: entry
+      - label: Junior
+        value: junior
+      - label: Mid
+        value: mid
+      - label: Senior
+        value: senior
+      - label: Lead
+        value: lead
+      - label: Manager
+        value: manager
+      - label: Director
+        value: director
+      - label: Executive
+        value: executive
     label: Position Level
     index: true
+    ai_context:
+      intent: "Career level and seniority for compensation bands"
+      selection_guidance: "Entry for new grads; Senior for 5+ years experience"
   
   department:
     type: lookup
     reference_to: hr_department
     label: Department
     index: true
+    ai_context:
+      intent: "Department where this position exists"
+      semantic_type: association
   
   reports_to:
     type: lookup
     reference_to: hr_position
     label: Reports To Position
+    ai_context:
+      intent: "Position hierarchy for reporting structure"
+      semantic_type: hierarchy
   
   min_salary:
     type: currency
@@ -64,10 +92,18 @@ fields:
   status:
     type: select
     options:
-      - active
-      - inactive
+      - label: Active
+        value: active
+      - label: Inactive
+        value: inactive
     defaultValue: active
     index: true
+    ai_context:
+      intent: "Whether position is currently open for hiring"
+      is_state_machine: true
+      transitions:
+        active: [inactive]
+        inactive: [active]
 
 indexes:
   # For department positions

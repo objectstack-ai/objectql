@@ -1,3 +1,20 @@
+# File: note.object.yml
+# Object name is inferred from filename as 'note'
+label: Note
+description: Audit note or comment
+icon: file-text-line
+
+ai_context:
+  intent: "Track audit notes and comments on records"
+  domain: audit
+  aliases: [note, comment, audit log]
+  common_queries:
+    - "Show recent notes"
+    - "Find notes by user"
+    - "List notes on a record"
+
 fields:
   content:
     type: text
+    ai_context:
+      intent: "Note content or comment text"

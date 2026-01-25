@@ -1,6 +1,17 @@
+# File: crm_contact.object.yml
+# Object name is inferred from filename as 'crm_contact'
 label: Contact
 description: Individual contact person
 icon: user-line
+
+ai_context:
+  intent: "Manage individual contacts and decision-makers at accounts"
+  domain: customer_relationship_management
+  aliases: [contact, person, decision maker]
+  common_queries:
+    - "Find contacts by account"
+    - "Show contacts by job title"
+    - "List active contacts with email"
 
 fields:
   first_name:
@@ -49,23 +60,36 @@ fields:
     label: Account
     required: true
     index: true
+    ai_context:
+      intent: "Company or organization this contact belongs to"
+      semantic_type: hierarchy
   
   owner:
     type: lookup
     reference_to: user
     label: Contact Owner
     index: true
+    ai_context:
+      intent: "Sales representative managing this contact"
+      semantic_type: ownership
   
   lead_source:
     type: select
     options:
-      - web
-      - referral
-      - trade_show
-      - partner
-      - other
+      - label: Web
+        value: web
+      - label: Referral
+        value: referral
+      - label: Trade Show
+        value: trade_show
+      - label: Partner
+        value: partner
+      - label: Other
+        value: other
     label: Lead Source
     index: true
+    ai_context:
+      intent: "Original source of the contact for attribution"
   
   linkedin_url:
     type: url
@@ -78,10 +102,18 @@ fields:
   status:
     type: select
     options:
-      - active
-      - inactive
+      - label: Active
+        value: active
+      - label: Inactive
+        value: inactive
     defaultValue: active
     index: true
+    ai_context:
+      intent: "Current status of contact engagement"
+      is_state_machine: true
+      transitions:
+        active: [inactive]
+        inactive: [active]
 
 indexes:
   # For account contact lookup

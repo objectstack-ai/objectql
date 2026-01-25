@@ -1,6 +1,17 @@
+# File: crm_opportunity.object.yml
+# Object name is inferred from filename as 'crm_opportunity'
 label: Opportunity
 description: Sales opportunity or deal
 icon: currency-line
+
+ai_context:
+  intent: "Track and manage active sales opportunities through the pipeline"
+  domain: customer_relationship_management
+  aliases: [opportunity, deal, sales opportunity]
+  common_queries:
+    - "Show my open opportunities"
+    - "Find opportunities closing this quarter"
+    - "List high-value deals by stage"
 
 fields:
   name:
@@ -8,6 +19,8 @@ fields:
     required: true
     label: Opportunity Name
     index: true
+    ai_context:
+      intent: "Descriptive name of the sales opportunity"
   
   account:
     type: lookup
@@ -15,6 +28,9 @@ fields:
     label: Account
     required: true
     index: true
+    ai_context:
+      intent: "Customer organization for this opportunity"
+      semantic_type: hierarchy
   
   amount:
     type: currency
@@ -29,16 +45,33 @@ fields:
   
   stage:
     type: select
+    label: Sales Stage
     options:
-      - prospecting
-      - qualification
-      - proposal
-      - negotiation
-      - closed_won
-      - closed_lost
+      - label: Prospecting
+        value: prospecting
+      - label: Qualification
+        value: qualification
+      - label: Proposal
+        value: proposal
+      - label: Negotiation
+        value: negotiation
+      - label: Closed Won
+        value: closed_won
+      - label: Closed Lost
+        value: closed_lost
     defaultValue: prospecting
     required: true
     index: true
+    ai_context:
+      intent: "Current stage in the sales pipeline"
+      is_state_machine: true
+      transitions:
+        prospecting: [qualification, closed_lost]
+        qualification: [proposal, closed_lost]
+        proposal: [negotiation, closed_lost]
+        negotiation: [closed_won, closed_lost]
+        closed_won: []
+        closed_lost: []
   
   probability:
     type: percent
@@ -49,23 +82,37 @@ fields:
   type:
     type: select
     options:
-      - new_business
-      - existing_customer
-      - renewal
+      - label: New Business
+        value: new_business
+      - label: Existing Customer
+        value: existing_customer
+      - label: Renewal
+        value: renewal
     label: Opportunity Type
     index: true
+    ai_context:
+      intent: "Categorize revenue type for forecasting"
+      selection_guidance: "New Business for new customers; Renewal for contract renewals"
   
   lead_source:
     type: select
     options:
-      - web
-      - referral
-      - trade_show
-      - partner
-      - cold_call
-      - other
+      - label: Web
+        value: web
+      - label: Referral
+        value: referral
+      - label: Trade Show
+        value: trade_show
+      - label: Partner
+        value: partner
+      - label: Cold Call
+        value: cold_call
+      - label: Other
+        value: other
     label: Lead Source
     index: true
+    ai_context:
+      intent: "Original source for ROI tracking"
   
   owner:
     type: lookup
@@ -73,6 +120,9 @@ fields:
     label: Opportunity Owner
     required: true
     index: true
+    ai_context:
+      intent: "Sales representative managing this opportunity"
+      semantic_type: ownership
   
   next_step:
     type: text

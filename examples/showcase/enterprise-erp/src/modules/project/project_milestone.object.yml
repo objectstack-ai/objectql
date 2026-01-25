@@ -1,6 +1,17 @@
+# File: project_milestone.object.yml
+# Object name is inferred from filename as 'project_milestone'
 label: Milestone
 description: Project milestone or checkpoint
 icon: flag-line
+
+ai_context:
+  intent: "Track major project milestones and deliverables"
+  domain: project_management
+  aliases: [milestone, checkpoint, deliverable]
+  common_queries:
+    - "Show upcoming milestones"
+    - "Find milestones by project"
+    - "List completed milestones by date"
 
 fields:
   name:
@@ -8,6 +19,8 @@ fields:
     required: true
     label: Milestone Name
     index: true
+    ai_context:
+      intent: "Descriptive name of the milestone"
   
   project:
     type: lookup
@@ -15,6 +28,9 @@ fields:
     label: Project
     required: true
     index: true
+    ai_context:
+      intent: "Project this milestone belongs to"
+      semantic_type: hierarchy
   
   description:
     type: textarea
@@ -32,19 +48,35 @@ fields:
   
   status:
     type: select
+    label: Milestone Status
     options:
-      - pending
-      - in_progress
-      - completed
-      - missed
+      - label: Pending
+        value: pending
+      - label: In Progress
+        value: in_progress
+      - label: Completed
+        value: completed
+      - label: Missed
+        value: missed
     defaultValue: pending
     required: true
     index: true
+    ai_context:
+      intent: "Current state of milestone progress"
+      is_state_machine: true
+      transitions:
+        pending: [in_progress]
+        in_progress: [completed, missed]
+        completed: []
+        missed: []
   
   owner:
     type: lookup
     reference_to: user
     label: Milestone Owner
+    ai_context:
+      intent: "Person responsible for delivering this milestone"
+      semantic_type: ownership
   
   deliverables:
     type: textarea

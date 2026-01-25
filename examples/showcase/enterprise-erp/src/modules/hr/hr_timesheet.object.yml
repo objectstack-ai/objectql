@@ -1,6 +1,17 @@
+# File: hr_timesheet.object.yml
+# Object name is inferred from filename as 'hr_timesheet'
 label: Timesheet
 description: Employee time tracking
 icon: time-line
+
+ai_context:
+  intent: "Track employee work hours and attendance"
+  domain: human_resources
+  aliases: [timesheet, attendance, time card]
+  common_queries:
+    - "Show timesheets for approval"
+    - "Find timesheets by employee and date"
+    - "List overtime hours by department"
 
 fields:
   employee:
@@ -9,6 +20,9 @@ fields:
     label: Employee
     required: true
     index: true
+    ai_context:
+      intent: "Employee submitting time worked"
+      semantic_type: association
   
   work_date:
     type: date
@@ -47,28 +61,50 @@ fields:
   work_type:
     type: select
     options:
-      - office
-      - remote
-      - field
-      - client_site
+      - label: Office
+        value: office
+      - label: Remote
+        value: remote
+      - label: Field
+        value: field
+      - label: Client Site
+        value: client_site
     defaultValue: office
     index: true
+    ai_context:
+      intent: "Work location for tracking remote vs on-site"
+      selection_guidance: "Remote for work from home; Field for on-location work"
   
   status:
     type: select
     options:
-      - draft
-      - submitted
-      - approved
-      - rejected
+      - label: Draft
+        value: draft
+      - label: Submitted
+        value: submitted
+      - label: Approved
+        value: approved
+      - label: Rejected
+        value: rejected
     defaultValue: draft
     required: true
     index: true
+    ai_context:
+      intent: "Approval workflow state"
+      is_state_machine: true
+      transitions:
+        draft: [submitted]
+        submitted: [approved, rejected]
+        approved: []
+        rejected: [draft]
   
   approved_by:
     type: lookup
     reference_to: user
     label: Approved By
+    ai_context:
+      intent: "Manager who approved the timesheet"
+      semantic_type: association
   
   approved_at:
     type: datetime

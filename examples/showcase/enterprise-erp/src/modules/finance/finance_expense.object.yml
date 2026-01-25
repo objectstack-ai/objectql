@@ -1,6 +1,17 @@
+# File: finance_expense.object.yml
+# Object name is inferred from filename as 'finance_expense'
 label: Expense
 description: Company expense record
 icon: wallet-line
+
+ai_context:
+  intent: "Track and manage employee expense claims and reimbursements"
+  domain: financial_management
+  aliases: [expense, expense claim, reimbursement]
+  common_queries:
+    - "Show pending expense approvals"
+    - "Find expenses by employee"
+    - "List expenses by category and date"
 
 fields:
   expense_number:
@@ -16,6 +27,9 @@ fields:
     label: Employee
     required: true
     index: true
+    ai_context:
+      intent: "Employee who incurred this expense"
+      semantic_type: association
   
   expense_date:
     type: date
@@ -26,17 +40,29 @@ fields:
   category:
     type: select
     options:
-      - travel
-      - meals
-      - office_supplies
-      - software
-      - marketing
-      - utilities
-      - rent
-      - training
-      - other
+      - label: Travel
+        value: travel
+      - label: Meals
+        value: meals
+      - label: Office Supplies
+        value: office_supplies
+      - label: Software
+        value: software
+      - label: Marketing
+        value: marketing
+      - label: Utilities
+        value: utilities
+      - label: Rent
+        value: rent
+      - label: Training
+        value: training
+      - label: Other
+        value: other
     required: true
     index: true
+    ai_context:
+      intent: "Expense category for budget tracking"
+      selection_guidance: "Choose category matching budget allocations"
   
   amount:
     type: currency
@@ -46,12 +72,19 @@ fields:
   currency:
     type: select
     options:
-      - USD
-      - EUR
-      - GBP
-      - CNY
-      - JPY
+      - label: USD
+        value: USD
+      - label: EUR
+        value: EUR
+      - label: GBP
+        value: GBP
+      - label: CNY
+        value: CNY
+      - label: JPY
+        value: JPY
     defaultValue: USD
+    ai_context:
+      intent: "Currency for international expense handling"
   
   merchant:
     type: text
@@ -69,19 +102,36 @@ fields:
   status:
     type: select
     options:
-      - draft
-      - submitted
-      - approved
-      - rejected
-      - reimbursed
+      - label: Draft
+        value: draft
+      - label: Submitted
+        value: submitted
+      - label: Approved
+        value: approved
+      - label: Rejected
+        value: rejected
+      - label: Reimbursed
+        value: reimbursed
     defaultValue: draft
     required: true
     index: true
+    ai_context:
+      intent: "Current approval and payment state"
+      is_state_machine: true
+      transitions:
+        draft: [submitted]
+        submitted: [approved, rejected]
+        approved: [reimbursed]
+        rejected: [draft]
+        reimbursed: []
   
   approved_by:
     type: lookup
     reference_to: user
     label: Approved By
+    ai_context:
+      intent: "Manager who approved this expense"
+      semantic_type: association
   
   approved_at:
     type: datetime
@@ -96,11 +146,17 @@ fields:
     reference_to: hr_department
     label: Department
     index: true
+    ai_context:
+      intent: "Department to charge this expense to"
+      semantic_type: association
   
   project:
     type: lookup
     reference_to: project_project
     label: Related Project
+    ai_context:
+      intent: "Project to charge this expense to"
+      semantic_type: association
 
 indexes:
   # For employee expense lookup
