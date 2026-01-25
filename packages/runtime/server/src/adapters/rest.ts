@@ -291,6 +291,17 @@ export function createRESTHandler(app: IObjectQL, options?: RESTHandlerOptions) 
                 return;
             }
 
+            // Check if single item operations returned null data
+            if (qlRequest.op === 'findOne' && result.data === null) {
+                sendJSON(res, 404, {
+                    error: {
+                        code: ErrorCode.NOT_FOUND,
+                        message: 'Resource not found'
+                    }
+                });
+                return;
+            }
+
             // Determine HTTP status code
             let statusCode = 200;
             if (result.error) {
