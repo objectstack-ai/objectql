@@ -582,15 +582,12 @@ describe('ExcelDriver', () => {
                 const result = await driver.executeQuery({
                     object: TEST_OBJECT,
                     fields: ['name', 'age'],
-                    filters: {
-                        type: 'comparison',
-                        field: 'age',
-                        operator: '>',
-                        value: 25
+                    where: {
+                        age: { $gt: 25 }
                     },
-                    sort: [{ field: 'age', order: 'asc' }],
-                    top: 10,
-                    skip: 0
+                    orderBy: [{ field: 'age', order: 'asc' }],
+                    limit: 10,
+                    offset: 0
                 });
 
                 expect(result.value).toHaveLength(2);
@@ -606,11 +603,10 @@ describe('ExcelDriver', () => {
 
                 const result = await driver.executeQuery({
                     object: TEST_OBJECT,
-                    filters: {
-                        type: 'and',
-                        children: [
-                            { type: 'comparison', field: 'age', operator: '>', value: 25 },
-                            { type: 'comparison', field: 'city', operator: '=', value: 'NYC' }
+                    where: {
+                        $and: [
+                            { age: { $gt: 25 } },
+                            { city: { $eq: 'NYC' } }
                         ]
                     }
                 });
@@ -626,9 +622,9 @@ describe('ExcelDriver', () => {
 
                 const result = await driver.executeQuery({
                     object: TEST_OBJECT,
-                    sort: [{ field: 'name', order: 'asc' }],
-                    skip: 1,
-                    top: 1
+                    orderBy: [{ field: 'name', order: 'asc' }],
+                    offset: 1,
+                    limit: 1
                 });
 
                 expect(result.value).toHaveLength(1);

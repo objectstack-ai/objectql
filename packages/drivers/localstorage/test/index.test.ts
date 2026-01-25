@@ -429,10 +429,7 @@ describe('LocalStorageDriver', () => {
                     object: 'users',
                     fields: ['name', 'age'],
                     where: {
-                        type: 'comparison',
-                        field: 'age',
-                        operator: '>',
-                        value: 25
+                        age: { $gt: 25 }
                     },
                     orderBy: [{ field: 'age', order: 'asc' }],
                     limit: 10,
@@ -453,10 +450,9 @@ describe('LocalStorageDriver', () => {
                 const result = await driver.executeQuery({
                     object: 'users',
                     where: {
-                        type: 'and',
-                        children: [
-                            { type: 'comparison', field: 'age', operator: '>', value: 25 },
-                            { type: 'comparison', field: 'city', operator: '=', value: 'NYC' }
+                        $and: [
+                            { age: { $gt: 25 } },
+                            { city: { $eq: 'NYC' } }
                         ]
                     }
                 });
