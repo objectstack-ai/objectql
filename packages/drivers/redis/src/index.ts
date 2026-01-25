@@ -378,9 +378,9 @@ export class RedisDriver implements Driver {
      * This method handles all read operations using the QueryAST format from @objectstack/spec.
      * It provides a standardized query interface that supports:
      * - Field selection (projection)
-     * - Filter conditions (using FilterNode AST)
+     * - Filter conditions (using FilterCondition format)
      * - Sorting
-     * - Pagination (skip/top)
+     * - Pagination (offset/limit)
      * - Grouping and aggregations (delegated to find)
      * 
      * The method converts the QueryAST format to the legacy query format and delegates
@@ -415,12 +415,13 @@ export class RedisDriver implements Driver {
         const objectName = ast.object || '';
         
         // Convert QueryAST to legacy query format
+        // Note: Convert FilterCondition (MongoDB-like) to array format for redis driver
         const legacyQuery: any = {
             fields: ast.fields,
-            filters: this.convertFilterNodeToLegacy(ast.filters),
-            sort: ast.sort?.map((s: SortNode) => [s.field, s.order]),
-            limit: ast.top,
-            skip: ast.skip,
+            filters: this.convertFilterConditionToArray(ast.where),
+            sort: ast.orderBy?.map((s: SortNode) => [s.field, s.order]),
+            limit: ast.limit,
+            skip: ast.offset,
         };
         
         // Use existing find method
@@ -638,84 +639,102 @@ export class RedisDriver implements Driver {
     // ========== Helper Methods ==========
 
     /**
-     * Convert FilterNode (QueryAST format) to legacy filter array format
+     * Convert FilterCondition (MongoDB-like format) to legacy filter array format
      * 
-     * This method bridges the gap between the new QueryAST filter format (tree-based)
+     * This method bridges the gap between the new FilterCondition format (MongoDB-style)
      * and the legacy array-based filter format used internally by the driver.
      * 
-     * QueryAST FilterNode format:
-     * - type: 'comparison' | 'and' | 'or' | 'not'
-     * - field, operator, value for comparisons
-     * - children for logical operators
+     * FilterCondition format (MongoDB-like):
+     * - Field-level operators: { field: { $eq: value }, field2: { $gt: value } }
+     * - Logical operators: { $and: [...], $or: [...], $not: {...} }
+     * - Examples: { age: { $gt: 18 } }, { $and: [{ age: { $gt: 18 }}, { role: { $eq: 'user' }}] }
      * 
      * Legacy format:
      * - Array of conditions: [field, operator, value]
      * - String separators: 'and', 'or'
      * - Example: [['age', '>', 18], 'and', ['role', '=', 'user']]
      * 
-     * @param node - The FilterNode to convert
+     * @param condition - The FilterCondition to convert (object or legacy array)
      * @returns Legacy filter array format, or undefined if no filters
      * @private
      * 
      * @example
-     * // Input: { type: 'comparison', field: 'age', operator: '>', value: 18 }
-     * // Output: [['age', '>', 18]]
+     * // Input: { field: { $gt: 18 } }
+     * // Output: [['field', '>', 18]]
      * 
      * @example
-     * // Input: { type: 'and', children: [...] }
+     * // Input: { $and: [{ field1: { $eq: 'val1' }}, { field2: { $gt: 10 }}] }
      * // Output: [['field1', '=', 'val1'], 'and', ['field2', '>', 10]]
      */
-    private convertFilterNodeToLegacy(node?: FilterNode): any {
-        if (!node) return undefined;
+    private convertFilterConditionToArray(condition?: any): any[] | undefined {
+        if (!condition) return undefined;
         
-        switch (node.type) {
-            case 'comparison':
-                // Convert comparison node to [field, operator, value] format
-                if (!node.operator) {
-                    console.warn('[RedisDriver] FilterNode comparison missing operator, defaulting to "="');
-                }
-                const operator = node.operator || '=';
-                return [[node.field, operator, node.value]];
-            
-            case 'and':
-                // Convert AND node to array with 'and' separator
-                if (!node.children || node.children.length === 0) return undefined;
-                const andResults: any[] = [];
-                for (const child of node.children) {
-                    const converted = this.convertFilterNodeToLegacy(child);
-                    if (converted) {
-                        if (andResults.length > 0) {
-                            andResults.push('and');
-                        }
-                        andResults.push(...(Array.isArray(converted) ? converted : [converted]));
-                    }
-                }
-                return andResults.length > 0 ? andResults : undefined;
-            
-            case 'or':
-                // Convert OR node to array with 'or' separator
-                if (!node.children || node.children.length === 0) return undefined;
-                const orResults: any[] = [];
-                for (const child of node.children) {
-                    const converted = this.convertFilterNodeToLegacy(child);
-                    if (converted) {
-                        if (orResults.length > 0) {
-                            orResults.push('or');
-                        }
-                        orResults.push(...(Array.isArray(converted) ? converted : [converted]));
-                    }
-                }
-                return orResults.length > 0 ? orResults : undefined;
-            
-            case 'not':
-                // NOT is not directly supported in legacy format
-                // We could implement it by negating the child operators
-                console.warn('[RedisDriver] NOT operator in filters is not fully supported in legacy format');
-                return undefined;
-            
-            default:
-                return undefined;
+        // If already an array, return as-is
+        if (Array.isArray(condition)) {
+            return condition;
         }
+        
+        // If it's an object (FilterCondition), convert to array format
+        // This is a simplified conversion - a full implementation would need to handle all operators
+        const result: any[] = [];
+        
+        for (const [key, value] of Object.entries(condition)) {
+            if (key === '$and' && Array.isArray(value)) {
+                // Handle $and: [cond1, cond2, ...]
+                for (let i = 0; i < value.length; i++) {
+                    const converted = this.convertFilterConditionToArray(value[i]);
+                    if (converted && converted.length > 0) {
+                        if (result.length > 0) {
+                            result.push('and');
+                        }
+                        result.push(...converted);
+                    }
+                }
+            } else if (key === '$or' && Array.isArray(value)) {
+                // Handle $or: [cond1, cond2, ...]
+                for (let i = 0; i < value.length; i++) {
+                    const converted = this.convertFilterConditionToArray(value[i]);
+                    if (converted && converted.length > 0) {
+                        if (result.length > 0) {
+                            result.push('or');
+                        }
+                        result.push(...converted);
+                    }
+                }
+            } else if (key === '$not' && typeof value === 'object') {
+                // Handle $not: { condition }
+                // Note: NOT is complex to represent in array format, so we skip it for now
+                console.warn('[RedisDriver] NOT operator in filters is not fully supported in legacy format');
+                const converted = this.convertFilterConditionToArray(value);
+                if (converted) {
+                    result.push(...converted);
+                }
+            } else if (typeof value === 'object' && value !== null) {
+                // Handle field-level conditions like { field: { $eq: value } }
+                const field = key;
+                for (const [operator, operandValue] of Object.entries(value)) {
+                    let op: string;
+                    switch (operator) {
+                        case '$eq': op = '='; break;
+                        case '$ne': op = '!='; break;
+                        case '$gt': op = '>'; break;
+                        case '$gte': op = '>='; break;
+                        case '$lt': op = '<'; break;
+                        case '$lte': op = '<='; break;
+                        case '$in': op = 'in'; break;
+                        case '$nin': op = 'nin'; break;
+                        case '$regex': op = 'like'; break;
+                        default: op = '=';
+                    }
+                    result.push([field, op, operandValue]);
+                }
+            } else {
+                // Handle simple equality: { field: value }
+                result.push([key, '=', value]);
+            }
+        }
+        
+        return result.length > 0 ? result : undefined;
     }
 
     /**
