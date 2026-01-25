@@ -538,6 +538,9 @@ importers:
       ts-json-schema-generator:
         specifier: ^2.4.0
         version: 2.4.0
+      zod:
+        specifier: ^3.23.8
+        version: 3.25.76
 
   packages/objectstack/runtime: {}
 
