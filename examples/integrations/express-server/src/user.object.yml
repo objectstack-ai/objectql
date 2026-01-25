@@ -1,17 +1,48 @@
+# File: user.object.yml
+# Object name is inferred from filename as 'user'
 label: Users
+
+ai_context:
+  intent: "Manage user accounts and profiles"
+  domain: user_management
+  common_queries:
+    - "Find active users"
+    - "List users by age"
+    - "Search users by email"
+
 fields:
   name:
-    type: string
+    type: text
     label: Full Name
     required: true
+    ai_context:
+      intent: "User's full name for display"
   email:
-    type: string
+    type: email
     label: Email Address
     required: true
+    ai_context:
+      intent: "Primary contact email and login identifier"
   status:
-    type: string
+    type: select
     label: Status
+    options:
+      - label: Active
+        value: active
+      - label: Inactive
+        value: inactive
+      - label: Suspended
+        value: suspended
     defaultValue: active
+    ai_context:
+      intent: "Account status"
+      is_state_machine: true
+      transitions:
+        active: [inactive, suspended]
+        inactive: [active]
+        suspended: [active, inactive]
   age:
     type: number
     label: Age
+    ai_context:
+      intent: "User's age for demographic purposes"

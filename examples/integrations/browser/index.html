@@ -247,8 +247,10 @@
                 });
                 
                 log('📝 Registering Notes schema...');
+                // Note: When using registerObject() programmatically, 'name' is required
+                // When using YAML files, the name is inferred from filename (latest ObjectStack spec)
                 window.app.registerObject({
-                    name: 'notes',
+                    name: 'notes',  // Required for programmatic registration
                     label: 'Notes',
                     fields: {
                         content: {
