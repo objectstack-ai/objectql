@@ -43,12 +43,12 @@ export class QueryBuilder {
 
         // Map filters using FilterTranslator
         if (query.filters) {
-            ast.filters = this.filterTranslator.translate(query.filters);
+            ast.where = this.filterTranslator.translate(query.filters);
         }
 
         // Map sort
         if (query.sort) {
-            ast.sort = query.sort.map(([field, order]) => ({
+            ast.orderBy = query.sort.map(([field, order]) => ({
                 field,
                 order: order as 'asc' | 'desc'
             }));
@@ -56,10 +56,10 @@ export class QueryBuilder {
 
         // Map pagination
         if (query.limit !== undefined) {
-            ast.top = query.limit;
+            ast.limit = query.limit;
         }
         if (query.skip !== undefined) {
-            ast.skip = query.skip;
+            ast.offset = query.skip;
         }
 
         // Map groupBy

@@ -43,10 +43,10 @@ class MockDriver implements Driver {
     async find(objectName: string, query: any) {
         let items = this.data[objectName] || [];
         
-        // Apply skip and limit if provided
+        // Apply offset and limit if provided (QueryAST uses 'offset', not 'skip')
         if (query) {
-            if (query.skip) {
-                items = items.slice(query.skip);
+            if (query.offset) {
+                items = items.slice(query.offset);
             }
             if (query.limit) {
                 items = items.slice(0, query.limit);

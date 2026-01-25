@@ -13,10 +13,10 @@ export type { ObjectStackKernel, ObjectStackRuntimeProtocol } from '@objectql/ru
 // export type { ObjectQL as ObjectQLEngine, SchemaRegistry } from '@objectstack/objectql';
 
 // Export ObjectStack spec types for driver development
-import { Data, System } from '@objectstack/spec';
+import { Data, Driver } from '@objectstack/spec';
 export type QueryAST = Data.QueryAST;
-export type DriverInterface = System.DriverInterface;
-export type DriverOptions = System.DriverOptions;
+export type DriverInterface = Driver.DriverInterface;
+export type DriverOptions = Driver.DriverOptions;
 
 // Export our enhanced runtime components (actual implementations)
 export * from './repository';

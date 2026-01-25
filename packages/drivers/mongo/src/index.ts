@@ -1,8 +1,7 @@
-import { Data, System } from '@objectstack/spec';
+import { Data, Driver as DriverSpec } from '@objectstack/spec';
 type QueryAST = Data.QueryAST;
-type FilterNode = Data.FilterNode;
 type SortNode = Data.SortNode;
-type DriverInterface = System.DriverInterface;
+type DriverInterface = DriverSpec.DriverInterface;
 /**
  * ObjectQL
  * Copyright (c) 2026-present ObjectStack Inc.
@@ -150,7 +149,16 @@ export class MongoDriver implements Driver {
     }
 
     private mapFilters(filters: any): Filter<any> {
-        if (!filters || filters.length === 0) return {};
+        if (!filters) return {};
+        
+        // If filters is an object (FilterCondition format), return it directly
+        // MongoDB can handle FilterCondition format natively
+        if (typeof filters === 'object' && !Array.isArray(filters)) {
+            return filters as Filter<any>;
+        }
+        
+        // If filters is an array (legacy format), convert it
+        if (Array.isArray(filters) && filters.length === 0) return {};
         
         const result = this.buildFilterConditions(filters);
         return result;
@@ -457,10 +465,10 @@ export class MongoDriver implements Driver {
         // Convert QueryAST to legacy query format
         const legacyQuery: any = {
             fields: ast.fields,
-            filters: this.convertFilterNodeToLegacy(ast.filters),
-            sort: ast.sort?.map((s: SortNode) => [s.field, s.order]),
-            limit: ast.top,
-            skip: ast.skip,
+            filters: this.convertFilterNodeToLegacy(ast.where),
+            sort: ast.orderBy?.map((s: SortNode) => [s.field, s.order]),
+            limit: ast.limit,
+            skip: ast.offset,
         };
         
         // Use existing find method
@@ -575,52 +583,15 @@ export class MongoDriver implements Driver {
     }
 
     /**
-     * Convert FilterNode (QueryAST format) to legacy filter array format
+     * Convert FilterCondition (QueryAST format) to legacy filter array format
      * This allows reuse of existing filter logic while supporting new QueryAST
      * 
      * @private
      */
-    private convertFilterNodeToLegacy(node?: FilterNode): any {
-        if (!node) return undefined;
-        
-        switch (node.type) {
-            case 'comparison':
-                // Convert comparison node to [field, operator, value] format
-                const operator = node.operator || '=';
-                return [[node.field, operator, node.value]];
-            
-            case 'and':
-            case 'or':
-                // Convert AND/OR node to array with separator
-                if (!node.children || node.children.length === 0) return undefined;
-                const results: any[] = [];
-                const separator = node.type; // 'and' or 'or'
-                
-                for (const child of node.children) {
-                    const converted = this.convertFilterNodeToLegacy(child);
-                    if (converted) {
-                        if (results.length > 0) {
-                            results.push(separator);
-                        }
-                        results.push(...(Array.isArray(converted) ? converted : [converted]));
-                    }
-                }
-                return results.length > 0 ? results : undefined;
-            
-            case 'not':
-                // NOT is not directly supported in the legacy filter format
-                // MongoDB supports $not, but legacy array format doesn't have a NOT operator
-                // Use native MongoDB queries with $not instead:
-                // Example: { field: { $not: { $eq: value } } }
-                throw new Error(
-                    'NOT filters are not supported in legacy filter format. ' +
-                    'Use native MongoDB queries with $not operator instead. ' +
-                    'Example: { field: { $not: { $eq: value } } }'
-                );
-            
-            default:
-                return undefined;
-        }
+    private convertFilterNodeToLegacy(condition?: any): any {
+        // FilterCondition is already in the modern format, just pass it through
+        // The legacy format methods can handle it directly
+        return condition;
     }
 
     /**

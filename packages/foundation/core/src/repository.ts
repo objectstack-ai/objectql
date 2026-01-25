@@ -10,7 +10,6 @@ import { ObjectQLContext, IObjectQL, ObjectConfig, Driver, UnifiedQuery, ActionC
 import type { ObjectStackKernel } from '@objectql/runtime';
 import { Data } from '@objectstack/spec';
 type QueryAST = Data.QueryAST;
-type FilterNode = Data.FilterNode;
 type SortNode = Data.SortNode;
 import { Validator } from './validator';
 import { FormulaEngine } from './formula-engine';

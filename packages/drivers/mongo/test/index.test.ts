@@ -341,14 +341,11 @@ describe('MongoDriver', () => {
                 const ast = {
                     object: 'users',
                     fields: ['name', 'email'],
-                    filters: {
-                        type: 'comparison' as const,
-                        field: 'status',
-                        operator: '=',
-                        value: 'active'
+                    where: {
+                        status: 'active'
                     },
-                    top: 10,
-                    skip: 0
+                    limit: 10,
+                    offset: 0
                 };
 
                 mockCollection.toArray.mockResolvedValue([
@@ -366,21 +363,10 @@ describe('MongoDriver', () => {
             it('should handle complex QueryAST with AND filters', async () => {
                 const ast = {
                     object: 'users',
-                    filters: {
-                        type: 'and' as const,
-                        children: [
-                            {
-                                type: 'comparison' as const,
-                                field: 'status',
-                                operator: '=',
-                                value: 'active'
-                            },
-                            {
-                                type: 'comparison' as const,
-                                field: 'age',
-                                operator: '>',
-                                value: 18
-                            }
+                    where: {
+                        $and: [
+                            { status: 'active' },
+                            { age: { $gt: 18 } }
                         ]
                     }
                 };
@@ -396,7 +382,7 @@ describe('MongoDriver', () => {
             it('should handle QueryAST with sort', async () => {
                 const ast = {
                     object: 'users',
-                    sort: [
+                    orderBy: [
                         { field: 'name', order: 'asc' as const }
                     ]
                 };

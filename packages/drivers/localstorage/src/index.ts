@@ -1,8 +1,7 @@
-import { Data, System } from '@objectstack/spec';
+import { Data, Driver as DriverSpec } from '@objectstack/spec';
 type QueryAST = Data.QueryAST;
-type FilterNode = Data.FilterNode;
 type SortNode = Data.SortNode;
-type DriverInterface = System.DriverInterface;
+type DriverInterface = DriverSpec.DriverInterface;
 /**
  * ObjectQL
  * Copyright (c) 2026-present ObjectStack Inc.
@@ -586,12 +585,13 @@ export class LocalStorageDriver implements Driver {
         const objectName = ast.object || '';
         
         // Convert QueryAST to legacy query format
+        // Note: Convert FilterCondition (MongoDB-like) to array format for localstorage driver
         const legacyQuery: any = {
             fields: ast.fields,
-            filters: this.convertFilterNodeToLegacy(ast.filters),
-            sort: ast.sort?.map((s: SortNode) => [s.field, s.order]),
-            limit: ast.top,
-            skip: ast.skip,
+            filters: this.convertFilterConditionToArray(ast.where),
+            sort: ast.orderBy?.map((s: SortNode) => [s.field, s.order]),
+            limit: ast.limit,
+            skip: ast.offset,
         };
         
         // Use existing find method
@@ -720,60 +720,80 @@ export class LocalStorageDriver implements Driver {
     // ========== Helper Methods (Same as MemoryDriver) ==========
 
     /**
-     * Convert FilterNode from QueryAST to legacy filter format.
+     * Convert FilterCondition (MongoDB-like format) to legacy array format.
+     * This allows the localstorage driver to use its existing filter evaluation logic.
      * 
-     * @param node - The FilterNode to convert
+     * @param condition - FilterCondition object or legacy array
      * @returns Legacy filter array format
      */
-    private convertFilterNodeToLegacy(node?: FilterNode): any {
-        if (!node) return undefined;
+    private convertFilterConditionToArray(condition?: any): any[] | undefined {
+        if (!condition) return undefined;
         
-        switch (node.type) {
-            case 'comparison':
-                // Convert comparison node to [field, operator, value] format
-                const operator = node.operator || '=';
-                return [[node.field, operator, node.value]];
-            
-            case 'and':
-                // Convert AND node to array with 'and' separator
-                if (!node.children || node.children.length === 0) return undefined;
-                const andResults: any[] = [];
-                for (const child of node.children) {
-                    const converted = this.convertFilterNodeToLegacy(child);
-                    if (converted) {
-                        if (andResults.length > 0) {
-                            andResults.push('and');
-                        }
-                        andResults.push(...(Array.isArray(converted) ? converted : [converted]));
-                    }
-                }
-                return andResults.length > 0 ? andResults : undefined;
-            
-            case 'or':
-                // Convert OR node to array with 'or' separator
-                if (!node.children || node.children.length === 0) return undefined;
-                const orResults: any[] = [];
-                for (const child of node.children) {
-                    const converted = this.convertFilterNodeToLegacy(child);
-                    if (converted) {
-                        if (orResults.length > 0) {
-                            orResults.push('or');
-                        }
-                        orResults.push(...(Array.isArray(converted) ? converted : [converted]));
-                    }
-                }
-                return orResults.length > 0 ? orResults : undefined;
-            
-            case 'not':
-                // NOT is complex - we'll just process the first child for now
-                if (node.children && node.children.length > 0) {
-                    return this.convertFilterNodeToLegacy(node.children[0]);
-                }
-                return undefined;
-            
-            default:
-                return undefined;
+        // If already an array, return as-is
+        if (Array.isArray(condition)) {
+            return condition;
         }
+        
+        // If it's an object (FilterCondition), convert to array format
+        // This is a simplified conversion - a full implementation would need to handle all operators
+        const result: any[] = [];
+        
+        for (const [key, value] of Object.entries(condition)) {
+            if (key === '$and' && Array.isArray(value)) {
+                // Handle $and: [cond1, cond2, ...]
+                for (let i = 0; i < value.length; i++) {
+                    const converted = this.convertFilterConditionToArray(value[i]);
+                    if (converted && converted.length > 0) {
+                        if (result.length > 0) {
+                            result.push('and');
+                        }
+                        result.push(...converted);
+                    }
+                }
+            } else if (key === '$or' && Array.isArray(value)) {
+                // Handle $or: [cond1, cond2, ...]
+                for (let i = 0; i < value.length; i++) {
+                    const converted = this.convertFilterConditionToArray(value[i]);
+                    if (converted && converted.length > 0) {
+                        if (result.length > 0) {
+                            result.push('or');
+                        }
+                        result.push(...converted);
+                    }
+                }
+            } else if (key === '$not' && typeof value === 'object') {
+                // Handle $not: { condition }
+                // Note: NOT is complex to represent in array format, so we skip it for now
+                const converted = this.convertFilterConditionToArray(value);
+                if (converted) {
+                    result.push(...converted);
+                }
+            } else if (typeof value === 'object' && value !== null) {
+                // Handle field-level conditions like { field: { $eq: value } }
+                const field = key;
+                for (const [operator, operandValue] of Object.entries(value)) {
+                    let op: string;
+                    switch (operator) {
+                        case '$eq': op = '='; break;
+                        case '$ne': op = '!='; break;
+                        case '$gt': op = '>'; break;
+                        case '$gte': op = '>='; break;
+                        case '$lt': op = '<'; break;
+                        case '$lte': op = '<='; break;
+                        case '$in': op = 'in'; break;
+                        case '$nin': op = 'nin'; break;
+                        case '$regex': op = 'like'; break;
+                        default: op = '=';
+                    }
+                    result.push([field, op, operandValue]);
+                }
+            } else {
+                // Handle simple equality: { field: value }
+                result.push([key, '=', value]);
+            }
+        }
+        
+        return result.length > 0 ? result : undefined;
     }
 
     /**

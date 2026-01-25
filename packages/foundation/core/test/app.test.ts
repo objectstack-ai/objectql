@@ -9,7 +9,8 @@
 import { ObjectQL } from '../src/app';
 import { MockDriver } from './mock-driver';
 import { ObjectConfig, HookContext, ActionContext, Metadata } from '@objectql/types';
-import type { PluginDefinition } from '@objectstack/spec';
+import type { Kernel } from '@objectstack/spec';
+type PluginDefinition = Kernel.PluginDefinition;
 
 const todoObject: ObjectConfig = {
     name: 'todo',

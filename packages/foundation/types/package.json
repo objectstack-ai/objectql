@@ -27,12 +27,13 @@
     "test": "jest --passWithNoTests"
   },
   "peerDependencies": {
-    "@objectstack/spec": "^0.3.1",
+    "@objectstack/spec": "^0.3.3",
     "@objectql/runtime": "^0.2.0"
   },
   "devDependencies": {
-    "@objectstack/spec": "^0.3.1",
+    "@objectstack/spec": "^0.3.3",
     "@objectql/runtime": "workspace:*",
-    "ts-json-schema-generator": "^2.4.0"
+    "ts-json-schema-generator": "^2.4.0",
+    "zod": "^3.23.8"
   }
 }

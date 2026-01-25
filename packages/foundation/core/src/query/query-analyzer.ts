@@ -9,7 +9,6 @@
 import type { UnifiedQuery, ObjectConfig, MetadataRegistry } from '@objectql/types';
 import { Data } from '@objectstack/spec';
 type QueryAST = Data.QueryAST;
-type FilterNode = Data.FilterNode;
 import { QueryService, QueryOptions } from './query-service';
 
 /**
@@ -167,10 +166,10 @@ export class QueryAnalyzer {
         // Build the QueryAST (without executing)
         const ast: QueryAST = {
             object: objectName,
-            filters: query.filters as any, // FilterCondition is compatible with FilterNode
-            sort: query.sort as any, // Will be converted to SortNode[] format
-            top: query.limit, // Changed from limit to top (QueryAST uses 'top')
-            skip: query.skip,
+            where: query.filters as any, // FilterCondition format
+            orderBy: query.sort as any, // Will be converted to SortNode[] format
+            limit: query.limit,
+            offset: query.skip,
             fields: query.fields
         };
         
