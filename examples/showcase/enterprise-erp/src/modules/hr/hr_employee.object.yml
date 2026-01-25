@@ -44,8 +44,10 @@ fields:
   
   full_name:
     type: formula
-    formula: "CONCAT(first_name, ' ', last_name)"
+    expression: "first_name + ' ' + last_name"
+    data_type: text
     label: Full Name
+    description: "Automatically calculated from first and last name"
   
   email:
     type: text

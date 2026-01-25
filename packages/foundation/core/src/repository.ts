@@ -224,9 +224,12 @@ export class ObjectRepository {
 
         // Evaluate each formula field
         for (const [fieldName, fieldConfig] of Object.entries(schema.fields)) {
-            if (fieldConfig.type === 'formula' && fieldConfig.formula) {
+            // Support both 'expression' (spec) and 'formula' (legacy) properties
+            const formulaExpression = fieldConfig.expression || fieldConfig.formula;
+            
+            if (fieldConfig.type === 'formula' && formulaExpression) {
                 const result = this.getFormulaEngine().evaluate(
-                    fieldConfig.formula,
+                    formulaExpression,
                     formulaContext,
                     fieldConfig.data_type || 'text',
                     { strict: true }
@@ -246,7 +249,7 @@ export class ObjectRepository {
                             objectName: this.objectName,
                             fieldName,
                             recordId: formulaContext.record_id,
-                            formula: fieldConfig.formula,
+                            expression: formulaExpression,
                             error: result.error,
                             stack: result.stack,
                         }
