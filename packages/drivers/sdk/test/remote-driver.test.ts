@@ -452,14 +452,14 @@ describe('RemoteDriver', () => {
             const queryAST = {
                 object: 'users',
                 fields: ['name', 'email'],
-                filters: {
+                where: {
                     type: 'comparison' as const,
                     field: 'status',
                     operator: '=',
                     value: 'active'
                 },
-                sort: [{ field: 'created_at', order: 'desc' as const }],
-                top: 10
+                orderBy: [{ field: 'created_at', order: 'desc' as const }],
+                limit: 10
             };
 
             const mockResponse = {

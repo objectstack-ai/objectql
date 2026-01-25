@@ -351,7 +351,7 @@ describe('RedisDriver', () => {
 
             const result = await driver.executeQuery({
                 object: TEST_OBJECT,
-                filters: {
+                where: {
                     type: 'comparison',
                     field: 'role',
                     operator: '=',
@@ -368,7 +368,7 @@ describe('RedisDriver', () => {
 
             const result = await driver.executeQuery({
                 object: TEST_OBJECT,
-                sort: [{ field: 'age', order: 'asc' }]
+                orderBy: [{ field: 'age', order: 'asc' }]
             });
 
             expect(result.value).toHaveLength(3);
@@ -382,9 +382,9 @@ describe('RedisDriver', () => {
 
             const result = await driver.executeQuery({
                 object: TEST_OBJECT,
-                sort: [{ field: 'age', order: 'asc' }],
-                skip: 1,
-                top: 1
+                orderBy: [{ field: 'age', order: 'asc' }],
+                offset: 1,
+                limit: 1
             });
 
             expect(result.value).toHaveLength(1);
@@ -396,7 +396,7 @@ describe('RedisDriver', () => {
 
             const result = await driver.executeQuery({
                 object: TEST_OBJECT,
-                filters: {
+                where: {
                     type: 'and',
                     children: [
                         {
@@ -424,7 +424,7 @@ describe('RedisDriver', () => {
 
             const result = await driver.executeQuery({
                 object: TEST_OBJECT,
-                filters: {
+                where: {
                     type: 'or',
                     children: [
                         {
