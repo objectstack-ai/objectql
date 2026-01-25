@@ -1,7 +1,17 @@
-name: organization
+# File: organization.object.yml
+# Object name is inferred from filename as 'organization'
 label: Organization
 description: Company or organization entity
 icon: building-line
+
+ai_context:
+  intent: "Define organizational hierarchy and structure"
+  domain: organizational_management
+  aliases: [company, org, department, team]
+  common_queries:
+    - "Show organization hierarchy"
+    - "Find active departments"
+    - "List teams under a parent org"
 
 fields:
   name:
@@ -9,32 +19,49 @@ fields:
     required: true
     label: Organization Name
     index: true
+    ai_context:
+      intent: "Primary identifier for the organization"
   
   code:
     type: text
     label: Organization Code
     unique: true
     index: true
+    ai_context:
+      intent: "Unique code for system identification"
   
   type:
     type: select
+    label: Organization Type
     options:
-      - enterprise
-      - department
-      - team
+      - label: Enterprise
+        value: enterprise
+      - label: Department
+        value: department
+      - label: Team
+        value: team
     defaultValue: enterprise
     index: true
+    ai_context:
+      intent: "Classify organizational unit level"
+      is_state_machine: false
   
   parent:
     type: lookup
     reference_to: organization
     label: Parent Organization
     index: true
+    ai_context:
+      intent: "Define hierarchical organization structure"
+      semantic_type: hierarchy
   
   manager:
     type: lookup
     reference_to: user
     label: Manager
+    ai_context:
+      intent: "Organization leader or manager"
+      semantic_type: ownership
   
   description:
     type: textarea
@@ -62,11 +89,19 @@ fields:
   
   status:
     type: select
+    label: Status
     options:
-      - active
-      - inactive
+      - label: Active
+        value: active
+      - label: Inactive
+        value: inactive
     defaultValue: active
     index: true
+    ai_context:
+      intent: "Track organization operational status"
+      transitions:
+        active: [inactive]
+        inactive: [active]
 
 indexes:
   # For org tree queries

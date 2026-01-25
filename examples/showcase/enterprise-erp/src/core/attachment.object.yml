@@ -1,7 +1,16 @@
-name: attachment
+# File: attachment.object.yml
+# Object name is inferred from filename as 'attachment'
 label: Attachment
 description: File attachment for any object
 icon: attachment-line
+
+ai_context:
+  intent: "Manage file attachments linked to any record type"
+  domain: file_management
+  common_queries:
+    - "Find attachments for a specific record"
+    - "List recent uploads by user"
+    - "Filter by file type"
 
 fields:
   name:

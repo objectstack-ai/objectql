@@ -1,4 +1,5 @@
-name: user
+# File: user.object.yml
+# Object name is inferred from filename as 'user'
 label: User
 description: System user with authentication and profile
 icon: user-line
@@ -35,21 +36,39 @@ fields:
   
   status:
     type: select
+    label: User Status
     options:
-      - active
-      - inactive
-      - suspended
+      - label: Active
+        value: active
+      - label: Inactive
+        value: inactive
+      - label: Suspended
+        value: suspended
     defaultValue: active
     index: true
+    ai_context:
+      intent: "Track user account status"
+      is_state_machine: true
+      transitions:
+        active: [inactive, suspended]
+        inactive: [active]
+        suspended: [active, inactive]
   
   role:
     type: select
+    label: User Role
     options:
-      - admin
-      - user
-      - guest
+      - label: Administrator
+        value: admin
+      - label: User
+        value: user
+      - label: Guest
+        value: guest
     defaultValue: user
     index: true
+    ai_context:
+      intent: "Define user permissions level"
+      selection_guidance: "Admin for full access; User for standard access; Guest for read-only"
   
   last_login_at:
     type: datetime
@@ -57,13 +76,19 @@ fields:
   
   locale:
     type: select
-    options:
-      - en
-      - zh-CN
-      - ja
-      - es
-    defaultValue: en
     label: Preferred Language
+    options:
+      - label: English
+        value: en
+      - label: Chinese (Simplified)
+        value: zh-CN
+      - label: Japanese
+        value: ja
+      - label: Spanish
+        value: es
+    defaultValue: en
+    ai_context:
+      intent: "User interface language preference"
   
   timezone:
     type: text

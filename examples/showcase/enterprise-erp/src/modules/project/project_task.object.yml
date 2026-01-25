@@ -1,6 +1,17 @@
+# File: project_task.object.yml
+# Object name is inferred from filename as 'project_task'
 label: Task
 description: Project task or work item
 icon: task-line
+
+ai_context:
+  intent: "Track individual work items and tasks within projects"
+  domain: project_management
+  aliases: [task, work item, issue]
+  common_queries:
+    - "Show my assigned tasks"
+    - "Find overdue tasks"
+    - "List tasks by project"
 
 fields:
   name:
@@ -8,6 +19,8 @@ fields:
     required: true
     label: Task Name
     index: true
+    ai_context:
+      intent: "Brief description of the task"
   
   project:
     type: lookup
@@ -15,73 +28,121 @@ fields:
     label: Project
     required: true
     index: true
+    ai_context:
+      intent: "Parent project containing this task"
+      semantic_type: hierarchy
   
   parent_task:
     type: lookup
     reference_to: project_task
     label: Parent Task
     index: true
+    ai_context:
+      intent: "Parent task for hierarchical task structure"
+      semantic_type: hierarchy
   
   description:
     type: textarea
     label: Description
+    ai_context:
+      intent: "Detailed task requirements and acceptance criteria"
   
   status:
     type: select
+    label: Task Status
     options:
-      - todo
-      - in_progress
-      - in_review
-      - blocked
-      - completed
+      - label: To Do
+        value: todo
+      - label: In Progress
+        value: in_progress
+      - label: In Review
+        value: in_review
+      - label: Blocked
+        value: blocked
+      - label: Completed
+        value: completed
     defaultValue: todo
     required: true
     index: true
+    ai_context:
+      intent: "Current state of task execution"
+      is_state_machine: true
+      transitions:
+        todo: [in_progress]
+        in_progress: [in_review, blocked, completed]
+        in_review: [in_progress, completed]
+        blocked: [in_progress, todo]
+        completed: []
   
   priority:
     type: select
+    label: Priority
     options:
-      - low
-      - medium
-      - high
-      - critical
+      - label: Low
+        value: low
+      - label: Medium
+        value: medium
+      - label: High
+        value: high
+      - label: Critical
+        value: critical
     defaultValue: medium
     index: true
+    ai_context:
+      intent: "Task urgency and importance level"
+      selection_guidance: "Critical for blockers; High for urgent items"
   
   assigned_to:
     type: lookup
     reference_to: user
     label: Assigned To
     index: true
+    ai_context:
+      intent: "User responsible for completing this task"
+      semantic_type: ownership
+      selection_guidance: "Active team members with relevant skills"
   
   due_date:
     type: date
     label: Due Date
     index: true
+    ai_context:
+      intent: "Target completion deadline"
   
   completed_date:
     type: datetime
     label: Completion Date
+    ai_context:
+      intent: "Actual completion timestamp for reporting"
   
   estimated_hours:
     type: number
     label: Estimated Hours
     scale: 2
+    ai_context:
+      intent: "Planned effort for capacity planning"
   
   actual_hours:
     type: number
     label: Actual Hours
     scale: 2
+    ai_context:
+      intent: "Actual time spent for productivity tracking"
   
   milestone:
     type: lookup
     reference_to: project_milestone
     label: Milestone
     index: true
+    ai_context:
+      intent: "Associated milestone for tracking progress"
+      semantic_type: association
   
   tags:
     type: text
     label: Tags
+    ai_context:
+      intent: "Categorization labels for filtering and organization"
 
 indexes:
   # For project task list

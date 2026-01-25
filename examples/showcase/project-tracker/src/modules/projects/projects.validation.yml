@@ -1,5 +1,5 @@
-name: projects_validation
-object: projects
+# File: projects.validation.yml
+# Object is inferred from filename as 'projects'
 description: "Validation rules for Projects"
 
 rules:
@@ -8,25 +8,33 @@ rules:
     ai_context:
       intent: "Ensure project timeline is valid"
       business_rule: "Projects cannot end before they start"
+      rationale: "Maintaining data integrity for project scheduling"
     rule:
       field: end_date
       operator: ">="
       compare_to: start_date
-    message: "End Date must be after Start Date"
+    message: "End Date must be on or after Start Date"
+    error_code: "INVALID_DATE_RANGE"
 
   - name: positive_budget
     type: field
+    ai_context:
+      intent: "Prevent negative budget values"
+      business_rule: "Project budget must be zero or positive"
     rule:
       field: budget
       operator: ">="
       value: 0
     message: "Budget cannot be negative"
+    error_code: "NEGATIVE_BUDGET"
 
   - name: comment_required_if_high_budget
     type: conditional
     description: "Description is required for high budget projects"
     ai_context:
-      business_rule: "High value projects (>10k) must have a detailed description"
+      intent: "Ensure governance for high-value projects"
+      business_rule: "High value projects (>$10k) must have a detailed description for stakeholder transparency"
+      rationale: "Projects over $10,000 require executive oversight and clear documentation"
     condition:
         field: budget
         operator: ">"
@@ -35,3 +43,4 @@ rules:
         field: description
         operator: "not_empty"
     message: "Description is required for high budget projects (> $10,000)"
+    error_code: "HIGH_BUDGET_REQUIRES_DESCRIPTION"
