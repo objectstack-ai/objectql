@@ -1,8 +1,7 @@
-import { Data, System } from '@objectstack/spec';
+import { Data, Driver as DriverSpec } from '@objectstack/spec';
 type QueryAST = Data.QueryAST;
-type FilterNode = Data.FilterNode;
 type SortNode = Data.SortNode;
-type DriverInterface = System.DriverInterface;
+type DriverInterface = DriverSpec.DriverInterface;
 /**
  * ObjectQL
  * Copyright (c) 2026-present ObjectStack Inc.

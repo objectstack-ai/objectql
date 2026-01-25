@@ -1,8 +1,7 @@
-import { Data, System } from '@objectstack/spec';
+import { Data, Driver as DriverSpec } from '@objectstack/spec';
 type QueryAST = Data.QueryAST;
-type FilterNode = Data.FilterNode;
 type SortNode = Data.SortNode;
-type DriverInterface = System.DriverInterface;
+type DriverInterface = DriverSpec.DriverInterface;
 /**
  * ObjectQL
  * Copyright (c) 2026-present ObjectStack Inc.
@@ -977,10 +976,10 @@ export class SqlDriver implements Driver {
         // Convert QueryAST to legacy query format for internal processing
         const legacyQuery: any = {
             fields: ast.fields,
-            filters: this.convertFilterNodeToLegacy(ast.filters),
-            sort: ast.sort?.map(s => [s.field, s.order]),
-            limit: ast.top,
-            offset: ast.skip,
+            filters: this.convertFilterNodeToLegacy(ast.where),
+            sort: ast.orderBy?.map(s => [s.field, s.order]),
+            limit: ast.limit,
+            offset: ast.offset,
         };
         
         // Use existing find method for execution
@@ -1094,61 +1093,15 @@ export class SqlDriver implements Driver {
     }
 
     /**
-     * Convert FilterNode (QueryAST format) to legacy filter array format
+     * Convert FilterCondition (QueryAST format) to legacy filter array format
      * This allows reuse of existing filter logic while supporting new QueryAST
      * 
      * @private
      */
-    private convertFilterNodeToLegacy(node?: FilterNode): any {
-        if (!node) return undefined;
-        
-        switch (node.type) {
-            case 'comparison':
-                // Convert comparison node to [field, operator, value] format
-                const operator = node.operator || '=';
-                return [[node.field, operator, node.value]];
-            
-            case 'and':
-                // Convert AND node to array with 'and' separator
-                if (!node.children || node.children.length === 0) return undefined;
-                const andResults: any[] = [];
-                for (const child of node.children) {
-                    const converted = this.convertFilterNodeToLegacy(child);
-                    if (converted) {
-                        if (andResults.length > 0) {
-                            andResults.push('and');
-                        }
-                        andResults.push(...(Array.isArray(converted) ? converted : [converted]));
-                    }
-                }
-                return andResults.length > 0 ? andResults : undefined;
-            
-            case 'or':
-                // Convert OR node to array with 'or' separator
-                if (!node.children || node.children.length === 0) return undefined;
-                const orResults: any[] = [];
-                for (const child of node.children) {
-                    const converted = this.convertFilterNodeToLegacy(child);
-                    if (converted) {
-                        if (orResults.length > 0) {
-                            orResults.push('or');
-                        }
-                        orResults.push(...(Array.isArray(converted) ? converted : [converted]));
-                    }
-                }
-                return orResults.length > 0 ? orResults : undefined;
-            
-            case 'not':
-                // NOT is more complex - we'll need to negate the inner condition
-                // For now, we'll just process the children
-                if (node.children && node.children.length > 0) {
-                    return this.convertFilterNodeToLegacy(node.children[0]);
-                }
-                return undefined;
-            
-            default:
-                return undefined;
-        }
+    private convertFilterNodeToLegacy(condition?: any): any {
+        // FilterCondition is already in the modern format, just pass it through
+        // The legacy format methods can handle it directly
+        return condition;
     }
 
     /**
