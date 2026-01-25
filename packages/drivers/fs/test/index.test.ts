@@ -492,7 +492,7 @@ describe('FileSystemDriver', () => {
                 expect(result.value.some((u: any) => u.name === 'Charlie')).toBe(true);
             });
 
-            test('should handle pagination with skip and top', async () => {
+            test('should handle pagination with offset and limit', async () => {
                 await driver.create('users', { name: 'Alice', age: 30 });
                 await driver.create('users', { name: 'Bob', age: 25 });
                 await driver.create('users', { name: 'Charlie', age: 35 });

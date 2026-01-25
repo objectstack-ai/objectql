@@ -428,15 +428,15 @@ describe('LocalStorageDriver', () => {
                 const result = await driver.executeQuery({
                     object: 'users',
                     fields: ['name', 'age'],
-                    filters: {
+                    where: {
                         type: 'comparison',
                         field: 'age',
                         operator: '>',
                         value: 25
                     },
-                    sort: [{ field: 'age', order: 'asc' }],
-                    top: 10,
-                    skip: 0
+                    orderBy: [{ field: 'age', order: 'asc' }],
+                    limit: 10,
+                    offset: 0
                 });
 
                 expect(result.value).toHaveLength(2);
@@ -452,7 +452,7 @@ describe('LocalStorageDriver', () => {
 
                 const result = await driver.executeQuery({
                     object: 'users',
-                    filters: {
+                    where: {
                         type: 'and',
                         children: [
                             { type: 'comparison', field: 'age', operator: '>', value: 25 },
@@ -465,16 +465,16 @@ describe('LocalStorageDriver', () => {
                 expect(result.value.every((u: any) => u.city === 'NYC')).toBe(true);
             });
 
-            it('should handle pagination with skip and top', async () => {
+            it('should handle pagination with offset and limit', async () => {
                 await driver.create('users', { name: 'Alice', age: 30 });
                 await driver.create('users', { name: 'Bob', age: 25 });
                 await driver.create('users', { name: 'Charlie', age: 35 });
 
                 const result = await driver.executeQuery({
                     object: 'users',
-                    sort: [{ field: 'name', order: 'asc' }],
-                    skip: 1,
-                    top: 1
+                    orderBy: [{ field: 'name', order: 'asc' }],
+                    offset: 1,
+                    limit: 1
                 });
 
                 expect(result.value).toHaveLength(1);
