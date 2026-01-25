@@ -40,8 +40,15 @@ actions:
         required: false
       method:
         type: select
-        options: [cash, card, transfer]
-        default: transfer
+        label: Payment Method
+        options:
+          - label: Cash
+            value: cash
+          - label: Card
+            value: card
+          - label: Transfer
+            value: transfer
+        defaultValue: transfer
 
   import_csv:
     type: global           # 'global' = acts on the collection

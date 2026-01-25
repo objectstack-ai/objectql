@@ -630,16 +630,26 @@ const uniqueCustomers = await app.object('order').distinct('customer_id', {
 
 ```yaml
 # task.object.yml
-name: task
+# Object name inferred as 'task'
+label: Task
 fields:
   status:
     type: select
-    options: [open, in_progress, completed]
+    label: Task Status
+    options:
+      - label: Open
+        value: open
+      - label: In Progress
+        value: in_progress
+      - label: Completed
+        value: completed
   assignee_id:
     type: lookup
     reference_to: users
+    label: Assignee
   due_date:
     type: date
+    label: Due Date
 
 indexes:
   # Composite index for common query

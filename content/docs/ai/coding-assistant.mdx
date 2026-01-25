@@ -74,25 +74,39 @@ navigation:
 
 ### 2. Object Definition (Schema)
 Objects are defined in `<name>.object.yml`.
+
+**Key Convention (v4.0+):** The object `name` is **inferred from the filename** - no redundant `name:` field needed!
+
 Supported types: `text`, `number`, `boolean`, `date`, `datetime`, `json`, `lookup`, `select`.
 
 Example `todo.object.yml`:
 ```yaml
-name: todo
+# File: todo.object.yml
+# Object name is inferred as 'todo' ✅
 label: Todo Item
 fields:
   title:
     type: text
     required: true
+    label: Task Title
   completed:
     type: boolean
     defaultValue: false
+    label: Completed
   priority:
     type: select
-    options: [low, medium, high]
+    label: Priority Level
+    options:
+      - label: Low
+        value: low
+      - label: Medium
+        value: medium
+      - label: High
+        value: high
   owner:
     type: lookup
     reference_to: user
+    label: Owner
 ```
 
 ### 3. Data Operations (API)
