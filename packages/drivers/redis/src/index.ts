@@ -674,8 +674,40 @@ export class RedisDriver implements Driver {
             return condition;
         }
         
-        // If it's an object (FilterCondition), convert to array format
-        // This is a simplified conversion - a full implementation would need to handle all operators
+        // Handle new @objectstack/spec FilterCondition format (v0.3.3+)
+        // Check if it's the new format with 'type' property
+        if (condition.type) {
+            if (condition.type === 'comparison') {
+                // Handle comparison filter: { type: 'comparison', field, operator, value }
+                return [[condition.field, condition.operator, condition.value]];
+            } else if (condition.type === 'and' || condition.type === 'or') {
+                // Handle logical filter: { type: 'and' | 'or', children: [...] }
+                const result: any[] = [];
+                const logicalOp = condition.type;
+                
+                if (condition.children && Array.isArray(condition.children)) {
+                    for (let i = 0; i < condition.children.length; i++) {
+                        const converted = this.convertFilterConditionToArray(condition.children[i]);
+                        if (converted && converted.length > 0) {
+                            if (result.length > 0) {
+                                result.push(logicalOp);
+                            }
+                            result.push(...converted);
+                        }
+                    }
+                }
+                
+                return result.length > 0 ? result : undefined;
+            } else if (condition.type === 'not') {
+                // Handle NOT filter: { type: 'not', child: {...} }
+                console.warn('[RedisDriver] NOT operator in filters is not fully supported in legacy format');
+                if (condition.child) {
+                    return this.convertFilterConditionToArray(condition.child);
+                }
+            }
+        }
+        
+        // Fallback: Handle legacy MongoDB-style filters for backward compatibility
         const result: any[] = [];
         
         for (const [key, value] of Object.entries(condition)) {
@@ -703,7 +735,6 @@ export class RedisDriver implements Driver {
                 }
             } else if (key === '$not' && typeof value === 'object') {
                 // Handle $not: { condition }
-                // Note: NOT is complex to represent in array format, so we skip it for now
                 console.warn('[RedisDriver] NOT operator in filters is not fully supported in legacy format');
                 const converted = this.convertFilterConditionToArray(value);
                 if (converted) {
