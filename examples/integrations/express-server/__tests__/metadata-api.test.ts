@@ -145,17 +145,17 @@ describe('Metadata API', () => {
             const fields = response.body.fields;
             
             expect(fields.name).toBeDefined();
-            expect(fields.name.type).toBe('string');
+            expect(fields.name.type).toBe('text');
             expect(fields.name.label).toBe('Full Name');
             expect(fields.name.required).toBe(true);
             
             expect(fields.email).toBeDefined();
-            expect(fields.email.type).toBe('string');
+            expect(fields.email.type).toBe('email');
             expect(fields.email.label).toBe('Email Address');
             expect(fields.email.required).toBe(true);
             
             expect(fields.status).toBeDefined();
-            expect(fields.status.type).toBe('string');
+            expect(fields.status.type).toBe('select');
             expect(fields.status.defaultValue).toBe('active');
             
             expect(fields.age).toBeDefined();
@@ -171,11 +171,11 @@ describe('Metadata API', () => {
             const fields = response.body.fields;
             
             expect(fields.title).toBeDefined();
-            expect(fields.title.type).toBe('string');
+            expect(fields.title.type).toBe('text');
             expect(fields.title.required).toBe(true);
             
             expect(fields.description).toBeDefined();
-            expect(fields.description.type).toBe('text');
+            expect(fields.description.type).toBe('textarea');
             
             expect(fields.status).toBeDefined();
             expect(fields.status.defaultValue).toBe('pending');
@@ -195,7 +195,7 @@ describe('Metadata API', () => {
 
             expect(response.status).toBe(200);
             expect(response.body.name).toBe('name');
-            expect(response.body.type).toBe('string');
+            expect(response.body.type).toBe('text');
             expect(response.body.label).toBe('Full Name');
             expect(response.body.required).toBe(true);
         });
