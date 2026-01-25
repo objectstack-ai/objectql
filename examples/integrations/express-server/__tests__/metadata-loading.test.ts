@@ -73,17 +73,17 @@ describe('Metadata Loading', () => {
             
             expect(userConfig.fields).toBeDefined();
             expect(userConfig.fields.name).toEqual(expect.objectContaining({
-                type: 'string',
+                type: 'text',
                 label: 'Full Name',
                 required: true
             }));
             expect(userConfig.fields.email).toEqual(expect.objectContaining({
-                type: 'string',
+                type: 'email',
                 label: 'Email Address',
                 required: true
             }));
             expect(userConfig.fields.status).toEqual(expect.objectContaining({
-                type: 'string',
+                type: 'select',
                 label: 'Status',
                 defaultValue: 'active'
             }));
@@ -98,21 +98,21 @@ describe('Metadata Loading', () => {
             
             expect(taskConfig.fields).toBeDefined();
             expect(taskConfig.fields.title).toEqual(expect.objectContaining({
-                type: 'string',
+                type: 'text',
                 label: 'Title',
                 required: true
             }));
             expect(taskConfig.fields.description).toEqual(expect.objectContaining({
-                type: 'text',
+                type: 'textarea',
                 label: 'Description'
             }));
             expect(taskConfig.fields.status).toEqual(expect.objectContaining({
-                type: 'string',
+                type: 'select',
                 label: 'Status',
                 defaultValue: 'pending'
             }));
             expect(taskConfig.fields.priority).toEqual(expect.objectContaining({
-                type: 'string',
+                type: 'select',
                 label: 'Priority',
                 defaultValue: 'medium'
             }));
