@@ -515,18 +515,27 @@ export class MemoryDriver implements Driver {
     /**
      * Convert ObjectQL filters to MongoDB query format for Mingo.
      * 
-     * Supports ObjectQL filter format:
-     * [
-     *   ['field', 'operator', value],
-     *   'or',
-     *   ['field2', 'operator', value2]
-     * ]
+     * Supports both:
+     * 1. Legacy ObjectQL filter format (array):
+     *    [['field', 'operator', value], 'or', ['field2', 'operator', value2']]
+     * 2. New FilterCondition format (object - already MongoDB-like):
+     *    { $and: [{ field: { $eq: value }}, { field2: { $gt: value2 }}] }
      * 
      * Converts to MongoDB query format:
      * { $or: [{ field: { $operator: value }}, { field2: { $operator: value2 }}] }
      */
-    private convertToMongoQuery(filters?: any[]): Record<string, any> {
-        if (!filters || filters.length === 0) {
+    private convertToMongoQuery(filters?: any[] | Record<string, any>): Record<string, any> {
+        if (!filters) {
+            return {};
+        }
+        
+        // If filters is already an object (FilterCondition format), return it directly
+        if (!Array.isArray(filters)) {
+            return filters;
+        }
+        
+        // Handle legacy array format
+        if (filters.length === 0) {
             return {};
         }
         
@@ -751,12 +760,14 @@ export class MemoryDriver implements Driver {
         const objectName = ast.object || '';
         
         // Convert QueryAST to legacy query format
+        // Note: ast.where is already in FilterCondition format (MongoDB-like with $eq, $and, etc.)
+        // which can be passed directly to Mingo, so we just pass it as-is
         const legacyQuery: any = {
             fields: ast.fields,
-            filters: this.convertFilterNodeToLegacy(ast.filters),
-            sort: ast.sort?.map((s: SortNode) => [s.field, s.order]),
-            limit: ast.top,
-            offset: ast.skip,
+            filters: ast.where,  // FilterCondition is already MongoDB-compatible
+            sort: ast.orderBy?.map((s: SortNode) => [s.field, s.order]),
+            limit: ast.limit,
+            offset: ast.offset,
         };
         
         // Use existing find method
@@ -869,63 +880,6 @@ export class MemoryDriver implements Driver {
                 error: error.message || 'Command execution failed',
                 affected: 0
             };
-        }
-    }
-
-    /**
-     * Convert FilterNode (QueryAST format) to legacy filter array format
-     * This allows reuse of existing filter logic while supporting new QueryAST
-     * 
-     * @private
-     */
-    private convertFilterNodeToLegacy(node?: FilterNode): any {
-        if (!node) return undefined;
-        
-        switch (node.type) {
-            case 'comparison':
-                // Convert comparison node to [field, operator, value] format
-                const operator = node.operator || '=';
-                return [[node.field, operator, node.value]];
-            
-            case 'and':
-                // Convert AND node to array with 'and' separator
-                if (!node.children || node.children.length === 0) return undefined;
-                const andResults: any[] = [];
-                for (const child of node.children) {
-                    const converted = this.convertFilterNodeToLegacy(child);
-                    if (converted) {
-                        if (andResults.length > 0) {
-                            andResults.push('and');
-                        }
-                        andResults.push(...(Array.isArray(converted) ? converted : [converted]));
-                    }
-                }
-                return andResults.length > 0 ? andResults : undefined;
-            
-            case 'or':
-                // Convert OR node to array with 'or' separator
-                if (!node.children || node.children.length === 0) return undefined;
-                const orResults: any[] = [];
-                for (const child of node.children) {
-                    const converted = this.convertFilterNodeToLegacy(child);
-                    if (converted) {
-                        if (orResults.length > 0) {
-                            orResults.push('or');
-                        }
-                        orResults.push(...(Array.isArray(converted) ? converted : [converted]));
-                    }
-                }
-                return orResults.length > 0 ? orResults : undefined;
-            
-            case 'not':
-                // NOT is complex - we'll just process the first child for now
-                if (node.children && node.children.length > 0) {
-                    return this.convertFilterNodeToLegacy(node.children[0]);
-                }
-                return undefined;
-            
-            default:
-                return undefined;
         }
     }
 
