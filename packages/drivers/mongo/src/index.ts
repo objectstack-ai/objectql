@@ -149,7 +149,16 @@ export class MongoDriver implements Driver {
     }
 
     private mapFilters(filters: any): Filter<any> {
-        if (!filters || filters.length === 0) return {};
+        if (!filters) return {};
+        
+        // If filters is an object (FilterCondition format), return it directly
+        // MongoDB can handle FilterCondition format natively
+        if (typeof filters === 'object' && !Array.isArray(filters)) {
+            return filters as Filter<any>;
+        }
+        
+        // If filters is an array (legacy format), convert it
+        if (Array.isArray(filters) && filters.length === 0) return {};
         
         const result = this.buildFilterConditions(filters);
         return result;
