@@ -143,6 +143,27 @@ Comprehensive security plugin with RBAC, FLS, and RLS:
 - Automatic field masking for sensitive data
 - Configurable mask formats (SSN, credit cards, emails, custom patterns)
 - Role-based field visibility
+
+#### `@objectql/plugin-ai` - AI Plugin (100%)
+**Package**: `packages/foundation/plugin-ai/`
+
+AI-powered plugin for code generation, validation, and suggestions:
+
+**AI Service** (`src/plugin.ts`) - ✅ 100%
+- Multi-provider support (OpenAI, Anthropic, and custom providers)
+- AI-powered code generation from natural language descriptions
+- Intelligent metadata validation with best practices
+- Smart suggestions for improvements and optimizations
+- Configurable system prompts for customization
+- Complete TypeScript type definitions for all AI operations
+
+**Features** - ✅ 100%
+- Generate complete ObjectQL applications (objects, validations, actions, hooks)
+- Validate YAML metadata with AI analysis
+- Business logic, security, and performance checks
+- Context-aware suggestions for fields, validations, and actions
+- Support for multiple AI providers with fallback
+- Language-specific prompts and responses
 - Field removal for unauthorized access
 
 **Plugin Integration** (`src/plugin.ts`) - ✅ 100%
@@ -587,6 +608,7 @@ Based on type definitions and code comments, these features are planned:
 | `@objectql/core` | ✅ 100% | All core features working |
 | `@objectql/platform-node` | ✅ 100% | Node.js integration complete |
 | `@objectql/plugin-security` | ✅ 100% | RBAC, FLS, RLS complete |
+| `@objectql/plugin-ai` | ✅ 100% | AI code generation, validation, suggestions |
 | `@objectql/driver-sql` | ✅ 100% | Production-ready |
 | `@objectql/driver-mongo` | ✅ 100% | Production-ready |
 | `@objectql/driver-memory` | ✅ 100% | Production-ready |
