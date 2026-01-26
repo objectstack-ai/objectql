@@ -72,6 +72,18 @@ export type Operator =
 ### 2.2 The Query Interface
 
 ```typescript
+// Modern filter condition type (object-based syntax)
+// Supports MongoDB/Prisma-style operators: $eq, $gt, $gte, $lt, $lte, $ne, $in, $nin, etc.
+// For full operator reference, see Section 3.2
+export type FilterCondition = {
+  [field: string]: 
+    | any  // Implicit equality: { status: "active" }
+    | { [operator: string]: any }  // Explicit operator: { price: { $gt: 100 } }
+} | {
+  $and?: FilterCondition[];  // Logical AND
+  $or?: FilterCondition[];   // Logical OR
+};
+
 export interface UnifiedQuery {
   // === 1. Target ===
   object: string;
@@ -422,8 +434,8 @@ Advanced filtering with AI-understandable intent:
       { "status": "active" },
       {
         "$or": [
-          { "end_date": { "$lt": "$today" } },  // Overdue
-          { "actual_cost": { "$gt": "$budget" } },  // Over budget (dynamic field reference)
+          { "end_date": { "$lt": "$today" } },  // Overdue (special variable)
+          { "budget_exceeded": true },  // Over budget flag
           { "risk_level": "high" }  // High risk flag
         ]
       }
