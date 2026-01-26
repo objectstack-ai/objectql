@@ -243,7 +243,50 @@ setup(app) {
 }
 ```
 
-## 5. Scope Isolation
+## 5. Official Plugins
+
+ObjectQL provides official plugins for common use cases:
+
+### @objectql/plugin-security
+
+Comprehensive security plugin with RBAC, Field-Level Security (FLS), and Row-Level Security (RLS).
+
+**Installation:**
+```bash
+pnpm add @objectql/plugin-security
+```
+
+**Features:**
+- ✅ Role-Based Access Control (RBAC)
+- ✅ Row-Level Security (RLS) with AST-level filtering
+- ✅ Field-Level Security (FLS) with field masking
+- ✅ Pre-compiled permissions (O(1) lookups)
+- ✅ Audit logging for permission checks
+- ✅ Configurable storage backends
+
+**Usage:**
+```typescript
+import { ObjectQLSecurityPlugin } from '@objectql/plugin-security';
+
+const app = new ObjectQL({
+  plugins: [
+    new ObjectQLSecurityPlugin({
+      enabled: true,
+      permissions: [projectPermissions],
+      precompileRules: true,
+      enableCache: true,
+      enableAudit: true
+    })
+  ]
+});
+```
+
+**Documentation:**
+- [Security Plugin README](https://github.com/objectstack-ai/objectql/tree/main/packages/foundation/plugin-security)
+- [Architecture Documentation](https://github.com/objectstack-ai/objectql/blob/main/packages/foundation/plugin-security/ARCHITECTURE.md)
+- [Security Guide](/docs/server/security)
+
+## 6. Scope Isolation
 
 
 When a plugin is loaded via **Package Name** (Method 2), ObjectQL automatically marks the hooks and actions registered by that plugin with its package name.
