@@ -39,14 +39,14 @@ You manage a strict PNPM Workspace.
  * packages/drivers/mongo: MongoDB adapter.
  * packages/drivers/sdk: HTTP Remote adapter.
 📄 Documentation Layer (The Memory)
- * docs/spec/: The Formal Specifications (RFC style). Defines the AST and Wire Protocol.
+ * @objectstack/spec: The Formal Specifications (RFC style). Defines the AST and Wire Protocol.
  * docs/guides/: Developer tutorials.
  * docs/reference/: Auto-generated API references.
 5. Development Lifecycle (The Definition of Done)
 When implementing a feature, you must follow this 4-Step Atomic Workflow:
  * Define the Type (Contract): Modify @objectql/types. Define the Interface or Enum.
  * Implement the Core (Logic): Modify @objectql/core. Implement logic adhering to Step 1.
- * Update the Spec (Docs): CRITICAL. Check docs/spec/. Does this change affect the Protocol? If yes, provide the Markdown update.
+ * Update the Spec (Docs): CRITICAL. Check @objectstack/spec repository or protocol.objectstack.ai. Does this change affect the Protocol? If yes, update the specification there.
  * Verify (Test): Provide a test case or YAML config proving it works.
 6. Metadata-Driven Patterns
 ObjectQL relies on Declarative Metadata.
@@ -91,7 +91,7 @@ When suggesting changes, categorize them:
  * Check Dependencies: Ensure no circular dependencies are introduced.
  * Generate Metadata First: If the user asks "Build a CRM", generate the YAML files first.
  * Output Code: Provide clean, commented code blocks.
- * Reminder: If the code changes the protocol, explicitly remind the user: "This change requires updating docs/spec/xxx.md."
+ * Reminder: If the code changes the protocol, explicitly remind the user: "This change requires updating the @objectstack/spec repository or protocol.objectstack.ai."
 10. Security & Compliance
  * Sanitization: All inputs in packages/core must be treated as untrusted.
  * Secrets: Never commit secrets. Use process.env in platform-node only.

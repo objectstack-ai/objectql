@@ -88,5 +88,5 @@ Creating a new Deal...
 ## Next Steps
 
 - See [Project Tracker Example](../../showcase/project-tracker/) for YAML-based metadata
-- Read the [Metadata Standard Spec](../../../content/docs/reference/spec/metadata-standard.mdx)
+- Read the [Metadata Standard Spec](https://protocol.objectstack.ai) from @objectstack/spec
 - Explore the [ObjectQL Documentation](../../../content/docs/)
