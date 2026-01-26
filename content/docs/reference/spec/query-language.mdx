@@ -174,12 +174,14 @@ Use operators for more complex conditions:
 
 ### 3.4 Null and Existence Checks
 
+Check for null or non-null values:
+
 ```json
 {
   "object": "users",
   "filters": {
-    "deletedAt": { "$null": true },
-    "lastLoginAt": { "$null": false }
+    "deletedAt": { "$null": true },     // IS NULL (record is not deleted)
+    "lastLoginAt": { "$null": false }   // IS NOT NULL (user has logged in)
   }
 }
 ```
