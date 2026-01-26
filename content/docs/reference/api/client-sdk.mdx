@@ -54,7 +54,7 @@ const activeUsers = await dataClient.list('users', {
 
 // TypeScript with generics
 interface User {
-  _id: string;
+  id: string;  // Note: Use 'id' not '_id' (unified field name across all databases)
   name: string;
   email: string;
   status: 'active' | 'inactive';
@@ -69,6 +69,8 @@ users.items?.forEach(user => {
   console.log(user.name); // Type-safe!
 });
 ```
+
+**Note:** The unified `id` field is used across all database drivers (MongoDB, SQL, etc.). For MongoDB migration from `_id`, see the [Migrations Guide](../../modeling/migrations.mdx).
 
 ### Get Single Record
 
@@ -91,7 +93,7 @@ const newUser = await dataClient.create('users', {
   role: 'admin'
 });
 
-console.log(newUser._id); // Generated ID
+console.log(newUser.id); // Generated ID (unified field name)
 console.log(newUser.created_at); // Timestamp
 
 // With TypeScript
@@ -328,7 +330,7 @@ export function useObjectData<T>(objectName: string, params?: any) {
 import { useObjectData } from './hooks/useObjectData';
 
 interface User {
-  _id: string;
+  id: string;  // Unified field name
   name: string;
   email: string;
   status: string;
@@ -346,7 +348,7 @@ function UserList() {
   return (
     <ul>
       {users.map(user => (
-        <li key={user._id}>
+        <li key={user.id}>
           {user.name} - {user.email}
         </li>
       ))}
@@ -574,7 +576,7 @@ import type {
 2. **Use Generic Types**
    ```typescript
    interface Project {
-     _id: string;
+     id: string;  // Use 'id' not '_id'
      name: string;
      status: string;
    }

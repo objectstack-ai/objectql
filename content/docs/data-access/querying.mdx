@@ -58,12 +58,24 @@ filters: {
 
 ### Create (Insert)
 
+Both `create()` and `insert()` methods are supported (aliases for the same operation):
+
 ```typescript
-const id = await app.object('user').insert({
+// Using create (recommended)
+const user = await app.object('user').create({
     name: "Alice",
     email: "alice@example.com",
     role: "admin"
 });
+console.log(user.id); // Returns full record with generated ID
+
+// Using insert (alias, returns ID only for backward compatibility)
+const id = await app.object('user').insert({
+    name: "Bob",
+    email: "bob@example.com",
+    role: "user"
+});
+console.log(id); // Returns just the ID string
 ```
 
 ### Update
@@ -73,7 +85,7 @@ Updates are always bulk operations targeted by `filters`. To update a single rec
 ```typescript
 // Update specific record
 await app.object('user').update(
-    { filters: { _id: '123' } }, // Target
+    { filters: { id: '123' } }, // Target (use 'id' not '_id')
     { doc: { status: 'active' } }       // Change
 );
 

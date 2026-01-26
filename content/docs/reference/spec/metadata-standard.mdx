@@ -21,7 +21,7 @@ In ObjectQL, **metadata** is machine-readable configuration that describes:
 
 ### 1. Core Data Layer
 
-#### [Objects & Fields](./object.md)
+#### [Objects & Fields](./object.mdx)
 **Purpose**: Define your data model - the foundation of your application.
 
 **What you define**:
@@ -49,7 +49,7 @@ fields:
     reference_to: users
 ```
 
-#### [Query Language](./query-language.md)
+#### [Query Language](./query-language.mdx)
 **Purpose**: Universal JSON-based query protocol for database operations.
 
 **What you define**:
@@ -77,7 +77,7 @@ fields:
 }
 ```
 
-#### [Validation Rules](./validation.md)
+#### [Validation Rules](./validation.mdx)
 **Purpose**: Enforce data quality and business rules.
 
 **What you define**:
@@ -128,7 +128,7 @@ records:
 
 ### 2. Business Logic Layer
 
-#### [Hooks (Triggers)](./hook.md)
+#### [Hooks (Triggers)](./hook.mdx)
 **Purpose**: Execute logic before/after data operations.
 
 **What you define**:
@@ -150,7 +150,7 @@ beforeCreate: async ({ data, user }) => {
 }
 ```
 
-#### [Actions (RPC)](./action.md)
+#### [Actions (RPC)](./action.mdx)
 **Purpose**: Define custom server-side operations.
 
 **What you define**:
@@ -171,7 +171,7 @@ actions:
         required: true
 ```
 
-#### [Workflows & Processes](./workflow.md)
+#### [Workflows & Processes](./workflow.mdx)
 **Purpose**: Automate business processes and approvals.
 
 **What you define**:
@@ -202,7 +202,7 @@ steps:
 
 ### 3. User Interface Layer
 
-#### [Pages](./page.md)
+#### [Pages](./page.mdx)
 **Purpose**: Define UI layouts and page structures.
 
 **What you define**:
@@ -238,7 +238,7 @@ actions:
   - export_to_excel
 ```
 
-#### [Views](./view.md)
+#### [Views](./view.mdx)
 **Purpose**: Saved queries and display configurations.
 
 **What you define**:
@@ -274,7 +274,7 @@ sort:
     direction: asc
 ```
 
-#### [Forms](./form.md)
+#### [Forms](./form.mdx)
 **Purpose**: Data entry layouts and configurations.
 
 **What you define**:
@@ -309,7 +309,7 @@ defaults:
   status: planning
 ```
 
-#### [Reports](./report.md)
+#### [Reports](./report.mdx)
 **Purpose**: Analytics and data exports.
 
 **What you define**:
@@ -343,7 +343,7 @@ aggregations:
     function: count
 ```
 
-#### [Menus](./menu.md)
+#### [Menus](./menu.mdx)
 **Purpose**: Navigation structure and organization.
 
 **What you define**:
@@ -379,7 +379,7 @@ items:
 
 ### 4. Security & Access Control
 
-#### [Permissions](./permission.md)
+#### [Permissions](./permission.mdx)
 **Purpose**: Control who can access what data and operations.
 
 **What you define**:
@@ -595,7 +595,7 @@ fields:
 
 ## Next Steps
 
-1. **Start Simple**: Define your first object → [Objects & Fields](./object.md)
+1. **Start Simple**: Define your first object → [Objects & Fields](./object.mdx)
 2. **Add Logic**: Implement validation and hooks
 3. **Build UI**: Create pages, views, and forms
 4. **Secure**: Configure permissions
@@ -605,24 +605,24 @@ fields:
 ## Reference
 
 ### Core Data Layer
-- [Objects & Fields](./object.md) - Data modeling
-- [Query Language](./query-language.md) - Data access
-- [Validation](./validation.md) - Data quality
-- [Formula Fields](./formula.md) - Calculated fields
-- [Initial Data](./data.md) - Seed data
+- [Objects & Fields](./object.mdx) - Data modeling
+- [Query Language](./query-language.mdx) - Data access
+- [Validation](./validation.mdx) - Data quality
+- [Formula Fields](./formula.mdx) - Calculated fields
+- [Initial Data](./data.mdx) - Seed data
 
 ### Business Logic Layer
-- [Hooks](./hook.md) - Event triggers
-- [Actions](./action.md) - Custom operations
-- [Workflows](./workflow.md) - Process automation
+- [Hooks](./hook.mdx) - Event triggers
+- [Actions](./action.mdx) - Custom operations
+- [Workflows](./workflow.mdx) - Process automation
 
 ### User Interface Layer
-- [Pages](./page.md) - UI pages and components
-- [Views](./view.md) - Data presentation
-- [Forms](./form.md) - Data entry
-- [Reports](./report.md) - Analytics
-- [Menus](./menu.md) - Navigation
+- [Pages](./page.mdx) - UI pages and components
+- [Views](./view.mdx) - Data presentation
+- [Forms](./form.mdx) - Data entry
+- [Reports](./report.mdx) - Analytics
+- [Menus](./menu.mdx) - Navigation
 
 ### Application & Security
-- [Apps](./app.md) - Application organization
-- [Permissions](./permission.md) - Security and access control
+- [Apps](./app.mdx) - Application organization
+- [Permissions](./permission.mdx) - Security and access control
