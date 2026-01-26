@@ -55,11 +55,11 @@ fields:
     searchable: true
   completed: 
     type: boolean
-    default: false
+    defaultValue: false
   priority:
     type: select
     options: [low, medium, high]
-    default: medium
+    defaultValue: medium
 ```
 
 ### 4. Run the Project
@@ -173,12 +173,12 @@ ObjectQL shines when you need to add logic.
 Triggers logic automatically when data changes.
 
 ```typescript
-app.on('beforeCreate', 'todo', async (ctx) => {
-    if (ctx.doc.title === 'Sleep') {
+app.on('before:create', 'todo', async (ctx) => {
+    if (ctx.data.title === 'Sleep') {
         throw new Error("Cannot sleep yet!");
     }
     // Auto-tagging
-    ctx.doc.title = `[Task] ${ctx.doc.title}`;
+    ctx.data.title = `[Task] ${ctx.data.title}`;
 });
 ```
 

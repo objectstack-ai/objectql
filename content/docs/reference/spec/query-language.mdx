@@ -102,6 +102,8 @@ export interface UnifiedQuery {
 
 The `filters` property is a recursive array structure that eliminates the need for SQL strings.
 
+**Note:** This array-based syntax ([field, operator, value]) is used for **runtime queries**. For **validation rules** in YAML metadata, an object-based syntax (field/operator/value) is used instead. See [Validation Rules](./validation.mdx) for details.
+
 ### 3.1 Single Criterion
 A criterion is a tuple of `[Field, Operator, Value]`.
 
