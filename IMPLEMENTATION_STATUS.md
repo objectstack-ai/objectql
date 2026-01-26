@@ -11,18 +11,18 @@ This document provides a comprehensive overview of what features are **actually 
 
 ObjectQL is a **production-ready** metadata-driven ORM with a strong foundation. Core features including validation, formulas, hooks, actions, and multi-database support are fully implemented and tested.
 
-**Overall Completion**: ~75%
+**Overall Completion**: ~80%
 
 | Category | Status | Notes |
 |----------|--------|-------|
 | **Core Engine** | ✅ 100% | Validation, Formulas, Repository Pattern |
 | **Database Drivers** | ✅ 100% | 7 drivers fully implemented |
 | **Logic Layer** | ✅ 100% | Hooks, Actions fully working |
+| **Security Plugin** | ✅ 100% | RBAC, FLS, RLS fully implemented |
 | **AI Integration** | ✅ 100% | AI Agent for code generation |
 | **Server Runtime** | ✅ 95% | REST/GraphQL/Node.js adapters |
 | **Developer Tools** | ✅ 95% | CLI, VSCode Extension |
 | **Workflows** | ❌ 0% | Planned for future release |
-| **Permissions/RBAC** | ❌ 0% | Planned for future release |
 | **Reports** | ❌ 0% | Planned for future release |
 | **Real-time/Subscriptions** | ❌ 0% | Planned for future release |
 
@@ -118,6 +118,38 @@ Node.js-specific utilities:
 - ✅ YAML loading from directories
 - ✅ Plugin discovery and loading
 - ✅ Glob-based file scanning
+
+#### `@objectql/plugin-security` - Security Plugin (100%)
+**Package**: `packages/foundation/plugin-security/`
+
+Comprehensive security plugin with RBAC, FLS, and RLS:
+
+**Permission System** (`src/permission-loader.ts`, `src/permission-guard.ts`) - ✅ 100%
+- Role-Based Access Control (RBAC) with object-level permissions
+- Pre-compilation of permission rules to bitmasks and lookup maps
+- In-memory caching of permission checks (O(1) lookups)
+- Permission audit logging with configurable retention
+- Configurable exemption list for public objects
+- Support for custom permission storage backends (memory, Redis, database)
+
+**Row-Level Security (RLS)** (`src/query-trimmer.ts`) - ✅ 100%
+- Automatic query filtering based on user permissions
+- AST-level query modifications before SQL generation
+- Zero runtime overhead (database-level filtering)
+- Support for simple, complex, and formula-based conditions
+- Role-based exception handling
+
+**Field-Level Security (FLS)** (`src/field-masker.ts`) - ✅ 100%
+- Automatic field masking for sensitive data
+- Configurable mask formats (SSN, credit cards, emails, custom patterns)
+- Role-based field visibility
+- Field removal for unauthorized access
+
+**Plugin Integration** (`src/plugin.ts`) - ✅ 100%
+- Implements `RuntimePlugin` interface
+- Registers hooks: `beforeQuery` (RLS), `beforeMutation` (permission checks), `afterQuery` (FLS)
+- Configurable behavior options (throwOnDenied, enableAudit)
+- Performance optimization flags (precompileRules, enableCache)
 
 ---
 
@@ -323,26 +355,7 @@ These features are mentioned in documentation or type definitions but **do not h
 
 ---
 
-### 2. Permission System / RBAC (0%)
-
-**Status**: Type definitions exist, no enforcement
-
-**What's Defined**:
-- `PermissionConfig` type in `@objectql/types`
-- Permission rule syntax in documentation
-- `.permission.yml` file support in VSCode extension
-
-**What's Missing**:
-- No permission checking in Repository
-- No role-based access control (RBAC) engine
-- No row-level security enforcement
-- No field-level permissions
-
-**Impact**: All operations currently execute with system privileges. Security must be implemented in application layer.
-
----
-
-### 3. Report Generation (0%)
+### 2. Report Generation (0%)
 
 **Status**: Mentioned in AI generation, not built
 
@@ -358,7 +371,7 @@ These features are mentioned in documentation or type definitions but **do not h
 
 ---
 
-### 4. Real-time / Subscriptions (0%)
+### 3. Real-time / Subscriptions (0%)
 
 **Status**: Framework mentioned, not implemented
 
@@ -374,7 +387,7 @@ These features are mentioned in documentation or type definitions but **do not h
 
 ---
 
-### 5. Advanced Query Features (Partial)
+### 4. Advanced Query Features (Partial)
 
 **Status**: Basic implementation, advanced features missing
 
@@ -392,7 +405,7 @@ These features are mentioned in documentation or type definitions but **do not h
 
 ---
 
-### 6. Multi-tenancy (0%)
+### 5. Multi-tenancy (0%)
 
 **Status**: Placeholder in code, not enforced
 
@@ -407,18 +420,21 @@ These features are mentioned in documentation or type definitions but **do not h
 
 ---
 
-### 7. Audit & History (0%)
+### 6. Audit & History (Partial)
 
-**Status**: Example only, not built-in
+**Status**: Permission audit logging implemented in plugin-security, general audit trail not built-in
 
-**What's Defined**:
-- Audit logging shown in example plugins
-- History tracking mentioned in documentation
+**What's Implemented**: ✅
+- Permission check audit logging in `@objectql/plugin-security`
+- Configurable retention and alert thresholds
+- Tracks all permission checks and access attempts
 
-**What's Missing**:
-- No built-in audit trail
-- No automatic history tracking
-- No change log generation
+**What's Missing**: ⚠️
+- No built-in general audit trail for all data changes
+- No automatic history tracking for record changes
+- No change log generation for data modifications
+
+**Recommendation**: Use hooks to implement custom audit trails for data changes, or use the security plugin's audit logging for permission-related events.
 
 ---
 
@@ -474,9 +490,12 @@ These features are mentioned in documentation or type definitions but **do not h
 | Project Scaffolding | ✅ Yes | ✅ Yes | ✅ Yes | npm create |
 | **Advanced Features** |
 | Workflows | ❌ No | ❌ No | ⚠️ Mentioned | Planned |
-| Permissions/RBAC | ❌ No | ❌ No | ⚠️ Mentioned | Planned |
+| Permissions/RBAC | ✅ Yes | ✅ Yes | ✅ Yes | Plugin implementation |
+| Row-Level Security | ✅ Yes | ✅ Yes | ✅ Yes | AST-level filtering |
+| Field-Level Security | ✅ Yes | ✅ Yes | ✅ Yes | Field masking |
+| Permission Audit | ✅ Yes | ✅ Yes | ✅ Yes | Security plugin |
 | Reports | ❌ No | ❌ No | ⚠️ Mentioned | Planned |
-| Audit Trail | ❌ No | ❌ No | ⚠️ Example | Planned |
+| Data Audit Trail | ❌ No | ❌ No | ⚠️ Example | Use hooks |
 | Multi-tenancy | ❌ No | ❌ No | ⚠️ TODO | Planned |
 | Real-time Updates | ❌ No | ❌ No | ⚠️ Mentioned | Planned |
 
@@ -497,19 +516,19 @@ Based on this analysis, here's what users should focus on:
 3. **Formulas** - Computed fields with expressions
 4. **Hooks** - Event-driven logic for all CRUD operations
 5. **Actions** - Custom RPC operations
-6. **7 Database Drivers** - SQL, MongoDB, Memory, LocalStorage, FS, Excel, Redis
-7. **REST/GraphQL APIs** - Auto-generated from metadata
-8. **AI Code Generation** - Generate apps from natural language
-9. **CLI Tools** - Complete project lifecycle management
-10. **VSCode Extension** - Schema validation and IntelliSense
+6. **Security Plugin** - RBAC, Field-Level Security, Row-Level Security with pre-compiled permissions
+7. **7 Database Drivers** - SQL, MongoDB, Memory, LocalStorage, FS, Excel, Redis
+8. **REST/GraphQL APIs** - Auto-generated from metadata
+9. **AI Code Generation** - Generate apps from natural language
+10. **CLI Tools** - Complete project lifecycle management
+11. **VSCode Extension** - Schema validation and IntelliSense
 
 ### ⚠️ **Implement in Application Layer**
 These features should be built in your application code, not expected from the framework:
-1. **Permissions** - Implement in hooks or middleware
-2. **Audit Trails** - Use hooks to log changes
-3. **Multi-tenancy** - Filter by tenant ID in hooks
-4. **Workflows** - Build state machines with validation rules
-5. **Reports** - Use query API + external libraries (PDF, Excel)
+1. **Data Audit Trails** - Use hooks to log data changes (permission audit logging is available in security plugin)
+2. **Multi-tenancy** - Filter by tenant ID in hooks
+3. **Workflows** - Build state machines with validation rules
+4. **Reports** - Use query API + external libraries (PDF, Excel)
 
 ### ❌ **Not Yet Available - Plan Accordingly**
 1. **Real-time Subscriptions** - Use polling or external service
@@ -521,16 +540,16 @@ These features should be built in your application code, not expected from the f
 ## 📝 Documentation Accuracy
 
 ### ✅ Accurate Documentation
-- Main README.md (mostly accurate)
+- Main README.md (updated with security plugin)
 - Validation documentation
 - Formula documentation
 - Hook documentation
 - Driver documentation
 - CLI documentation
+- Security plugin documentation (README.md, ARCHITECTURE.md)
 
 ### ⚠️ Needs Clarification
 - **Workflow documentation** - Should be marked as "Planned Feature"
-- **Permission documentation** - Should note "Not Enforced - Application Layer"
 - **Report documentation** - Should be marked as "Example Pattern"
 - **Advanced query features** - Should note limitations
 
@@ -543,8 +562,8 @@ Based on type definitions and code comments, these features are planned:
 ### Short-term (Next 6 months)
 - Complete GraphQL subscription support
 - WebSocket server implementation
-- Enhanced permission system
-- Audit trail plugin
+- Multi-tenancy enforcement
+- Data audit trail plugin
 
 ### Medium-term (6-12 months)
 - Built-in workflow engine
@@ -567,6 +586,7 @@ Based on type definitions and code comments, these features are planned:
 | `@objectql/types` | ✅ 100% | All types defined |
 | `@objectql/core` | ✅ 100% | All core features working |
 | `@objectql/platform-node` | ✅ 100% | Node.js integration complete |
+| `@objectql/plugin-security` | ✅ 100% | RBAC, FLS, RLS complete |
 | `@objectql/driver-sql` | ✅ 100% | Production-ready |
 | `@objectql/driver-mongo` | ✅ 100% | Production-ready |
 | `@objectql/driver-memory` | ✅ 100% | Production-ready |
@@ -590,6 +610,7 @@ Based on type definitions and code comments, these features are planned:
 - Comprehensive validation system
 - Formula engine for computed fields
 - Hook system for business logic
+- **Complete security system (RBAC, FLS, RLS)**
 - AI-powered code generation
 - Complete developer tooling
 
@@ -600,11 +621,13 @@ Based on type definitions and code comments, these features are planned:
 - AI-generated applications
 - Low-code platforms
 - Rapid prototyping
+- **Secure multi-user applications with fine-grained permissions**
 
 **Plan to implement yourself**:
-- Complex permission systems
+- Data audit trails for record changes (permission audit is included)
 - Workflow automation
 - Advanced reporting
 - Real-time features
+- Multi-tenancy enforcement
 
 This document will be updated as new features are implemented or as the status of existing features changes.

@@ -1,26 +1,144 @@
 ---
 title: Security & Permissions
-description: Security best practices and permission implementation patterns
+description: Security best practices and comprehensive RBAC implementation with @objectql/plugin-security
 ---
 
 ## Security Model
 
-ObjectQL provides a **framework for security**, but **requires application-layer implementation** of permission checks and access control.
+ObjectQL now provides **comprehensive security** through the **@objectql/plugin-security** package, offering:
+- ✅ **Role-Based Access Control (RBAC)** - Object-level and field-level permissions
+- ✅ **Row-Level Security (RLS)** - Automatic query filtering at AST level
+- ✅ **Field-Level Security (FLS)** - Field masking and visibility control
+- ✅ **Audit Logging** - Track permission checks and access attempts
+- ✅ **Pre-compiled Permissions** - O(1) permission lookups with bitmasks
 
-> **⚠️ Important**: The core ObjectQL engine does NOT automatically enforce permissions. You must implement security checks in your application layer using hooks, middleware, or custom logic.
+> **🎉 New in 4.0+**: The security plugin provides production-ready permission enforcement out of the box!
 
-## Current Implementation Status
+## Quick Start with Security Plugin
+
+### 1. Installation
+
+```bash
+pnpm add @objectql/plugin-security
+```
+
+### 2. Define Permission Configuration
+
+```typescript
+import { PermissionConfig } from '@objectql/plugin-security';
+
+const projectPermissions: PermissionConfig = {
+  name: 'project_permissions',
+  object: 'project',
+  
+  // Object-level permissions
+  object_permissions: {
+    create: ['admin', 'manager'],
+    read: ['admin', 'manager', 'user'],
+    update: ['admin', 'manager'],
+    delete: ['admin'],
+    view_all: ['admin'],
+    modify_all: ['admin']
+  },
+  
+  // Field-level security
+  field_permissions: {
+    budget: {
+      read: ['admin', 'manager'],
+      update: ['admin']
+    },
+    internal_notes: {
+      read: ['admin'],
+      update: ['admin']
+    }
+  },
+  
+  // Row-level security
+  row_level_security: {
+    enabled: true,
+    default_rule: {
+      field: 'owner_id',
+      operator: '=',
+      value: '$current_user.id'
+    },
+    exceptions: [
+      {
+        role: 'admin',
+        bypass: true
+      }
+    ]
+  }
+};
+```
+
+### 3. Register the Plugin
+
+```typescript
+import { ObjectQLSecurityPlugin } from '@objectql/plugin-security';
+import { createKernel } from '@objectql/runtime';
+
+const kernel = createKernel({
+  plugins: [
+    new ObjectQLSecurityPlugin({
+      enabled: true,
+      permissions: [projectPermissions],
+      precompileRules: true,
+      enableCache: true,
+      throwOnDenied: true,
+      enableAudit: true
+    })
+  ]
+});
+```
+
+### 4. Security is Automatic
+
+```typescript
+// Security is automatically applied to all queries and mutations
+const projects = await kernel.find('project', {
+  filters: { status: 'active' }
+});
+// Results are automatically filtered by RLS and FLS
+
+await kernel.create('project', {
+  name: 'New Project',
+  owner_id: currentUser.id
+});
+// Permission check is automatically performed
+```
+
+## Implementation Status
 
 | Feature | Status | Implementation |
 |---------|--------|----------------|
 | **Validation** | ✅ Built-in | Automatic field/cross-field/state validation |
 | **Authentication** | ⚠️ Application Layer | Implement using middleware |
-| **Authorization/RBAC** | ⚠️ Application Layer | Implement using hooks |
-| **Row-Level Security** | ⚠️ Application Layer | Implement in `beforeFind` hooks |
-| **Field-Level Security** | ⚠️ Application Layer | Implement in hooks or use GraphQL resolvers |
-| **Audit Logging** | ⚠️ Application Layer | Implement using `after*` hooks |
+| **Authorization/RBAC** | ✅ Security Plugin | `@objectql/plugin-security` |
+| **Row-Level Security** | ✅ Security Plugin | AST-level query filtering |
+| **Field-Level Security** | ✅ Security Plugin | Automatic field masking |
+| **Permission Audit** | ✅ Security Plugin | Configurable audit logging |
+| **Data Audit Trail** | ⚠️ Application Layer | Implement using `after*` hooks |
 
 ## Security Patterns
+
+The security plugin provides production-ready implementations for most security needs. However, you can also implement custom patterns using hooks.
+
+### Security Plugin Features
+
+For complete documentation, see:
+- [`@objectql/plugin-security` README](https://github.com/objectstack-ai/objectql/tree/main/packages/foundation/plugin-security)
+- [Plugin Architecture Documentation](https://github.com/objectstack-ai/objectql/blob/main/packages/foundation/plugin-security/ARCHITECTURE.md)
+
+Key features:
+- **Pre-compiled Permissions**: Rules compiled to bitmasks at startup (O(1) checks)
+- **AST-level RLS**: Query filtering before SQL generation (zero overhead)
+- **Configurable Storage**: Memory, Redis, Database, or custom backends
+- **Audit Logging**: Track all permission checks with retention policies
+- **Formula Conditions**: Support for complex permission logic
+
+### Alternative: Custom Hook-Based Patterns
+
+If you need custom security logic beyond the plugin, you can implement it using hooks:
 
 ### 1. Authentication (Who Are You?)
 
@@ -373,18 +491,46 @@ await app.init();
 
 ## Related Documentation
 
+- [Security Plugin README](/packages/foundation/plugin-security/README.md) - Complete plugin documentation
+- [Security Plugin Architecture](/packages/foundation/plugin-security/ARCHITECTURE.md) - Technical deep-dive
 - [Hooks](/docs/logic/hooks) - Event lifecycle and hook patterns
 - [Actions](/docs/logic/actions) - Custom RPC operations
 - [Server Integration](/docs/server/integration) - Express/Next.js setup
 - [API Reference](/docs/reference/api) - Complete API documentation
 
-## Future Enhancements
+## Migration Guide
 
-The ObjectQL team is planning native support for:
+If you previously implemented custom permission checks using hooks, you can migrate to the security plugin:
 
-- **Built-in RBAC engine** - Declarative permission rules
-- **Permission metadata** - Define permissions in `.permission.yml` files
-- **Automatic enforcement** - Framework-level permission checks
-- **Role inheritance** - Complex role hierarchies
+### Before (Hook-based)
+```typescript
+app.on('beforeFind', 'project', async (ctx) => {
+  if (!ctx.user?.isAdmin) {
+    ctx.query.filters.push(['owner', '=', ctx.user.id]);
+  }
+});
+```
 
-> **📋 Track progress**: See [Implementation Status](https://github.com/objectstack-ai/objectql/blob/main/IMPLEMENTATION_STATUS.md) for current development status.
+### After (Security Plugin)
+```typescript
+const projectPermissions: PermissionConfig = {
+  name: 'project_permissions',
+  object: 'project',
+  row_level_security: {
+    enabled: true,
+    default_rule: {
+      field: 'owner',
+      operator: '=',
+      value: '$current_user.id'
+    },
+    exceptions: [{ role: 'admin', bypass: true }]
+  }
+};
+```
+
+Benefits of migration:
+- ✅ Pre-compiled permissions (faster)
+- ✅ Centralized configuration
+- ✅ Built-in audit logging
+- ✅ Field-level security included
+- ✅ Less code to maintain

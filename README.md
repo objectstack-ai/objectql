@@ -37,6 +37,7 @@ ObjectQL is organized as a Monorepo to ensure modularity and universal compatibi
 | **[`@objectql/types`](./packages/foundation/types)** | Universal | **The Contract.** Pure TypeScript interfaces defining the protocol. |
 | **[`@objectql/core`](./packages/foundation/core)** | Universal | **The Engine.** The runtime logic, validation, and repository pattern. |
 | **[`@objectql/platform-node`](./packages/foundation/platform-node)**| Node.js | Node.js platform utilities for file system integration, YAML loading, and plugin management. |
+| **[`@objectql/plugin-security`](./packages/foundation/plugin-security)**| Universal | **Security Plugin.** Comprehensive RBAC, Field-Level Security (FLS), and Row-Level Security (RLS) with AST-level enforcement. |
 
 ### Driver Layer
 
@@ -307,6 +308,7 @@ ObjectQL has **mature, production-ready implementations** of core features:
 - ✅ **Hook System (100%)** - Complete event lifecycle (before/after create/update/delete/find)
 - ✅ **Action System (100%)** - Custom RPC operations
 - ✅ **Repository Pattern (100%)** - Full CRUD operations
+- ✅ **Security Plugin (100%)** - Comprehensive RBAC, FLS, and RLS with pre-compiled permission checks
 - ✅ **7 Database Drivers (100%)** - SQL, MongoDB, Memory, LocalStorage, FS, Excel, Redis
 - ✅ **AI Agent (100%)** - AI-powered code generation
 - ✅ **Server Runtime (95%)** - REST, GraphQL, Node.js adapters
@@ -317,9 +319,8 @@ ObjectQL has **mature, production-ready implementations** of core features:
 
 These features have type definitions but require implementation in your application:
 
-- ⚠️ **Permissions/RBAC** - Implement in hooks or middleware
 - ⚠️ **Workflows** - Build using state machine validation + hooks
-- ⚠️ **Audit Trails** - Use hooks to track changes
+- ⚠️ **Audit Trails** - Use hooks to track changes (or use the security plugin's audit logging for permission checks)
 - ⚠️ **Multi-tenancy** - Filter by tenant ID in hooks
 - ⚠️ **Reports** - Use query API + external libraries
 
