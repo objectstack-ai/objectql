@@ -25,10 +25,6 @@ The filename (without the `.validation.yml` extension) automatically identifies 
 
 ## 2. Root Structure
 
-**Important:** Validation rules use an **object-based syntax** (field/operator/value) while the [Query Language](./query-language.mdx) uses an **array-based syntax** ([field, operator, value]). This distinction exists because:
-- **Validation rules** are declarative metadata (YAML) optimized for readability and AI generation
-- **Query filters** are runtime AST (JSON) optimized for parsing and logical precedence
-
 ```yaml
 # File: project.validation.yml
 # Object "project" is inferred from filename!
