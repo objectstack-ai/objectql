@@ -164,8 +164,8 @@ app.registerAction('todo', 'complete_all', async (ctx) => {
 
 **Hooks (Triggers):**
 ```typescript
-// Valid events: beforeCreate, afterCreate, beforeUpdate, afterUpdate, beforeDelete, etc.
-app.on('beforeCreate', 'todo', async (ctx) => {
+// Valid events: before:create, after:create, before:update, after:update, before:delete, etc.
+app.on('before:create', 'todo', async (ctx) => {
     // ctx.data contains the payload for create/update
     if (!ctx.data.title) {
         throw new Error("Title is required");
