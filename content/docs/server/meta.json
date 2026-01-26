@@ -1,8 +1,10 @@
 {
   "title": "Server & Deployment",
   "pages": [
+    "index",
     "configuration",
     "integration",
+    "security",
     "microservices",
     "plugins"
   ]

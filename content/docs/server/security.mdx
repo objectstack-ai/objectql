@@ -1,0 +1,390 @@
+---
+title: Security & Permissions
+description: Security best practices and permission implementation patterns
+---
+
+## Security Model
+
+ObjectQL provides a **framework for security**, but **requires application-layer implementation** of permission checks and access control.
+
+> **⚠️ Important**: The core ObjectQL engine does NOT automatically enforce permissions. You must implement security checks in your application layer using hooks, middleware, or custom logic.
+
+## Current Implementation Status
+
+| Feature | Status | Implementation |
+|---------|--------|----------------|
+| **Validation** | ✅ Built-in | Automatic field/cross-field/state validation |
+| **Authentication** | ⚠️ Application Layer | Implement using middleware |
+| **Authorization/RBAC** | ⚠️ Application Layer | Implement using hooks |
+| **Row-Level Security** | ⚠️ Application Layer | Implement in `beforeFind` hooks |
+| **Field-Level Security** | ⚠️ Application Layer | Implement in hooks or use GraphQL resolvers |
+| **Audit Logging** | ⚠️ Application Layer | Implement using `after*` hooks |
+
+## Security Patterns
+
+### 1. Authentication (Who Are You?)
+
+Implement authentication in your server middleware layer:
+
+```typescript
+import express from 'express';
+import { ObjectQL } from '@objectql/core';
+import jwt from 'jsonwebtoken';
+
+const app = express();
+const objectql = new ObjectQL({ /* config */ });
+
+// Authentication Middleware
+app.use('/api', async (req, res, next) => {
+  try {
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    if (!token) {
+      return res.status(401).json({ error: 'No token provided' });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    // Store user info for ObjectQL context
+    req.user = decoded;
+    next();
+  } catch (error) {
+    res.status(401).json({ error: 'Invalid token' });
+  }
+});
+
+// Create ObjectQL context with authenticated user
+app.use('/api/objectql', (req, res) => {
+  const ctx = objectql.createContext({
+    userId: req.user.id,
+    user: req.user,
+    // Add any other context info
+  });
+  
+  // Handle request with authenticated context
+  // ... 
+});
+```
+
+### 2. Authorization (What Can You Do?)
+
+Implement authorization using **hooks** to check permissions before operations:
+
+#### Pattern A: Check Permissions in Hooks
+
+```typescript
+// project.hook.ts
+import { ObjectHookDefinition } from '@objectql/types';
+
+const hooks: ObjectHookDefinition = {
+  beforeCreate: async (ctx) => {
+    // Only managers can create projects
+    if (!ctx.user?.roles?.includes('manager')) {
+      throw new Error('Unauthorized: Only managers can create projects');
+    }
+  },
+
+  beforeUpdate: async (ctx) => {
+    const project = ctx.previousData;
+    
+    // Only owner or admin can update
+    if (project.owner !== ctx.user.id && !ctx.user.isAdmin) {
+      throw new Error('Unauthorized: You can only update your own projects');
+    }
+  },
+
+  beforeDelete: async (ctx) => {
+    // Only admins can delete
+    if (!ctx.user?.isAdmin) {
+      throw new Error('Unauthorized: Only admins can delete projects');
+    }
+  }
+};
+
+export default hooks;
+```
+
+#### Pattern B: Permission Helper Function
+
+```typescript
+// utils/permissions.ts
+export class PermissionChecker {
+  constructor(private user: any) {}
+
+  can(action: string, resource: string, record?: any): boolean {
+    // Implement your RBAC logic here
+    const rolePermissions = {
+      admin: ['*'],
+      manager: ['create:project', 'update:project', 'read:*'],
+      user: ['read:*', 'update:own']
+    };
+
+    const userRole = this.user.role || 'user';
+    const permissions = rolePermissions[userRole] || [];
+
+    // Check wildcard
+    if (permissions.includes('*')) return true;
+    if (permissions.includes(`${action}:*`)) return true;
+    
+    // Check specific permission
+    if (permissions.includes(`${action}:${resource}`)) {
+      // Additional check for "own" resources
+      if (record && permissions.includes('update:own')) {
+        return record.owner === this.user.id;
+      }
+      return true;
+    }
+
+    return false;
+  }
+
+  assertCan(action: string, resource: string, record?: any): void {
+    if (!this.can(action, resource, record)) {
+      throw new Error(`Unauthorized: Cannot ${action} ${resource}`);
+    }
+  }
+}
+
+// project.hook.ts
+import { PermissionChecker } from './utils/permissions';
+
+const hooks: ObjectHookDefinition = {
+  beforeCreate: async (ctx) => {
+    const permissions = new PermissionChecker(ctx.user);
+    permissions.assertCan('create', 'project');
+  },
+
+  beforeUpdate: async (ctx) => {
+    const permissions = new PermissionChecker(ctx.user);
+    permissions.assertCan('update', 'project', ctx.previousData);
+  }
+};
+```
+
+### 3. Row-Level Security (Filter Data by User)
+
+Implement row-level security by injecting filters in `beforeFind` hooks:
+
+```typescript
+// project.hook.ts
+const hooks: ObjectHookDefinition = {
+  beforeFind: async (ctx) => {
+    // Non-admins can only see their own projects
+    if (!ctx.user?.isAdmin) {
+      // Inject filter to limit results
+      if (!ctx.query.filters) {
+        ctx.query.filters = [];
+      }
+      
+      // Add owner filter
+      ctx.query.filters.push(['owner', '=', ctx.user.id]);
+    }
+  },
+
+  beforeCount: async (ctx) => {
+    // Same logic for count operations
+    if (!ctx.user?.isAdmin) {
+      if (!ctx.query.filters) {
+        ctx.query.filters = [];
+      }
+      ctx.query.filters.push(['owner', '=', ctx.user.id]);
+    }
+  }
+};
+```
+
+### 4. Field-Level Security (Hide Sensitive Fields)
+
+Remove sensitive fields from results in `afterFind` hooks:
+
+```typescript
+// user.hook.ts
+const hooks: ObjectHookDefinition = {
+  afterFind: async (ctx) => {
+    // Hide sensitive fields from non-admins
+    if (!ctx.user?.isAdmin) {
+      ctx.result = ctx.result.map(record => {
+        const { password, social_security_number, salary, ...safeRecord } = record;
+        return safeRecord;
+      });
+    }
+  },
+
+  afterFindOne: async (ctx) => {
+    // Same for single record
+    if (!ctx.user?.isAdmin && ctx.result) {
+      const { password, social_security_number, salary, ...safeRecord } = ctx.result;
+      ctx.result = safeRecord;
+    }
+  }
+};
+```
+
+### 5. Audit Logging
+
+Track all changes using `after*` hooks:
+
+```typescript
+// Global audit hook (app.ts)
+app.on('after:create', '*', async (ctx) => {
+  await ctx.object('audit_log').create({
+    action: 'create',
+    object_name: ctx.objectName,
+    record_id: ctx.result._id,
+    user_id: ctx.user?.id,
+    timestamp: new Date(),
+    data: ctx.data
+  });
+});
+
+app.on('after:update', '*', async (ctx) => {
+  await ctx.object('audit_log').create({
+    action: 'update',
+    object_name: ctx.objectName,
+    record_id: ctx.id,
+    user_id: ctx.user?.id,
+    timestamp: new Date(),
+    changes: {
+      before: ctx.previousData,
+      after: ctx.result
+    }
+  });
+});
+
+app.on('after:delete', '*', async (ctx) => {
+  await ctx.object('audit_log').create({
+    action: 'delete',
+    object_name: ctx.objectName,
+    record_id: ctx.id,
+    user_id: ctx.user?.id,
+    timestamp: new Date(),
+    deleted_data: ctx.previousData
+  });
+});
+```
+
+## Multi-Tenancy
+
+Implement tenant isolation using hooks:
+
+```typescript
+// Global tenant filter
+app.on('before:find', '*', async (ctx) => {
+  // Skip for system operations
+  if (ctx.isSystem) return;
+
+  // Inject tenant filter
+  const tenantId = ctx.user?.tenantId;
+  if (!tenantId) {
+    throw new Error('No tenant context');
+  }
+
+  if (!ctx.query.filters) {
+    ctx.query.filters = [];
+  }
+  
+  ctx.query.filters.push(['tenant_id', '=', tenantId]);
+});
+
+app.on('before:create', '*', async (ctx) => {
+  // Auto-set tenant on create
+  const tenantId = ctx.user?.tenantId;
+  if (!tenantId) {
+    throw new Error('No tenant context');
+  }
+  
+  ctx.data.tenant_id = tenantId;
+});
+```
+
+## Best Practices
+
+### ✅ Do
+
+1. **Always validate user input** - Use ObjectQL's validation system for data integrity
+2. **Implement authentication** - Verify user identity before processing requests
+3. **Check permissions in hooks** - Enforce authorization for all CRUD operations
+4. **Use prepared statements** - ObjectQL drivers use parameterized queries (SQL injection safe)
+5. **Sanitize file uploads** - Validate file types and sizes
+6. **Log security events** - Track authentication failures, permission denials
+7. **Use HTTPS in production** - Encrypt data in transit
+8. **Rotate secrets** - Regularly update JWT secrets, API keys
+9. **Implement rate limiting** - Prevent brute force attacks
+10. **Test permissions** - Write tests for all permission scenarios
+
+### ❌ Don't
+
+1. **Don't assume automatic permission enforcement** - You must implement it
+2. **Don't expose sensitive data** - Filter fields in hooks
+3. **Don't trust client input** - Always validate server-side
+4. **Don't hardcode credentials** - Use environment variables
+5. **Don't skip context validation** - Always check ctx.user exists
+6. **Don't expose internal errors** - Return generic error messages to clients
+7. **Don't allow arbitrary code execution** - Sandbox formulas (already done by ObjectQL)
+
+## Example: Complete Security Setup
+
+```typescript
+// app.ts
+import { ObjectQL } from '@objectql/core';
+import { SqlDriver } from '@objectql/driver-sql';
+
+const app = new ObjectQL({
+  datasources: {
+    default: new SqlDriver({ /* config */ })
+  }
+});
+
+// 1. Row-Level Security
+app.on('before:find', '*', async (ctx) => {
+  if (ctx.isSystem) return;
+  
+  const tenantId = ctx.user?.tenantId;
+  if (tenantId) {
+    if (!ctx.query.filters) ctx.query.filters = [];
+    ctx.query.filters.push(['tenant_id', '=', tenantId]);
+  }
+});
+
+// 2. Permission Checks
+app.on('before:create', 'project', async (ctx) => {
+  if (!canCreate(ctx.user, 'project')) {
+    throw new Error('Unauthorized');
+  }
+});
+
+app.on('before:update', 'project', async (ctx) => {
+  if (!canUpdate(ctx.user, 'project', ctx.previousData)) {
+    throw new Error('Unauthorized');
+  }
+});
+
+// 3. Audit Logging
+app.on('after:create', '*', async (ctx) => {
+  await auditLog(ctx, 'create');
+});
+
+// 4. Field Masking
+app.on('after:find', 'user', async (ctx) => {
+  ctx.result = ctx.result.map(maskSensitiveFields);
+});
+
+await app.init();
+```
+
+## Related Documentation
+
+- [Hooks](/docs/logic/hooks) - Event lifecycle and hook patterns
+- [Actions](/docs/logic/actions) - Custom RPC operations
+- [Server Integration](/docs/server/integration) - Express/Next.js setup
+- [API Reference](/docs/reference/api) - Complete API documentation
+
+## Future Enhancements
+
+The ObjectQL team is planning native support for:
+
+- **Built-in RBAC engine** - Declarative permission rules
+- **Permission metadata** - Define permissions in `.permission.yml` files
+- **Automatic enforcement** - Framework-level permission checks
+- **Role inheritance** - Complex role hierarchies
+
+> **📋 Track progress**: See [Implementation Status](https://github.com/objectstack-ai/objectql/blob/main/IMPLEMENTATION_STATUS.md) for current development status.

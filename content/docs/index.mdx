@@ -5,9 +5,9 @@ description: Welcome to the ObjectQL Documentation
 
 ## What is ObjectQL?
 
-**ObjectStack ObjectQL** is a protocol and engine for generating domain-driven AI software. It decouples **Intent** (Schema & Logic) from **Implementation** (Database & Code).
+**ObjectStack ObjectQL** is a production-ready protocol and engine for building metadata-driven applications. It decouples **Intent** (Schema & Logic) from **Implementation** (Database & Code).
 
-By defining your data models, permissions, and business logic in simple standard formats (YAML/JSON), ObjectQL compiles them into a production-ready, type-safe, and secured backend.
+By defining your data models, validation rules, and business logic in simple standard formats (YAML/JSON), ObjectQL compiles them into a type-safe backend with automatic validation and formula evaluation.
 
 ### Key Features
 
@@ -18,19 +18,43 @@ By defining your data models, permissions, and business logic in simple standard
   <Card title="Compiler, Not ORM" href="/docs/data-access">
     ObjectQL is not a runtime wrapper. It is a Database Compiler.
   </Card>
-  <Card title="Security by Design" href="/docs/server">
-    Permissions (RBAC) and Validation are injected automatically by the Core engine.
+  <Card title="Validation by Design" href="/docs/logic">
+    Field, cross-field, and state machine validation automatically enforced by the Core engine.
   </Card>
 </Cards>
 
+## What's Implemented
+
+ObjectQL has **mature, production-ready** implementations of:
+
+- ✅ **Validation System** - Field, cross-field, state machine validation
+- ✅ **Formula Engine** - Computed fields with JavaScript expressions  
+- ✅ **Hook System** - Complete event lifecycle for CRUD operations
+- ✅ **Action System** - Custom RPC operations
+- ✅ **7 Database Drivers** - SQL, MongoDB, Memory, LocalStorage, FS, Excel, Redis
+- ✅ **AI Code Generation** - Generate apps from natural language
+- ✅ **REST/GraphQL APIs** - Auto-generated from metadata
+
+> **📋 See [Implementation Status](https://github.com/objectstack-ai/objectql/blob/main/IMPLEMENTATION_STATUS.md) for complete feature matrix**
+
+## Application-Layer Features
+
+These features require implementation in your application code:
+
+- **Permissions/RBAC** - Implement using hooks or middleware
+- **Workflows** - Build using state machine validation + hooks  
+- **Audit Trails** - Track changes using hooks
+- **Reports** - Generate using query API + external libraries
+
 ## Documentation Structure
 
-- **[Getting Started](/docs/getting-started)**: Installation, IDE setup, and CLI usage.
-- **[Modeling Data](/docs/modeling)**: Learn how to define objects, fields, and relationships.
-- **[Business Logic](/docs/logic)**: Add dynamic behavior with Formulas, Hooks, and Actions.
-- **[Data Access](/docs/data-access)**: Query your data using the type-safe SDK.
-- **[Server & Deployment](/docs/server)**: Configure and deploy your ObjectQL application.
-- **[API Reference](/docs/reference/api)**: Detailed API specifications.
+- **[Getting Started](/docs/getting-started)**: Installation, IDE setup, and CLI usage
+- **[Modeling Data](/docs/modeling)**: Define objects, fields, and relationships
+- **[Business Logic](/docs/logic)**: Formulas, Hooks, and Actions (all implemented)
+- **[Data Access](/docs/data-access)**: Query your data using the Repository API
+- **[Server & Deployment](/docs/server)**: Configure REST/GraphQL servers
+- **[AI Integration](/docs/ai)**: AI-powered code generation
+- **[API Reference](/docs/reference)**: Detailed API specifications
 
 ## Next Steps
 
