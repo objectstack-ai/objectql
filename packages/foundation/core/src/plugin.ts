@@ -57,12 +57,6 @@ export interface ObjectQLPluginConfig {
   formulaConfig?: FormulaPluginConfig;
   
   /**
-   * Enable AI integration
-   * @default true
-   */
-  enableAI?: boolean;
-  
-  /**
    * Enable query service and analyzer
    * @default true
    */
@@ -92,7 +86,6 @@ export class ObjectQLPlugin implements RuntimePlugin {
       enableRepository: true,
       enableValidator: true,
       enableFormulas: true,
-      enableAI: true,
       enableQueryService: true,
       ...config
     };
@@ -139,10 +132,6 @@ export class ObjectQLPlugin implements RuntimePlugin {
     if (this.config.enableFormulas !== false) {
       const formulaPlugin = new FormulaPlugin(this.config.formulaConfig || {});
       await formulaPlugin.install(ctx);
-    }
-    
-    if (this.config.enableAI !== false) {
-      await this.registerAI(ctx.engine);
     }
     
     console.log(`[${this.name}] Plugin installed successfully`);
@@ -210,15 +199,5 @@ export class ObjectQLPlugin implements RuntimePlugin {
     };
 
     console.log(`[${this.name}] Repository pattern registered`);
-  }
-  
-  /**
-   * Register AI integration
-   * @private
-   */
-  private async registerAI(kernel: ObjectStackKernel): Promise<void> {
-    // TODO: Implement AI registration
-    // For now, this is a placeholder to establish the structure
-    console.log(`[${this.name}] AI integration registered`);
   }
 }
