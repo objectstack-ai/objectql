@@ -97,6 +97,9 @@ rules:
       - department_id
   
   # Rule 3: State Machine with Transitions
+  # This enforces valid state transitions at the validation layer.
+  # For AI-friendly documentation of states, also add is_state_machine: true
+  # in the field's ai_context (see Object spec).
   - name: status_transition
     type: state_machine
     field: status
