@@ -1,7 +1,7 @@
 {
   "name": "@objectql/types",
   "version": "4.0.1",
-  "description": "Pure TypeScript type definitions and interfaces for the ObjectQL protocol - The Contract",
+  "description": "Runtime type extensions for ObjectQL - complements @objectstack/spec with validation, hooks, drivers, and UI types",
   "keywords": [
     "objectql",
     "types",

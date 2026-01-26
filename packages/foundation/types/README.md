@@ -2,9 +2,45 @@
 
 > **Implementation Status**: ✅ **Complete** - All type definitions available. See [Implementation Status](https://github.com/objectstack-ai/objectql/blob/main/IMPLEMENTATION_STATUS.md) for runtime implementation details.
 
-Type definitions for the ObjectQL system, including object schemas, field configurations, validation rules, queries, hooks, and actions.
+Runtime type extensions for the ObjectQL ecosystem - complements `@objectstack/spec` with validation, hooks, drivers, and UI types.
 
-> **Note**: This package defines the type system. Some types (like permissions and workflows) are defined but require application-layer implementation. See the implementation status document for details.
+> **Note**: This package provides **runtime-specific types** that extend the wire-protocol definitions from `@objectstack/spec`. Some types (like permissions and workflows) are defined but require application-layer implementation. See the implementation status document for details.
+
+## Relationship with @objectstack/spec
+
+This package builds on top of the wire-protocol types defined in `@objectstack/spec`:
+
+- **@objectstack/spec**: Protocol-only types (wire format, language-agnostic, standardized)
+- **@objectql/types**: Runtime extensions (validation system, hooks, drivers, UI metadata, TypeScript-specific)
+
+### Migration Guide: Protocol Type Imports
+
+Some protocol types are re-exported from `@objectstack/spec` for convenience, but are marked `@deprecated`. Import them directly from the spec instead:
+
+```typescript
+// ❌ Deprecated (still works, but discouraged)
+import { SpecField, SpecObject } from '@objectql/types';
+
+// ✅ Recommended (import protocol types directly)
+import { Data } from '@objectstack/spec';
+type Field = Data.Field;
+type ServiceObject = Data.ServiceObject;
+```
+
+For runtime-specific types (validation, hooks, drivers, etc.), continue using `@objectql/types`:
+
+```typescript
+// ✅ Runtime types (only available in @objectql/types)
+import { 
+    ObjectConfig,      // Runtime object configuration (extends ServiceObject)
+    FieldConfig,       // Runtime field configuration (extends Field)
+    ValidationRule,    // Validation system types
+    HookAPI,           // Hook lifecycle API
+    Driver,            // Database driver interface
+    UnifiedQuery,      // Query execution types
+    ActionContext      // Action execution context
+} from '@objectql/types';
+```
 
 ## Features
 
