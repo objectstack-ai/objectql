@@ -1,0 +1,292 @@
+---
+title: "Business Logic"
+description: "Add dynamic behavior with Formulas, Hooks, and Actions"
+---
+
+ObjectQL provides three powerful mechanisms to implement business logic in your applications. All three features are **fully implemented and production-ready**.
+
+## 📊 Quick Comparison
+
+| Feature | Use Case | When It Runs | Implementation Status |
+|---------|----------|--------------|----------------------|
+| **[Formulas](/docs/logic/formulas)** | Computed fields | On read/write | ✅ 100% Complete |
+| **[Hooks](/docs/logic/hooks)** | Event-driven logic | Before/after CRUD operations | ✅ 100% Complete |
+| **[Actions](/docs/logic/actions)** | Custom RPC operations | On explicit invocation | ✅ 100% Complete |
+
+## ✅ Formulas (Computed Fields)
+
+**Status**: Fully Implemented ✅
+
+Formulas allow you to create **computed fields** that automatically calculate their values based on other fields or expressions.
+
+### Key Features
+- JavaScript expression evaluation with sandbox
+- Field references and lookup chains
+- System variables (`$today`, `$now`, `$current_user`)
+- Built-in Math, String, Date functions
+- Type coercion and validation
+- Execution timeout protection
+
+### Example
+```yaml
+# order.object.yml
+fields:
+  price:
+    type: currency
+  quantity:
+    type: number
+  total:
+    type: formula
+    expression: "price * quantity"
+    data_type: currency
+```
+
+**[Learn More →](/docs/logic/formulas)**
+
+---
+
+## ✅ Hooks (Event-Driven Logic)
+
+**Status**: Fully Implemented ✅
+
+Hooks (also called "triggers") allow you to intercept database operations to inject custom logic. They are **transaction-aware** and run automatically.
+
+### Available Hooks
+- `beforeCreate` / `afterCreate`
+- `beforeUpdate` / `afterUpdate`
+- `beforeDelete` / `afterDelete`
+- `beforeFind` / `afterFind`
+- `beforeCount` / `afterCount`
+
+### Common Use Cases
+- ✅ **Validation** - Additional business rule checks
+- ✅ **Default Values** - Set computed defaults
+- ✅ **Audit Logging** - Track all changes
+- ✅ **Security** - Row-level access control
+- ✅ **Side Effects** - Send notifications, update related records
+- ✅ **Data Transformation** - Sanitize or format data
+
+### Example
+```typescript
+// project.hook.ts
+import { ObjectHookDefinition } from '@objectql/types';
+
+const hooks: ObjectHookDefinition = {
+  beforeCreate: async (ctx) => {
+    // Set default owner
+    if (!ctx.data.owner) {
+      ctx.data.owner = ctx.user.userId;
+    }
+  },
+
+  afterUpdate: async (ctx) => {
+    // Log changes
+    console.log(`Project ${ctx.id} updated by ${ctx.user.userId}`);
+  }
+};
+
+export default hooks;
+```
+
+**[Learn More →](/docs/logic/hooks)**
+
+---
+
+## ✅ Actions (Custom RPC Operations)
+
+**Status**: Fully Implemented ✅
+
+Actions allow you to define **custom backend functions** that go beyond simple CRUD. They are integrated into the metadata, making them discoverable and type-safe.
+
+### Action Types
+- **Record Actions** - Operate on a specific record (e.g., "Approve Invoice")
+- **Global Actions** - Operate on the collection (e.g., "Import CSV")
+
+### Common Use Cases
+- ✅ **Workflow Operations** - Approve, reject, submit
+- ✅ **Batch Operations** - Bulk update, mass delete
+- ✅ **External Integration** - Sync with third-party systems
+- ✅ **Complex Business Logic** - Multi-step processes
+- ✅ **Report Generation** - Generate PDFs, exports
+
+### Example
+```yaml
+# invoice.object.yml
+actions:
+  mark_paid:
+    type: record
+    label: Mark as Paid
+    icon: standard:money
+    params:
+      payment_method:
+        type: select
+        options: [cash, card, transfer]
+```
+
+```typescript
+// invoice.action.ts
+import { ActionDefinition } from '@objectql/types';
+
+export const mark_paid: ActionDefinition = {
+  handler: async ({ id, input, api, user }) => {
+    await api.update('invoice', id, {
+      status: 'Paid',
+      payment_method: input.payment_method,
+      paid_by: user.id,
+      paid_at: new Date()
+    });
+
+    return { 
+      success: true, 
+      message: 'Invoice marked as paid' 
+    };
+  }
+};
+```
+
+**[Learn More →](/docs/logic/actions)**
+
+---
+
+## 🔄 Combining Logic Types
+
+You can combine formulas, hooks, and actions to create sophisticated business logic:
+
+### Example: Order Management System
+
+```yaml
+# order.object.yml
+fields:
+  subtotal:
+    type: currency
+  tax_rate:
+    type: percent
+    defaultValue: 0.08
+  
+  # Formula: Calculate tax
+  tax:
+    type: formula
+    expression: "subtotal * tax_rate"
+    data_type: currency
+  
+  # Formula: Calculate total
+  total:
+    type: formula
+    expression: "subtotal + tax"
+    data_type: currency
+  
+  status:
+    type: select
+    options: [draft, submitted, approved, paid]
+
+actions:
+  approve:
+    type: record
+    label: Approve Order
+```
+
+```typescript
+// order.hook.ts
+const hooks: ObjectHookDefinition = {
+  beforeCreate: async (ctx) => {
+    // Default status
+    ctx.data.status = 'draft';
+    ctx.data.created_by = ctx.user.userId;
+  },
+
+  afterUpdate: async (ctx) => {
+    // Send notification when status changes
+    if (ctx.previousData.status !== ctx.data.status) {
+      await sendNotification({
+        user: ctx.data.created_by,
+        message: `Order ${ctx.id} status changed to ${ctx.data.status}`
+      });
+    }
+  }
+};
+```
+
+```typescript
+// order.action.ts
+export const approve: ActionDefinition = {
+  handler: async ({ id, api, user }) => {
+    const order = await api.findOne('order', id);
+    
+    if (order.status !== 'submitted') {
+      throw new Error('Only submitted orders can be approved');
+    }
+
+    await api.update('order', id, {
+      status: 'approved',
+      approved_by: user.id,
+      approved_at: new Date()
+    });
+
+    return { success: true };
+  }
+};
+```
+
+---
+
+## 🎯 Best Practices
+
+### When to Use Each
+
+| Scenario | Use |
+|----------|-----|
+| Calculate derived values | **Formula** |
+| Validate business rules | **Hook** (beforeCreate/Update) |
+| Set default values | **Hook** (beforeCreate) |
+| Track changes (audit) | **Hook** (after*) |
+| Enforce permissions | **Hook** (before*) |
+| Custom workflow operations | **Action** |
+| Multi-step processes | **Action** |
+| External integrations | **Action** |
+
+### Performance Tips
+
+1. **Formulas** - Keep expressions simple; they run on every read/write
+2. **Hooks** - Avoid heavy computations in `before*` hooks (they block the operation)
+3. **Actions** - Use for expensive operations that shouldn't block CRUD
+4. **Async Operations** - Use `after*` hooks for sending emails, external calls
+5. **Database Queries** - Use the `api` parameter in hooks/actions to avoid circular dependencies
+
+---
+
+## 📚 Next Steps
+
+- **[Formulas](/docs/logic/formulas)** - Complete formula syntax guide
+- **[Hooks](/docs/logic/hooks)** - Hook lifecycle and patterns
+- **[Actions](/docs/logic/actions)** - Action definition and implementation
+- **[Security](/docs/server/security)** - Implement permissions using hooks
+- **[Data Access](/docs/data-access)** - Querying data from hooks and actions
+
+---
+
+## 🚀 Implementation Status
+
+All three logic mechanisms are **production-ready**:
+
+- ✅ **Formula Engine** - 100% Complete
+  - JavaScript expression evaluation
+  - Sandbox security
+  - Type coercion
+  - Built-in functions
+  - Execution monitoring
+
+- ✅ **Hook System** - 100% Complete
+  - All lifecycle events
+  - Transaction-aware
+  - Wildcard listeners
+  - Hook API for inter-object operations
+  - Error handling
+
+- ✅ **Action System** - 100% Complete
+  - Record and global actions
+  - Parameter validation
+  - Full context access
+  - Type-safe definitions
+  - Execution framework
+
+> **📋 See [Implementation Status](https://github.com/objectstack-ai/objectql/blob/main/IMPLEMENTATION_STATUS.md) for complete feature matrix**

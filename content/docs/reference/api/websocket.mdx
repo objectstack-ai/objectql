@@ -1,12 +1,98 @@
 ---
 title: "WebSocket API"
-description: WebSocket API
+description: WebSocket API for real-time updates
 ---
-*(Planned Feature)*
 
-For real-time updates and live data synchronization.
+> **⚠️ Planned Feature**: WebSocket support is **not yet implemented** in ObjectQL. This page describes the planned API design.
 
-## Connection
+Real-time updates and live data synchronization will be available in a future release through WebSocket connections.
+
+## Planned Features
+
+- **Real-time subscriptions** - Subscribe to data changes
+- **Live queries** - Get updates when query results change
+- **Presence tracking** - Track online users
+- **Collaborative editing** - Multi-user real-time collaboration
+
+## Workarounds Until WebSocket Support
+
+### Option 1: Polling
+
+Use regular HTTP requests to poll for changes:
+
+```typescript
+// Poll every 5 seconds
+setInterval(async () => {
+  const orders = await ctx.object('orders').find({
+    filters: [['status', '=', 'pending']],
+    sort: [['updated_at', 'desc']]
+  });
+  
+  updateUI(orders);
+}, 5000);
+```
+
+### Option 2: Server-Sent Events (SSE)
+
+Implement SSE in your server:
+
+```typescript
+// Express endpoint
+app.get('/api/events', (req, res) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+
+  // Subscribe to changes using hooks
+  const listener = (data) => {
+    res.write(`data: ${JSON.stringify(data)}\n\n`);
+  };
+
+  objectql.on('after:create', 'orders', listener);
+  objectql.on('after:update', 'orders', listener);
+
+  req.on('close', () => {
+    // Clean up listeners
+    objectql.off('after:create', listener);
+    objectql.off('after:update', listener);
+  });
+});
+```
+
+### Option 3: External Real-time Service
+
+Use a dedicated real-time service alongside ObjectQL:
+
+- **Pusher** - Hosted real-time service
+- **Socket.io** - WebSocket library
+- **Ably** - Real-time messaging platform
+- **Firebase Realtime Database** - Google's real-time service
+
+```typescript
+import Pusher from 'pusher';
+
+const pusher = new Pusher({ /* config */ });
+
+// Broadcast changes using hooks
+objectql.on('after:create', 'orders', async (ctx) => {
+  pusher.trigger('orders', 'new-order', {
+    order: ctx.result
+  });
+});
+
+objectql.on('after:update', 'orders', async (ctx) => {
+  pusher.trigger('orders', 'order-updated', {
+    orderId: ctx.id,
+    changes: ctx.result
+  });
+});
+```
+
+## Planned WebSocket API Design
+
+> **Note**: This is the planned API design, not yet implemented.
+
+### Connection
 
 ```javascript
 const ws = new WebSocket('ws://localhost:3000/api/realtime');
@@ -22,7 +108,7 @@ ws.onopen = () => {
   ws.send(JSON.stringify({
     type: 'subscribe',
     object: 'orders',
-    filters: { status: 'pending' }
+    filters: [['status', '=', 'pending']]
   }));
 };
 
@@ -34,3 +120,38 @@ ws.onmessage = (event) => {
   }
 };
 ```
+
+### Subscription Types
+
+```javascript
+// Subscribe to specific records
+ws.send(JSON.stringify({
+  type: 'subscribe',
+  object: 'orders',
+  recordId: 'order_123'
+}));
+
+// Subscribe to query results
+ws.send(JSON.stringify({
+  type: 'subscribe',
+  object: 'orders',
+  filters: [['status', '=', 'pending']],
+  fields: ['id', 'status', 'total']
+}));
+
+// Subscribe to presence
+ws.send(JSON.stringify({
+  type: 'presence:join',
+  channel: 'project:123'
+}));
+```
+
+## Track Progress
+
+See [Implementation Status](https://github.com/objectstack-ai/objectql/blob/main/IMPLEMENTATION_STATUS.md) for the latest development status and roadmap.
+
+## Related Documentation
+
+- **[Hooks](/docs/logic/hooks)** - Use hooks to trigger notifications
+- **[Server Integration](/docs/server/integration)** - Setup your server
+- **[Implementation Status](https://github.com/objectstack-ai/objectql/blob/main/IMPLEMENTATION_STATUS.md)** - Current feature status

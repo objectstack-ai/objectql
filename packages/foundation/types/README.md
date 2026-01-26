@@ -1,6 +1,10 @@
 # @objectql/types
 
+> **Implementation Status**: ✅ **Complete** - All type definitions available. See [Implementation Status](https://github.com/objectstack-ai/objectql/blob/main/IMPLEMENTATION_STATUS.md) for runtime implementation details.
+
 Type definitions for the ObjectQL system, including object schemas, field configurations, validation rules, queries, hooks, and actions.
+
+> **Note**: This package defines the type system. Some types (like permissions and workflows) are defined but require application-layer implementation. See the implementation status document for details.
 
 ## Features
 

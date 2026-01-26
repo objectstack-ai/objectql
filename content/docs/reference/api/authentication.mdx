@@ -2,12 +2,39 @@
 title: "Authentication & Authorization"
 description: Authentication & Authorization
 ---
+
+> **⚠️ Important**: Authentication and authorization are **application-layer responsibilities**. ObjectQL provides the framework and hooks, but you must implement the actual authentication and permission checking logic.
+
 ## Authentication Methods
 
-ObjectQL supports multiple authentication strategies:
+ObjectQL supports multiple authentication strategies through **server middleware**:
 
 ## 1. JWT Tokens (Recommended)
 
+Implement JWT authentication in your server middleware:
+
+```typescript
+// Express middleware example
+import jwt from 'jsonwebtoken';
+
+app.use('/api/objectql', async (req, res, next) => {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  
+  if (!token) {
+    return res.status(401).json({ error: 'No token provided' });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded;
+    next();
+  } catch (error) {
+    return res.status(401).json({ error: 'Invalid token' });
+  }
+});
+```
+
+**Client Request:**
 ```bash
 POST /api/objectql
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
@@ -16,6 +43,27 @@ Content-Type: application/json
 
 ## 2. API Keys
 
+Implement API key authentication in middleware:
+
+```typescript
+app.use('/api/objectql', async (req, res, next) => {
+  const apiKey = req.headers['x-api-key'];
+  
+  if (!apiKey) {
+    return res.status(401).json({ error: 'No API key provided' });
+  }
+
+  const user = await validateApiKey(apiKey);
+  if (!user) {
+    return res.status(401).json({ error: 'Invalid API key' });
+  }
+
+  req.user = user;
+  next();
+});
+```
+
+**Client Request:**
 ```bash
 POST /api/objectql
 X-API-Key: your_api_key_here
@@ -24,44 +72,93 @@ Content-Type: application/json
 
 ## 3. Session Cookies
 
+Implement session-based authentication:
+
+```typescript
+import session from 'express-session';
+
+app.use(session({
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false
+}));
+
+app.use('/api/objectql', (req, res, next) => {
+  if (!req.session.user) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+  
+  req.user = req.session.user;
+  next();
+});
+```
+
+**Client Request:**
 ```bash
 POST /api/objectql
 Cookie: session_id=abc123...
 Content-Type: application/json
 ```
 
-## 4. User Context in Request (Development Only)
+## Authorization (Permissions)
 
-For testing and development, you can pass user context directly in the request:
+> **📋 Implementation Status**: Permission enforcement is **NOT automatic**. You must implement it using hooks or middleware.
 
-```json
-{
-  "user": {
-    "id": "user_123",
-    "roles": ["admin"]
+### Pattern 1: Implement in Hooks
+
+See the [Security Guide](/docs/server/security) for complete patterns.
+
+```typescript
+// project.hook.ts
+const hooks: ObjectHookDefinition = {
+  beforeCreate: async (ctx) => {
+    if (!ctx.user?.roles?.includes('manager')) {
+      throw new Error('Unauthorized: Only managers can create projects');
+    }
   },
-  "op": "find",
-  "object": "users",
-  "args": {}
-}
+
+  beforeUpdate: async (ctx) => {
+    const project = ctx.previousData;
+    if (project.owner !== ctx.user.id && !ctx.user.isAdmin) {
+      throw new Error('Unauthorized: You can only update your own projects');
+    }
+  }
+};
 ```
 
-⚠️ **Warning**: In production, always authenticate via headers, not request body.
+### Pattern 2: Row-Level Security
 
-## Permission System
+Filter data by user in `beforeFind` hooks:
 
-ObjectQL enforces permissions at multiple levels, as defined in the [Permission Specification](../spec/permission.mdx):
-
-1. **Object Permissions** (`object_permissions`): Controls which roles can perform CRUD operations on an object
-2. **Field Permissions** (`field_permissions`): Controls which fields specific roles can read or update
-3. **Record Rules** (`record_rules`): Conditional access based on record data (e.g., owner-only access)
-
-**Permission Check Flow:**
-```
-Request → Authentication → Object Permissions → Field Permissions → Record Rules → Execute
+```typescript
+app.on('before:find', '*', async (ctx) => {
+  if (!ctx.user?.isAdmin) {
+    if (!ctx.query.filters) ctx.query.filters = [];
+    ctx.query.filters.push(['owner', '=', ctx.user.id]);
+  }
+});
 ```
 
-**Example Permission Config:**
+### Pattern 3: Field-Level Security
+
+Remove sensitive fields in `afterFind` hooks:
+
+```typescript
+app.on('after:find', 'user', async (ctx) => {
+  if (!ctx.user?.isAdmin) {
+    ctx.result = ctx.result.map(record => {
+      const { password, ssn, ...safeRecord } = record;
+      return safeRecord;
+    });
+  }
+});
+```
+
+## Permission Metadata (Planned Feature)
+
+> **⚠️ Note**: Permission YAML files can be created, but they are **not automatically enforced**. Use them as documentation or implement enforcement in hooks.
+
+**Example Permission Config (Documentation Only):**
 ```yaml
 # File: project.permission.yml
 
@@ -94,4 +191,80 @@ record_rules:
       delete: true
 ```
 
-See the [Permission Specification](../spec/permission.mdx) for complete details on the permission model.
+This configuration serves as documentation but **requires implementation in hooks** to be enforced.
+
+## Best Practices
+
+### ✅ Do
+1. **Implement authentication in middleware** - Verify identity before requests reach ObjectQL
+2. **Create ObjectQL context with user info** - Pass authenticated user to context
+3. **Check permissions in hooks** - Enforce authorization for all operations
+4. **Use HTTPS in production** - Encrypt data in transit
+5. **Validate all input** - Use ObjectQL's validation system
+6. **Log security events** - Track authentication failures and permission denials
+
+### ❌ Don't
+1. **Don't assume automatic permission enforcement** - You must implement it
+2. **Don't trust client input** - Always validate server-side
+3. **Don't hardcode credentials** - Use environment variables
+4. **Don't expose sensitive errors** - Return generic error messages
+
+## Complete Example
+
+```typescript
+import express from 'express';
+import { ObjectQL } from '@objectql/core';
+import jwt from 'jsonwebtoken';
+
+const app = express();
+const objectql = new ObjectQL({ /* config */ });
+
+// 1. Authentication Middleware
+app.use('/api/objectql', async (req, res, next) => {
+  try {
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    if (!token) return res.status(401).json({ error: 'No token' });
+
+    const user = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = user;
+    next();
+  } catch (error) {
+    res.status(401).json({ error: 'Invalid token' });
+  }
+});
+
+// 2. Create Context with User
+app.post('/api/objectql', async (req, res) => {
+  const ctx = objectql.createContext({
+    userId: req.user.id,
+    user: req.user
+  });
+
+  try {
+    const result = await ctx.object(req.body.object).find(req.body.args);
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 3. Enforce Permissions in Hooks
+objectql.on('before:create', 'project', async (ctx) => {
+  if (!ctx.user?.roles?.includes('manager')) {
+    throw new Error('Unauthorized');
+  }
+});
+
+await objectql.init();
+app.listen(3000);
+```
+
+## Related Documentation
+
+- **[Security Guide](/docs/server/security)** - Complete security patterns and examples
+- **[Hooks](/docs/logic/hooks)** - Implement permission checks in hooks
+- **[Server Integration](/docs/server/integration)** - Express/Next.js setup
+
+## See Also
+
+- [Implementation Status](https://github.com/objectstack-ai/objectql/blob/main/IMPLEMENTATION_STATUS.md) - Current feature status

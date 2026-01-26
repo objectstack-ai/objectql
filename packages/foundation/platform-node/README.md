@@ -151,17 +151,19 @@ registerDriver(app, 'default', new SqlDriver({
 
 The loader automatically handles these file patterns:
 
-| Pattern | Description |
-|---------|-------------|
-| `**/*.object.yml` | Object/Entity definitions |
-| `**/*.object.yaml` | Object definitions (YAML format) |
-| `**/*.validation.yml` | Validation rules |
-| `**/*.permission.yml` | Permission/RBAC rules |
-| `**/*.hook.yml` | Lifecycle hooks metadata |
-| `**/*.action.yml` | Custom action definitions |
-| `**/*.workflow.yml` | Workflow automation |
-| `**/*.app.yml` | Application configuration |
-| `**/*.data.yml` | Initial/seed data |
+| Pattern | Description | Status |
+|---------|-------------|--------|
+| `**/*.object.yml` | Object/Entity definitions | ✅ Fully Supported |
+| `**/*.object.yaml` | Object definitions (YAML format) | ✅ Fully Supported |
+| `**/*.validation.yml` | Validation rules | ✅ Fully Supported |
+| `**/*.permission.yml` | Permission/RBAC rules | ⚠️ Loaded (requires manual enforcement) |
+| `**/*.hook.yml` | Lifecycle hooks metadata | ✅ Fully Supported |
+| `**/*.action.yml` | Custom action definitions | ✅ Fully Supported |
+| `**/*.workflow.yml` | Workflow automation | ⚠️ Loaded (no runtime execution) |
+| `**/*.app.yml` | Application configuration | ✅ Fully Supported |
+| `**/*.data.yml` | Initial/seed data | ✅ Fully Supported |
+
+> **Note**: Permission and workflow files can be loaded, but require application-layer implementation. See [Implementation Status](https://github.com/objectstack-ai/objectql/blob/main/IMPLEMENTATION_STATUS.md) for details.
 
 ## Project Structure Examples
 
