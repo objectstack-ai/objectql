@@ -38,6 +38,7 @@ ObjectQL is organized as a Monorepo to ensure modularity and universal compatibi
 | **[`@objectql/core`](./packages/foundation/core)** | Universal | **The Engine.** The runtime logic, validation, and repository pattern. |
 | **[`@objectql/platform-node`](./packages/foundation/platform-node)**| Node.js | Node.js platform utilities for file system integration, YAML loading, and plugin management. |
 | **[`@objectql/plugin-security`](./packages/foundation/plugin-security)**| Universal | **Security Plugin.** Comprehensive RBAC, Field-Level Security (FLS), and Row-Level Security (RLS) with AST-level enforcement. |
+| **[`@objectql/plugin-ai`](./packages/foundation/plugin-ai)**| Universal | **AI Plugin.** AI-powered code generation, intelligent validation, and smart suggestions using LLMs (OpenAI, Anthropic, etc.). |
 
 ### Driver Layer
 

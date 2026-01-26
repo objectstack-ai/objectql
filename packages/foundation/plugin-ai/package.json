@@ -1,0 +1,36 @@
+{
+  "name": "@objectql/plugin-ai",
+  "version": "4.0.1",
+  "description": "AI plugin for ObjectQL - AI-powered code generation, validation, and suggestions",
+  "keywords": [
+    "objectql",
+    "ai",
+    "plugin",
+    "code-generation",
+    "validation",
+    "openai",
+    "llm",
+    "artificial-intelligence"
+  ],
+  "license": "MIT",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "jest --passWithNoTests"
+  },
+  "dependencies": {
+    "@objectql/types": "workspace:*",
+    "@objectql/runtime": "workspace:*",
+    "@objectstack/spec": "^0.3.3",
+    "openai": "^4.0.0",
+    "js-yaml": "^4.1.0"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.5",
+    "typescript": "^5.3.0"
+  }
+}
