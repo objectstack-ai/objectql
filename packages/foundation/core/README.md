@@ -1,18 +1,20 @@
 # @objectql/core
 
+> **Implementation Status**: ✅ **Production Ready** - All core features fully implemented and tested. See [Implementation Status](https://github.com/objectstack-ai/objectql/blob/main/IMPLEMENTATION_STATUS.md) for complete details.
+
 The core ORM and runtime engine for ObjectQL. This package handles object querying, CRUD operations, database driver coordination, transaction management, and **metadata-driven validation**. As of version 4.0.0, it wraps the **ObjectStackKernel** for plugin architecture and lifecycle management.
 
 ## Features
 
-- **Plugin Architecture**: Built on top of `@objectql/runtime` with kernel-based plugin system
-- **Unified Query Language**: A generic way to query data across different databases (SQL, Mongo, etc.)
-- **Repository Pattern**: `ObjectRepository` for managing object records
-- **Driver Agnostic**: Abstraction layer for database drivers
-- **Dynamic Schema**: Loads object definitions from metadata
-- **Hooks & Actions**: Runtime logic injection
-- **Validation Engine**: Metadata-driven validation with field-level, cross-field, and state machine rules
-- **Formula Engine**: Computed fields with dynamic formulas
-- **AI Integration**: Built-in AI agent capabilities
+- ✅ **Plugin Architecture**: Built on top of `@objectql/runtime` with kernel-based plugin system
+- ✅ **Unified Query Language**: A generic way to query data across different databases (SQL, Mongo, etc.)
+- ✅ **Repository Pattern**: `ObjectRepository` for managing object records
+- ✅ **Driver Agnostic**: Abstraction layer for database drivers
+- ✅ **Dynamic Schema**: Loads object definitions from metadata
+- ✅ **Hooks & Actions**: Runtime logic injection - fully implemented
+- ✅ **Validation Engine**: Metadata-driven validation with field-level, cross-field, and state machine rules
+- ✅ **Formula Engine**: Computed fields with dynamic formulas
+- ✅ **AI Integration**: Built-in AI agent capabilities for code generation
 
 ## Installation
 
