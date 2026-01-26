@@ -155,13 +155,27 @@ export class QueryTrimmer {
     if (condition.type === 'formula') {
       // Formula conditions can't be directly converted to filters
       // They need to be evaluated in memory after fetching
-      console.warn('Formula conditions cannot be converted to query filters');
+      // TODO: Consider implementing a formula-to-SQL compiler for common patterns
+      console.warn(
+        'Formula conditions cannot be converted to query filters and will be evaluated in-memory. ' +
+        'This may result in fetching more data than necessary. ' +
+        'Consider using simple or complex conditions for better performance, ' +
+        'or ensure formula conditions are combined with other filterable conditions.'
+      );
       return {};
     }
     
     if (condition.type === 'lookup') {
       // Lookup conditions require join logic
-      console.warn('Lookup conditions not yet supported in query trimming');
+      // TODO: Implement support for lookup conditions in a future release
+      console.warn(
+        'Lookup conditions are not yet supported in query trimming. ' +
+        'This feature is planned for a future release. ' +
+        'As a workaround, consider: ' +
+        '1. Using record-level rules instead of row-level security for lookup-based filtering ' +
+        '2. Denormalizing the lookup field into the main table ' +
+        '3. Implementing custom query logic in beforeQuery hooks'
+      );
       return {};
     }
     

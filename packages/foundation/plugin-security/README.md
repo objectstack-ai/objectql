@@ -321,6 +321,59 @@ The QueryTrimmer operates at the AST level, modifying the query before it's sent
 3. **Enable audit logging in production** - Track permission violations
 4. **Regular permission reviews** - Audit who has access to what
 5. **Principle of least privilege** - Grant minimum required permissions
+6. **Formula condition security** - When using formula-based conditions:
+   - Only allow trusted administrators to define formulas
+   - Formulas are evaluated in a restricted context but still pose risks
+   - Consider using simple or complex conditions instead for better security
+   - For production, consider implementing a sandboxed evaluator (e.g., vm2, isolated-vm)
+   - Regularly audit formula definitions for security issues
+
+### Security Considerations for Formula Conditions
+
+Formula conditions use the JavaScript `Function` constructor for evaluation. While the execution context is restricted, there are still potential security risks:
+
+**Current Implementation:**
+```typescript
+// Restricted context - only exposes record and user
+const evalContext = {
+  record: context.record,
+  user: context.user,
+  $current_user: context.user
+};
+```
+
+**Recommendations:**
+- Use formula conditions only for internal tools or trusted environments
+- For production systems with untrusted users, use simple or complex conditions
+- Consider implementing a custom expression parser or sandboxed evaluator
+- Audit all formula definitions before deployment
+- Implement rate limiting and monitoring for formula evaluation
+
+**Alternative Approaches:**
+```typescript
+// ✓ Preferred: Use simple conditions
+{
+  field: 'status',
+  operator: '=',
+  value: 'active'
+}
+
+// ✓ Preferred: Use complex conditions
+{
+  type: 'complex',
+  expression: [
+    { field: 'status', operator: '=', value: 'active' },
+    { field: 'owner_id', operator: '=', value: '$current_user.id' },
+    'and'
+  ]
+}
+
+// ⚠️ Use with caution: Formula conditions
+{
+  type: 'formula',
+  formula: 'record.status === "active" && record.owner_id === user.id'
+}
+```
 
 ## API Reference
 

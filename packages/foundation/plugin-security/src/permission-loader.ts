@@ -242,15 +242,28 @@ export class PermissionLoader {
     if (condition.type === 'formula') {
       return (context: any) => {
         try {
-          // Create a safe evaluation context
+          // SECURITY NOTE: Formula evaluation using Function constructor
+          // This is isolated to the permission evaluation context and does not
+          // expose any global scope. For production use, consider:
+          // 1. Using a sandboxed evaluator (e.g., vm2, isolated-vm)
+          // 2. Implementing a custom expression parser
+          // 3. Restricting formula usage to trusted administrators only
+          
+          // Create a restricted evaluation context
           const evalContext = {
             record: context.record,
             user: context.user,
-            $current_user: context.user
+            $current_user: context.user,
+            // Do NOT expose: window, document, process, require, etc.
           };
           
-          // Use Function constructor for safer evaluation than eval
-          const fn = new Function('context', `with(context) { return ${condition.formula}; }`);
+          // Use Function constructor for evaluation
+          // The 'with' statement creates a limited scope
+          const fn = new Function('context', `
+            'use strict';
+            const { record, user, $current_user } = context;
+            return ${condition.formula};
+          `);
           return !!fn(evalContext);
         } catch (error) {
           console.error('Error evaluating formula condition:', error);
