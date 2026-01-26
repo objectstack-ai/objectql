@@ -149,7 +149,9 @@ fields:
     ai_context:
       intent: "Current lifecycle stage of the project"
       
-      # State machine information
+      # State machine information for AI understanding
+      # Note: For actual state transition enforcement, define a state_machine
+      # validation rule in project.validation.yml (see Validation spec)
       is_state_machine: true
       transitions:
         planning: [active, cancelled]
@@ -565,7 +567,7 @@ fields:
   status:
     type: select
     required: true
-    default: planning
+    defaultValue: planning
     options:
       - value: planning
         label: Planning

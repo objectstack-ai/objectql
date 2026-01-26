@@ -19,6 +19,32 @@ Unlike Hooks (which trigger automatically), Actions are explicitly invoked by th
 ### 1.2 Schema-First Inputs
 Input parameters (`params`) are defined using the same `FieldConfig` schema as object fields. This gives you free validation, type coercion, and UI generation.
 
+### 1.3 AI Context Support
+Actions support the `ai_context` property to provide semantic information for AI-assisted development and code generation.
+
+```yaml
+# File: order.object.yml
+actions:
+  approve_order:
+    type: record
+    label: Approve Order
+    ai_context:
+      intent: "Approve a pending order after verifying inventory and payment"
+      business_rules:
+        - "Only orders in 'Pending' status can be approved"
+        - "Must verify sufficient inventory before approval"
+        - "Payment must be confirmed"
+      examples:
+        - "Approve order #12345 after payment verification"
+        - "Batch approve all paid orders"
+```
+
+| Property | Type | Description |
+| :--- | :--- | :--- |
+| `intent` | `string` | Brief description of the action's business purpose. |
+| `business_rules` | `string[]` | Key constraints or validation requirements. |
+| `examples` | `string[]` | Typical use cases or invocation scenarios. |
+
 ## 2. Configuration (YAML)
 
 Actions are declared in your object definition file (`<object_name>.object.yml`).

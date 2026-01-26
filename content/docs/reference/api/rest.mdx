@@ -18,8 +18,17 @@ For traditional REST clients, ObjectQL can expose a REST-style interface.
 
 ## List Records
 
+The REST API accepts query parameters that map to the [Query Language](../spec/query-language.mdx) specification:
+
+- `filter` - JSON-encoded filter array (optional)
+- `sort` - Field name or comma-separated list (optional)
+- `top` - Maximum number of records to return (LIMIT, recommended: 10-100)
+- `skip` - Number of records to skip (OFFSET, for pagination)
+
+**Note:** For backward compatibility, `limit` is accepted as an alias for `top`.
+
 ```bash
-GET /api/data/users?filter={"status":"active"}&sort=created_at&limit=20
+GET /api/data/users?filter=[["status","=","active"]]&sort=created_at&top=20&skip=0
 ```
 
 **Response:**

@@ -50,33 +50,48 @@ For testing and development, you can pass user context directly in the request:
 
 ## Permission System
 
-ObjectQL enforces permissions at multiple levels:
+ObjectQL enforces permissions at multiple levels, as defined in the [Permission Specification](../spec/permission.mdx):
 
-1. **Object-Level**: Can the user access this object at all?
-2. **Operation-Level**: Can they perform this operation (read/create/update/delete)?
-3. **Field-Level**: Which fields can they see/edit?
-4. **Record-Level**: Which specific records can they access?
+1. **Object Permissions** (`object_permissions`): Controls which roles can perform CRUD operations on an object
+2. **Field Permissions** (`field_permissions`): Controls which fields specific roles can read or update
+3. **Record Rules** (`record_rules`): Conditional access based on record data (e.g., owner-only access)
 
 **Permission Check Flow:**
 ```
-Request → Authentication → Object Permission → Field Permission → Record Permission → Execute
+Request → Authentication → Object Permissions → Field Permissions → Record Rules → Execute
 ```
 
 **Example Permission Config:**
 ```yaml
-# user.object.yml
-permissions:
-  - profile: admin
-    allow_read: true
-    allow_create: true
-    allow_edit: true
-    allow_delete: true
-    
-  - profile: user
-    allow_read: true
-    allow_create: false
-    allow_edit: true
-    allow_delete: false
-    record_filters:
-      - ["owner", "=", "$current_user"]
+# File: project.permission.yml
+
+roles:
+  - admin
+  - manager
+  - user
+
+object_permissions:
+  create: [admin, manager]
+  read: [admin, manager, user]
+  update: [admin, manager]
+  delete: [admin]
+
+field_permissions:
+  budget:
+    read: [admin, manager]
+    update: [admin]
+
+record_rules:
+  - name: owner_access
+    description: Owner has full access
+    condition:
+      field: owner_id
+      operator: "="
+      value: $current_user.id
+    permissions:
+      read: true
+      update: true
+      delete: true
 ```
+
+See the [Permission Specification](../spec/permission.mdx) for complete details on the permission model.

@@ -154,7 +154,7 @@ Query multiple records with optional filtering and pagination:
 
 ```graphql
 query {
-  userList(limit: 10, skip: 0) {
+  userList(top: 10, skip: 0) {
     id
     name
     email
@@ -163,21 +163,23 @@ query {
 ```
 
 **Available Arguments:**
-- `limit` (Int): Maximum number of records to return
-- `skip` (Int): Number of records to skip (for pagination)
-- `filters` (String): JSON-encoded filter expression
+- `top` (Int): Maximum number of records to return (LIMIT, aligns with Query Language spec)
+- `skip` (Int): Number of records to skip (OFFSET, for pagination)
+- `filters` (String): JSON-encoded filter expression (array format)
 - `fields` (List): Specific fields to include
 - `sort` (String): JSON-encoded sort specification
 
+**Note:** `limit` is accepted as a deprecated alias for `top` for backward compatibility.
+
 ## Advanced Filtering
 
-Use the `filters` argument with JSON-encoded filter expressions:
+Use the `filters` argument with JSON-encoded filter expressions (array format per the Query Language spec):
 
 ```graphql
 query {
   userList(
     filters: "[[\\"role\\", \\"=\\", \\"admin\\"], \\"and\\", [\\"age\\", \\">=\\", 30]]"
-    limit: 20
+    top: 20
   ) {
     id
     name
@@ -521,7 +523,7 @@ GraphQL provides built-in introspection for schema discovery:
 ```typescript
 const query = `
   query GetUsers {
-    userList(limit: 10) {
+    userList(top: 10) {
       id
       name
       email
@@ -693,7 +695,7 @@ query {
     role
   }
   
-  userList(limit: 10) {
+  userList(top: 10) {
     ...UserBasic
   }
 }
@@ -702,8 +704,8 @@ query {
 ## 4. Implement Pagination
 
 ```graphql
-query GetUsersPaginated($limit: Int!, $skip: Int!) {
-  userList(limit: $limit, skip: $skip) {
+query GetUsersPaginated($top: Int!, $skip: Int!) {
+  userList(top: $top, skip: $skip) {
     id
     name
     email
@@ -907,8 +909,8 @@ query GetUser($id: String!) {
 }
 
 # Read Many
-query ListUsers($limit: Int, $skip: Int) {
-  userList(limit: $limit, skip: $skip) {
+query ListUsers($top: Int, $skip: Int) {
+  userList(top: $top, skip: $skip) {
     id
     name
     email

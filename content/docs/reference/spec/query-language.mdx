@@ -33,13 +33,11 @@ Queries can include an `ai_context` block to make them more understandable and m
   },
   
   "fields": ["order_no", "amount", "customer.name"],
-  "filters": [
-    ["status", "=", "paid"],
-    "and",
-    ["amount", ">", 1000],
-    "and",
-    ["created_at", ">=", "2024-01-01"]
-  ]
+  "filters": {
+    "status": "paid",
+    "amount": { "$gt": 1000 },
+    "created_at": { "$gte": "2024-01-01" }
+  }
 }
 ```
 
@@ -74,6 +72,18 @@ export type Operator =
 ### 2.2 The Query Interface
 
 ```typescript
+// Modern filter condition type (object-based syntax)
+// Supports MongoDB/Prisma-style operators: $eq, $gt, $gte, $lt, $lte, $ne, $in, $nin, etc.
+// For full operator reference, see Section 3.2
+export type FilterCondition = {
+  [field: string]: 
+    | any  // Implicit equality: { status: "active" }
+    | { [operator: string]: any }  // Explicit operator: { price: { $gt: 100 } }
+} | {
+  $and?: FilterCondition[];  // Logical AND
+  $or?: FilterCondition[];   // Logical OR
+};
+
 export interface UnifiedQuery {
   // === 1. Target ===
   object: string;
@@ -83,8 +93,8 @@ export interface UnifiedQuery {
   fields?: string[]; 
   
   // === 3. Selection (WHERE) ===
-  // Recursive AST array structure
-  filters?: Array<any>; // See Section 3 for detailed syntax
+  // Modern object-based filter syntax (MongoDB/Prisma-style)
+  filters?: FilterCondition; // See Section 3 for detailed syntax
   
   // === 4. Ordering & Pagination ===
   // Format: [['created_at', 'desc'], ['name', 'asc']]
@@ -98,93 +108,168 @@ export interface UnifiedQuery {
 }
 ```
 
-## 3. Filter Syntax (The AST)
+## 3. Modern Filter Syntax
 
-The `filters` property is a recursive array structure that eliminates the need for SQL strings.
+ObjectQL uses a **modern object-based filter syntax** inspired by MongoDB and Prisma. This replaces the legacy array-based syntax and provides better type safety, readability, and IDE support.
 
-### 3.1 Single Criterion
-A criterion is a tuple of `[Field, Operator, Value]`.
+> **For detailed filter examples and patterns**, see the [Filter Syntax Guide](../../data-access/filter-syntax.mdx).
+
+### 3.1 Basic Filters
+
+#### Implicit Equality
+The simplest form - just specify field and value:
 
 ```json
-["status", "=", "open"]
+{
+  "object": "products",
+  "filters": {
+    "category": "Electronics",
+    "status": "active"
+  }
+}
 ```
 
-### 3.2 Basic Logic (AND/OR)
-Combine criteria using boolean operators (`and`, `or`).
+Multiple fields at the top level are implicitly combined with AND logic.
+
+#### Explicit Operators
+
+Use operators for more complex conditions:
 
 ```json
-[
-  ["status", "=", "open"],
-  "and",
-  ["priority", ">", 3]
-]
+{
+  "object": "products",
+  "filters": {
+    "price": { "$gt": 100, "$lte": 500 },
+    "stock": { "$gte": 1 }
+  }
+}
 ```
 
-### 3.3 Nested Logic (Groups)
-Create complex logic by nesting arrays. This mimics parentheses `(...)` in SQL.
+### 3.2 Comparison Operators
 
-**SQL:** `WHERE status = 'open' AND (owner = 'me' OR priority = 'critical')`
+| Operator | Description | Example |
+|----------|-------------|---------|
+| (implicit) | Equal to | `{ "status": "active" }` |
+| `$eq` | Equal to | `{ "status": { "$eq": "active" } }` |
+| `$ne` | Not equal to | `{ "status": { "$ne": "deleted" } }` |
+| `$gt` | Greater than | `{ "price": { "$gt": 100 } }` |
+| `$gte` | Greater than or equal | `{ "price": { "$gte": 100 } }` |
+| `$lt` | Less than | `{ "price": { "$lt": 500 } }` |
+| `$lte` | Less than or equal | `{ "price": { "$lte": 500 } }` |
+| `$in` | In array | `{ "status": { "$in": ["active", "pending"] } }` |
+| `$nin` | Not in array | `{ "status": { "$nin": ["deleted", "archived"] } }` |
 
-**ObjectQL:**
+### 3.3 String Operators
+
 ```json
-[
-  ["status", "=", "open"],
-  "and",
-  [
-    ["owner", "=", "me"],
-    "or",
-    ["priority", "=", "critical"]
+{
+  "object": "products",
+  "filters": {
+    "name": { "$contains": "laptop" },
+    "sku": { "$startsWith": "ELEC-" },
+    "email": { "$endsWith": "@company.com" }
+  }
+}
+```
+
+### 3.4 Null and Existence Checks
+
+Check for null or non-null values:
+
+```json
+{
+  "object": "users",
+  "filters": {
+    "deletedAt": { "$null": true },     // IS NULL (record is not deleted)
+    "lastLoginAt": { "$null": false }   // IS NOT NULL (user has logged in)
+  }
+}
+```
+
+### 3.5 Logical Operators
+
+#### AND (Explicit)
+
+Top-level fields are implicitly AND-ed, but you can use `$and` explicitly:
+
+```json
+{
+  "object": "products",
+  "filters": {
+    "$and": [
+      { "category": "Electronics" },
+      { "status": "active" },
+      { "price": { "$gt": 100 } }
+    ]
+  }
+}
+```
+
+#### OR
+
+```json
+{
+  "object": "products",
+  "filters": {
+    "$or": [
+      { "category": "Electronics" },
+      { "category": "Computers" },
+      { "featured": true }
+    ]
+  }
+}
+```
+
+#### Complex Nested Logic
+
+Combine AND and OR for complex queries:
+
+```json
+{
+  "object": "products",
+  "filters": {
+    "$and": [
+      {
+        "$or": [
+          { "category": "Electronics" },
+          { "category": "Computers" }
+        ]
+      },
+      { "status": "active" },
+      { "price": { "$gt": 100 } }
+    ]
+  }
+}
+```
+
+**SQL Equivalent:** `WHERE (category = 'Electronics' OR category = 'Computers') AND status = 'active' AND price > 100`
+
+### 3.6 Legacy Array-Based Syntax (Deprecated)
+
+> **⚠️ Deprecated:** The array-based filter syntax is still supported for backward compatibility but is **not recommended** for new code. Use the modern object-based syntax instead.
+
+The legacy syntax used array tuples:
+
+```json
+// ❌ Old (still works but deprecated)
+{
+  "filters": [
+    ["status", "=", "active"],
+    "and",
+    ["price", ">", 100]
   ]
-]
+}
+
+// ✅ New (recommended)
+{
+  "filters": {
+    "status": "active",
+    "price": { "$gt": 100 }
+  }
+}
 ```
 
-
-
-## 3. Filter AST Structure
-
-The `filters` property uses an array-based AST (S-Expression style) to explicitly define logical precedence without ambiguity.
-
-### 3.1 Leaf Node (Criterion)
-
-A simple condition is an array of 3 elements: `[Field, Operator, Value]`.
-
-```javascript
-["status", "=", "paid"]
-["amount", ">", 100]
-
-```
-
-### 3.2 Branch Node (Logic)
-
-Conditions are combined using `'and'` or `'or'` strings within an array.
-
-**A AND B:**
-
-```javascript
-[
-  ["status", "=", "paid"], 
-  "and", 
-  ["amount", ">", 100]
-]
-
-```
-
-**Nested Logic: (A OR B) AND C:**
-
-```javascript
-[
-  // Group 1: (A OR B)
-  [
-    ["status", "=", "paid"], 
-    "or", 
-    ["status", "=", "pending"]
-  ],
-  "and", 
-  // Condition C
-  ["created_at", ">", "2023-01-01"]
-]
-
-```
+For migration guidance, see the [Filter Syntax Guide](../../data-access/filter-syntax.mdx).
 
 ## 4. Full Examples
 
@@ -209,18 +294,19 @@ Fetching orders with complex filtering and related customer data:
   "object": "orders",
   "fields": ["order_no", "amount", "status", "created_at"],
   
-  // Logic: (Paid OR Pending) AND Amount > 100 AND Recent
-  "filters": [
-    [
-      ["status", "=", "paid"], 
-      "or", 
-      ["status", "=", "pending"]
-    ],
-    "and",
-    ["amount", ">", 100],
-    "and",
-    ["created_at", ">", "2024-01-01"]
-  ],
+  // Modern filter syntax: (Paid OR Pending) AND Amount > 100 AND Recent
+  "filters": {
+    "$and": [
+      {
+        "$or": [
+          { "status": "paid" },
+          { "status": "pending" }
+        ]
+      },
+      { "amount": { "$gt": 100 } },
+      { "created_at": { "$gt": "2024-01-01" } }
+    ]
+  },
   
   "sort": [["created_at", "desc"]],
   "top": 20,
@@ -231,7 +317,7 @@ Fetching orders with complex filtering and related customer data:
     "customer": { 
       "fields": ["name", "email", "vip_level"],
       // Nested filter on the related table
-      "filters": [["is_active", "=", true]],
+      "filters": { "is_active": true },
       
       "ai_context": {
         "intent": "Include customer details for contact and VIP status"
@@ -296,11 +382,10 @@ Data analysis query with clear business intent:
   ],
   
   // Filter is applied BEFORE aggregation
-  "filters": [
-    ["status", "=", "paid"],
-    "and",
-    ["created_at", ">=", "2024-01-01"]
-  ],
+  "filters": {
+    "status": "paid",
+    "created_at": { "$gte": "2024-01-01" }
+  },
   
   // Sort results by total sales (descending)
   "sort": [["total_sales", "desc"]]
@@ -346,20 +431,18 @@ Advanced filtering with AI-understandable intent:
   ],
   
   // Complex logic: Active AND (Overdue OR Over Budget OR High Risk)
-  "filters": [
-    ["status", "=", "active"],
-    "and",
-    [
-      // Overdue
-      ["end_date", "<", "$today"],
-      "or",
-      // Over budget
-      ["actual_cost", ">", "budget"],
-      "or",
-      // High risk flag
-      ["risk_level", "=", "high"]
+  "filters": {
+    "$and": [
+      { "status": "active" },
+      {
+        "$or": [
+          { "end_date": { "$lt": "$today" } },  // Overdue (special variable)
+          { "budget_exceeded": true },  // Over budget flag
+          { "risk_level": "high" }  // High risk flag
+        ]
+      }
     ]
-  ],
+  },
   
   "expand": {
     "owner": {
@@ -390,11 +473,10 @@ Combining traditional filters with search:
   },
   
   // Traditional filters
-  "filters": [
-    ["vip_level", ">=", "gold"],
-    "and",
-    ["is_active", "=", true]
-  ],
+  "filters": {
+    "vip_level": { "$gte": "gold" },
+    "is_active": true
+  },
   
   // Text search across multiple fields
   "search": "Acme",
@@ -422,13 +504,11 @@ With AI context, systems can:
     "generated_by": "ai_assistant",
     "confidence": 0.95
   },
-  "filters": [
-    ["assignee_id", "=", "$current_user"],
-    "and",
-    ["due_date", "<", "$today"],
-    "and",
-    ["status", "!=", "completed"]
-  ],
+  "filters": {
+    "assignee_id": "$current_user",
+    "due_date": { "$lt": "$today" },
+    "status": { "$ne": "completed" }
+  },
   "sort": [["due_date", "asc"]]
 }
 ```
@@ -447,11 +527,10 @@ AI context can suggest optimizations:
     "performance_note": "Frequently accessed query - consider caching"
   },
   
-  "filters": [
-    ["status", "=", "active"],
-    "and",
-    ["created_at", ">", "2024-01-01"]
-  ]
+  "filters": {
+    "status": "active",
+    "created_at": { "$gt": "2024-01-01" }
+  }
 }
 ```
 
@@ -598,20 +677,22 @@ The cursor encodes the last record's sort values:
 ```javascript
 // Cursor contains: { created_at: "2024-01-14", id: "81" }
 // Query becomes:
-"filters": [
-  // Your original filters (if any)
-  // ... plus cursor filter:
-  "and",
-  [
-    ["created_at", "<", "2024-01-14"],
-    "or",
-    [
-      ["created_at", "=", "2024-01-14"],
-      "and",
-      ["id", ">", "81"]
-    ]
+"filters": {
+  "$and": [
+    // Your original filters (if any) would go here
+    {
+      "$or": [
+        { "created_at": { "$lt": "2024-01-14" } },
+        {
+          "$and": [
+            { "created_at": "2024-01-14" },
+            { "id": { "$gt": "81" } }
+          ]
+        }
+      ]
+    }
   ]
-]
+}
 ```
 
 ### 6.3 Keyset Pagination (Seek Method)
@@ -626,18 +707,17 @@ Similar to cursor but explicitly defined in the query.
   "top": 20,
   
   // For page 2+, use seek criteria
-  "filters": [
-    // Start after the last record from previous page
-    [
-      ["created_at", "<", "2024-01-10"],
-      "or",
-      [
-        ["created_at", "=", "2024-01-10"],
-        "and",
-        ["id", ">", "12345"]
-      ]
+  "filters": {
+    "$or": [
+      { "created_at": { "$lt": "2024-01-10" } },
+      {
+        "$and": [
+          { "created_at": "2024-01-10" },
+          { "id": { "$gt": "12345" } }
+        ]
+      }
     ]
-  ],
+  },
   
   "ai_context": {
     "intent": "Efficient keyset pagination",
@@ -693,11 +773,10 @@ Pagination parameters work alongside filters.
   "fields": ["title", "status", "assignee", "due_date"],
   
   // Filters reduce the total result set
-  "filters": [
-    ["status", "in", ["pending", "in_progress"]],
-    "and",
-    ["assignee_id", "=", "$current_user"]
-  ],
+  "filters": {
+    "status": { "$in": ["pending", "in_progress"] },
+    "assignee_id": "$current_user"
+  },
   
   "sort": [["due_date", "asc"]],
   
@@ -774,11 +853,10 @@ Pagination parameters work alongside filters.
     "days_overdue"
   ],
   
-  "filters": [
-    ["status", "!=", "paid"],
-    "and",
-    ["due_date", "<", "$today"]
-  ],
+  "filters": {
+    "status": { "$ne": "paid" },
+    "due_date": { "$lt": "$today" }
+  },
   
   "sort": [
     ["days_overdue", "desc"],  // Most overdue first

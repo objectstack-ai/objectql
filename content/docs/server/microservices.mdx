@@ -21,7 +21,7 @@ It must expose the metadata API (default in `@objectql/server`).
 ```typescript
 // user-service/index.ts
 const app = new ObjectQL({
-    source: './src/objects', // Defines 'user', 'role'
+    modules: ['./src/objects'], // Defines 'user', 'role'
     datasources: { ... }
 });
 // Exposes http://user-service:3000/api/metadata/objects

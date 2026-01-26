@@ -4,7 +4,7 @@ description: Error Handling
 ---
 ## Error Response Format
 
-All errors follow a consistent format:
+All REST and JSON-RPC errors follow a consistent format:
 
 ```json
 {
@@ -18,6 +18,22 @@ All errors follow a consistent format:
   }
 }
 ```
+
+**Note for GraphQL:** GraphQL uses the standard GraphQL error format with error codes in the `extensions` field:
+```json
+{
+  "errors": [
+    {
+      "message": "Validation failed",
+      "extensions": {
+        "code": "VALIDATION_ERROR"
+      }
+    }
+  ]
+}
+```
+See [GraphQL API](./graphql.mdx) for more details on GraphQL-specific error handling.
+
 
 ## Error Codes
 

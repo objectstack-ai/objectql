@@ -22,6 +22,37 @@ Unlike traditional ORMs that provide generic contexts, ObjectQL hooks are **Type
 *   **Separation of Concerns**: `before` hooks focus on validation/mutation; `after` hooks focus on side-effects.
 *   **Change Tracking**: Built-in helpers like `isModified()` simplify "diff" logic.
 
+### AI Context Support
+
+While hooks are implemented in TypeScript files, you can document their business logic using `ai_context` in your object definition or validation rules for AI-assisted development.
+
+```yaml
+# File: project.object.yml
+label: Project
+description: "Project management with status tracking"
+
+ai_context:
+  intent: "Manage projects with automatic owner assignment and state validation"
+  business_rules:
+    - "Owner is auto-assigned on creation from current user"
+    - "Completed projects cannot be reopened"
+    - "Status changes trigger notifications"
+  hooks_description:
+    - "beforeCreate: Auto-assign owner and validate unique name"
+    - "beforeUpdate: Prevent reopening completed projects"
+    - "afterUpdate: Send notification when project completes"
+
+fields:
+  # ... field definitions
+```
+
+| Property | Type | Description |
+| :--- | :--- | :--- |
+| `hooks_description` | `string[]` | Documentation of hook behavior for AI understanding. |
+| `business_rules` | `string[]` | Key validation rules enforced by hooks. |
+
+**Note:** This ai_context goes in the object definition file, not the hook implementation file.
+
 ## 2. Supported Hooks
 
 | Hook | Operation | Context Properties | Purpose |
