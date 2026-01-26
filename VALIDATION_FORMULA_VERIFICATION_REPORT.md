@@ -15,7 +15,7 @@ The investigation revealed one minor gap in formula field implementation which h
 
 ### Specification Compliance: ✅ PASSED
 
-The validation system is **fully compliant** with the specification documented in `content/docs/reference/spec/validation.mdx`.
+The validation system is **fully compliant** with the specification documented in the [@objectstack/spec](https://protocol.objectstack.ai) package.
 
 #### Implemented Features
 
@@ -72,7 +72,7 @@ The validation system is **fully compliant** with the specification documented i
 
 ### Specification Compliance: ✅ PASSED (after fixes)
 
-The formula system is now **fully compliant** with the specification documented in `content/docs/reference/spec/formula.mdx`.
+The formula system is now **fully compliant** with the specification documented in the [@objectstack/spec](https://protocol.objectstack.ai) package.
 
 #### Issue Found and Fixed
 
@@ -261,8 +261,8 @@ The ObjectQL validation and formula systems are:
 
 ## References
 
-- **Validation Specification**: `content/docs/reference/spec/validation.mdx`
-- **Formula Specification**: `content/docs/reference/spec/formula.mdx`
+- **Validation Specification**: [@objectstack/spec](https://protocol.objectstack.ai) package
+- **Formula Specification**: [@objectstack/spec](https://protocol.objectstack.ai) package
 - **Type Definitions**: `packages/foundation/types/src/`
 - **Implementation**: `packages/foundation/core/src/`
 - **Tests**: `packages/foundation/core/test/`
