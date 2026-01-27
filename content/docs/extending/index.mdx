@@ -1,0 +1,221 @@
+---
+title: "Extending ObjectQL"
+description: "Learn how to extend ObjectQL with custom drivers and plugins"
+---
+
+ObjectQL is designed to be **extensible by default**. The architecture separates the protocol (what to do) from the implementation (how to do it), allowing developers to create custom drivers, plugins, and integrations without modifying the core engine.
+
+## Extension Points
+
+ObjectQL provides two primary extension mechanisms:
+
+### 1. Custom Drivers
+
+**Drivers** adapt ObjectQL to different data sources and storage backends.
+
+- **Purpose**: Connect ObjectQL to databases, APIs, or custom storage systems
+- **Examples**: SQL databases, MongoDB, Redis, REST APIs, GraphQL endpoints
+- **Use When**: You need to store/retrieve data from a specific backend
+- **Interface**: Implement the `Driver` interface from `@objectql/types`
+
+**See**: [Custom Drivers Guide](/docs/extending/custom-drivers)
+
+### 2. Plugins
+
+**Plugins** extend ObjectQL's functionality by adding new capabilities or modifying behavior.
+
+- **Purpose**: Add cross-cutting concerns like security, caching, audit logging
+- **Examples**: Authentication, field-level security, data transformation, webhooks
+- **Use When**: You need to add behavior that applies across multiple objects
+- **Interface**: Implement the `RuntimePlugin` interface from `@objectql/runtime`
+
+**See**: [Plugin Development Guide](/docs/extending/plugins)
+
+## Driver vs Plugin: When to Use Each
+
+| Scenario | Use Driver | Use Plugin |
+|----------|-----------|-----------|
+| Connect to PostgreSQL | ✅ | ❌ |
+| Add RBAC security | ❌ | ✅ |
+| Support Redis as storage | ✅ | ❌ |
+| Add audit logging | ❌ | ✅ |
+| Query Elasticsearch | ✅ | ❌ |
+| Add data validation hooks | ❌ | ✅ |
+| Cache query results | ❌ | ✅ |
+| Connect to REST API | ✅ | ❌ |
+
+**Rule of Thumb:**
+- **Driver** = Data persistence layer (CRUD operations)
+- **Plugin** = Business logic layer (hooks, transformations, cross-cutting concerns)
+
+## Architecture Philosophy
+
+ObjectQL follows a **Compiler, Not ORM** philosophy:
+
+```
+┌─────────────────────────────────────────┐
+│  Application Layer                      │
+│  (ObjectQL API - find, create, etc.)    │
+└─────────────────┬───────────────────────┘
+                  │
+┌─────────────────▼───────────────────────┐
+│  Core Engine                             │
+│  • Query AST compiler                    │
+│  • Validation engine                     │
+│  • Plugin hooks                          │
+└─────────────────┬───────────────────────┘
+                  │
+        ┌─────────┴─────────┐
+        │                   │
+┌───────▼────────┐  ┌──────▼──────────┐
+│  Drivers       │  │  Plugins        │
+│  (Data Layer)  │  │  (Logic Layer)  │
+└────────────────┘  └─────────────────┘
+```
+
+### Key Principles
+
+1. **Protocol-Driven**: Define intent in metadata (YAML/JSON), not code
+2. **Type-Safe**: Strict TypeScript interfaces prevent runtime errors
+3. **Zero-Intrusion**: Extensions shouldn't require changes to business logic
+4. **Hallucination-Free**: Clear contracts prevent ambiguous behavior
+
+## Getting Started
+
+### Quick Example: Using a Custom Driver
+
+```typescript
+import { ObjectStackKernel } from '@objectstack/runtime';
+import { RedisDriver } from '@objectql/driver-redis';
+
+const kernel = new ObjectStackKernel([
+  new RedisDriver({ url: 'redis://localhost:6379' })
+]);
+
+await kernel.start();
+```
+
+### Quick Example: Using a Plugin
+
+```typescript
+import { ObjectStackKernel } from '@objectstack/runtime';
+import { ObjectQLSecurityPlugin } from '@objectql/plugin-security';
+
+const kernel = new ObjectStackKernel([
+  new ObjectQLSecurityPlugin({
+    enableRowLevelSecurity: true,
+    enableFieldLevelSecurity: true
+  })
+]);
+
+await kernel.start();
+```
+
+## Official Extensions
+
+ObjectQL provides several official drivers and plugins:
+
+### Official Drivers
+
+- **@objectql/driver-sql**: PostgreSQL, MySQL, SQLite (via Knex.js)
+- **@objectql/driver-mongo**: MongoDB native driver
+- **@objectql/driver-redis**: Redis key-value store
+- **@objectql/driver-memory**: In-memory storage for testing
+
+### Official Plugins
+
+- **@objectql/plugin-security**: RBAC, FLS, RLS, permission guards
+- **@objectql/plugin-validation**: Advanced validation rules
+- **@objectql/plugin-formula**: Formula field engine
+
+## Building Custom Extensions
+
+### Development Workflow
+
+1. **Define the Interface** (Contract)
+   - For drivers: Implement `Driver` interface
+   - For plugins: Implement `RuntimePlugin` interface
+
+2. **Implement Core Logic**
+   - Follow TypeScript strict mode
+   - Use generics, avoid `any`
+
+3. **Write Tests**
+   - Unit tests for core methods
+   - Integration tests with ObjectQL core
+
+4. **Document**
+   - README with usage examples
+   - TypeDoc comments on public APIs
+
+5. **Publish** (Optional)
+   - NPM package with `@objectql/*` or custom scope
+   - Follow semantic versioning
+
+### Testing Your Extension
+
+```typescript
+import { describe, it, expect } from 'vitest';
+import { MyCustomDriver } from './my-driver';
+
+describe('MyCustomDriver', () => {
+  it('should connect successfully', async () => {
+    const driver = new MyCustomDriver({ url: 'test://localhost' });
+    await driver.connect();
+    const health = await driver.checkHealth();
+    expect(health).toBe(true);
+  });
+
+  it('should create and retrieve records', async () => {
+    const driver = new MyCustomDriver({ url: 'test://localhost' });
+    await driver.connect();
+    
+    const created = await driver.create('users', { name: 'Alice' });
+    expect(created.id).toBeDefined();
+    
+    const found = await driver.findOne('users', created.id);
+    expect(found.name).toBe('Alice');
+  });
+});
+```
+
+## Community Guidelines
+
+### Sharing Your Extension
+
+We encourage the community to build and share extensions:
+
+1. **Naming Convention**
+   - Drivers: `@yourscope/objectql-driver-<name>` or `objectql-driver-<name>`
+   - Plugins: `@yourscope/objectql-plugin-<name>` or `objectql-plugin-<name>`
+
+2. **Documentation Requirements**
+   - Clear README with installation and usage
+   - TypeScript definitions included
+   - Examples for common use cases
+
+3. **Quality Standards**
+   - TypeScript strict mode enabled
+   - Unit tests with >80% coverage
+   - No runtime dependencies on ObjectQL internals (only `@objectql/types`)
+
+4. **Security**
+   - Never store credentials in code
+   - Use environment variables for secrets
+   - Document security implications
+
+### Getting Help
+
+- **GitHub Discussions**: Ask questions, share ideas
+- **Discord**: Real-time community support
+- **GitHub Issues**: Report bugs, request features
+
+## Next Steps
+
+- **[Create a Custom Driver](/docs/extending/custom-drivers)** - Connect ObjectQL to your data source
+- **[Build a Plugin](/docs/extending/plugins)** - Add custom functionality
+- **[API Reference](/docs/reference)** - Explore the full API surface
+
+---
+
+**Remember**: ObjectQL is a **Standard Protocol for AI Software Generation**. When building extensions, think about how AI agents will consume and generate code using your API. Clear, consistent interfaces are essential.
