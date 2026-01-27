@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "@objectql/types": "workspace:*",
-    "@objectstack/spec": "^0.3.3",
+    "@objectstack/spec": "^0.4.1",
     "mingo": "^7.1.1"
   },
   "devDependencies": {
