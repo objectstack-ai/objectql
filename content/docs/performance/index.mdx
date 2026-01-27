@@ -1,0 +1,627 @@
+---
+title: "Performance Optimization"
+description: "Comprehensive guide to optimizing ObjectQL applications for production performance"
+---
+
+ObjectQL applications can handle production workloads efficiently when properly optimized. This guide covers strategies for maximizing performance across all layers of your application.
+
+## Performance Philosophy
+
+ObjectQL is designed as a **Database Compiler**, not a runtime wrapper. This means:
+
+- ✅ **Zero Runtime Overhead**: Metadata is compiled into optimized queries at startup
+- ✅ **Driver-Native Performance**: Queries compile to native database operations
+- ✅ **Smart Query Planning**: ObjectQL optimizes queries before execution
+- ✅ **Minimal Abstraction Cost**: Direct mapping to database primitives
+
+## Quick Wins
+
+Start with these high-impact optimizations:
+
+### 1. Enable Production Mode
+
+```typescript
+import { ObjectQL } from '@objectql/core';
+
+const app = new ObjectQL({
+  production: true,  // Disables development warnings
+  datasources: { default: driver }
+});
+```
+
+**Impact**: 10-15% faster initialization, reduced memory usage
+
+### 2. Use Field Projection
+
+Only request the fields you need:
+
+```typescript
+// ❌ Slow: Fetches all fields
+const users = await repo.find({});
+
+// ✅ Fast: Only fetches needed fields
+const users = await repo.find({
+  fields: ['id', 'name', 'email']
+});
+```
+
+**Impact**: 50-70% reduction in data transfer and parsing time
+
+### 3. Add Database Indexes
+
+Define indexes in your object schema:
+
+```yaml
+name: project
+fields:
+  status: { type: select }
+  owner: { type: lookup, reference_to: users }
+  created_at: { type: datetime }
+
+indexes:
+  status_owner:
+    fields: [status, owner]
+  created_at_idx:
+    fields: [created_at]
+```
+
+**Impact**: 100x+ faster queries on large datasets
+
+### 4. Use Bulk Operations
+
+Batch multiple operations:
+
+```typescript
+// ❌ Slow: N individual queries
+for (const item of items) {
+  await repo.create(item);
+}
+
+// ✅ Fast: Single batch operation
+await repo.createMany(items);
+```
+
+**Impact**: 10-50x faster for batch operations
+
+## Query Optimization
+
+### Efficient Filtering
+
+Use indexed fields in filters:
+
+```typescript
+// ✅ Indexed field first
+const projects = await repo.find({
+  filters: [
+    ['status', '=', 'active'],        // Indexed
+    ['created_at', '>', startDate]    // Indexed
+  ]
+});
+
+// ❌ Avoid filtering on non-indexed fields
+const projects = await repo.find({
+  filters: [
+    ['description', 'contains', 'test']  // Not indexed
+  ]
+});
+```
+
+### Pagination Best Practices
+
+Always paginate large result sets:
+
+```typescript
+// ✅ Efficient pagination
+const PAGE_SIZE = 50;
+const page1 = await repo.find({
+  filters: [['status', '=', 'active']],
+  sort: 'created_at',
+  limit: PAGE_SIZE,
+  skip: 0
+});
+
+// For page 2:
+const page2 = await repo.find({
+  filters: [['status', '=', 'active']],
+  sort: 'created_at',
+  limit: PAGE_SIZE,
+  skip: PAGE_SIZE
+});
+```
+
+**Cursor-based pagination** (for large datasets):
+
+```typescript
+// First page
+const page1 = await repo.find({
+  filters: [['status', '=', 'active']],
+  sort: 'id',
+  limit: 50
+});
+
+// Next page (use last ID from previous page)
+const lastId = page1[page1.length - 1].id;
+const page2 = await repo.find({
+  filters: [
+    ['status', '=', 'active'],
+    ['id', '>', lastId]
+  ],
+  sort: 'id',
+  limit: 50
+});
+```
+
+### Selective Joins (Lookups)
+
+ObjectQL automatically resolves lookup fields. Control this behavior:
+
+```typescript
+// ❌ Auto-resolves all lookups (slower)
+const projects = await repo.find({
+  fields: ['name', 'owner', 'account']  // 'owner' and 'account' are lookups
+});
+
+// ✅ Request only ID for lookups you don't need
+const projects = await repo.find({
+  fields: ['name', 'owner_id', 'account_id']  // Just IDs, no joins
+});
+
+// ✅ Resolve specific lookup fields only
+const projects = await repo.find({
+  fields: ['name', 'owner.name', 'owner.email']  // Partial lookup resolution
+});
+```
+
+## Indexing Strategies
+
+### Single-Field Indexes
+
+Index frequently queried fields:
+
+```yaml
+indexes:
+  status_idx:
+    fields: [status]
+  created_at_idx:
+    fields: [created_at]
+  owner_idx:
+    fields: [owner]
+```
+
+**When to use**:
+- Fields used in `filters`
+- Fields used in `sort`
+- Lookup/relationship fields
+- Fields used in uniqueness checks
+
+### Compound Indexes
+
+Index field combinations used together:
+
+```yaml
+indexes:
+  status_created:
+    fields: [status, created_at]
+  owner_status:
+    fields: [owner, status]
+```
+
+**Index order matters**:
+- Most selective field first
+- Fields in query order
+
+```typescript
+// ✅ Uses status_created index efficiently
+const active = await repo.find({
+  filters: [
+    ['status', '=', 'active'],
+    ['created_at', '>', yesterday]
+  ]
+});
+
+// ⚠️ Less efficient (only uses first field of index)
+const recent = await repo.find({
+  filters: [
+    ['created_at', '>', yesterday]
+    // 'status' not specified
+  ]
+});
+```
+
+### Unique Indexes
+
+Enforce uniqueness and improve lookup performance:
+
+```yaml
+fields:
+  email:
+    type: email
+    unique: true  # Creates unique index automatically
+
+indexes:
+  email_unique:
+    fields: [email]
+    unique: true
+  
+  # Compound unique constraint
+  org_name_unique:
+    fields: [organization, name]
+    unique: true
+```
+
+### Partial Indexes (SQL Drivers)
+
+Index subset of records (PostgreSQL, SQLite):
+
+```typescript
+// Define in migration or schema extension
+await knex.raw(`
+  CREATE INDEX active_projects_idx 
+  ON projects(created_at) 
+  WHERE status = 'active'
+`);
+```
+
+## Caching Strategies
+
+### Metadata Caching
+
+ObjectQL caches compiled metadata automatically:
+
+```typescript
+const app = new ObjectQL({
+  datasources: { default: driver },
+  cache: {
+    enabled: true,        // Default: true
+    ttl: 3600,           // Cache TTL in seconds (default: 1 hour)
+    maxSize: 1000        // Max cached items
+  }
+});
+```
+
+**What's cached**:
+- Object metadata compilation
+- Schema validation results
+- Field type resolvers
+- Formula parsers
+
+### Application-Level Caching
+
+Cache frequently accessed data:
+
+```typescript
+import { LRUCache } from 'lru-cache';
+
+const cache = new LRUCache({
+  max: 500,
+  ttl: 1000 * 60 * 5  // 5 minutes
+});
+
+// Cache expensive queries
+async function getActiveProjects() {
+  const cacheKey = 'active_projects';
+  let projects = cache.get(cacheKey);
+  
+  if (!projects) {
+    projects = await ctx.object('projects').find({
+      filters: [['status', '=', 'active']]
+    });
+    cache.set(cacheKey, projects);
+  }
+  
+  return projects;
+}
+```
+
+### Cache Invalidation
+
+Invalidate cache on mutations:
+
+```typescript
+// In afterCreate/afterUpdate/afterDelete hook
+export async function afterUpdate(ctx: HookContext): Promise<void> {
+  // Invalidate related caches
+  cache.delete('active_projects');
+  cache.delete(`project_${ctx.doc.id}`);
+}
+```
+
+## Connection Pooling
+
+### SQL Drivers
+
+Configure connection pool for SQL databases:
+
+```typescript
+import { SqlDriver } from '@objectql/driver-sql';
+
+const driver = new SqlDriver({
+  client: 'pg',
+  connection: {
+    host: 'localhost',
+    database: 'myapp',
+    user: 'postgres',
+    password: 'secret'
+  },
+  pool: {
+    min: 2,           // Minimum connections
+    max: 10,          // Maximum connections
+    acquireTimeoutMillis: 30000,
+    idleTimeoutMillis: 30000,
+    createTimeoutMillis: 3000
+  }
+});
+```
+
+**Pool sizing guidelines**:
+- **Development**: min: 2, max: 10
+- **Production (small)**: min: 5, max: 20
+- **Production (large)**: min: 10, max: 50
+
+**Formula**: `max_connections = (core_count * 2) + effective_spindle_count`
+
+### MongoDB Connection Pool
+
+```typescript
+import { MongoDriver } from '@objectql/driver-mongo';
+
+const driver = new MongoDriver({
+  url: 'mongodb://localhost:27017',
+  dbName: 'myapp',
+  poolSize: 10,              // Max connections
+  maxIdleTimeMS: 30000,      // Close idle connections
+  waitQueueTimeoutMS: 10000  // Queue timeout
+});
+```
+
+### Connection Pool Monitoring
+
+```typescript
+// SQL Driver
+const pool = driver.getKnex().client.pool;
+console.log('Pool stats:', {
+  numUsed: pool.numUsed(),
+  numFree: pool.numFree(),
+  numPendingAcquires: pool.numPendingAcquires()
+});
+
+// MongoDB Driver
+const stats = await driver.getClient().db().admin().serverStatus();
+console.log('Connections:', stats.connections);
+```
+
+## Bulk Operations
+
+### Batch Inserts
+
+Use `createMany` for bulk inserts:
+
+```typescript
+const users = [
+  { name: 'Alice', email: 'alice@example.com' },
+  { name: 'Bob', email: 'bob@example.com' },
+  // ... 1000 more
+];
+
+// ✅ Efficient: Single transaction, optimized query
+await repo.createMany(users);
+
+// Configure batch size for very large datasets
+await repo.createMany(users, {
+  batchSize: 100  // Insert in chunks of 100
+});
+```
+
+**Performance**: ~50x faster than individual inserts
+
+### Batch Updates
+
+Update multiple records efficiently:
+
+```typescript
+// ✅ Single query
+await repo.updateMany(
+  [['status', '=', 'pending']],  // Filter
+  { status: 'active' }            // Update
+);
+
+// ❌ Avoid N queries
+const pending = await repo.find({ filters: [['status', '=', 'pending']] });
+for (const record of pending) {
+  await repo.update(record.id, { status: 'active' });
+}
+```
+
+### Batch Deletes
+
+```typescript
+// ✅ Single query
+await repo.deleteMany([
+  ['status', '=', 'archived'],
+  ['created_at', '<', oldDate]
+]);
+```
+
+## Memory Optimization
+
+### Stream Large Result Sets
+
+For processing large datasets:
+
+```typescript
+// ❌ Loads all records into memory
+const allUsers = await repo.find({});  // 1M records = OOM
+
+// ✅ Process in batches
+const BATCH_SIZE = 1000;
+let offset = 0;
+let batch;
+
+do {
+  batch = await repo.find({
+    limit: BATCH_SIZE,
+    skip: offset
+  });
+  
+  // Process batch
+  for (const user of batch) {
+    await processUser(user);
+  }
+  
+  offset += BATCH_SIZE;
+} while (batch.length === BATCH_SIZE);
+```
+
+### Memory Driver Limits
+
+The Memory driver stores data in RAM:
+
+```typescript
+import { MemoryDriver } from '@objectql/driver-memory';
+
+const driver = new MemoryDriver({
+  maxRecords: 10000,     // Limit total records
+  maxMemory: 100_000_000 // 100MB limit
+});
+```
+
+**Best for**: Testing, prototyping, edge functions (< 10k records)  
+**Not for**: Production databases with large datasets
+
+## Monitoring & Profiling
+
+### Enable Query Logging
+
+```typescript
+const app = new ObjectQL({
+  datasources: { default: driver },
+  debug: true  // Logs all queries
+});
+```
+
+### Measure Query Performance
+
+```typescript
+const start = Date.now();
+const results = await repo.find({ filters: [['status', '=', 'active']] });
+const duration = Date.now() - start;
+
+console.log(`Query took ${duration}ms, returned ${results.length} records`);
+```
+
+### Driver-Specific Profiling
+
+See [Driver Optimization Guide](/docs/performance/driver-optimization) for database-specific profiling tools:
+
+- **PostgreSQL**: `EXPLAIN ANALYZE`
+- **MongoDB**: `.explain("executionStats")`
+- **MySQL**: `EXPLAIN` and slow query log
+
+### Application Performance Monitoring
+
+Integrate with APM tools:
+
+```typescript
+import * as Sentry from '@sentry/node';
+
+// Track query performance
+const transaction = Sentry.startTransaction({
+  op: 'db.query',
+  name: 'Find active projects'
+});
+
+try {
+  const results = await repo.find({ filters: [['status', '=', 'active']] });
+  transaction.setStatus('ok');
+} catch (err) {
+  transaction.setStatus('internal_error');
+  throw err;
+} finally {
+  transaction.finish();
+}
+```
+
+## Performance Checklist
+
+Before deploying to production:
+
+- [ ] **Indexes**: All frequently queried fields indexed
+- [ ] **Field Projection**: Only fetch needed fields
+- [ ] **Pagination**: Large queries paginated
+- [ ] **Connection Pool**: Configured for expected load
+- [ ] **Bulk Operations**: Use createMany/updateMany for batches
+- [ ] **Caching**: Application-level cache for hot data
+- [ ] **Production Mode**: `production: true` enabled
+- [ ] **Query Logging**: Enabled in development, monitored in production
+- [ ] **Load Testing**: Tested under expected production load
+- [ ] **Monitoring**: APM integrated and alerting configured
+
+## Driver-Specific Optimization
+
+Each driver has unique performance characteristics:
+
+- **[SQL Driver](/docs/performance/driver-optimization#sql-driver)**: Indexes, query plans, connection pooling
+- **[MongoDB Driver](/docs/performance/driver-optimization#mongodb-driver)**: Indexes, aggregation pipelines, sharding
+- **[Memory Driver](/docs/performance/driver-optimization#memory-driver)**: In-memory limits, data structure optimization
+- **[Redis Driver](/docs/performance/driver-optimization#redis-driver)**: Key patterns, expiration, pipelining
+
+See the [Driver Optimization Guide](/docs/performance/driver-optimization) for detailed strategies.
+
+## Benchmarking
+
+### Simple Benchmark
+
+```typescript
+async function benchmark() {
+  const iterations = 1000;
+  const start = Date.now();
+  
+  for (let i = 0; i < iterations; i++) {
+    await repo.find({
+      filters: [['status', '=', 'active']],
+      limit: 10
+    });
+  }
+  
+  const duration = Date.now() - start;
+  const perQuery = duration / iterations;
+  const qps = 1000 / perQuery;
+  
+  console.log(`
+    Total: ${duration}ms
+    Per Query: ${perQuery.toFixed(2)}ms
+    Queries/sec: ${qps.toFixed(0)}
+  `);
+}
+```
+
+### Load Testing
+
+Use tools like [k6](https://k6.io/) for production load testing:
+
+```javascript
+// k6-load-test.js
+import http from 'k6/http';
+import { check } from 'k6';
+
+export const options = {
+  vus: 50,        // 50 virtual users
+  duration: '30s'
+};
+
+export default function() {
+  const res = http.get('http://localhost:3000/api/projects?status=active');
+  check(res, {
+    'status is 200': (r) => r.status === 200,
+    'response time < 500ms': (r) => r.timings.duration < 500
+  });
+}
+```
+
+Run: `k6 run k6-load-test.js`
+
+## Next Steps
+
+- [Driver Optimization Guide](/docs/performance/driver-optimization) - Database-specific tuning
+- [Data Access Patterns](/docs/data-access) - Efficient query patterns
+- [Modeling Best Practices](/docs/modeling) - Schema design for performance

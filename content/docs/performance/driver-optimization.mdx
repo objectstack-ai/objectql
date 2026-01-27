@@ -1,0 +1,973 @@
+---
+title: "Driver Optimization"
+description: "Database-specific performance optimization strategies for ObjectQL drivers"
+---
+
+Each ObjectQL driver has unique performance characteristics based on the underlying database technology. This guide provides driver-specific optimization strategies for production deployments.
+
+## SQL Driver (PostgreSQL, MySQL, SQLite)
+
+The SQL driver uses Knex.js to compile queries to native SQL. Optimization focuses on indexes, query planning, and connection management.
+
+### Connection Configuration
+
+```typescript
+import { SqlDriver } from '@objectql/driver-sql';
+
+// PostgreSQL - Production Configuration
+const pgDriver = new SqlDriver({
+  client: 'pg',
+  connection: {
+    host: process.env.DB_HOST,
+    port: 5432,
+    database: process.env.DB_NAME,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    ssl: { rejectUnauthorized: false }
+  },
+  pool: {
+    min: 5,
+    max: 20,
+    acquireTimeoutMillis: 30000,
+    idleTimeoutMillis: 30000,
+    createTimeoutMillis: 3000,
+    createRetryIntervalMillis: 200
+  },
+  acquireConnectionTimeout: 10000
+});
+
+// MySQL - Production Configuration
+const mysqlDriver = new SqlDriver({
+  client: 'mysql2',
+  connection: {
+    host: process.env.DB_HOST,
+    database: process.env.DB_NAME,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    charset: 'utf8mb4'
+  },
+  pool: {
+    min: 5,
+    max: 20
+  }
+});
+
+// SQLite - Optimized for Performance
+const sqliteDriver = new SqlDriver({
+  client: 'better-sqlite3',  // Faster than sqlite3
+  connection: {
+    filename: './data/app.db'
+  },
+  useNullAsDefault: true
+});
+```
+
+### Index Optimization
+
+**Create effective indexes**:
+
+```yaml
+# In object definition
+name: orders
+fields:
+  customer_id: { type: lookup, reference_to: customers }
+  status: { type: select, options: [pending, completed, cancelled] }
+  order_date: { type: datetime }
+  total_amount: { type: currency }
+
+indexes:
+  # Single-column indexes
+  customer_idx:
+    fields: [customer_id]
+  
+  # Compound index (order matters!)
+  status_date_idx:
+    fields: [status, order_date]
+  
+  # Unique constraint
+  order_number_unique:
+    fields: [order_number]
+    unique: true
+  
+  # Covering index (includes all query fields)
+  customer_status_amount:
+    fields: [customer_id, status, total_amount]
+```
+
+**Index selection rules**:
+1. **Cardinality**: High-cardinality fields first (e.g., customer_id before status)
+2. **Equality before range**: `=` filters before `>`, `<`, `BETWEEN`
+3. **Most selective first**: Filter that eliminates most rows
+
+**Query using indexes**:
+
+```typescript
+// ✅ Uses status_date_idx efficiently
+const recentCompleted = await repo.find({
+  filters: [
+    ['status', '=', 'completed'],      // Uses index
+    ['order_date', '>', lastWeek]      // Uses index
+  ],
+  sort: 'order_date'                   // Covered by index
+});
+
+// ❌ Index not fully utilized
+const recentOrders = await repo.find({
+  filters: [
+    ['order_date', '>', lastWeek]      // Can't use status_date_idx efficiently
+  ]
+});
+```
+
+### Query Analysis (PostgreSQL)
+
+Use `EXPLAIN ANALYZE` to understand query performance:
+
+```typescript
+// Enable query logging
+const driver = new SqlDriver({
+  client: 'pg',
+  connection: { /* ... */ },
+  debug: true  // Logs all SQL queries
+});
+
+// Or analyze specific queries
+const knex = driver.getKnex();
+const plan = await knex.raw(`
+  EXPLAIN ANALYZE
+  SELECT * FROM orders 
+  WHERE status = 'completed' 
+  AND order_date > NOW() - INTERVAL '7 days'
+`);
+
+console.log(plan.rows);
+```
+
+**What to look for**:
+- **Seq Scan** → Add index
+- **Index Scan** → Good
+- **Bitmap Heap Scan** → Good for large result sets
+- **High execution time** → Optimize query or add index
+
+### Query Analysis (MySQL)
+
+```typescript
+const knex = driver.getKnex();
+
+// Analyze query
+const plan = await knex.raw(`
+  EXPLAIN 
+  SELECT * FROM orders 
+  WHERE status = 'completed' 
+  AND order_date > DATE_SUB(NOW(), INTERVAL 7 DAY)
+`);
+
+console.log(plan[0]);
+```
+
+**Key columns**:
+- `type`: ALL (bad), index (good), ref (good), eq_ref (best)
+- `key`: Which index is used
+- `rows`: Estimated rows scanned (lower is better)
+
+### Aggregation Performance
+
+Use native SQL aggregations:
+
+```typescript
+// ✅ Efficient: Runs in database
+const stats = await driver.aggregate('orders', {
+  aggregations: [
+    { function: 'sum', field: 'total_amount', alias: 'revenue' },
+    { function: 'count', field: '*', alias: 'order_count' },
+    { function: 'avg', field: 'total_amount', alias: 'avg_order' }
+  ],
+  groupBy: ['customer_id'],
+  filters: [['status', '=', 'completed']]
+});
+
+// ❌ Slow: Fetches all data then aggregates in JS
+const orders = await repo.find({ filters: [['status', '=', 'completed']] });
+const revenue = orders.reduce((sum, o) => sum + o.total_amount, 0);
+```
+
+### Batch Operations
+
+Use transactions for bulk operations:
+
+```typescript
+// Automatic transaction wrapping
+await repo.createMany(items);  // Single transaction
+
+// Manual transaction control
+await driver.getKnex().transaction(async (trx) => {
+  for (const item of items) {
+    await trx('orders').insert(item);
+  }
+});
+```
+
+### PostgreSQL-Specific Optimizations
+
+**Use JSONB for flexible fields**:
+
+```yaml
+fields:
+  metadata:
+    type: json  # Stored as JSONB in PostgreSQL
+```
+
+```typescript
+// Query JSONB fields
+const orders = await repo.find({
+  filters: [
+    ['metadata.shipping_method', '=', 'express']
+  ]
+});
+```
+
+**Add GIN indexes for JSONB**:
+
+```sql
+CREATE INDEX orders_metadata_gin ON orders USING GIN (metadata);
+```
+
+**Use array types**:
+
+```yaml
+fields:
+  tags:
+    type: array
+    items: text
+```
+
+**Connection pooling with PgBouncer** (for high concurrency):
+
+```typescript
+const driver = new SqlDriver({
+  client: 'pg',
+  connection: {
+    host: 'pgbouncer-host',
+    port: 6432,
+    database: 'myapp',
+    // ...
+  },
+  pool: {
+    min: 0,    // PgBouncer handles pooling
+    max: 10
+  }
+});
+```
+
+### MySQL-Specific Optimizations
+
+**Use appropriate storage engines**:
+- **InnoDB**: Default, supports transactions, foreign keys
+- **MyISAM**: Faster reads, no transactions (not recommended)
+
+**Optimize for UTF8MB4**:
+
+```typescript
+const driver = new SqlDriver({
+  client: 'mysql2',
+  connection: {
+    // ...
+    charset: 'utf8mb4',
+    collation: 'utf8mb4_unicode_ci'
+  }
+});
+```
+
+**Enable query cache** (MySQL < 8.0):
+
+```sql
+SET GLOBAL query_cache_size = 268435456;  -- 256MB
+SET GLOBAL query_cache_type = 1;
+```
+
+### SQLite-Specific Optimizations
+
+**Use better-sqlite3** (synchronous, faster):
+
+```typescript
+const driver = new SqlDriver({
+  client: 'better-sqlite3',
+  connection: {
+    filename: './data.db',
+    options: {
+      // Performance pragmas
+      journal_mode: 'WAL',      // Write-Ahead Logging
+      synchronous: 'NORMAL',    // Balance safety/speed
+      cache_size: -64000,       // 64MB cache
+      temp_store: 'MEMORY'
+    }
+  }
+});
+```
+
+**Optimize for read-heavy workloads**:
+
+```sql
+PRAGMA journal_mode = WAL;
+PRAGMA synchronous = NORMAL;
+PRAGMA cache_size = -64000;
+PRAGMA temp_store = MEMORY;
+PRAGMA mmap_size = 30000000000;
+```
+
+**Vacuum regularly**:
+
+```typescript
+// Periodically
+await driver.getKnex().raw('VACUUM');
+```
+
+---
+
+## MongoDB Driver
+
+MongoDB driver optimizations focus on indexing, aggregation pipelines, and schema design.
+
+### Connection Configuration
+
+```typescript
+import { MongoDriver } from '@objectql/driver-mongo';
+
+const driver = new MongoDriver({
+  url: 'mongodb://localhost:27017',
+  dbName: 'myapp',
+  
+  // Connection pool
+  poolSize: 20,
+  maxIdleTimeMS: 30000,
+  waitQueueTimeoutMS: 10000,
+  
+  // Timeouts
+  connectTimeoutMS: 10000,
+  socketTimeoutMS: 45000,
+  
+  // Write concern (balance safety/performance)
+  w: 'majority',
+  wtimeoutMS: 5000,
+  
+  // Read preference
+  readPreference: 'primaryPreferred',
+  
+  // Compression
+  compressors: ['snappy', 'zlib']
+});
+```
+
+### Index Strategies
+
+**Create indexes in MongoDB**:
+
+```yaml
+# In object definition
+name: products
+fields:
+  name: { type: text }
+  category: { type: select }
+  price: { type: currency }
+  tags: { type: array }
+
+indexes:
+  # Single field
+  category_idx:
+    fields: [category]
+  
+  # Compound index
+  category_price_idx:
+    fields: [category, price]
+  
+  # Text search index
+  name_text_idx:
+    type: text
+    fields: [name, description]
+  
+  # Unique index
+  sku_unique:
+    fields: [sku]
+    unique: true
+```
+
+**Create indexes programmatically**:
+
+```typescript
+const db = driver.getClient().db();
+
+// Single field index
+await db.collection('products').createIndex({ category: 1 });
+
+// Compound index
+await db.collection('products').createIndex({ 
+  category: 1, 
+  price: -1  // Descending
+});
+
+// Text index for full-text search
+await db.collection('products').createIndex({ 
+  name: 'text', 
+  description: 'text' 
+});
+
+// Unique index
+await db.collection('products').createIndex(
+  { sku: 1 }, 
+  { unique: true }
+);
+
+// TTL index (auto-delete after 30 days)
+await db.collection('sessions').createIndex(
+  { createdAt: 1 },
+  { expireAfterSeconds: 2592000 }
+);
+
+// Partial index (only index subset)
+await db.collection('orders').createIndex(
+  { order_date: 1 },
+  { partialFilterExpression: { status: 'pending' } }
+);
+```
+
+### Query Optimization
+
+**Use projection to fetch only needed fields**:
+
+```typescript
+// ✅ Efficient
+const products = await repo.find({
+  fields: ['name', 'price'],  // Only fetch these fields
+  filters: [['category', '=', 'electronics']]
+});
+
+// ❌ Fetches all fields
+const products = await repo.find({
+  filters: [['category', '=', 'electronics']]
+});
+```
+
+**Use covered queries** (query fields are in index):
+
+```typescript
+// Index: { category: 1, price: 1 }
+const products = await repo.find({
+  fields: ['category', 'price'],  // Both in index
+  filters: [['category', '=', 'electronics']]
+});
+// MongoDB doesn't need to read documents, just the index
+```
+
+### Aggregation Pipelines
+
+Use native MongoDB aggregations for complex queries:
+
+```typescript
+const db = driver.getClient().db();
+
+// Efficient aggregation pipeline
+const results = await db.collection('orders').aggregate([
+  // Match first (uses index)
+  { $match: { status: 'completed' } },
+  
+  // Group and aggregate
+  { $group: {
+    _id: '$customer_id',
+    total: { $sum: '$amount' },
+    count: { $sum: 1 },
+    avg: { $avg: '$amount' }
+  }},
+  
+  // Sort results
+  { $sort: { total: -1 } },
+  
+  // Limit results
+  { $limit: 10 }
+]).toArray();
+```
+
+### Full-Text Search
+
+```typescript
+// Create text index first
+await db.collection('articles').createIndex({ 
+  title: 'text', 
+  content: 'text' 
+});
+
+// Search
+const articles = await repo.find({
+  filters: [
+    ['$text', { $search: 'mongodb performance' }]
+  ],
+  sort: { score: { $meta: 'textScore' } }
+});
+```
+
+### Query Analysis
+
+Use `.explain()` to analyze queries:
+
+```typescript
+const db = driver.getClient().db();
+
+const explain = await db.collection('products')
+  .find({ category: 'electronics', price: { $gt: 100 } })
+  .explain('executionStats');
+
+console.log({
+  executionTimeMillis: explain.executionStats.executionTimeMillis,
+  totalDocsExamined: explain.executionStats.totalDocsExamined,
+  totalKeysExamined: explain.executionStats.totalKeysExamined,
+  indexUsed: explain.queryPlanner.winningPlan.inputStage?.indexName
+});
+```
+
+**What to look for**:
+- `executionTimeMillis`: < 100ms is good
+- `totalKeysExamined` / `totalDocsExamined`: Closer to 1 is better
+- `indexUsed`: Should show an index name (not `null`)
+
+### Bulk Operations
+
+```typescript
+// Efficient bulk insert
+await repo.createMany(items);  // Uses MongoDB bulkWrite
+
+// Bulk update
+const bulk = db.collection('products').initializeUnorderedBulkOp();
+for (const item of items) {
+  bulk.find({ _id: item.id }).update({ $set: item });
+}
+await bulk.execute();
+```
+
+### MongoDB-Specific Features
+
+**Use arrays and nested documents**:
+
+```yaml
+fields:
+  tags:
+    type: array
+    items: text
+  
+  address:
+    type: object
+    properties:
+      street: { type: text }
+      city: { type: text }
+      zip: { type: text }
+```
+
+**Query arrays**:
+
+```typescript
+// Find products with specific tag
+const products = await repo.find({
+  filters: [['tags', 'contains', 'electronics']]
+});
+
+// Find products with any of these tags
+const products = await repo.find({
+  filters: [['tags', 'in', ['electronics', 'computers']]]
+});
+```
+
+### Sharding (High Scale)
+
+For very large datasets, enable sharding:
+
+```javascript
+// Enable sharding for database
+sh.enableSharding('myapp');
+
+// Shard collection by key
+sh.shardCollection('myapp.products', { category: 1, _id: 1 });
+```
+
+---
+
+## Memory Driver
+
+The Memory driver stores all data in RAM using JavaScript Maps. Optimization focuses on data structure efficiency and memory limits.
+
+### Configuration
+
+```typescript
+import { MemoryDriver } from '@objectql/driver-memory';
+
+const driver = new MemoryDriver({
+  // Pre-populate with data
+  initialData: {
+    users: [
+      { id: '1', name: 'Alice', email: 'alice@example.com' }
+    ]
+  },
+  
+  // Throw errors for missing records
+  strictMode: true,
+  
+  // Limit memory usage (optional)
+  maxRecords: 10000,
+  maxMemory: 100_000_000  // 100MB
+});
+```
+
+### Performance Characteristics
+
+| Operation | Complexity | Performance |
+|-----------|-----------|-------------|
+| `findById` | O(1) | ⚡⚡⚡ Instant |
+| `find` (no filter) | O(n) | ⚡⚡ Fast |
+| `find` (with filter) | O(n) | ⚡⚡ Fast |
+| `create` | O(1) | ⚡⚡⚡ Instant |
+| `update` | O(1) | ⚡⚡⚡ Instant |
+| `delete` | O(1) | ⚡⚡⚡ Instant |
+
+**Best for**:
+- Testing (< 10k records)
+- Prototyping
+- Edge functions (Cloudflare Workers, Vercel Edge)
+- Client-side state management
+
+**Not for**:
+- Production databases with large datasets
+- Persistent storage requirements
+- Multi-process environments
+
+### Memory Optimization
+
+**Use field projection** to reduce memory footprint:
+
+```typescript
+// ❌ Loads entire records into memory
+const users = await repo.find({});
+
+// ✅ Only loads needed fields
+const users = await repo.find({
+  fields: ['id', 'name']
+});
+```
+
+**Clear data periodically** (if using as cache):
+
+```typescript
+// Clear all data
+await driver.clear();
+
+// Clear specific collection
+await driver.deleteMany('sessions', [
+  ['created_at', '<', oneHourAgo]
+]);
+```
+
+### Query Performance
+
+The Memory driver uses **Mingo** (MongoDB query engine) for filtering:
+
+```typescript
+// All MongoDB-style queries work
+const users = await repo.find({
+  filters: [
+    ['age', '>', 18],
+    ['status', '=', 'active']
+  ],
+  sort: [['name', 'asc']],
+  limit: 10,
+  skip: 0
+});
+
+// Complex queries
+const results = await repo.find({
+  filters: [
+    ['age', '>', 18],
+    'or',
+    ['role', '=', 'admin']
+  ]
+});
+```
+
+### Browser Usage
+
+Perfect for client-side applications:
+
+```typescript
+import { MemoryDriver } from '@objectql/driver-memory';
+
+// Create driver
+const driver = new MemoryDriver();
+
+// Use with ObjectQL
+const app = new ObjectQL({
+  datasources: { default: driver }
+});
+
+// Data persists in browser memory until page refresh
+// For persistent storage, use LocalStorage driver
+```
+
+---
+
+## LocalStorage Driver
+
+Browser-based persistent storage using localStorage API.
+
+### Configuration
+
+```typescript
+import { LocalStorageDriver } from '@objectql/driver-localstorage';
+
+const driver = new LocalStorageDriver({
+  prefix: 'myapp_',  // Key prefix in localStorage
+  compress: true,    // Compress data (saves space)
+  encrypt: false     // Optional encryption
+});
+```
+
+### Storage Limits
+
+| Browser | Limit |
+|---------|-------|
+| Chrome | 10MB |
+| Firefox | 10MB |
+| Safari | 5MB |
+| Edge | 10MB |
+
+**Check available space**:
+
+```typescript
+const quota = await navigator.storage.estimate();
+console.log(`Used: ${quota.usage}, Available: ${quota.quota}`);
+```
+
+### Performance Tips
+
+1. **Minimize data stored**: Only store essential fields
+2. **Use compression**: Enable `compress: true`
+3. **Batch updates**: Group multiple operations
+4. **Clear old data**: Remove stale records periodically
+
+```typescript
+// Clear old sessions
+await driver.deleteMany('sessions', [
+  ['expires_at', '<', new Date()]
+]);
+```
+
+---
+
+## Redis Driver
+
+Key-value store with TTL support, perfect for caching and sessions.
+
+### Configuration
+
+```typescript
+import { RedisDriver } from '@objectql/driver-redis';
+
+const driver = new RedisDriver({
+  host: 'localhost',
+  port: 6379,
+  password: process.env.REDIS_PASSWORD,
+  db: 0,
+  
+  // Connection pool
+  maxRetriesPerRequest: 3,
+  enableReadyCheck: true,
+  
+  // TTL (default expiration)
+  defaultTTL: 3600,  // 1 hour
+  
+  // Key prefix
+  keyPrefix: 'myapp:'
+});
+```
+
+### Key Patterns
+
+Use structured keys:
+
+```typescript
+// Good key patterns
+'user:123'
+'session:abc-def-ghi'
+'cache:products:category:electronics'
+'lock:order:456'
+
+// Bad key patterns (avoid)
+'user_123'  // Inconsistent separator
+'productcategoryelectronics'  // Hard to parse
+```
+
+### TTL Management
+
+Set expiration for automatic cleanup:
+
+```typescript
+// Create with TTL
+await driver.create('sessions', {
+  id: 'session-123',
+  user_id: 'user-456',
+  expires_at: new Date(Date.now() + 3600000)  // 1 hour
+}, {
+  ttl: 3600  // Seconds
+});
+
+// Update TTL
+await driver.setTTL('sessions', 'session-123', 7200);  // 2 hours
+
+// Remove TTL (persist forever)
+await driver.persist('sessions', 'session-123');
+```
+
+### Pipelining
+
+Batch multiple commands for better performance:
+
+```typescript
+const redis = driver.getClient();
+const pipeline = redis.pipeline();
+
+// Queue commands
+pipeline.set('key1', 'value1');
+pipeline.set('key2', 'value2');
+pipeline.set('key3', 'value3');
+
+// Execute all at once
+await pipeline.exec();
+```
+
+### Caching Pattern
+
+Use Redis as a cache layer:
+
+```typescript
+async function getUser(id: string) {
+  // Try cache first
+  const cached = await redisDriver.findOne('users', id);
+  if (cached) return cached;
+  
+  // Fetch from database
+  const user = await sqlDriver.findOne('users', id);
+  
+  // Cache for 1 hour
+  await redisDriver.create('users', user, { ttl: 3600 });
+  
+  return user;
+}
+```
+
+---
+
+## FileSystem Driver
+
+Store data as JSON files on disk.
+
+### Configuration
+
+```typescript
+import { FileSystemDriver } from '@objectql/driver-fs';
+
+const driver = new FileSystemDriver({
+  basePath: './data',
+  pretty: false,  // Minified JSON (smaller files)
+  autoBackup: true,
+  backupInterval: 3600000  // 1 hour
+});
+```
+
+### Performance Characteristics
+
+- **Read**: Fast (file system cache)
+- **Write**: Slower (disk I/O)
+- **Best for**: Small datasets (< 100k records), configuration data
+
+### Optimization
+
+1. **Use memory caching**: Cache frequently accessed files
+2. **Minimize writes**: Batch updates
+3. **Use SSD storage**: 10-100x faster than HDD
+
+---
+
+## Driver Selection Guide
+
+Choose the right driver for your use case:
+
+| Use Case | Recommended Driver | Why |
+|----------|-------------------|-----|
+| Production API | SQL (PostgreSQL) | ACID, mature, scalable |
+| High-scale writes | MongoDB | Horizontal scaling, flexible schema |
+| Real-time apps | Redis | In-memory speed, pub/sub |
+| Unit tests | Memory | Fast, no setup, clean slate |
+| Serverless/Edge | Memory | No external dependencies |
+| Browser apps | LocalStorage | Persistent client-side storage |
+| Mobile apps | SQLite (SQL Driver) | Embedded, reliable |
+| Analytics | PostgreSQL | Advanced aggregations, window functions |
+| Session store | Redis | TTL, fast access |
+| Configuration | FileSystem | Human-readable, version control |
+
+## Performance Testing
+
+### Benchmark Template
+
+```typescript
+async function benchmarkDriver(driver: any, operations = 1000) {
+  const start = Date.now();
+  
+  // Create
+  const createStart = Date.now();
+  const ids = [];
+  for (let i = 0; i < operations; i++) {
+    const doc = await driver.create('test', {
+      name: `Item ${i}`,
+      value: Math.random()
+    });
+    ids.push(doc.id);
+  }
+  const createTime = Date.now() - createStart;
+  
+  // Read
+  const readStart = Date.now();
+  for (const id of ids) {
+    await driver.findOne('test', id);
+  }
+  const readTime = Date.now() - readStart;
+  
+  // Update
+  const updateStart = Date.now();
+  for (const id of ids) {
+    await driver.update('test', id, { value: Math.random() });
+  }
+  const updateTime = Date.now() - updateStart;
+  
+  // Delete
+  const deleteStart = Date.now();
+  for (const id of ids) {
+    await driver.delete('test', id);
+  }
+  const deleteTime = Date.now() - deleteStart;
+  
+  const total = Date.now() - start;
+  
+  return {
+    operations,
+    total: `${total}ms`,
+    create: `${createTime}ms (${(operations / createTime * 1000).toFixed(0)} ops/sec)`,
+    read: `${readTime}ms (${(operations / readTime * 1000).toFixed(0)} ops/sec)`,
+    update: `${updateTime}ms (${(operations / updateTime * 1000).toFixed(0)} ops/sec)`,
+    delete: `${deleteTime}ms (${(operations / deleteTime * 1000).toFixed(0)} ops/sec)`
+  };
+}
+
+// Run benchmark
+const results = await benchmarkDriver(driver, 1000);
+console.table(results);
+```
+
+## Next Steps
+
+- [General Performance Guide](/docs/performance) - Cross-driver optimization strategies
+- [Data Access Patterns](/docs/data-access) - Efficient query patterns
+- [Monitoring & Profiling](/docs/server/monitoring) - Production monitoring
