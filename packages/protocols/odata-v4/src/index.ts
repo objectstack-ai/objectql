@@ -6,7 +6,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import type { RuntimePlugin, RuntimeContext, ObjectStackRuntimeProtocol } from '@objectql/runtime';
+import type { RuntimePlugin, RuntimeContext } from '@objectql/runtime';
+import { ObjectStackRuntimeProtocol } from '@objectql/runtime';
 import { IncomingMessage, ServerResponse, createServer, Server } from 'http';
 
 /**
@@ -69,9 +70,6 @@ export class ODataV4Plugin implements RuntimePlugin {
      */
     async install(ctx: RuntimeContext): Promise<void> {
         console.log(`[${this.name}] Installing OData V4 protocol plugin...`);
-        
-        // Import the ObjectStackRuntimeProtocol class
-        const { ObjectStackRuntimeProtocol } = await import('@objectql/runtime');
         
         // Initialize the protocol bridge
         this.protocol = new ObjectStackRuntimeProtocol(ctx.engine);
@@ -395,7 +393,17 @@ export class ODataV4Plugin implements RuntimePlugin {
 
     /**
      * Parse OData $filter expression to ObjectQL where clause
-     * This is a simplified implementation - production would need a full OData parser
+     * 
+     * NOTE: This is a simplified implementation for demonstration purposes.
+     * Production use requires a full OData filter parser supporting:
+     * - Comparison operators: eq, ne, gt, ge, lt, le
+     * - Logical operators: and, or, not
+     * - String functions: contains, startswith, endswith
+     * - Arithmetic operators: add, sub, mul, div, mod
+     * 
+     * Currently only supports: field eq 'value'
+     * 
+     * TODO: Implement full OData filter expression parser
      */
     private parseODataFilter(filter: string): any {
         // Simple implementation: "name eq 'John'" -> { name: { $eq: 'John' } }
@@ -404,7 +412,8 @@ export class ODataV4Plugin implements RuntimePlugin {
             return { [eqMatch[1]]: { $eq: eqMatch[2] } };
         }
         
-        // For demo purposes, return empty filter
+        // Unsupported filter expression - log warning and return empty filter
+        console.warn(`[ODataV4Plugin] Unsupported $filter expression: "${filter}". Only "field eq 'value'" is currently supported.`);
         return {};
     }
 

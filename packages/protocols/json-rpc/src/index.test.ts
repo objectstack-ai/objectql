@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { JSONRPCPlugin } from '../index';
+import { JSONRPCPlugin } from './index';
 import { ObjectStackKernel } from '@objectql/runtime';
 
 describe('JSONRPCPlugin', () => {

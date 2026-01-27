@@ -40,8 +40,39 @@ async function main() {
     kernel.metadata.register('object', name, metadata);
   }
 
+  // Setup graceful shutdown handlers
+  const shutdown = async (signal: string) => {
+    console.log(`\n\n🛑 Received ${signal}, shutting down gracefully...`);
+    try {
+      await kernel.stop();
+      console.log('✅ Server stopped successfully. Goodbye!');
+      process.exit(0);
+    } catch (error) {
+      console.error('❌ Error during shutdown:', error);
+      process.exit(1);
+    }
+  };
+
+  process.on('SIGINT', () => shutdown('SIGINT'));
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+
+  // Handle uncaught errors
+  process.on('uncaughtException', (error) => {
+    console.error('❌ Uncaught exception:', error);
+    shutdown('UNCAUGHT_EXCEPTION').catch(() => process.exit(1));
+  });
+
+  process.on('unhandledRejection', (reason, promise) => {
+    console.error('❌ Unhandled rejection at:', promise, 'reason:', reason);
+    shutdown('UNHANDLED_REJECTION').catch(() => process.exit(1));
+  });
+
   await kernel.start();
   console.log('✅ Server started!\n');
+  console.log('💡 Press Ctrl+C to stop the server\n');
 }
 
-main().catch(console.error);
+main().catch((error) => {
+  console.error('❌ Fatal error:', error);
+  process.exit(1);
+});

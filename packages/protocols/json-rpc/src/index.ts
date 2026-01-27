@@ -6,7 +6,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import type { RuntimePlugin, RuntimeContext, ObjectStackRuntimeProtocol } from '@objectql/runtime';
+import type { RuntimePlugin, RuntimeContext } from '@objectql/runtime';
+import { ObjectStackRuntimeProtocol } from '@objectql/runtime';
 import { IncomingMessage, ServerResponse, createServer, Server } from 'http';
 
 /**
@@ -112,9 +113,6 @@ export class JSONRPCPlugin implements RuntimePlugin {
      */
     async install(ctx: RuntimeContext): Promise<void> {
         console.log(`[${this.name}] Installing JSON-RPC 2.0 protocol plugin...`);
-        
-        // Import the ObjectStackRuntimeProtocol class
-        const { ObjectStackRuntimeProtocol } = await import('@objectql/runtime');
         
         // Initialize the protocol bridge
         this.protocol = new ObjectStackRuntimeProtocol(ctx.engine);
