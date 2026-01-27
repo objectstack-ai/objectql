@@ -129,11 +129,18 @@ npm install -D typescript @types/node vitest
 **tsconfig.json**:
 ```json
 {
-  "extends": "@objectql/tsconfig",
   "compilerOptions": {
+    "target": "ES2020",
+    "module": "commonjs",
+    "lib": ["ES2020"],
     "outDir": "dist",
     "rootDir": "src",
-    "strict": true
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "declaration": true,
+    "declarationMap": true
   },
   "include": ["src/**/*"]
 }
@@ -153,6 +160,8 @@ export interface RedisDriverConfig {
   keyPrefix?: string;
   /** TTL for keys in seconds (0 = no expiration) */
   ttl?: number;
+  /** Enable TLS for secure connections */
+  useTLS?: boolean;
   /** Additional Redis client options */
   options?: any;
 }
