@@ -47,7 +47,7 @@ export default function HomePage() {
             {/* Logic Badge */}
             <div className="inline-flex items-center rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1 text-sm font-medium text-blue-500 backdrop-blur-sm">
               <span className="flex h-2 w-2 rounded-full bg-blue-500 mr-2 animate-pulse"></span>
-              v2.0 Architecture Preview
+              v4.0 Architecture Preview
             </div>
 
             <h1 className="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-foreground">
