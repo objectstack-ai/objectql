@@ -151,16 +151,49 @@ export class MongoDriver implements Driver {
     private mapFilters(filters: any): Filter<any> {
         if (!filters) return {};
         
-        // If filters is an object (FilterCondition format), return it directly
-        // MongoDB can handle FilterCondition format natively
+        // If filters is an object (FilterCondition format), map id fields to _id
         if (typeof filters === 'object' && !Array.isArray(filters)) {
-            return filters as Filter<any>;
+            return this.mapIdFieldsInFilter(filters);
         }
         
         // If filters is an array (legacy format), convert it
         if (Array.isArray(filters) && filters.length === 0) return {};
         
         const result = this.buildFilterConditions(filters);
+        return result;
+    }
+
+    /**
+     * Recursively map 'id' fields to '_id' in FilterCondition objects
+     */
+    private mapIdFieldsInFilter(filter: any): any {
+        if (!filter || typeof filter !== 'object') {
+            return filter;
+        }
+
+        const result: any = {};
+        
+        for (const [key, value] of Object.entries(filter)) {
+            // Handle logical operators
+            if (key === '$and' || key === '$or') {
+                if (Array.isArray(value)) {
+                    result[key] = value.map(v => this.mapIdFieldsInFilter(v));
+                }
+            } 
+            // Map 'id' to '_id'
+            else if (key === 'id') {
+                result['_id'] = value;
+            }
+            // Recursively handle nested objects
+            else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+                result[key] = this.mapIdFieldsInFilter(value);
+            }
+            // Keep other values as-is
+            else {
+                result[key] = value;
+            }
+        }
+        
         return result;
     }
 
@@ -268,19 +301,28 @@ export class MongoDriver implements Driver {
      */
     async find(objectName: string, query: any, options?: any): Promise<any[]> {
         const collection = await this.getCollection(objectName);
-        const filter = this.mapFilters(query.where);
+        
+        // Handle both new format (where) and legacy format (filters)
+        const filterCondition = query.where || query.filters;
+        const filter = this.mapFilters(filterCondition);
         
         const findOptions: FindOptions = {};
-        // Standard protocol uses 'offset' instead of 'skip'
-        if (query.offset) findOptions.skip = query.offset;
-        if (query.limit) findOptions.limit = query.limit;
         
-        // Standard protocol uses orderBy as array of {field, order} objects
-        if (query.orderBy && Array.isArray(query.orderBy)) {
+        // Handle pagination - support both new format (offset/limit) and legacy format (skip/top)
+        const offsetValue = query.offset ?? query.skip;
+        const limitValue = query.limit ?? query.top;
+        
+        if (offsetValue !== undefined) findOptions.skip = offsetValue;
+        if (limitValue !== undefined) findOptions.limit = limitValue;
+        
+        // Handle sort - support both new format (orderBy) and legacy format (sort)
+        const sortArray = query.orderBy || query.sort;
+        if (sortArray && Array.isArray(sortArray)) {
             findOptions.sort = {};
-            for (const item of query.orderBy) {
-                const field = item.field;
-                const order = item.order || 'asc';
+            for (const item of sortArray) {
+                // Support both {field, order} object format and [field, order] array format
+                const field = item.field || item[0];
+                const order = item.order || item[1] || 'asc';
                 // Map both 'id' and '_id' to '_id' for backward compatibility
                 const dbField = (field === 'id' || field === '_id') ? '_id' : field;
                 (findOptions.sort as any)[dbField] = order === 'desc' ? -1 : 1;
@@ -361,9 +403,9 @@ export class MongoDriver implements Driver {
         const collection = await this.getCollection(objectName);
         // Handle both filter objects and query objects
         let actualFilters = filters;
-        if (filters && filters.where) {
-            // It's a query object with 'where' property
-            actualFilters = filters.where;
+        if (filters && (filters.where || filters.filters)) {
+            // It's a query object with 'where' or 'filters' property
+            actualFilters = filters.where || filters.filters;
         }
         const filter = this.mapFilters(actualFilters);
         return await collection.countDocuments(filter);

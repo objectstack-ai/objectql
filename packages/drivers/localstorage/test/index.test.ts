@@ -240,7 +240,7 @@ describe('LocalStorageDriver', () => {
 
         it('should filter records with = operator', async () => {
             const results = await driver.find(TEST_OBJECT, {
-                filters: [['role', '=', 'user']]
+                where: { role: 'user' }
             });
             expect(results).toHaveLength(2);
             expect(results.every(r => r.role === 'user')).toBe(true);
@@ -248,7 +248,7 @@ describe('LocalStorageDriver', () => {
 
         it('should filter records with > operator', async () => {
             const results = await driver.find(TEST_OBJECT, {
-                filters: [['age', '>', 25]]
+                where: { age: { $gt: 25 } }
             });
             expect(results).toHaveLength(2);
             expect(results.every(r => r.age > 25)).toBe(true);
@@ -256,18 +256,19 @@ describe('LocalStorageDriver', () => {
 
         it('should combine filters with OR', async () => {
             const results = await driver.find(TEST_OBJECT, {
-                filters: [
-                    ['role', '=', 'admin'],
-                    'or',
-                    ['age', '>', 30]
-                ]
+                where: {
+                    $or: [
+                        { role: 'admin' },
+                        { age: { $gt: 30 } }
+                    ]
+                }
             });
             expect(results).toHaveLength(2); // Alice (admin) and Charlie (age > 30)
         });
 
         it('should sort records ascending', async () => {
             const results = await driver.find(TEST_OBJECT, {
-                sort: [['age', 'asc']]
+                orderBy: [{ field: 'age', order: 'asc' }]
             });
             expect(results[0].age).toBe(25);
             expect(results[1].age).toBe(30);
@@ -276,8 +277,8 @@ describe('LocalStorageDriver', () => {
 
         it('should support pagination with skip and limit', async () => {
             const results = await driver.find(TEST_OBJECT, {
-                sort: [['age', 'asc']],
-                skip: 1,
+                orderBy: [{ field: 'age', order: 'asc' }],
+                offset: 1,
                 limit: 1
             });
             expect(results).toHaveLength(1);
@@ -303,12 +304,12 @@ describe('LocalStorageDriver', () => {
         });
 
         it('should count all records', async () => {
-            const count = await driver.count(TEST_OBJECT, []);
+            const count = await driver.count(TEST_OBJECT, {});
             expect(count).toBe(3);
         });
 
         it('should count filtered records', async () => {
-            const count = await driver.count(TEST_OBJECT, [['role', '=', 'user']]);
+            const count = await driver.count(TEST_OBJECT, { role: 'user' });
             expect(count).toBe(2);
         });
     });
@@ -331,7 +332,7 @@ describe('LocalStorageDriver', () => {
 
             const result = await driver.updateMany(
                 TEST_OBJECT,
-                [['role', '=', 'user']],
+                { role: 'user' },
                 { status: 'active' }
             );
 
@@ -343,9 +344,7 @@ describe('LocalStorageDriver', () => {
             await driver.create(TEST_OBJECT, { id: '2', role: 'user' });
             await driver.create(TEST_OBJECT, { id: '3', role: 'admin' });
 
-            const result = await driver.deleteMany(TEST_OBJECT, [
-                ['role', '=', 'user']
-            ]);
+            const result = await driver.deleteMany(TEST_OBJECT, { role: 'user' });
 
             expect(result.deletedCount).toBe(2);
         });

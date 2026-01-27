@@ -483,12 +483,21 @@ export class LocalStorageDriver implements Driver {
         const keys = this.getObjectKeys(objectName);
         let count = 0;
         
+        // Extract where condition from query object if needed
+        let whereCondition = filters;
+        if (filters && !Array.isArray(filters) && filters.where) {
+            whereCondition = filters.where;
+        }
+        
+        // Convert to array format for matchesFilters
+        const filtersArray = this.convertFilterConditionToArray(whereCondition) || [];
+        
         for (const key of keys) {
             const existing = this.storage.getItem(key);
             if (existing) {
                 try {
                     const record = JSON.parse(existing);
-                    if (this.matchesFilters(record, filters)) {
+                    if (this.matchesFilters(record, filtersArray)) {
                         const updated = {
                             ...record,
                             ...data,
@@ -515,12 +524,21 @@ export class LocalStorageDriver implements Driver {
         const keys = this.getObjectKeys(objectName);
         const keysToDelete: string[] = [];
         
+        // Extract where condition from query object if needed
+        let whereCondition = filters;
+        if (filters && !Array.isArray(filters) && filters.where) {
+            whereCondition = filters.where;
+        }
+        
+        // Convert to array format for matchesFilters
+        const filtersArray = this.convertFilterConditionToArray(whereCondition) || [];
+        
         for (const key of keys) {
             const data = this.storage.getItem(key);
             if (data) {
                 try {
                     const record = JSON.parse(data);
-                    if (this.matchesFilters(record, filters)) {
+                    if (this.matchesFilters(record, filtersArray)) {
                         keysToDelete.push(key);
                     }
                 } catch (error) {

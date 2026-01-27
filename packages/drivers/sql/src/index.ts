@@ -93,20 +93,31 @@ export class SqlDriver implements Driver {
     private applyFilters(builder: Knex.QueryBuilder, filters: any) {
         if (!filters) return;
         
-        // Handle Plain Object filters (MongoDB style simple query)
-        // e.g. { name: 'John', age: 20 }
-        if (!Array.isArray(filters)) {
-            if (typeof filters === 'object') {
-                for (const [key, value] of Object.entries(filters)) {
-                    // Ignore special query properties if they leak here
-                    if (['filters', 'sort', 'limit', 'skip', 'fields'].includes(key)) continue;
-                    builder.where(key, value as any);
-                }
+        // Handle FilterCondition (MongoDB-style query)
+        if (!Array.isArray(filters) && typeof filters === 'object') {
+            // Check if it has MongoDB operators
+            const hasMongoOperators = Object.keys(filters).some(k => 
+                k.startsWith('$') || 
+                (typeof filters[k] === 'object' && filters[k] !== null && 
+                 Object.keys(filters[k]).some(op => op.startsWith('$')))
+            );
+            
+            if (hasMongoOperators) {
+                // Handle MongoDB-style FilterCondition
+                this.applyFilterCondition(builder, filters);
+                return;
+            }
+            
+            // Handle simple object filters { name: 'John', age: 20 }
+            for (const [key, value] of Object.entries(filters)) {
+                // Ignore special query properties if they leak here
+                if (['filters', 'sort', 'limit', 'skip', 'offset', 'fields', 'orderBy'].includes(key)) continue;
+                builder.where(key, value as any);
             }
             return;
         }
 
-        if (filters.length === 0) return;
+        if (!Array.isArray(filters) || filters.length === 0) return;
 
         let nextJoin = 'and';
 
@@ -158,6 +169,78 @@ export class SqlDriver implements Driver {
         }
     }
 
+    private applyFilterCondition(builder: Knex.QueryBuilder, condition: any, logicalOp: 'and' | 'or' = 'and') {
+        if (!condition || typeof condition !== 'object') return;
+
+        for (const [key, value] of Object.entries(condition)) {
+            if (key === '$and' && Array.isArray(value)) {
+                // Handle $and
+                builder.where((qb) => {
+                    for (const subCondition of value) {
+                        qb.where((subQb) => {
+                            this.applyFilterCondition(subQb, subCondition, 'and');
+                        });
+                    }
+                });
+            } else if (key === '$or' && Array.isArray(value)) {
+                // Handle $or
+                const method = logicalOp === 'or' ? 'orWhere' : 'where';
+                builder[method]((qb) => {
+                    for (const subCondition of value) {
+                        qb.orWhere((subQb) => {
+                            this.applyFilterCondition(subQb, subCondition, 'or');
+                        });
+                    }
+                });
+            } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+                // Handle field operators like { age: { $gt: 18 } }
+                const field = this.mapSortField(key);
+                for (const [op, opValue] of Object.entries(value)) {
+                    const method = logicalOp === 'or' ? 'orWhere' : 'where';
+                    switch (op) {
+                        case '$eq':
+                            builder[method](field, opValue);
+                            break;
+                        case '$ne':
+                            builder[method](field, '<>', opValue);
+                            break;
+                        case '$gt':
+                            builder[method](field, '>', opValue);
+                            break;
+                        case '$gte':
+                            builder[method](field, '>=', opValue);
+                            break;
+                        case '$lt':
+                            builder[method](field, '<', opValue);
+                            break;
+                        case '$lte':
+                            builder[method](field, '<=', opValue);
+                            break;
+                        case '$in':
+                            const methodIn = logicalOp === 'or' ? 'orWhereIn' : 'whereIn';
+                            builder[methodIn](field, opValue as any[]);
+                            break;
+                        case '$nin':
+                            const methodNotIn = logicalOp === 'or' ? 'orWhereNotIn' : 'whereNotIn';
+                            builder[methodNotIn](field, opValue as any[]);
+                            break;
+                        case '$contains':
+                            builder[method](field, 'like', `%${opValue}%`);
+                            break;
+                        default:
+                            // Unknown operator, treat as equality
+                            builder[method](field, opValue);
+                    }
+                }
+            } else {
+                // Simple field: value case
+                const field = this.mapSortField(key);
+                const method = logicalOp === 'or' ? 'orWhere' : 'where';
+                builder[method](field, value);
+            }
+        }
+    }
+
     private mapSortField(field: string): string {
         if (field === 'createdAt') return 'created_at';
         if (field === 'updatedAt') return 'updated_at';
@@ -200,25 +283,31 @@ export class SqlDriver implements Driver {
             builder.select('*');
         }
 
-        // Handle filters (standard: where)
-        if (query.where) {
-            this.applyFilters(builder, query.where);
+        // Handle filters - support both new format (where) and legacy format (filters)
+        const filterCondition = query.where || query.filters;
+        if (filterCondition) {
+            this.applyFilters(builder, filterCondition);
         }
 
-        // Handle sort (standard: orderBy as array of {field, order} objects)
-        if (query.orderBy && Array.isArray(query.orderBy)) {
-            for (const item of query.orderBy) {
-                const field = item.field;
-                const dir = item.order || 'asc';
+        // Handle sort - support both new format (orderBy) and legacy format (sort)
+        const sortArray = query.orderBy || query.sort;
+        if (sortArray && Array.isArray(sortArray)) {
+            for (const item of sortArray) {
+                // Support both {field, order} object format and [field, order] array format
+                const field = item.field || item[0];
+                const dir = item.order || item[1] || 'asc';
                 if (field) {
                     builder.orderBy(this.mapSortField(field), dir);
                 }
             }
         }
 
-        // Handle pagination (standard: offset and limit)
-        if (query.offset) builder.offset(query.offset);
-        if (query.limit) builder.limit(query.limit);
+        // Handle pagination - support both new format (offset/limit) and legacy format (skip/top)
+        const offsetValue = query.offset ?? query.skip;
+        const limitValue = query.limit ?? query.top;
+        
+        if (offsetValue !== undefined) builder.offset(offsetValue);
+        if (limitValue !== undefined) builder.limit(limitValue);
 
         const results = await builder;
         
@@ -289,9 +378,9 @@ export class SqlDriver implements Driver {
         
         // Handle both filter objects and query objects
         let actualFilters = filters;
-        if (filters && filters.where) {
-            // It's a query object with 'where' property
-            actualFilters = filters.where;
+        if (filters && (filters.where || filters.filters)) {
+            // It's a query object with 'where' or 'filters' property
+            actualFilters = filters.where || filters.filters;
         }
 
         if (actualFilters) {
@@ -337,11 +426,14 @@ export class SqlDriver implements Driver {
             }
         }
 
-        // 3. Aggregate Functions (standard: aggregations with 'function' property)
-        if (query.aggregations) {
-            for (const agg of query.aggregations) {
-                // aggregations use 'function' not 'func'
-                const rawFunc = this.mapAggregateFunc(agg.function); 
+        // 3. Aggregate Functions
+        // Support both new format (aggregations with 'function') and legacy format (aggregate with 'func')
+        const aggregates = query.aggregations || query.aggregate;
+        if (aggregates) {
+            for (const agg of aggregates) {
+                // Support both 'function' (new) and 'func' (legacy)
+                const funcName = agg.function || agg.func;
+                const rawFunc = this.mapAggregateFunc(funcName); 
                 if (agg.alias) {
                     builder.select(this.knex.raw(`${rawFunc}(??) as ??`, [agg.field, agg.alias]));
                 } else {
