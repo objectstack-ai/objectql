@@ -179,9 +179,9 @@ export class ObjectQLServer {
             items
         };
 
-        // Calculate pagination metadata if limit/skip are present
-        if (args && (args.limit || args.skip)) {
-            const skip = args.skip || 0;
+        // Calculate pagination metadata if limit/skip/offset are present
+        if (args && (args.limit || args.skip || args.offset)) {
+            const skip = args.offset || args.skip || 0;
             const limit = args.limit || items.length;
             
             // Get total count - exclude limit/skip to count all matching records

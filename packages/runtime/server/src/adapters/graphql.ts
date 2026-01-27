@@ -259,7 +259,7 @@ export function generateGraphQLSchema(app: IObjectQL): GraphQLSchema {
             resolve: async (_, args) => {
                 const queryArgs: any = {};
                 if (args.limit) queryArgs.limit = args.limit;
-                if (args.skip) queryArgs.skip = args.skip;
+                if (args.skip) queryArgs.offset = args.skip;
                 if (args.fields) queryArgs.fields = args.fields;
                 if (args.filters) {
                     try {
