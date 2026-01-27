@@ -616,20 +616,39 @@ export class ExcelDriver implements Driver {
         // Deep copy to avoid mutations
         results = results.map(r => ({ ...r }));
         
-        // Apply filters
+        // Apply filters from where clause (QueryAST format)
+        if (normalizedQuery.where) {
+            const legacyFilters = this.convertFilterConditionToArray(normalizedQuery.where);
+            if (legacyFilters) {
+                results = this.applyFilters(results, legacyFilters);
+            }
+        }
+        
+        // Apply filters from legacy filters clause
         if (normalizedQuery.filters) {
             results = this.applyFilters(results, normalizedQuery.filters);
         }
         
-        // Apply sorting
+        // Apply sorting from orderBy (QueryAST format)
+        if (normalizedQuery.orderBy && Array.isArray(normalizedQuery.orderBy)) {
+            results = this.applySort(results, normalizedQuery.orderBy);
+        }
+        
+        // Apply sorting from legacy sort clause
         if (normalizedQuery.sort && Array.isArray(normalizedQuery.sort)) {
             results = this.applySort(results, normalizedQuery.sort);
         }
         
-        // Apply pagination
+        // Apply pagination with offset (QueryAST format)
+        if (normalizedQuery.offset) {
+            results = results.slice(normalizedQuery.offset);
+        }
+        
+        // Apply pagination with skip (legacy format)
         if (normalizedQuery.skip) {
             results = results.slice(normalizedQuery.skip);
         }
+        
         if (normalizedQuery.limit) {
             results = results.slice(0, normalizedQuery.limit);
         }
@@ -763,9 +782,15 @@ export class ExcelDriver implements Driver {
     async count(objectName: string, filters: any, options?: any): Promise<number> {
         const records = this.data.get(objectName) || [];
         
-        // Extract actual filters from query object if needed
+        // Extract actual filters from query object
         let actualFilters = filters;
-        if (filters && !Array.isArray(filters) && filters.filters) {
+        
+        // Support QueryAST format with 'where' clause
+        if (filters && filters.where) {
+            actualFilters = this.convertFilterConditionToArray(filters.where);
+        }
+        // Support legacy format with 'filters' clause
+        else if (filters && !Array.isArray(filters) && filters.filters) {
             actualFilters = filters.filters;
         }
         
@@ -1113,8 +1138,9 @@ export class ExcelDriver implements Driver {
      * Normalizes query format to support both legacy UnifiedQuery and QueryAST formats.
      * This ensures backward compatibility while supporting the new @objectstack/spec interface.
      * 
-     * QueryAST format uses 'top' for limit, while UnifiedQuery uses 'limit'.
-     * QueryAST sort is array of {field, order}, while UnifiedQuery is array of [field, order].
+     * QueryAST format uses 'top' for limit, 'offset' for skip, and 'orderBy' for sort.
+     * QueryAST uses 'where' for filters with MongoDB-like operators.
+     * UnifiedQuery uses 'limit', 'skip', 'sort', and 'filters'.
      */
     private normalizeQuery(query: any): any {
         if (!query) return {};
@@ -1126,7 +1152,21 @@ export class ExcelDriver implements Driver {
             normalized.limit = normalized.top;
         }
         
-        // Normalize sort format
+        // Normalize offset/skip (both are preserved for backward compatibility)
+        // The find() method will check both
+        
+        // Normalize orderBy to sort format if orderBy is present
+        if (normalized.orderBy && Array.isArray(normalized.orderBy)) {
+            // Check if it's already in the legacy array format [field, order]
+            const firstSort = normalized.orderBy[0];
+            if (firstSort && typeof firstSort === 'object' && !Array.isArray(firstSort) && firstSort.field) {
+                // It's in QueryAST format {field, order}, keep as-is
+                // The find() method will handle it
+                normalized.orderBy = normalized.orderBy;
+            }
+        }
+        
+        // Normalize sort format (legacy)
         if (normalized.sort && Array.isArray(normalized.sort)) {
             // Check if it's already in the array format [field, order]
             const firstSort = normalized.sort[0];

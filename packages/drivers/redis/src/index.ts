@@ -340,10 +340,19 @@ export class RedisDriver implements Driver {
             return keys.length;
         }
         
-        // Extract actual filters from query object if needed
+        // Convert filters if needed
         let actualFilters = filters;
         if (filters && !Array.isArray(filters) && filters.filters) {
             actualFilters = filters.filters;
+        }
+        
+        // If filters are in the new FilterCondition format, convert them
+        // Check for FilterCondition-specific properties (type property is a reliable indicator)
+        if (filters && !Array.isArray(filters) && !actualFilters && filters.type) {
+            actualFilters = this.convertFilterConditionToArray(filters);
+        } else if (filters && !Array.isArray(filters) && !actualFilters && filters.field && 'operator' in filters && filters.value !== undefined) {
+            // Also handle FilterCondition without explicit type (some simplified formats)
+            actualFilters = this.convertFilterConditionToArray(filters);
         }
         
         // Count only records matching filters
@@ -796,8 +805,16 @@ export class RedisDriver implements Driver {
      * Normalizes query format to support both legacy UnifiedQuery and QueryAST formats.
      * This ensures backward compatibility while supporting the new @objectstack/spec interface.
      * 
-     * QueryAST format uses 'top' for limit, while UnifiedQuery uses 'limit'.
-     * QueryAST sort is array of {field, order}, while UnifiedQuery is array of [field, order].
+     * Supports:
+     * - Legacy format: { filters: [], sort: [], skip, limit }
+     * - QueryAST format: { where: FilterCondition, orderBy: [], offset, limit, fields }
+     * 
+     * QueryAST format uses:
+     * - 'offset' for skip/top
+     * - 'limit' or 'top' for limit  
+     * - 'orderBy' for sort
+     * - 'where' for filters
+     * - FilterCondition format for filters (MongoDB-like or structured format)
      */
     private normalizeQuery(query: any): any {
         if (!query) return {};
@@ -809,8 +826,26 @@ export class RedisDriver implements Driver {
             normalized.limit = normalized.top;
         }
         
-        // Normalize sort format
-        if (normalized.sort && Array.isArray(normalized.sort)) {
+        // Normalize offset/skip
+        if (normalized.offset !== undefined && normalized.skip === undefined) {
+            normalized.skip = normalized.offset;
+        }
+        
+        // Normalize filters - convert 'where' to 'filters'
+        if (normalized.where && !normalized.filters) {
+            normalized.filters = this.convertFilterConditionToArray(normalized.where);
+        }
+        
+        // Normalize sort format - convert 'orderBy' to 'sort'
+        if (normalized.orderBy && !normalized.sort) {
+            if (Array.isArray(normalized.orderBy)) {
+                // Convert from QueryAST format {field, order} to internal format [field, order]
+                normalized.sort = normalized.orderBy.map((item: any) => [
+                    item.field,
+                    item.order || item.direction || item.dir || 'asc'
+                ]);
+            }
+        } else if (normalized.sort && Array.isArray(normalized.sort)) {
             // Check if it's already in the array format [field, order]
             const firstSort = normalized.sort[0];
             if (firstSort && typeof firstSort === 'object' && !Array.isArray(firstSort)) {

@@ -448,10 +448,21 @@ export class FileSystemDriver implements Driver {
     async count(objectName: string, filters: any, options?: any): Promise<number> {
         const records = this.loadRecords(objectName);
 
-        // Extract actual filters from query object if needed
+        // Handle query object with 'where' property
         let actualFilters = filters;
-        if (filters && !Array.isArray(filters) && filters.filters) {
+        
+        // If filters is a query object with 'where' property, extract and convert it
+        if (filters && typeof filters === 'object' && !Array.isArray(filters) && 'where' in filters) {
+            actualFilters = this.convertFilterConditionToArray(filters.where);
+        }
+        // If filters is a query object with 'filters' property, extract it
+        else if (filters && !Array.isArray(filters) && 'filters' in filters) {
             actualFilters = filters.filters;
+        }
+        // If filters is a FilterCondition object (MongoDB-like), convert it
+        else if (filters && !Array.isArray(filters) && typeof filters === 'object' && 
+                 !('where' in filters) && !('filters' in filters)) {
+            actualFilters = this.convertFilterConditionToArray(filters);
         }
 
         // If no filters or empty object/array, return total count
@@ -470,10 +481,17 @@ export class FileSystemDriver implements Driver {
      */
     async distinct(objectName: string, field: string, filters?: any, options?: any): Promise<any[]> {
         const records = this.loadRecords(objectName);
+        
+        // Convert FilterCondition format (MongoDB-like) to array format if needed
+        let actualFilters = filters;
+        if (filters && !Array.isArray(filters) && typeof filters === 'object') {
+            actualFilters = this.convertFilterConditionToArray(filters);
+        }
+        
         const values = new Set<any>();
 
         for (const record of records) {
-            if (!filters || this.matchesFilters(record, filters)) {
+            if (!actualFilters || this.matchesFilters(record, actualFilters)) {
                 const value = record[field];
                 if (value !== undefined && value !== null) {
                     values.add(value);
@@ -501,10 +519,17 @@ export class FileSystemDriver implements Driver {
      */
     async updateMany(objectName: string, filters: any, data: any, options?: any): Promise<any> {
         const records = this.loadRecords(objectName);
+        
+        // Convert FilterCondition format (MongoDB-like) to array format if needed
+        let actualFilters = filters;
+        if (filters && !Array.isArray(filters) && typeof filters === 'object') {
+            actualFilters = this.convertFilterConditionToArray(filters);
+        }
+        
         let count = 0;
 
         for (let i = 0; i < records.length; i++) {
-            if (this.matchesFilters(records[i], filters)) {
+            if (this.matchesFilters(records[i], actualFilters)) {
                 const updated = {
                     ...records[i],
                     ...data,
@@ -529,9 +554,16 @@ export class FileSystemDriver implements Driver {
      */
     async deleteMany(objectName: string, filters: any, options?: any): Promise<any> {
         const records = this.loadRecords(objectName);
+        
+        // Convert FilterCondition format (MongoDB-like) to array format if needed
+        let actualFilters = filters;
+        if (filters && !Array.isArray(filters) && typeof filters === 'object') {
+            actualFilters = this.convertFilterConditionToArray(filters);
+        }
+        
         const initialCount = records.length;
 
-        const remaining = records.filter(record => !this.matchesFilters(record, filters));
+        const remaining = records.filter(record => !this.matchesFilters(record, actualFilters));
         const deletedCount = initialCount - remaining.length;
 
         if (deletedCount > 0) {
@@ -834,20 +866,48 @@ export class FileSystemDriver implements Driver {
      * Normalizes query format to support both legacy UnifiedQuery and QueryAST formats.
      * This ensures backward compatibility while supporting the new @objectstack/spec interface.
      * 
-     * QueryAST format uses 'top' for limit, while UnifiedQuery uses 'limit'.
-     * QueryAST sort is array of {field, order}, while UnifiedQuery is array of [field, order].
+     * QueryAST format uses:
+     * - 'where' with MongoDB-like filters (convert to 'filters' array)
+     * - 'orderBy' with array of {field, order} (convert to 'sort' with [field, order])
+     * - 'offset' (convert to 'skip')
+     * - 'top' (convert to 'limit')
      */
     private normalizeQuery(query: any): any {
         if (!query) return {};
         
         const normalized: any = { ...query };
         
+        // Convert 'where' (FilterCondition) to 'filters' (array format)
+        if (normalized.where !== undefined && normalized.filters === undefined) {
+            normalized.filters = this.convertFilterConditionToArray(normalized.where);
+        }
+        
+        // Convert 'orderBy' to 'sort'
+        if (normalized.orderBy !== undefined && normalized.sort === undefined) {
+            if (Array.isArray(normalized.orderBy)) {
+                normalized.sort = normalized.orderBy.map((item: any) => {
+                    if (Array.isArray(item)) {
+                        // Already in [field, order] format
+                        return item;
+                    } else {
+                        // Convert from {field, order} format
+                        return [item.field, item.order || item.direction || item.dir || 'asc'];
+                    }
+                });
+            }
+        }
+        
+        // Convert 'offset' to 'skip'
+        if (normalized.offset !== undefined && normalized.skip === undefined) {
+            normalized.skip = normalized.offset;
+        }
+        
         // Normalize limit/top
         if (normalized.top !== undefined && normalized.limit === undefined) {
             normalized.limit = normalized.top;
         }
         
-        // Normalize sort format
+        // Normalize sort format (in case sort is already present)
         if (normalized.sort && Array.isArray(normalized.sort)) {
             // Check if it's already in the array format [field, order]
             const firstSort = normalized.sort[0];

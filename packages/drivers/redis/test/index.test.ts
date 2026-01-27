@@ -206,7 +206,12 @@ describe('RedisDriver', () => {
             if (!driver) return;
 
             const results = await driver.find(TEST_OBJECT, {
-                filters: [['role', '=', 'user']]
+                where: {
+                    type: 'comparison',
+                    field: 'role',
+                    operator: '=',
+                    value: 'user'
+                }
             });
 
             expect(results).toHaveLength(2);
@@ -217,7 +222,12 @@ describe('RedisDriver', () => {
             if (!driver) return;
 
             const results = await driver.find(TEST_OBJECT, {
-                filters: [['age', '>', 25]]
+                where: {
+                    type: 'comparison',
+                    field: 'age',
+                    operator: '>',
+                    value: 25
+                }
             });
 
             expect(results).toHaveLength(2);
@@ -227,11 +237,23 @@ describe('RedisDriver', () => {
             if (!driver) return;
 
             const results = await driver.find(TEST_OBJECT, {
-                filters: [
-                    ['name', '=', 'Alice'],
-                    'or',
-                    ['name', '=', 'Bob']
-                ]
+                where: {
+                    type: 'or',
+                    children: [
+                        {
+                            type: 'comparison',
+                            field: 'name',
+                            operator: '=',
+                            value: 'Alice'
+                        },
+                        {
+                            type: 'comparison',
+                            field: 'name',
+                            operator: '=',
+                            value: 'Bob'
+                        }
+                    ]
+                }
             });
 
             expect(results).toHaveLength(2);
@@ -241,7 +263,12 @@ describe('RedisDriver', () => {
             if (!driver) return;
 
             const results = await driver.find(TEST_OBJECT, {
-                filters: [['name', 'contains', 'li']]
+                where: {
+                    type: 'comparison',
+                    field: 'name',
+                    operator: 'contains',
+                    value: 'li'
+                }
             });
 
             expect(results).toHaveLength(2); // Alice and Charlie
@@ -250,7 +277,12 @@ describe('RedisDriver', () => {
         it('should count with filters', async () => {
             if (!driver) return;
 
-            const count = await driver.count(TEST_OBJECT, [['role', '=', 'user']]);
+            const count = await driver.count(TEST_OBJECT, {
+                type: 'comparison',
+                field: 'role',
+                operator: '=',
+                value: 'user'
+            });
 
             expect(count).toBe(2);
         });
@@ -269,7 +301,7 @@ describe('RedisDriver', () => {
             if (!driver) return;
 
             const results = await driver.find(TEST_OBJECT, {
-                sort: [['age', 'asc']]
+                orderBy: [{ field: 'age', order: 'asc' }]
             });
 
             expect(results[0].name).toBe('Bob');
@@ -281,7 +313,7 @@ describe('RedisDriver', () => {
             if (!driver) return;
 
             const results = await driver.find(TEST_OBJECT, {
-                sort: [['age', 'desc']]
+                orderBy: [{ field: 'age', order: 'desc' }]
             });
 
             expect(results[0].name).toBe('Charlie');
@@ -303,8 +335,8 @@ describe('RedisDriver', () => {
             if (!driver) return;
 
             const results = await driver.find(TEST_OBJECT, {
-                sort: [['age', 'asc']],
-                skip: 1
+                orderBy: [{ field: 'age', order: 'asc' }],
+                offset: 1
             });
 
             expect(results).toHaveLength(2);
