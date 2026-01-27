@@ -348,9 +348,9 @@ export class RedisDriver implements Driver {
         
         // If filters are in the new FilterCondition format, convert them
         // Check for FilterCondition-specific properties (type property is a reliable indicator)
-        if (filters && !Array.isArray(filters) && !actualFilters && filters.type) {
+        if (filters && !Array.isArray(filters) && !Array.isArray(actualFilters) && filters.type) {
             actualFilters = this.convertFilterConditionToArray(filters);
-        } else if (filters && !Array.isArray(filters) && !actualFilters && filters.field && 'operator' in filters && filters.value !== undefined) {
+        } else if (filters && !Array.isArray(filters) && !Array.isArray(actualFilters) && filters.field && 'operator' in filters && filters.value !== undefined) {
             // Also handle FilterCondition without explicit type (some simplified formats)
             actualFilters = this.convertFilterConditionToArray(filters);
         }
