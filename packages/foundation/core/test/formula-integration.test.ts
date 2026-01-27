@@ -42,7 +42,7 @@ describe('Formula Integration', () => {
         },
         full_name: {
           type: 'formula',
-          formula: 'first_name + " " + last_name',
+          expression: 'first_name + " " + last_name',
           data_type: 'text',
           label: 'Full Name',
         },
@@ -54,7 +54,7 @@ describe('Formula Integration', () => {
         },
         total: {
           type: 'formula',
-          formula: 'quantity * unit_price',
+          expression: 'quantity * unit_price',
           data_type: 'currency',
           label: 'Total',
         },
@@ -63,7 +63,7 @@ describe('Formula Integration', () => {
         },
         status_label: {
           type: 'formula',
-          formula: 'is_active ? "Active" : "Inactive"',
+          expression: 'is_active ? "Active" : "Inactive"',
           data_type: 'text',
           label: 'Status',
         },
@@ -165,7 +165,7 @@ describe('Formula Integration', () => {
           tax_rate: { type: 'percent' },
           final_price: {
             type: 'formula',
-            formula: 'subtotal * (1 - discount_rate / 100) * (1 + tax_rate / 100)',
+            expression: 'subtotal * (1 - discount_rate / 100) * (1 + tax_rate / 100)',
             data_type: 'currency',
             label: 'Final Price',
           },
@@ -173,7 +173,7 @@ describe('Formula Integration', () => {
           status: { type: 'select', options: ['draft', 'confirmed', 'shipped'] },
           risk_level: {
             type: 'formula',
-            formula: `
+            expression: `
               if (subtotal > 10000) {
                 return 'High';
               } else if (subtotal > 1000) {
@@ -256,7 +256,7 @@ describe('Formula Integration', () => {
           price: { type: 'currency' },
           invalid_formula: {
             type: 'formula',
-            formula: 'nonexistent_field * 2',
+            expression: 'nonexistent_field * 2',
             data_type: 'number',
           },
         },

@@ -8,20 +8,9 @@
 
 // Import protocol types from @objectstack/spec
 import { Data } from '@objectstack/spec';
-type ServiceObject = Data.ServiceObject;
-
-// Extract IndexSchema type from ServiceObject
-type IndexSchema = NonNullable<ServiceObject['indexes']>[number];
 import { FieldConfig } from './field';
 import { ActionConfig } from './action';
 import { AnyValidationRule } from './validation';
-
-/**
- * Re-export Protocol Types from the Constitution
- * 
- * @deprecated Import directly from @objectstack/spec instead
- */
-export type { ServiceObject as SpecObject, IndexSchema };
 
 /**
  * RUNTIME-SPECIFIC TYPES
@@ -73,7 +62,7 @@ export interface ObjectAiConfig {
  * Runtime Object Configuration
  * 
  * Extends the Protocol ServiceObject with runtime-specific properties.
- * The Protocol Constitution (SpecObject) defines the core object schema.
+ * The Protocol Constitution defines the core object schema.
  * This adds runtime conveniences like actions, AI config, and validation rules.
  */
 export interface ObjectConfig {
