@@ -266,68 +266,36 @@ export class MongoDriver implements Driver {
      * QueryAST sort is array of {field, order}, while UnifiedQuery is array of [field, order].
      * QueryAST uses 'aggregations', while legacy uses 'aggregate'.
      */
-    private normalizeQuery(query: any): any {
-        if (!query) return {};
-        
-        const normalized: any = { ...query };
-        
-        // Normalize limit/top
-        if (normalized.top !== undefined && normalized.limit === undefined) {
-            normalized.limit = normalized.top;
-        }
-        
-        // Normalize aggregations/aggregate
-        if (normalized.aggregations !== undefined && normalized.aggregate === undefined) {
-            // Convert QueryAST aggregations format to legacy aggregate format
-            normalized.aggregate = normalized.aggregations.map((agg: any) => ({
-                func: agg.function || agg.func,
-                field: agg.field,
-                alias: agg.alias
-            }));
-        }
-        
-        // Normalize sort format
-        if (normalized.sort && Array.isArray(normalized.sort)) {
-            // Check if it's already in the array format [field, order]
-            const firstSort = normalized.sort[0];
-            if (firstSort && typeof firstSort === 'object' && !Array.isArray(firstSort)) {
-                // Convert from QueryAST format {field, order} to internal format [field, order]
-                normalized.sort = normalized.sort.map((item: any) => [
-                    item.field,
-                    item.order || item.direction || item.dir || 'asc'
-                ]);
-            }
-        }
-        
-        return normalized;
-    }
-
     async find(objectName: string, query: any, options?: any): Promise<any[]> {
-        const normalizedQuery = this.normalizeQuery(query);
         const collection = await this.getCollection(objectName);
-        const filter = this.mapFilters(normalizedQuery.filters);
+        const filter = this.mapFilters(query.where);
         
         const findOptions: FindOptions = {};
-        if (normalizedQuery.skip) findOptions.skip = normalizedQuery.skip;
-        if (normalizedQuery.limit) findOptions.limit = normalizedQuery.limit;
-        if (normalizedQuery.sort) {
-            // map [['field', 'desc']] to { field: -1 }
+        // Standard protocol uses 'offset' instead of 'skip'
+        if (query.offset) findOptions.skip = query.offset;
+        if (query.limit) findOptions.limit = query.limit;
+        
+        // Standard protocol uses orderBy as array of {field, order} objects
+        if (query.orderBy && Array.isArray(query.orderBy)) {
             findOptions.sort = {};
-            for (const [field, order] of normalizedQuery.sort) {
+            for (const item of query.orderBy) {
+                const field = item.field;
+                const order = item.order || 'asc';
                 // Map both 'id' and '_id' to '_id' for backward compatibility
                 const dbField = (field === 'id' || field === '_id') ? '_id' : field;
                 (findOptions.sort as any)[dbField] = order === 'desc' ? -1 : 1;
             }
         }
-        if (normalizedQuery.fields && normalizedQuery.fields.length > 0) {
+        
+        if (query.fields && query.fields.length > 0) {
             findOptions.projection = {};
-            for (const field of normalizedQuery.fields) {
+            for (const field of query.fields) {
                 // Map both 'id' and '_id' to '_id' for backward compatibility
                 const dbField = (field === 'id' || field === '_id') ? '_id' : field;
                 (findOptions.projection as any)[dbField] = 1;
             }
             // Explicitly exclude _id if 'id' is not in the requested fields
-            const hasIdField = normalizedQuery.fields.some((f: string) => f === 'id' || f === '_id');
+            const hasIdField = query.fields.some((f: string) => f === 'id' || f === '_id');
             if (!hasIdField) {
                 (findOptions.projection as any)._id = 0;
             }
@@ -391,9 +359,12 @@ export class MongoDriver implements Driver {
 
     async count(objectName: string, filters: any, options?: any): Promise<number> {
         const collection = await this.getCollection(objectName);
-        // Normalize to support both filter arrays and full query objects
-        const normalizedQuery = this.normalizeQuery(filters);
-        const actualFilters = normalizedQuery.filters || filters;
+        // Handle both filter objects and query objects
+        let actualFilters = filters;
+        if (filters && filters.where) {
+            // It's a query object with 'where' property
+            actualFilters = filters.where;
+        }
         const filter = this.mapFilters(actualFilters);
         return await collection.countDocuments(filter);
     }
@@ -460,19 +431,9 @@ export class MongoDriver implements Driver {
      * @returns Query results with value and count
      */
     async executeQuery(ast: QueryAST, options?: any): Promise<{ value: any[]; count?: number }> {
-        const objectName = ast.object || '';
-        
-        // Convert QueryAST to legacy query format
-        const legacyQuery: any = {
-            fields: ast.fields,
-            filters: this.convertFilterNodeToLegacy(ast.where),
-            sort: ast.orderBy?.map((s: SortNode) => [s.field, s.order]),
-            limit: ast.limit,
-            skip: ast.offset,
-        };
-        
-        // Use existing find method
-        const results = await this.find(objectName, legacyQuery, options);
+        // QueryAST is now the same format as our internal query
+        // Just pass it directly to find
+        const results = await this.find(ast.object || '', ast, options);
         
         return {
             value: results,
@@ -586,14 +547,6 @@ export class MongoDriver implements Driver {
      * Convert FilterCondition (QueryAST format) to legacy filter array format
      * This allows reuse of existing filter logic while supporting new QueryAST
      * 
-     * @private
-     */
-    private convertFilterNodeToLegacy(condition?: any): any {
-        // FilterCondition is already in the modern format, just pass it through
-        // The legacy format methods can handle it directly
-        return condition;
-    }
-
     /**
      * Execute command (alternative signature for compatibility)
      * 
