@@ -1,0 +1,871 @@
+---
+title: "@objectql/platform-node"
+description: The Node.js Bridge - File system integration, YAML loading, and plugin management for ObjectQL
+---
+
+# @objectql/platform-node
+
+**The Node.js Bridge**: Platform-specific utilities that connect ObjectQL's platform-agnostic core to Node.js capabilities like file system access, YAML loading, and dynamic plugin discovery.
+
+## Overview
+
+`@objectql/platform-node` bridges the gap between `@objectql/core` (which has zero Node.js dependencies) and Node.js-specific features. This separation allows the core to run in edge runtimes (Cloudflare Workers, Deno Deploy) while providing powerful file-based workflows for Node.js applications.
+
+## Installation
+
+```bash
+npm install @objectql/platform-node @objectql/core @objectql/types
+```
+
+## Features
+
+- ✅ **File System Metadata Loader** - Auto-discover `.object.yml`, `.validation.yml`, `.permission.yml` files
+- ✅ **YAML/YML Parsing** - Load and parse YAML metadata files
+- ✅ **Plugin System** - Dynamic loading of ObjectQL plugins
+- ✅ **Module Discovery** - Package and module scanning
+- ✅ **Convention-Based** - Automatic metadata discovery using glob patterns
+- ✅ **Hot Reload Ready** - File watching support for development
+
+## Quick Start
+
+### Basic Metadata Loading
+
+```typescript
+import { ObjectQL } from '@objectql/core';
+import { SqlDriver } from '@objectql/driver-sql';
+import { ObjectLoader } from '@objectql/platform-node';
+import * as path from 'path';
+
+// Initialize ObjectQL
+const app = new ObjectQL({
+  datasources: {
+    default: new SqlDriver({ /* config */ })
+  }
+});
+
+// Create loader and load metadata from directory
+const loader = new ObjectLoader(app.metadata);
+loader.load(path.join(__dirname, 'src/objects'));
+
+await app.init();
+```
+
+### Load from Multiple Directories
+
+```typescript
+import { ObjectLoader } from '@objectql/platform-node';
+
+const loader = new ObjectLoader(app.metadata);
+
+// Load from multiple directories
+loader.load('./src/core/objects');
+loader.load('./src/plugins/crm/objects');
+loader.load('./src/plugins/project/objects');
+
+// Load specific file types
+loader.load('./src/validations', {
+  include: ['**/*.validation.yml']
+});
+```
+
+## Core Components
+
+### ObjectLoader
+
+The main class for loading metadata files from the file system.
+
+#### Constructor
+
+```typescript
+import { ObjectLoader } from '@objectql/platform-node';
+import { MetadataRegistry } from '@objectql/core';
+
+const registry = new MetadataRegistry();
+const loader = new ObjectLoader(registry);
+```
+
+**Parameters:**
+- `registry: MetadataRegistry` - The metadata registry from your ObjectQL instance
+
+#### Methods
+
+##### load(dirPath: string, options?: LoadOptions): void
+
+Load metadata files from a directory.
+
+```typescript
+// Basic usage
+loader.load('./src/objects');
+
+// With options
+loader.load('./src', {
+  include: ['**/*.object.yml', '**/*.validation.yml'],
+  exclude: ['**/node_modules/**', '**/test/**']
+});
+```
+
+**Options:**
+
+```typescript
+interface LoadOptions {
+  include?: string[];  // Glob patterns to include (default: all supported types)
+  exclude?: string[];  // Glob patterns to exclude
+}
+```
+
+**Default Include Patterns:**
+- `**/*.object.yml`
+- `**/*.object.yaml`
+- `**/*.validation.yml`
+- `**/*.permission.yml`
+- `**/*.hook.yml`
+- `**/*.action.yml`
+- `**/*.workflow.yml`
+- `**/*.app.yml`
+- `**/*.data.yml`
+
+##### use(plugin: LoaderPlugin): void
+
+Register a custom loader plugin for handling additional file types.
+
+```typescript
+import { LoaderPlugin } from '@objectql/types';
+import * as yaml from 'js-yaml';
+
+const customPlugin: LoaderPlugin = {
+  name: 'custom-metadata',
+  glob: ['**/*.custom.yml'],
+  handler: (ctx) => {
+    const data = yaml.load(ctx.content);
+    
+    // Validate structure
+    if (!data.name) {
+      console.warn(`Invalid custom metadata in ${ctx.file}`);
+      return;
+    }
+    
+    // Register in metadata registry
+    ctx.registry.addEntry('custom', data.name, {
+      ...data,
+      _source: ctx.file
+    });
+  }
+};
+
+loader.use(customPlugin);
+```
+
+### Plugin Loading
+
+Load external plugins dynamically.
+
+#### loadPlugin(packageName: string): ObjectQLPlugin
+
+```typescript
+import { loadPlugin } from '@objectql/platform-node';
+
+const plugin = loadPlugin('@objectql/plugin-audit');
+app.use(plugin);
+```
+
+**How it works:**
+- Resolves package from `node_modules`
+- Supports class-based and instance-based plugins
+- Automatically instantiates classes if needed
+- Searches default export and named exports
+
+**Example:**
+
+```typescript
+import { loadPlugin } from '@objectql/platform-node';
+import { ObjectQL } from '@objectql/core';
+
+const app = new ObjectQL({ /* ... */ });
+
+// Load plugin from package
+try {
+  const auditPlugin = loadPlugin('@objectql/plugin-audit');
+  app.use(auditPlugin);
+  console.log('Audit plugin loaded');
+} catch (error) {
+  console.log('Audit plugin not installed:', error.message);
+}
+```
+
+### Driver Registration
+
+Simplified driver registration for Node.js environments.
+
+```typescript
+import { registerDriver } from '@objectql/platform-node';
+import { SqlDriver } from '@objectql/driver-sql';
+
+registerDriver(app, 'default', new SqlDriver({
+  client: 'postgresql',
+  connection: {
+    host: 'localhost',
+    port: 5432,
+    database: 'myapp',
+    user: 'postgres',
+    password: 'password'
+  }
+}));
+```
+
+## Supported Metadata File Types
+
+The loader automatically handles these file patterns:
+
+| Pattern | Description | Status |
+|---------|-------------|--------|
+| `**/*.object.yml` | Object/Entity definitions | ✅ Fully Supported |
+| `**/*.object.yaml` | Object definitions (YAML format) | ✅ Fully Supported |
+| `**/*.validation.yml` | Validation rules | ✅ Fully Supported |
+| `**/*.permission.yml` | Permission/RBAC rules | ⚠️ Loaded (requires manual enforcement) |
+| `**/*.hook.yml` | Lifecycle hooks metadata | ✅ Fully Supported |
+| `**/*.action.yml` | Custom action definitions | ✅ Fully Supported |
+| `**/*.workflow.yml` | Workflow automation | ⚠️ Loaded (no runtime execution) |
+| `**/*.app.yml` | Application configuration | ✅ Fully Supported |
+| `**/*.data.yml` | Initial/seed data | ✅ Fully Supported |
+
+> **Note**: Permission and workflow files can be loaded, but require application-layer implementation. See [Implementation Status](https://github.com/objectstack-ai/objectql/blob/main/IMPLEMENTATION_STATUS.md) for details.
+
+## Project Structure Examples
+
+### Standard Structure
+
+Organize metadata by type:
+
+```
+my-app/
+├── src/
+│   ├── objects/
+│   │   ├── user.object.yml
+│   │   ├── project.object.yml
+│   │   └── task.object.yml
+│   ├── validations/
+│   │   ├── user.validation.yml
+│   │   └── project.validation.yml
+│   └── permissions/
+│       ├── user.permission.yml
+│       └── project.permission.yml
+└── objectql.config.ts
+```
+
+**Loading:**
+
+```typescript
+const loader = new ObjectLoader(app.metadata);
+loader.load('./src/objects');
+loader.load('./src/validations');
+loader.load('./src/permissions');
+```
+
+### Modular Structure
+
+Organize by feature/module (recommended):
+
+```
+my-app/
+├── src/
+│   ├── modules/
+│   │   ├── crm/
+│   │   │   ├── objects/
+│   │   │   │   ├── customer.object.yml
+│   │   │   │   └── opportunity.object.yml
+│   │   │   └── validations/
+│   │   │       └── customer.validation.yml
+│   │   └── project/
+│   │       ├── objects/
+│   │       │   ├── project.object.yml
+│   │       │   └── milestone.object.yml
+│   │       └── permissions/
+│   │           └── project.permission.yml
+└── objectql.config.ts
+```
+
+**Loading:**
+
+```typescript
+const loader = new ObjectLoader(app.metadata);
+loader.load('./src/modules/crm');
+loader.load('./src/modules/project');
+```
+
+### Co-located Structure
+
+Keep all metadata for an object together:
+
+```
+my-app/
+├── src/
+│   ├── entities/
+│   │   ├── user/
+│   │   │   ├── user.object.yml
+│   │   │   ├── user.validation.yml
+│   │   │   ├── user.permission.yml
+│   │   │   └── user.hooks.ts
+│   │   └── project/
+│   │       ├── project.object.yml
+│   │       ├── project.validation.yml
+│   │       └── project.hooks.ts
+└── objectql.config.ts
+```
+
+**Loading:**
+
+```typescript
+const loader = new ObjectLoader(app.metadata);
+loader.load('./src/entities');
+```
+
+## Complete Example
+
+### objectql.config.ts
+
+```typescript
+import { ObjectQL } from '@objectql/core';
+import { SqlDriver } from '@objectql/driver-sql';
+import { ObjectLoader, loadPlugin } from '@objectql/platform-node';
+import * as path from 'path';
+
+// Initialize ObjectQL
+const app = new ObjectQL({
+  datasources: {
+    default: new SqlDriver({
+      client: 'sqlite3',
+      connection: {
+        filename: path.join(__dirname, 'dev.sqlite3')
+      },
+      useNullAsDefault: true
+    })
+  }
+});
+
+// Load metadata from file system
+const loader = new ObjectLoader(app.metadata);
+
+// Load core objects
+loader.load(path.join(__dirname, 'src/objects'));
+
+// Load module-specific metadata
+loader.load(path.join(__dirname, 'src/modules/crm'));
+loader.load(path.join(__dirname, 'src/modules/project'));
+
+// Load plugins
+try {
+  const auditPlugin = loadPlugin('@objectql/plugin-audit');
+  app.use(auditPlugin);
+} catch (e) {
+  console.log('Audit plugin not installed');
+}
+
+export default app;
+```
+
+### src/objects/project.object.yml
+
+```yaml
+name: project
+label: Project
+description: Project management entity
+
+fields:
+  name:
+    type: text
+    label: Project Name
+    required: true
+    validation:
+      min_length: 3
+      max_length: 100
+      pattern: '^[a-zA-Z0-9\s]+$'
+  
+  status:
+    type: select
+    label: Status
+    options:
+      - label: Planning
+        value: planning
+      - label: Active
+        value: active
+      - label: Completed
+        value: completed
+    default: planning
+  
+  start_date:
+    type: date
+    label: Start Date
+    required: true
+  
+  end_date:
+    type: date
+    label: End Date
+    required: true
+  
+  budget:
+    type: currency
+    label: Budget
+    validation:
+      min: 0
+      max: 10000000
+  
+  owner:
+    type: lookup
+    label: Project Owner
+    reference_to: users
+    required: true
+
+validation:
+  rules:
+    - name: valid_date_range
+      type: cross_field
+      rule:
+        field: end_date
+        operator: '>='
+        compare_to: start_date
+      message: End date must be on or after start date
+      error_code: INVALID_DATE_RANGE
+```
+
+### src/validations/project.validation.yml
+
+```yaml
+object: project
+rules:
+  - name: status_transition
+    type: state_machine
+    field: status
+    transitions:
+      planning:
+        allowed_next:
+          - active
+          - cancelled
+      active:
+        allowed_next:
+          - on_hold
+          - completed
+          - cancelled
+      on_hold:
+        allowed_next:
+          - active
+          - cancelled
+      completed:
+        allowed_next: []
+        is_terminal: true
+      cancelled:
+        allowed_next: []
+        is_terminal: true
+    message: Invalid status transition from {{old_status}} to {{new_status}}
+    error_code: INVALID_STATE_TRANSITION
+```
+
+### src/index.ts
+
+```typescript
+import app from './objectql.config';
+
+(async () => {
+  // Initialize
+  await app.init();
+  
+  // Create context
+  const ctx = app.createContext({ userId: 'admin' });
+  
+  // Use the app
+  const projects = await ctx.object('project').find({
+    filters: [['status', '=', 'active']]
+  });
+  
+  console.log(`Found ${projects.length} active projects`);
+  
+  // Shutdown
+  await app.shutdown();
+})();
+```
+
+## Advanced Usage
+
+### Custom Loader Plugin
+
+Create custom handlers for specialized file types:
+
+```typescript
+import { LoaderPlugin, LoaderHandlerContext } from '@objectql/types';
+import * as yaml from 'js-yaml';
+
+const reportPlugin: LoaderPlugin = {
+  name: 'report-loader',
+  glob: ['**/*.report.yml'],
+  handler: (ctx: LoaderHandlerContext) => {
+    const report = yaml.load(ctx.content);
+    
+    // Validate report structure
+    if (!report.name || !report.query) {
+      console.warn(`Invalid report in ${ctx.file}`);
+      return;
+    }
+    
+    // Register report in metadata
+    ctx.registry.addEntry('report', report.name, {
+      ...report,
+      _source: ctx.file
+    });
+    
+    console.log(`Loaded report: ${report.name}`);
+  }
+};
+
+loader.use(reportPlugin);
+
+// Now load reports
+loader.load('./src/reports');
+```
+
+### Conditional Loading
+
+Load different metadata based on environment:
+
+```typescript
+const loader = new ObjectLoader(app.metadata);
+
+// Always load core
+loader.load('./src/objects');
+
+// Environment-specific
+if (process.env.NODE_ENV === 'development') {
+  loader.load('./src/dev-objects');
+  loader.load('./src/test-data');
+} else if (process.env.NODE_ENV === 'production') {
+  loader.load('./src/production-objects');
+}
+
+// Feature flags
+if (process.env.ENABLE_ANALYTICS === 'true') {
+  loader.load('./src/analytics-objects');
+}
+```
+
+### Error Handling
+
+```typescript
+import * as fs from 'fs';
+
+const loader = new ObjectLoader(app.metadata);
+
+try {
+  loader.load('./src/objects');
+} catch (error) {
+  console.error('Failed to load metadata:', error);
+  
+  if (error.code === 'ENOENT') {
+    console.error('Directory not found. Creating...');
+    fs.mkdirSync('./src/objects', { recursive: true });
+  }
+  
+  throw error;
+}
+```
+
+### File Watching (Development)
+
+Add hot-reload capability during development:
+
+```typescript
+import * as chokidar from 'chokidar';
+import * as path from 'path';
+
+const loader = new ObjectLoader(app.metadata);
+const watchPath = path.join(__dirname, 'src/objects');
+
+// Initial load
+loader.load(watchPath);
+await app.init();
+
+// Watch for changes in development
+if (process.env.NODE_ENV === 'development') {
+  const watcher = chokidar.watch('**/*.{yml,yaml}', {
+    cwd: watchPath,
+    ignoreInitial: true
+  });
+  
+  watcher.on('change', async (filePath) => {
+    console.log(`Metadata changed: ${filePath}`);
+    
+    // Clear and reload metadata
+    app.metadata.clear();
+    loader.load(watchPath);
+    
+    // Re-initialize
+    await app.init();
+    
+    console.log('Metadata reloaded');
+  });
+  
+  watcher.on('add', async (filePath) => {
+    console.log(`New metadata file: ${filePath}`);
+    loader.load(watchPath);
+    await app.init();
+  });
+}
+```
+
+### Module Discovery
+
+Discover and load all modules in a directory:
+
+```typescript
+import { discoverModules } from '@objectql/platform-node';
+
+// Discover all modules
+const modules = discoverModules('./src/modules');
+
+for (const module of modules) {
+  console.log(`Loading module: ${module.name}`);
+  loader.load(module.path);
+}
+```
+
+## Best Practices
+
+### 1. Organize by Feature
+
+Group related metadata together by business feature:
+
+```
+✅ Good: Feature-based organization
+src/
+  modules/
+    users/
+      objects/
+      validations/
+      permissions/
+      hooks/
+    projects/
+      objects/
+      validations/
+```
+
+```
+❌ Bad: Type-based organization
+src/
+  all-objects/
+  all-validations/
+  all-permissions/
+```
+
+### 2. Use Consistent Naming
+
+- Match file names to object names: `user.object.yml` for object "user"
+- Use singular names: `project`, not `projects`
+- Use lowercase with underscores: `project_task`, not `ProjectTask`
+
+### 3. Separate Concerns
+
+Keep different metadata types in separate files:
+
+```
+user/
+  user.object.yml        # Object structure
+  user.validation.yml    # Validation rules
+  user.permission.yml    # Access control
+  user.hooks.ts          # Business logic
+```
+
+### 4. Environment Configuration
+
+Use environment variables for environment-specific loading:
+
+```typescript
+// Load base configuration
+loader.load('./src/objects');
+
+// Add environment-specific overrides
+if (process.env.NODE_ENV === 'production') {
+  loader.load('./src/objects/production');
+}
+
+// Feature flags
+if (process.env.FEATURE_ANALYTICS) {
+  loader.load('./src/analytics');
+}
+```
+
+### 5. Validate YAML Structure
+
+Ensure YAML files follow the expected structure:
+
+```yaml
+# ✅ Good: Well-structured YAML
+name: project
+label: Project
+fields:
+  name:
+    type: text
+    required: true
+
+# ❌ Bad: Invalid structure
+project:
+  fields:
+    - name: text  # Wrong format
+```
+
+## Troubleshooting
+
+### Files Not Loading
+
+**Problem:** Metadata files are not being discovered.
+
+**Solutions:**
+- Verify file extensions: `.yml` or `.yaml`
+- Check naming conventions: `*.object.yml`, `*.validation.yml`
+- Ensure directory path is correct (use absolute paths)
+- Check for YAML syntax errors
+
+**Debug:**
+
+```typescript
+const loader = new ObjectLoader(app.metadata);
+
+// Enable verbose logging (if available)
+loader.load('./src/objects');
+
+// Check what was loaded
+console.log('Loaded objects:', app.metadata.listObjects());
+```
+
+### Plugin Loading Fails
+
+**Problem:** `loadPlugin()` throws "Failed to resolve plugin" error.
+
+**Solutions:**
+- Ensure plugin is installed: `npm install @objectql/plugin-name`
+- Verify package name is correct
+- Check plugin exports a valid ObjectQL plugin
+- Try absolute path if relative resolution fails
+
+**Debug:**
+
+```typescript
+try {
+  const plugin = loadPlugin('@objectql/plugin-audit');
+  console.log('Plugin loaded:', plugin.name);
+} catch (error) {
+  console.error('Plugin error:', error.message);
+  console.error('Make sure @objectql/plugin-audit is installed');
+}
+```
+
+### Performance Issues
+
+**Problem:** Slow metadata loading on startup.
+
+**Solutions:**
+- Limit glob patterns to specific directories
+- Use `exclude` patterns to skip unnecessary directories
+- Consider lazy loading modules
+- Cache parsed metadata in production
+
+**Optimize:**
+
+```typescript
+// ❌ Slow: Scans everything
+loader.load('./');
+
+// ✅ Fast: Specific directories
+loader.load('./src/objects', {
+  exclude: ['**/node_modules/**', '**/test/**', '**/dist/**']
+});
+```
+
+### YAML Parsing Errors
+
+**Problem:** YAML files fail to parse.
+
+**Solutions:**
+- Validate YAML syntax using online tools
+- Check indentation (must use spaces, not tabs)
+- Ensure proper quoting of special characters
+- Verify array/object structure
+
+**Common Issues:**
+
+```yaml
+# ❌ Bad: Mixed tabs and spaces
+fields:
+	name:  # Tab used here
+    type: text  # Spaces used here
+
+# ✅ Good: Consistent spacing
+fields:
+  name:
+    type: text
+
+# ❌ Bad: Missing quotes
+message: User's name is required
+
+# ✅ Good: Quoted
+message: "User's name is required"
+```
+
+## TypeScript Support
+
+Full TypeScript support with type definitions:
+
+```typescript
+import { 
+  ObjectLoader, 
+  LoaderPlugin, 
+  LoaderHandlerContext,
+  loadPlugin
+} from '@objectql/platform-node';
+
+const loader: ObjectLoader = new ObjectLoader(app.metadata);
+
+const plugin: LoaderPlugin = {
+  name: 'custom',
+  glob: ['**/*.custom.yml'],
+  handler: (ctx: LoaderHandlerContext) => {
+    // Fully typed context
+    console.log(ctx.file, ctx.content, ctx.registry);
+  }
+};
+
+loader.use(plugin);
+```
+
+## Environment Requirements
+
+- **Node.js**: 14.x or higher
+- **TypeScript**: 4.5 or higher (for TypeScript projects)
+
+## Dependencies
+
+This package includes:
+- `fast-glob` - Fast file system glob matching
+- `js-yaml` - YAML parsing
+- `@objectql/types` - Core type definitions
+- `@objectql/core` - Core utilities
+
+## Related Packages
+
+- **[@objectql/core](/docs/reference/foundation/core)** - Core ObjectQL engine
+- **[@objectql/types](/docs/reference/foundation/types)** - Type definitions
+- **[@objectql/cli](../../tools/cli)** - Command-line interface
+
+## Related Documentation
+
+- **[Foundation Overview](/docs/reference/foundation)** - Trinity architecture
+- **[Core Reference](/docs/reference/foundation/core)** - Runtime engine
+- **[Types Reference](/docs/reference/foundation/types)** - Type system
+- **[Configuration Guide](/docs/guides/configuration)** - App configuration
+- **[Metadata Specification](/docs/spec)** - Metadata file formats
+
+## Contributing
+
+Contributions are welcome! Please see the main [repository README](https://github.com/objectstack-ai/objectql) for guidelines.
+
+## Support
+
+- 📖 [API Reference](/docs/api)
+- 💬 [GitHub Discussions](https://github.com/objectstack-ai/objectql/discussions)
+- 🐛 [Report Issues](https://github.com/objectstack-ai/objectql/issues)

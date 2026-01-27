@@ -1,0 +1,1109 @@
+---
+title: "Plugin Development"
+description: "Build custom plugins to extend ObjectQL's functionality"
+---
+
+**Plugins** are the mechanism for adding cross-cutting concerns and custom behavior to ObjectQL without modifying the core engine. They allow you to inject logic at specific points in the request lifecycle.
+
+## Understanding Plugins
+
+### What is a Plugin?
+
+A plugin in ObjectQL is a **composable module** that:
+
+1. **Hooks into lifecycle events**: beforeQuery, afterQuery, beforeMutation, afterMutation
+2. **Extends the kernel**: Adds new capabilities to the ObjectStack runtime
+3. **Operates transparently**: Can be enabled/disabled without code changes
+4. **Follows the protocol**: Implements the `RuntimePlugin` interface from `@objectql/runtime`
+
+### When to Create a Plugin
+
+Create a plugin when you need to:
+
+- ✅ Add security/permissions (RBAC, FLS, RLS)
+- ✅ Implement audit logging
+- ✅ Add data validation hooks
+- ✅ Transform data before/after database operations
+- ✅ Implement caching layers
+- ✅ Add webhook notifications
+- ✅ Integrate with external services (Slack, email)
+- ✅ Implement multi-tenancy
+
+**Don't create a plugin when:**
+- ❌ You need database-specific operations → Use a **Driver** instead
+- ❌ You're adding object-specific logic → Use **Hooks** in metadata
+- ❌ You need UI customization → Use **Pages/Actions** instead
+
+## The Plugin Interface
+
+### RuntimePlugin Interface
+
+Defined in `@objectql/runtime`:
+
+```typescript
+import type { RuntimePlugin, RuntimeContext } from '@objectql/runtime';
+
+export interface RuntimePlugin {
+  /** Unique plugin identifier */
+  name: string;
+
+  /** Plugin version (semantic versioning) */
+  version?: string;
+
+  /** 
+   * Install hook - called during kernel initialization
+   * Use this to register hooks, initialize state, load configuration
+   */
+  install?(ctx: RuntimeContext): void | Promise<void>;
+
+  /** 
+   * Start hook - called when kernel starts
+   * Use this to start background processes, connect to services
+   */
+  onStart?(ctx: RuntimeContext): void | Promise<void>;
+
+  /** 
+   * Stop hook - called when kernel stops
+   * Use this to cleanup resources, disconnect from services
+   */
+  onStop?(ctx: RuntimeContext): void | Promise<void>;
+}
+
+export interface RuntimeContext {
+  /** The ObjectStack kernel instance */
+  engine: ObjectStackKernel;
+}
+```
+
+### Legacy Plugin Interface (ObjectStack Spec)
+
+The `@objectstack/spec` also defines a `PluginDefinition` for full ObjectStack ecosystem compatibility:
+
+```typescript
+export interface PluginDefinition {
+  id?: string;
+  name?: string;
+  version?: string;
+  
+  // Lifecycle hooks
+  onEnable?(): void | Promise<void>;
+  onDisable?(): void | Promise<void>;
+  onInstall?(): void | Promise<void>;
+  onUninstall?(): void | Promise<void>;
+  onUpgrade?(fromVersion: string, toVersion: string): void | Promise<void>;
+}
+```
+
+## Plugin Lifecycle
+
+The plugin lifecycle follows this sequence:
+
+```
+┌─────────────────────────────────────────┐
+│  1. Kernel Construction                 │
+│     new ObjectStackKernel([plugins])    │
+└────────────────┬────────────────────────┘
+                 │
+┌────────────────▼────────────────────────┐
+│  2. Install Phase                       │
+│     plugin.install(ctx)                 │
+│     • Register hooks                    │
+│     • Initialize state                  │
+│     • Load configuration                │
+└────────────────┬────────────────────────┘
+                 │
+┌────────────────▼────────────────────────┐
+│  3. Start Phase                         │
+│     await kernel.start()                │
+│     plugin.onStart(ctx)                 │
+│     • Connect to external services      │
+│     • Start background jobs             │
+└────────────────┬────────────────────────┘
+                 │
+                 │  ← Runtime execution
+                 │
+┌────────────────▼────────────────────────┐
+│  4. Stop Phase                          │
+│     await kernel.stop()                 │
+│     plugin.onStop(ctx)                  │
+│     • Cleanup resources                 │
+│     • Disconnect from services          │
+└─────────────────────────────────────────┘
+```
+
+## Step-by-Step Tutorial: Building an Audit Log Plugin
+
+Let's build a comprehensive audit logging plugin that tracks all data mutations.
+
+### Step 1: Project Setup
+
+```bash
+mkdir objectql-plugin-audit
+cd objectql-plugin-audit
+npm init -y
+npm install @objectql/runtime
+npm install -D typescript @types/node vitest
+```
+
+**tsconfig.json**:
+```json
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "commonjs",
+    "lib": ["ES2020"],
+    "outDir": "dist",
+    "rootDir": "src",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "declaration": true,
+    "declarationMap": true
+  },
+  "include": ["src/**/*"]
+}
+```
+
+### Step 2: Define Types
+
+**src/types.ts**:
+```typescript
+/**
+ * Audit log entry
+ */
+export interface AuditLogEntry {
+  /** Unique log entry ID */
+  id: string;
+  /** Timestamp when the event occurred */
+  timestamp: number;
+  /** User who performed the action */
+  userId?: string;
+  /** Username for display */
+  username?: string;
+  /** Object type being modified */
+  objectName: string;
+  /** Operation type */
+  operation: 'create' | 'update' | 'delete' | 'bulkCreate' | 'bulkUpdate' | 'bulkDelete';
+  /** Record ID (for single operations) */
+  recordId?: string | number;
+  /** Data before the change (for updates/deletes) */
+  before?: any;
+  /** Data after the change (for creates/updates) */
+  after?: any;
+  /** Number of records affected */
+  affected: number;
+  /** Client IP address */
+  ipAddress?: string;
+  /** User agent */
+  userAgent?: string;
+  /** Additional context */
+  metadata?: Record<string, any>;
+}
+
+/**
+ * Plugin configuration
+ */
+export interface AuditPluginConfig {
+  /** Enable/disable the plugin */
+  enabled?: boolean;
+  
+  /** Objects to exclude from audit logging */
+  excludeObjects?: string[];
+  
+  /** Operations to exclude from logging */
+  excludeOperations?: Array<'create' | 'update' | 'delete'>;
+  
+  /** Storage backend */
+  storage?: 'memory' | 'database' | 'file' | 'custom';
+  
+  /** Maximum number of logs to keep in memory */
+  maxLogs?: number;
+  
+  /** Custom storage handler */
+  customStorage?: AuditStorage;
+  
+  /** File path for file-based storage */
+  filePath?: string;
+  
+  /** Database table name for database storage */
+  tableName?: string;
+}
+
+/**
+ * Custom storage interface
+ */
+export interface AuditStorage {
+  write(entry: AuditLogEntry): Promise<void>;
+  read(filter?: Partial<AuditLogEntry>): Promise<AuditLogEntry[]>;
+  clear(): Promise<void>;
+}
+```
+
+### Step 3: Implement Storage Backends
+
+**src/storage/memory-storage.ts**:
+```typescript
+import type { AuditLogEntry, AuditStorage } from '../types';
+
+export class MemoryAuditStorage implements AuditStorage {
+  private logs: AuditLogEntry[] = [];
+  private maxLogs: number;
+
+  constructor(maxLogs: number = 10000) {
+    this.maxLogs = maxLogs;
+  }
+
+  async write(entry: AuditLogEntry): Promise<void> {
+    this.logs.push(entry);
+
+    // Keep only the last N logs
+    if (this.logs.length > this.maxLogs) {
+      this.logs.shift();
+    }
+  }
+
+  async read(filter?: Partial<AuditLogEntry>): Promise<AuditLogEntry[]> {
+    if (!filter) {
+      return [...this.logs];
+    }
+
+    return this.logs.filter(log => {
+      for (const [key, value] of Object.entries(filter)) {
+        if (log[key as keyof AuditLogEntry] !== value) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }
+
+  async clear(): Promise<void> {
+    this.logs = [];
+  }
+
+  getStats() {
+    return {
+      total: this.logs.length,
+      maxLogs: this.maxLogs
+    };
+  }
+}
+```
+
+**src/storage/file-storage.ts**:
+```typescript
+import { promises as fs } from 'fs';
+import { join } from 'path';
+import type { AuditLogEntry, AuditStorage } from '../types';
+
+export class FileAuditStorage implements AuditStorage {
+  private filePath: string;
+
+  constructor(filePath: string = './audit-logs.jsonl') {
+    this.filePath = filePath;
+  }
+
+  async write(entry: AuditLogEntry): Promise<void> {
+    const line = JSON.stringify(entry) + '\n';
+    await fs.appendFile(this.filePath, line, 'utf-8');
+  }
+
+  async read(filter?: Partial<AuditLogEntry>): Promise<AuditLogEntry[]> {
+    try {
+      const content = await fs.readFile(this.filePath, 'utf-8');
+      const lines = content.split('\n').filter(line => line.trim());
+      
+      let logs = lines.map(line => JSON.parse(line) as AuditLogEntry);
+
+      if (filter) {
+        logs = logs.filter(log => {
+          for (const [key, value] of Object.entries(filter)) {
+            if (log[key as keyof AuditLogEntry] !== value) {
+              return false;
+            }
+          }
+          return true;
+        });
+      }
+
+      return logs;
+    } catch (error: any) {
+      if (error.code === 'ENOENT') {
+        return []; // File doesn't exist yet
+      }
+      throw error;
+    }
+  }
+
+  async clear(): Promise<void> {
+    await fs.writeFile(this.filePath, '', 'utf-8');
+  }
+}
+```
+
+### Step 4: Implement the Plugin
+
+**src/index.ts**:
+```typescript
+import type { RuntimePlugin, RuntimeContext, ObjectStackKernel } from '@objectql/runtime';
+import type { AuditPluginConfig, AuditLogEntry, AuditStorage } from './types';
+import { MemoryAuditStorage } from './storage/memory-storage';
+import { FileAuditStorage } from './storage/file-storage';
+
+/**
+ * Extended kernel interface with hook support
+ */
+interface KernelWithHooks extends ObjectStackKernel {
+  use?(hook: string, handler: (context: any) => Promise<void>): void;
+}
+
+/**
+ * Audit Logging Plugin for ObjectQL
+ * 
+ * Automatically tracks all data mutations (create, update, delete) with:
+ * - User attribution
+ * - Timestamp
+ * - Before/after snapshots
+ * - IP address and user agent
+ * 
+ * Design Philosophy:
+ * - Zero-Configuration: Works out of the box with sensible defaults
+ * - Storage-Agnostic: Memory, file, database, or custom storage
+ * - Performance-First: Async writes, no blocking
+ * - Queryable: Rich filtering and search capabilities
+ */
+export class AuditLogPlugin implements RuntimePlugin {
+  name = '@objectql/plugin-audit';
+  version = '1.0.0';
+
+  private config: Required<AuditPluginConfig>;
+  private storage: AuditStorage;
+
+  constructor(config: AuditPluginConfig = {}) {
+    this.config = {
+      enabled: true,
+      excludeObjects: [],
+      excludeOperations: [],
+      storage: 'memory',
+      maxLogs: 10000,
+      customStorage: undefined as any,
+      filePath: './audit-logs.jsonl',
+      tableName: 'audit_logs',
+      ...config
+    };
+
+    // Initialize storage
+    this.storage = this.initializeStorage();
+  }
+
+  private initializeStorage(): AuditStorage {
+    switch (this.config.storage) {
+      case 'memory':
+        return new MemoryAuditStorage(this.config.maxLogs);
+      case 'file':
+        return new FileAuditStorage(this.config.filePath);
+      case 'custom':
+        if (!this.config.customStorage) {
+          throw new Error('Custom storage handler not provided');
+        }
+        return this.config.customStorage;
+      default:
+        throw new Error(`Unsupported storage type: ${this.config.storage}`);
+    }
+  }
+
+  /**
+   * Install hook - register audit handlers
+   */
+  async install(ctx: RuntimeContext): Promise<void> {
+    const kernel = ctx.engine as KernelWithHooks;
+
+    console.log(`[${this.name}] Installing audit plugin...`);
+
+    if (!this.config.enabled) {
+      console.log(`[${this.name}] Audit plugin is disabled`);
+      return;
+    }
+
+    // Register hooks if kernel supports them
+    if (typeof kernel.use === 'function') {
+      // Hook into mutations (create, update, delete)
+      kernel.use('beforeMutation', async (context: any) => {
+        await this.handleBeforeMutation(context);
+      });
+
+      kernel.use('afterMutation', async (context: any) => {
+        await this.handleAfterMutation(context);
+      });
+
+      console.log(`[${this.name}] Audit hooks registered`);
+    } else {
+      console.warn(`[${this.name}] Kernel does not support hooks - audit logging disabled`);
+    }
+
+    // Make plugin accessible from kernel
+    (kernel as any).auditPlugin = this;
+  }
+
+  /**
+   * Start hook
+   */
+  async onStart(ctx: RuntimeContext): Promise<void> {
+    console.log(`[${this.name}] Audit logging started (storage: ${this.config.storage})`);
+  }
+
+  /**
+   * Stop hook
+   */
+  async onStop(ctx: RuntimeContext): Promise<void> {
+    console.log(`[${this.name}] Audit plugin stopped`);
+  }
+
+  /**
+   * Handle beforeMutation - capture "before" state
+   */
+  private async handleBeforeMutation(context: any): Promise<void> {
+    const objectName = context.objectName || context.object;
+    const operation = context.operation;
+
+    // Check if this object/operation should be audited
+    if (this.shouldSkipAudit(objectName, operation)) {
+      return;
+    }
+
+    // For updates and deletes, capture the current state
+    if ((operation === 'update' || operation === 'delete') && context.id) {
+      // Store current state in context for later comparison
+      context._auditBefore = await this.fetchCurrentState(context, objectName, context.id);
+    }
+  }
+
+  /**
+   * Handle afterMutation - write audit log
+   */
+  private async handleAfterMutation(context: any): Promise<void> {
+    const objectName = context.objectName || context.object;
+    const operation = context.operation;
+
+    // Check if this object/operation should be audited
+    if (this.shouldSkipAudit(objectName, operation)) {
+      return;
+    }
+
+    // Skip if mutation failed
+    if (context.error) {
+      return;
+    }
+
+    // Create audit log entry
+    const entry: AuditLogEntry = {
+      id: this.generateId(),
+      timestamp: Date.now(),
+      userId: context.userId || context.user?.id,
+      username: context.username || context.user?.name || context.user?.email,
+      objectName,
+      operation,
+      recordId: context.id,
+      before: context._auditBefore,
+      after: this.extractAfterState(context, operation),
+      affected: this.calculateAffected(context, operation),
+      ipAddress: context.ipAddress || context.req?.ip,
+      userAgent: context.userAgent || context.req?.headers?.[' user-agent'],
+      metadata: context.auditMetadata
+    };
+
+    // Write to storage (async, non-blocking)
+    try {
+      await this.storage.write(entry);
+    } catch (error) {
+      console.error(`[${this.name}] Failed to write audit log:`, error);
+    }
+  }
+
+  /**
+   * Check if audit should be skipped
+   */
+  private shouldSkipAudit(objectName: string, operation: string): boolean {
+    if (!this.config.enabled) {
+      return true;
+    }
+
+    if (this.config.excludeObjects.includes(objectName)) {
+      return true;
+    }
+
+    if (this.config.excludeOperations.includes(operation as any)) {
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Fetch current state before mutation
+   */
+  private async fetchCurrentState(context: any, objectName: string, id: string | number): Promise<any> {
+    try {
+      // Try to get from context result if available
+      if (context.currentRecord) {
+        return context.currentRecord;
+      }
+
+      // Try to fetch from kernel
+      const kernel = context.engine || context.kernel;
+      if (kernel?.ql?.findOne) {
+        return await kernel.ql.findOne(objectName, id);
+      }
+
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Extract "after" state from context
+   */
+  private extractAfterState(context: any, operation: string): any {
+    if (operation === 'delete') {
+      return null; // No after state for deletes
+    }
+
+    if (operation === 'create') {
+      return context.result || context.data;
+    }
+
+    if (operation === 'update') {
+      return context.result || { ...context._auditBefore, ...context.data };
+    }
+
+    return context.result;
+  }
+
+  /**
+   * Calculate number of affected records
+   */
+  private calculateAffected(context: any, operation: string): number {
+    if (operation.startsWith('bulk')) {
+      return context.affected || context.result?.length || 0;
+    }
+    return context.result ? 1 : 0;
+  }
+
+  /**
+   * Generate unique ID for log entry
+   */
+  private generateId(): string {
+    return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  /**
+   * Query audit logs
+   */
+  async getLogs(filter?: Partial<AuditLogEntry>): Promise<AuditLogEntry[]> {
+    return await this.storage.read(filter);
+  }
+
+  /**
+   * Get logs for a specific user
+   */
+  async getLogsByUser(userId: string): Promise<AuditLogEntry[]> {
+    return await this.storage.read({ userId });
+  }
+
+  /**
+   * Get logs for a specific object
+   */
+  async getLogsByObject(objectName: string): Promise<AuditLogEntry[]> {
+    return await this.storage.read({ objectName });
+  }
+
+  /**
+   * Get logs for a specific record
+   */
+  async getLogsByRecord(objectName: string, recordId: string | number): Promise<AuditLogEntry[]> {
+    return await this.storage.read({ objectName, recordId });
+  }
+
+  /**
+   * Clear all audit logs
+   */
+  async clearLogs(): Promise<void> {
+    await this.storage.clear();
+  }
+
+  /**
+   * Get audit statistics
+   */
+  async getStats() {
+    const allLogs = await this.storage.read();
+    const byOperation = allLogs.reduce((acc, log) => {
+      acc[log.operation] = (acc[log.operation] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const byObject = allLogs.reduce((acc, log) => {
+      acc[log.objectName] = (acc[log.objectName] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    return {
+      total: allLogs.length,
+      byOperation,
+      byObject,
+      oldest: allLogs[0]?.timestamp,
+      newest: allLogs[allLogs.length - 1]?.timestamp
+    };
+  }
+}
+
+// Export types
+export * from './types';
+export * from './storage/memory-storage';
+export * from './storage/file-storage';
+```
+
+### Step 5: Write Tests
+
+**test/audit-plugin.test.ts**:
+```typescript
+import { describe, it, expect, beforeEach } from 'vitest';
+import { AuditLogPlugin } from '../src';
+import { ObjectStackKernel } from '@objectql/runtime';
+
+describe('AuditLogPlugin', () => {
+  let plugin: AuditLogPlugin;
+  let kernel: ObjectStackKernel;
+
+  beforeEach(async () => {
+    plugin = new AuditLogPlugin({
+      storage: 'memory',
+      maxLogs: 100
+    });
+
+    kernel = new ObjectStackKernel([plugin]);
+    await kernel.start();
+  });
+
+  it('should install successfully', () => {
+    expect(plugin.name).toBe('@objectql/plugin-audit');
+    expect((kernel as any).auditPlugin).toBeDefined();
+  });
+
+  it('should log create operations', async () => {
+    // Simulate a create mutation
+    const context = {
+      engine: kernel,
+      objectName: 'users',
+      operation: 'create',
+      userId: 'user-123',
+      data: { name: 'Alice', email: 'alice@example.com' },
+      result: { id: 'user-456', name: 'Alice', email: 'alice@example.com' }
+    };
+
+    await (plugin as any).handleBeforeMutation(context);
+    await (plugin as any).handleAfterMutation(context);
+
+    const logs = await plugin.getLogs();
+    expect(logs.length).toBe(1);
+    expect(logs[0].objectName).toBe('users');
+    expect(logs[0].operation).toBe('create');
+    expect(logs[0].userId).toBe('user-123');
+    expect(logs[0].after).toEqual(context.result);
+  });
+
+  it('should exclude configured objects', async () => {
+    const plugin2 = new AuditLogPlugin({
+      excludeObjects: ['audit_logs']
+    });
+
+    const context = {
+      objectName: 'audit_logs',
+      operation: 'create'
+    };
+
+    expect((plugin2 as any).shouldSkipAudit('audit_logs', 'create')).toBe(true);
+    expect((plugin2 as any).shouldSkipAudit('users', 'create')).toBe(false);
+  });
+
+  it('should query logs by user', async () => {
+    // Create multiple log entries
+    for (let i = 0; i < 5; i++) {
+      const context = {
+        engine: kernel,
+        objectName: 'tasks',
+        operation: 'create',
+        userId: i % 2 === 0 ? 'user-1' : 'user-2',
+        result: { id: `task-${i}` }
+      };
+      await (plugin as any).handleAfterMutation(context);
+    }
+
+    const user1Logs = await plugin.getLogsByUser('user-1');
+    const user2Logs = await plugin.getLogsByUser('user-2');
+
+    expect(user1Logs.length).toBe(3);
+    expect(user2Logs.length).toBe(2);
+  });
+
+  it('should provide statistics', async () => {
+    // Create test data
+    await (plugin as any).handleAfterMutation({
+      objectName: 'users',
+      operation: 'create',
+      result: {}
+    });
+    await (plugin as any).handleAfterMutation({
+      objectName: 'users',
+      operation: 'update',
+      result: {}
+    });
+    await (plugin as any).handleAfterMutation({
+      objectName: 'tasks',
+      operation: 'create',
+      result: {}
+    });
+
+    const stats = await plugin.getStats();
+
+    expect(stats.total).toBe(3);
+    expect(stats.byOperation.create).toBe(2);
+    expect(stats.byOperation.update).toBe(1);
+    expect(stats.byObject.users).toBe(2);
+    expect(stats.byObject.tasks).toBe(1);
+  });
+
+  it('should clear logs', async () => {
+    await (plugin as any).handleAfterMutation({
+      objectName: 'users',
+      operation: 'create',
+      result: {}
+    });
+
+    let logs = await plugin.getLogs();
+    expect(logs.length).toBe(1);
+
+    await plugin.clearLogs();
+
+    logs = await plugin.getLogs();
+    expect(logs.length).toBe(0);
+  });
+});
+```
+
+### Step 6: Usage Example
+
+**examples/usage.ts**:
+```typescript
+import { ObjectStackKernel } from '@objectstack/runtime';
+import { AuditLogPlugin } from '@objectql/plugin-audit';
+import { SQLDriver } from '@objectql/driver-sql';
+
+(async () => {
+  // Create audit plugin
+  const auditPlugin = new AuditLogPlugin({
+    storage: 'file',
+    filePath: './audit-logs.jsonl',
+    excludeObjects: ['audit_logs', 'system_logs']
+  });
+
+  // Initialize kernel
+  const kernel = new ObjectStackKernel([
+    new SQLDriver({ connection: 'postgres://localhost/mydb' }),
+    auditPlugin
+  ]);
+
+  await kernel.start();
+
+  // Perform some operations (these will be automatically audited)
+  const user = await (kernel as any).ql.create('users', {
+    name: 'Alice',
+    email: 'alice@example.com'
+  });
+
+  await (kernel as any).ql.update('users', user.id, {
+    email: 'alice.new@example.com'
+  });
+
+  // Query audit logs
+  const userLogs = await auditPlugin.getLogsByObject('users');
+  console.log('User audit logs:', userLogs);
+
+  // Get statistics
+  const stats = await auditPlugin.getStats();
+  console.log('Audit statistics:', stats);
+
+  await kernel.stop();
+})();
+```
+
+## Advanced Plugin Patterns
+
+### 1. Plugin with Configuration Schema
+
+```typescript
+import Ajv from 'ajv';
+
+const configSchema = {
+  type: 'object',
+  properties: {
+    enabled: { type: 'boolean' },
+    maxLogs: { type: 'number', minimum: 1 },
+    storage: { enum: ['memory', 'file', 'database'] }
+  },
+  required: ['enabled']
+};
+
+export class ValidatedPlugin implements RuntimePlugin {
+  name = 'validated-plugin';
+  
+  constructor(config: any) {
+    const ajv = new Ajv();
+    const validate = ajv.compile(configSchema);
+    
+    if (!validate(config)) {
+      throw new Error(`Invalid configuration: ${JSON.stringify(validate.errors)}`);
+    }
+    
+    this.config = config;
+  }
+}
+```
+
+### 2. Plugin with Dependency Injection
+
+```typescript
+export class CachePlugin implements RuntimePlugin {
+  name = '@objectql/plugin-cache';
+  
+  async install(ctx: RuntimeContext): Promise<void> {
+    const kernel = ctx.engine as any;
+    
+    // Inject cache service into kernel
+    kernel.cache = {
+      get: async (key: string) => { /* ... */ },
+      set: async (key: string, value: any) => { /* ... */ },
+      delete: async (key: string) => { /* ... */ }
+    };
+    
+    // Hook into queries to check cache
+    kernel.use?.('beforeQuery', async (context: any) => {
+      const cacheKey = this.getCacheKey(context);
+      const cached = await kernel.cache.get(cacheKey);
+      
+      if (cached) {
+        context.result = cached;
+        context.skip = true; // Skip database query
+      }
+    });
+    
+    // Hook into query results to populate cache
+    kernel.use?.('afterQuery', async (context: any) => {
+      const cacheKey = this.getCacheKey(context);
+      await kernel.cache.set(cacheKey, context.result);
+    });
+  }
+}
+```
+
+### 3. Plugin with Background Jobs
+
+```typescript
+export class WebhookPlugin implements RuntimePlugin {
+  name = '@objectql/plugin-webhook';
+  private queue: any[] = [];
+  private worker?: NodeJS.Timeout;
+  
+  async onStart(ctx: RuntimeContext): Promise<void> {
+    // Start background worker
+    this.worker = setInterval(() => {
+      this.processQueue();
+    }, 5000); // Process every 5 seconds
+  }
+  
+  async onStop(ctx: RuntimeContext): Promise<void> {
+    // Stop background worker
+    if (this.worker) {
+      clearInterval(this.worker);
+    }
+    
+    // Process remaining items
+    await this.processQueue();
+  }
+  
+  private async processQueue() {
+    while (this.queue.length > 0) {
+      const event = this.queue.shift();
+      await this.sendWebhook(event);
+    }
+  }
+  
+  private async sendWebhook(event: any) {
+    // Send HTTP POST to webhook URL
+    // ... implementation
+  }
+}
+```
+
+## Plugin Types and Examples
+
+### Data Transformation Plugin
+
+```typescript
+export class EncryptionPlugin implements RuntimePlugin {
+  name = '@objectql/plugin-encryption';
+  
+  async install(ctx: RuntimeContext): Promise<void> {
+    const kernel = ctx.engine as any;
+    
+    // Encrypt sensitive fields before save
+    kernel.use?.('beforeMutation', async (context: any) => {
+      if (context.operation === 'create' || context.operation === 'update') {
+        context.data = await this.encryptSensitiveFields(
+          context.objectName,
+          context.data
+        );
+      }
+    });
+    
+    // Decrypt sensitive fields after read
+    kernel.use?.('afterQuery', async (context: any) => {
+      context.result = await this.decryptSensitiveFields(
+        context.objectName,
+        context.result
+      );
+    });
+  }
+}
+```
+
+### Validation Plugin
+
+```typescript
+export class ValidationPlugin implements RuntimePlugin {
+  name = '@objectql/plugin-validation';
+  
+  async install(ctx: RuntimeContext): Promise<void> {
+    const kernel = ctx.engine as any;
+    
+    kernel.use?.('beforeMutation', async (context: any) => {
+      const errors = await this.validate(context.objectName, context.data);
+      
+      if (errors.length > 0) {
+        const error = new Error('Validation failed');
+        (error as any).code = 'VALIDATION_ERROR';
+        (error as any).details = errors;
+        throw error;
+      }
+    });
+  }
+  
+  private async validate(objectName: string, data: any): Promise<any[]> {
+    // Validation logic
+    return [];
+  }
+}
+```
+
+### Multi-Tenancy Plugin
+
+```typescript
+export class MultiTenancyPlugin implements RuntimePlugin {
+  name = '@objectql/plugin-multitenancy';
+  
+  async install(ctx: RuntimeContext): Promise<void> {
+    const kernel = ctx.engine as any;
+    
+    // Inject tenant filter into all queries
+    kernel.use?.('beforeQuery', async (context: any) => {
+      const tenantId = context.user?.tenantId;
+      
+      if (!tenantId) {
+        throw new Error('No tenant context');
+      }
+      
+      // Add tenant filter to query
+      context.query.filters = {
+        ...context.query.filters,
+        tenantId: { $eq: tenantId }
+      };
+    });
+    
+    // Inject tenant ID into all creates
+    kernel.use?.('beforeMutation', async (context: any) => {
+      if (context.operation === 'create') {
+        const tenantId = context.user?.tenantId;
+        context.data.tenantId = tenantId;
+      }
+    });
+  }
+}
+```
+
+## Testing Strategies
+
+### Unit Testing
+
+Test plugin logic in isolation:
+
+```typescript
+describe('AuditLogPlugin', () => {
+  it('should generate valid log entries', () => {
+    const plugin = new AuditLogPlugin();
+    const entry = (plugin as any).createLogEntry({
+      objectName: 'users',
+      operation: 'create',
+      userId: 'user-123'
+    });
+    
+    expect(entry.id).toBeDefined();
+    expect(entry.timestamp).toBeGreaterThan(0);
+  });
+});
+```
+
+### Integration Testing
+
+Test plugin with actual kernel:
+
+```typescript
+describe('Plugin Integration', () => {
+  it('should intercept mutations', async () => {
+    const plugin = new AuditLogPlugin({ storage: 'memory' });
+    const kernel = new ObjectStackKernel([plugin]);
+    await kernel.start();
+    
+    // Trigger mutation
+    // ... verify audit log was created
+  });
+});
+```
+
+## Best Practices
+
+1. **Keep Plugins Focused**: One responsibility per plugin
+2. **Async Everything**: Never block the event loop
+3. **Error Handling**: Always catch and log errors, never crash the kernel
+4. **Configuration**: Provide sensible defaults, validate config
+5. **Documentation**: Document hooks, configuration, and usage
+6. **Versioning**: Follow semantic versioning
+7. **Testing**: >80% code coverage
+
+## Reference Implementations
+
+Study these official plugins:
+
+- **@objectql/plugin-security**: RBAC, FLS, RLS
+- **@objectql/plugin-validation**: Advanced validation
+- **@objectql/plugin-formula**: Formula field engine
+
+## Next Steps
+
+- **[Custom Drivers](/docs/extending/custom-drivers)** - Build data adapters
+- **[Hooks Reference](/docs/reference/hooks)** - All available hooks
+- **[API Reference](/docs/reference)** - Full API documentation
+
+---
+
+**Remember**: Plugins are **Aspect-Oriented**. They add cross-cutting concerns without modifying business logic. Keep them clean, focused, and testable.

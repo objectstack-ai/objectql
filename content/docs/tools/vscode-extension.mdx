@@ -1,0 +1,411 @@
+---
+title: "VS Code Extension"
+description: "ObjectQL VS Code extension for intelligent development with IntelliSense, validation, and snippets"
+---
+
+The ObjectQL VS Code extension enhances your development experience with intelligent code completion, real-time validation, and powerful snippets for ObjectQL metadata files.
+
+## Features
+
+### 🎯 Intelligent IntelliSense
+
+The extension provides context-aware auto-completion for all ObjectQL YAML files:
+
+- **Auto-completion** for `.object.yml`, `.validation.yml`, `.permission.yml`, `.workflow.yml` files
+- **JSON Schema validation** with inline error reporting
+- **Context-aware suggestions** based on file type and cursor position
+- **Field type suggestions** with documentation
+
+### 📝 Code Snippets
+
+Accelerate development with 40+ pre-built snippets covering all ObjectQL patterns.
+
+#### Object Definition Snippets
+
+| Snippet | Trigger | Description |
+|---------|---------|-------------|
+| Complete Object | `oql-object` | Full object definition template |
+| Text Field | `oql-field-text` | Text field with searchable option |
+| Number Field | `oql-field-number` | Number field with min/max |
+| Select Field | `oql-field-select` | Select field with options |
+| Lookup Field | `oql-field-lookup` | Relationship field |
+| DateTime Field | `oql-field-datetime` | DateTime field |
+| Boolean Field | `oql-field-boolean` | Boolean field with default |
+| Email Field | `oql-field-email` | Email field with validation |
+| Currency Field | `oql-field-currency` | Currency field |
+| File Field | `oql-field-file` | File attachment field |
+| Image Field | `oql-field-image` | Image field with size limits |
+| Index Definition | `oql-index` | Database index |
+| AI Search Config | `oql-ai-search` | AI semantic search setup |
+
+#### Validation Snippets
+
+| Snippet | Trigger | Description |
+|---------|---------|-------------|
+| Cross-Field Validation | `oql-validation-cross-field` | Compare two fields |
+| Uniqueness Validation | `oql-validation-unique` | Ensure field uniqueness |
+| Business Rule | `oql-validation-business` | Custom business logic |
+| State Machine | `oql-validation-state` | State transition rules |
+
+#### TypeScript Hook Snippets
+
+| Snippet | Trigger | Description |
+|---------|---------|-------------|
+| Before Create Hook | `oql-hook-beforeCreate` | Pre-creation logic |
+| After Create Hook | `oql-hook-afterCreate` | Post-creation logic |
+| Before Update Hook | `oql-hook-beforeUpdate` | Pre-update logic |
+| After Update Hook | `oql-hook-afterUpdate` | Post-update logic |
+| Before Delete Hook | `oql-hook-beforeDelete` | Pre-deletion logic |
+| After Delete Hook | `oql-hook-afterDelete` | Post-deletion logic |
+
+#### Action & Query Snippets
+
+| Snippet | Trigger | Description |
+|---------|---------|-------------|
+| Record Action | `oql-action-record` | Record-level action |
+| Global Action | `oql-action-global` | Global action |
+| Repository Query | `oql-query` | Find with filters |
+| Create Record | `oql-create` | Create operation |
+| Update Record | `oql-update` | Update operation |
+| Error Handling | `oql-error` | Throw ObjectQLError |
+
+### 🎨 File Type Recognition
+
+Custom icons and language associations for ObjectQL metadata files:
+
+- `*.object.yml` - Object definitions (custom icon)
+- `*.validation.yml` - Validation rules (custom icon)
+- `*.permission.yml` - Permission rules
+- `*.workflow.yml` - Workflow definitions
+- `*.hook.ts` - Hook implementations
+- `*.action.ts` - Action implementations
+
+### ⚡ Quick Commands
+
+Access via Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`):
+
+- **ObjectQL: New Object Definition** - Create object from template
+- **ObjectQL: New Validation Rules** - Create validation rules file
+- **ObjectQL: New Permission Rules** - Create permission rules file
+- **ObjectQL: New Workflow Definition** - Create workflow file
+- **ObjectQL: Validate Current File** - Validate current ObjectQL file
+
+### 🔍 Schema Validation
+
+Real-time validation against ObjectQL JSON schemas:
+
+- ✅ Syntax checking
+- ✅ Type validation
+- ✅ Required field validation
+- ✅ Enum value validation
+- ✅ Instant feedback in Problems panel
+
+## Installation
+
+### Prerequisites
+
+The extension requires:
+- **VS Code** 1.85.0 or higher
+- **Red Hat YAML** extension (`redhat.vscode-yaml`) - Recommended
+
+The extension will prompt you to install the YAML extension if not already installed.
+
+### From VS Code Marketplace
+
+1. Open VS Code
+2. Go to Extensions (`Ctrl+Shift+X` / `Cmd+Shift+X`)
+3. Search for "ObjectQL"
+4. Click **Install**
+
+### From VSIX File
+
+1. Download the latest `.vsix` file from [releases](https://github.com/objectstack-ai/objectql/releases)
+2. Open VS Code
+3. Go to Extensions (`Ctrl+Shift+X` / `Cmd+Shift+X`)
+4. Click the "..." menu → "Install from VSIX..."
+5. Select the downloaded `.vsix` file
+
+### From Source
+
+```bash
+cd packages/tools/vscode-objectql
+npm install
+npm run compile
+npm run package
+```
+
+This creates a `vscode-objectql-4.0.0.vsix` file that you can install.
+
+## Usage Guide
+
+### Creating a New Object
+
+The fastest way to create an object:
+
+1. Open Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`)
+2. Type "ObjectQL: New Object Definition"
+3. Enter object name (e.g., `account`, `project`)
+4. A new file is created with a complete template
+
+**Example Output:**
+
+```yaml
+# ObjectQL Object Definition
+name: account
+label: Account
+description: "Account object"
+
+fields:
+  name:
+    type: text
+    label: Name
+    required: true
+    searchable: true
+  
+  status:
+    type: select
+    label: Status
+    options:
+      - label: Active
+        value: active
+      - label: Inactive
+        value: inactive
+    defaultValue: active
+```
+
+### Using Snippets
+
+Start typing in a YAML file to activate snippets:
+
+1. Type `oql-field-` and see available field snippets
+2. Select the desired field type
+3. Tab through placeholders to customize
+
+**Example - Adding a lookup field:**
+
+```yaml
+fields:
+  owner:  # Type 'oql-field-lookup' and press Enter
+    type: lookup
+    label: Owner
+    reference_to: users
+    required: true
+```
+
+**Example - Adding a state machine validation:**
+
+Type `oql-validation-state` to generate:
+
+```yaml
+- name: state_machine
+  type: state_machine
+  field: status
+  message: "Invalid state transition"
+  transitions:
+    draft: [pending, cancelled]
+    pending: [approved, rejected]
+    approved: []
+    rejected: []
+  initial_states: [draft]
+```
+
+### Validation in Real-Time
+
+As you type, the extension validates your YAML against ObjectQL schemas:
+
+- ✅ Valid fields show no errors
+- ❌ Invalid fields are underlined in red
+- 💡 Hover over errors for detailed messages
+- 📋 View all issues in the Problems panel (`Ctrl+Shift+M` / `Cmd+Shift+M`)
+
+**Common Validation Errors:**
+
+| Error | Cause | Fix |
+|-------|-------|-----|
+| "Missing required property: name" | Object name not specified | Add `name: object_name` |
+| "Invalid enum value" | Unknown field type | Use valid type: text, number, select, etc. |
+| "Property not allowed" | Typo in property name | Check spelling (e.g., `required` not `require`) |
+
+### TypeScript Hooks & Actions
+
+The extension provides IntelliSense for TypeScript hook and action files:
+
+**Creating a Before Create Hook:**
+
+1. Create a file: `project.hook.ts`
+2. Type `oql-hook-beforeCreate`
+3. Press Enter
+
+```typescript
+import { HookContext, ObjectQLError } from '@objectql/types';
+
+/**
+ * Hook executed before creating a new record
+ * @param ctx Hook execution context
+ */
+export async function beforeCreate(ctx: HookContext): Promise<void> {
+  const { doc, object } = ctx;
+  
+  // Add logic here
+  // Example: Set default values
+  if (!doc.created_at) {
+    doc.created_at = new Date();
+  }
+}
+```
+
+**Creating a Record Action:**
+
+Type `oql-action-record` for a complete action template:
+
+```typescript
+import { ActionContext, ObjectQLError } from '@objectql/types';
+
+/**
+ * Action Name - Record-level action
+ * @param ctx Action execution context
+ */
+export async function actionName(ctx: ActionContext): Promise<void> {
+  const { recordId, object, context, params } = ctx;
+  
+  // Fetch the record
+  const repo = context.object(object);
+  const record = await repo.findById(recordId);
+  
+  if (!record) {
+    throw new ObjectQLError({
+      code: 'NOT_FOUND',
+      message: 'Record not found'
+    });
+  }
+  
+  // Perform action logic
+  // Your action logic here
+}
+```
+
+## Configuration
+
+Configure the extension through VS Code settings (`Ctrl+,` / `Cmd+,`):
+
+```json
+{
+  "objectql.validation.enabled": true,
+  "objectql.completion.enabled": true,
+  "objectql.diagnostics.enabled": true,
+  "objectql.trace.server": "off"
+}
+```
+
+### Settings Reference
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `objectql.validation.enabled` | boolean | `true` | Enable schema validation |
+| `objectql.completion.enabled` | boolean | `true` | Enable auto-completion |
+| `objectql.diagnostics.enabled` | boolean | `true` | Enable diagnostics |
+| `objectql.trace.server` | string | `"off"` | Language server trace level (`off`, `messages`, `verbose`) |
+
+## Complete Example
+
+Here's a complete object definition using the extension's snippets:
+
+```yaml
+name: opportunity
+label: Opportunity
+description: "Sales opportunity tracking"
+
+fields:
+  name:
+    type: text
+    label: Opportunity Name
+    required: true
+    searchable: true
+  
+  amount:
+    type: currency
+    label: Amount
+    min: 0
+  
+  close_date:
+    type: date
+    label: Close Date
+    required: true
+  
+  stage:
+    type: select
+    label: Stage
+    options:
+      - label: Prospecting
+        value: prospecting
+      - label: Qualification
+        value: qualification
+      - label: Proposal
+        value: proposal
+      - label: Closed Won
+        value: closed_won
+      - label: Closed Lost
+        value: closed_lost
+    defaultValue: prospecting
+  
+  account:
+    type: lookup
+    label: Account
+    reference_to: accounts
+    required: true
+
+validation:
+  rules:
+    - name: positive_amount
+      type: cross_field
+      message: "Amount must be positive"
+      rule:
+        field: amount
+        operator: ">"
+        value: 0
+      trigger: [create, update]
+
+indexes:
+  stage_date:
+    fields: [stage, close_date]
+```
+
+## Troubleshooting
+
+### Extension Not Working
+
+1. **Check VS Code Version**: Ensure you're using VS Code 1.85.0 or higher
+2. **Restart VS Code**: Sometimes the extension needs a restart to activate
+3. **Check Output Panel**: View → Output → Select "ObjectQL" from dropdown
+
+### IntelliSense Not Appearing
+
+1. **Install Red Hat YAML**: The extension depends on it for YAML support
+2. **Check File Extension**: Ensure file ends with `.object.yml`, `.validation.yml`, etc.
+3. **Reload Window**: Command Palette → "Developer: Reload Window"
+
+### Validation Not Working
+
+1. **Check Settings**: Ensure `objectql.validation.enabled` is `true`
+2. **Verify Schema Files**: The extension includes JSON schemas in `schemas/` directory
+3. **Check Problems Panel**: Open Problems panel (`Ctrl+Shift+M`) to see validation errors
+
+### Snippets Not Showing
+
+1. **Check Language Mode**: Ensure file is recognized as YAML
+2. **Trigger Prefix**: Start typing `oql-` to see ObjectQL snippets
+3. **Snippet Settings**: Check VS Code snippet settings are not disabled
+
+## Resources
+
+- **[ObjectQL Documentation](/docs)** - Complete ObjectQL documentation
+- **[GitHub Repository](https://github.com/objectstack-ai/objectql)** - Source code and issues
+- **[Report a Bug](https://github.com/objectstack-ai/objectql/issues)** - File an issue
+- **[Publishing Guide](https://github.com/objectstack-ai/objectql/tree/main/packages/tools/vscode-objectql/PUBLISHING.md)** - For maintainers
+
+## Next Steps
+
+- [Learn about Object Modeling](/docs/modeling)
+- [Explore Validation Rules](/docs/logic/validation)
+- [Build Custom Hooks](/docs/logic/hooks)
+- [Create Actions](/docs/logic/actions)

@@ -1,0 +1,879 @@
+---
+title: "Custom Drivers"
+description: "Build custom data drivers to connect ObjectQL to any data source"
+---
+
+A **Driver** in ObjectQL is the abstraction layer between the ObjectQL engine and your data storage backend. Drivers translate ObjectQL's universal query protocol into database-specific operations.
+
+## Understanding Drivers
+
+### What is a Driver?
+
+A driver is **not** an ORM. It's a **compiler adapter** that:
+
+1. **Receives**: Abstract query intent (QueryAST)
+2. **Compiles**: Into database-specific operations (SQL, MongoDB queries, API calls)
+3. **Executes**: Against the target data source
+4. **Returns**: Results in ObjectQL's standard format
+
+### When to Create a Custom Driver
+
+Create a custom driver when you need to:
+
+- ✅ Connect to a database not supported by official drivers (e.g., CouchDB, DynamoDB)
+- ✅ Query a REST/GraphQL API as if it were a database
+- ✅ Implement custom caching layers (Redis, Memcached)
+- ✅ Bridge to legacy systems with proprietary protocols
+- ✅ Create an in-memory or test storage backend
+
+**Don't create a driver when:**
+- ❌ You need to add validation logic → Use a **Plugin** instead
+- ❌ You want to modify query behavior → Use **Hooks** instead
+- ❌ An official driver already exists → Contribute to the existing driver
+
+## The Driver Interface
+
+ObjectQL supports two driver interfaces:
+
+### 1. Legacy Driver Interface (ObjectQL v3.x)
+
+Defined in `@objectql/types`:
+
+```typescript
+import { Driver } from '@objectql/types';
+
+export interface Driver {
+  // Metadata (recommended)
+  name?: string;
+  version?: string;
+  supports?: {
+    transactions?: boolean;
+    joins?: boolean;
+    fullTextSearch?: boolean;
+    jsonFields?: boolean;
+    // ... more capabilities
+  };
+
+  // Core CRUD methods (required)
+  find(objectName: string, query: any, options?: any): Promise<any[]>;
+  findOne(objectName: string, id: string | number, query?: any, options?: any): Promise<any>;
+  create(objectName: string, data: any, options?: any): Promise<any>;
+  update(objectName: string, id: string | number, data: any, options?: any): Promise<any>;
+  delete(objectName: string, id: string | number, options?: any): Promise<any>;
+  count(objectName: string, filters: any, options?: any): Promise<number>;
+
+  // Lifecycle (optional but recommended)
+  connect?(): Promise<void>;
+  disconnect?(): Promise<void>;
+  checkHealth?(): Promise<boolean>;
+
+  // Advanced methods (optional)
+  aggregate?(objectName: string, query: any, options?: any): Promise<any>;
+  distinct?(objectName: string, field: string, filters?: any, options?: any): Promise<any[]>;
+  
+  // Bulk operations (optional)
+  bulkCreate?(objectName: string, data: any[], options?: any): Promise<any>;
+  bulkUpdate?(objectName: string, updates: Array<{id: string | number, data: any}>, options?: any): Promise<any>;
+  bulkDelete?(objectName: string, ids: Array<string | number>, options?: any): Promise<any>;
+
+  // Transactions (optional)
+  beginTransaction?(): Promise<any>;
+  commitTransaction?(transaction: any): Promise<void>;
+  rollbackTransaction?(transaction: any): Promise<void>;
+
+  // Schema introspection (optional)
+  init?(objects: any[]): Promise<void>;
+  introspectSchema?(): Promise<IntrospectedSchema>;
+}
+```
+
+### 2. DriverInterface v4.0 (ObjectStack Spec)
+
+The new protocol-driven interface from `@objectstack/spec`:
+
+```typescript
+export interface DriverInterface {
+  name: string;
+  version: string;
+  supports: DriverCapabilities;
+
+  // Query execution (AST-based)
+  executeQuery(ast: QueryAST, options?: any): Promise<{ value: any[]; count?: number }>;
+
+  // Command execution (mutations)
+  executeCommand(command: Command, options?: any): Promise<{ success: boolean; data?: any; affected: number }>;
+
+  // Lifecycle
+  connect(): Promise<void>;
+  disconnect(): Promise<void>;
+  checkHealth(): Promise<boolean>;
+}
+```
+
+**Recommendation**: New drivers should implement both interfaces for maximum compatibility.
+
+## Step-by-Step Tutorial: Building a Redis Driver
+
+Let's build a custom driver for Redis (key-value store) as a practical example.
+
+### Step 1: Project Setup
+
+```bash
+mkdir objectql-driver-redis
+cd objectql-driver-redis
+npm init -y
+npm install redis @objectql/types
+npm install -D typescript @types/node vitest
+```
+
+**tsconfig.json**:
+```json
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "commonjs",
+    "lib": ["ES2020"],
+    "outDir": "dist",
+    "rootDir": "src",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "declaration": true,
+    "declarationMap": true
+  },
+  "include": ["src/**/*"]
+}
+```
+
+### Step 2: Define Configuration Interface
+
+**src/types.ts**:
+```typescript
+/**
+ * Redis driver configuration
+ */
+export interface RedisDriverConfig {
+  /** Redis connection URL */
+  url: string;
+  /** Key prefix for namespacing */
+  keyPrefix?: string;
+  /** TTL for keys in seconds (0 = no expiration) */
+  ttl?: number;
+  /** Enable TLS for secure connections */
+  useTLS?: boolean;
+  /** Additional Redis client options */
+  options?: any;
+}
+
+/**
+ * Command interface for v4.0 DriverInterface
+ */
+export interface Command {
+  type: 'create' | 'update' | 'delete' | 'bulkCreate' | 'bulkUpdate' | 'bulkDelete';
+  object: string;
+  data?: any;
+  id?: string | number;
+  ids?: Array<string | number>;
+  records?: any[];
+  updates?: Array<{id: string | number, data: any}>;
+  options?: any;
+}
+
+export interface CommandResult {
+  success: boolean;
+  data?: any;
+  affected: number;
+  error?: string;
+}
+```
+
+### Step 3: Implement Core Driver Class
+
+**src/index.ts**:
+```typescript
+import { Driver } from '@objectql/types';
+import { createClient, RedisClientType } from 'redis';
+import type { RedisDriverConfig, Command, CommandResult } from './types';
+
+export class RedisDriver implements Driver {
+  // Driver metadata
+  public readonly name = 'RedisDriver';
+  public readonly version = '4.0.0';
+  public readonly supports = {
+    transactions: false,
+    joins: false,
+    fullTextSearch: false,
+    jsonFields: true,
+    arrayFields: true,
+    queryFilters: true,
+    queryAggregations: false,
+    querySorting: true,
+    queryPagination: true,
+  };
+
+  private client: RedisClientType;
+  private config: RedisDriverConfig;
+  private connected: Promise<void>;
+
+  constructor(config: RedisDriverConfig) {
+    this.config = {
+      keyPrefix: 'objectql',
+      ttl: 0, // No expiration by default
+      ...config
+    };
+
+    this.client = createClient({
+      url: config.url,
+      ...config.options
+    }) as RedisClientType;
+
+    this.client.on('error', (err: Error) => {
+      console.error('[RedisDriver] Error:', err);
+    });
+
+    this.connected = this.connect();
+  }
+
+  async connect(): Promise<void> {
+    await this.client.connect();
+    console.log(`[RedisDriver] Connected to ${this.config.url}`);
+  }
+
+  async disconnect(): Promise<void> {
+    await this.client.quit();
+  }
+
+  async checkHealth(): Promise<boolean> {
+    try {
+      await this.connected;
+      await this.client.ping();
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  // Generate Redis key: <prefix>:<objectName>:<id>
+  private generateKey(objectName: string, id: string | number): string {
+    return `${this.config.keyPrefix}:${objectName}:${id}`;
+  }
+
+  // Generate unique ID for new records
+  private generateId(): string {
+    return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  }
+```
+
+### Step 4: Implement CRUD Methods
+
+Continue **src/index.ts**:
+
+```typescript
+  /**
+   * Find multiple records
+   * ⚠️ WARNING: Uses KEYS command which scans all keys (inefficient for large datasets)
+   */
+  async find(objectName: string, query: any = {}, options?: any): Promise<any[]> {
+    await this.connected;
+
+    // Get all keys for this object
+    const pattern = `${this.config.keyPrefix}:${objectName}:*`;
+    const keys = await this.client.keys(pattern);
+
+    // Retrieve all documents
+    let results: any[] = [];
+    for (const key of keys) {
+      const data = await this.client.get(key);
+      if (data) {
+        try {
+          results.push(JSON.parse(data));
+        } catch (error) {
+          console.warn(`[RedisDriver] Failed to parse key ${key}`);
+        }
+      }
+    }
+
+    // Apply filters (in-memory)
+    if (query.filters) {
+      results = this.applyFilters(results, query.filters);
+    }
+
+    // Apply sorting
+    if (query.sort) {
+      results = this.applySort(results, query.sort);
+    }
+
+    // Apply pagination
+    if (query.skip) {
+      results = results.slice(query.skip);
+    }
+    if (query.limit) {
+      results = results.slice(0, query.limit);
+    }
+
+    return results;
+  }
+
+  async findOne(objectName: string, id: string | number, query?: any, options?: any): Promise<any> {
+    await this.connected;
+
+    const key = this.generateKey(objectName, id);
+    const data = await this.client.get(key);
+
+    if (!data) {
+      return null;
+    }
+
+    try {
+      return JSON.parse(data);
+    } catch {
+      return null;
+    }
+  }
+
+  async create(objectName: string, data: any, options?: any): Promise<any> {
+    await this.connected;
+
+    const id = data.id || this.generateId();
+    const now = new Date().toISOString();
+
+    const doc = {
+      ...data,
+      id,
+      created_at: data.created_at || now,
+      updated_at: data.updated_at || now
+    };
+
+    const key = this.generateKey(objectName, id);
+    await this.client.set(key, JSON.stringify(doc), {
+      EX: this.config.ttl || undefined
+    });
+
+    return doc;
+  }
+
+  async update(objectName: string, id: string | number, data: any, options?: any): Promise<any> {
+    await this.connected;
+
+    const key = this.generateKey(objectName, id);
+    const existing = await this.client.get(key);
+
+    if (!existing) {
+      throw new Error(`Record not found: ${objectName}:${id}`);
+    }
+
+    const current = JSON.parse(existing);
+    const updated = {
+      ...current,
+      ...data,
+      id, // Preserve ID
+      updated_at: new Date().toISOString()
+    };
+
+    await this.client.set(key, JSON.stringify(updated), {
+      EX: this.config.ttl || undefined
+    });
+
+    return updated;
+  }
+
+  async delete(objectName: string, id: string | number, options?: any): Promise<any> {
+    await this.connected;
+
+    const key = this.generateKey(objectName, id);
+    const existing = await this.client.get(key);
+
+    if (!existing) {
+      throw new Error(`Record not found: ${objectName}:${id}`);
+    }
+
+    const doc = JSON.parse(existing);
+    await this.client.del(key);
+
+    return doc;
+  }
+
+  async count(objectName: string, filters: any, options?: any): Promise<number> {
+    const results = await this.find(objectName, { filters }, options);
+    return results.length;
+  }
+```
+
+### Step 5: Implement Helper Methods
+
+Continue **src/index.ts**:
+
+```typescript
+  /**
+   * Apply filters to results (in-memory)
+   */
+  private applyFilters(results: any[], filters: any): any[] {
+    if (!filters || Object.keys(filters).length === 0) {
+      return results;
+    }
+
+    return results.filter(doc => {
+      for (const [field, condition] of Object.entries(filters)) {
+        const value = doc[field];
+
+        // Handle operators
+        if (typeof condition === 'object' && !Array.isArray(condition)) {
+          for (const [op, filterValue] of Object.entries(condition)) {
+            switch (op) {
+              case '$eq':
+                if (value !== filterValue) return false;
+                break;
+              case '$ne':
+                if (value === filterValue) return false;
+                break;
+              case '$gt':
+                if (!(value > filterValue)) return false;
+                break;
+              case '$gte':
+                if (!(value >= filterValue)) return false;
+                break;
+              case '$lt':
+                if (!(value < filterValue)) return false;
+                break;
+              case '$lte':
+                if (!(value <= filterValue)) return false;
+                break;
+              case '$in':
+                if (!Array.isArray(filterValue) || !filterValue.includes(value)) return false;
+                break;
+              case '$nin':
+                if (Array.isArray(filterValue) && filterValue.includes(value)) return false;
+                break;
+              default:
+                console.warn(`[RedisDriver] Unsupported operator: ${op}`);
+            }
+          }
+        } else {
+          // Direct equality
+          if (value !== condition) return false;
+        }
+      }
+      return true;
+    });
+  }
+
+  /**
+   * Apply sorting to results (in-memory)
+   */
+  private applySort(results: any[], sort: any[]): any[] {
+    if (!sort || sort.length === 0) {
+      return results;
+    }
+
+    return results.sort((a, b) => {
+      for (const sortItem of sort) {
+        const field = sortItem.field;
+        const direction = sortItem.direction || 'asc';
+
+        const aVal = a[field];
+        const bVal = b[field];
+
+        if (aVal < bVal) return direction === 'asc' ? -1 : 1;
+        if (aVal > bVal) return direction === 'asc' ? 1 : -1;
+      }
+      return 0;
+    });
+  }
+}
+
+// Export types
+export * from './types';
+```
+
+### Step 6: Implement v4.0 DriverInterface Methods (Optional)
+
+Add these methods to support the new protocol:
+
+```typescript
+  /**
+   * Execute a query using QueryAST (v4.0 DriverInterface)
+   */
+  async executeQuery(ast: any, options?: any): Promise<{ value: any[]; count?: number }> {
+    const objectName = ast.from;
+    const value = await this.find(objectName, ast, options);
+    const count = ast.count ? await this.count(objectName, ast.filters, options) : undefined;
+
+    return { value, count };
+  }
+
+  /**
+   * Execute a command (v4.0 DriverInterface)
+   */
+  async executeCommand(command: Command, options?: any): Promise<CommandResult> {
+    try {
+      let data: any;
+      let affected = 0;
+
+      switch (command.type) {
+        case 'create':
+          data = await this.create(command.object, command.data, options);
+          affected = 1;
+          break;
+
+        case 'update':
+          if (!command.id) {
+            throw new Error('Update command requires id');
+          }
+          data = await this.update(command.object, command.id, command.data, options);
+          affected = 1;
+          break;
+
+        case 'delete':
+          if (!command.id) {
+            throw new Error('Delete command requires id');
+          }
+          data = await this.delete(command.object, command.id, options);
+          affected = 1;
+          break;
+
+        case 'bulkCreate':
+          if (!command.records) {
+            throw new Error('bulkCreate requires records array');
+          }
+          data = await Promise.all(
+            command.records.map(record => this.create(command.object, record, options))
+          );
+          affected = data.length;
+          break;
+
+        default:
+          throw new Error(`Unsupported command type: ${command.type}`);
+      }
+
+      return { success: true, data, affected };
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.message,
+        affected: 0
+      };
+    }
+  }
+}
+```
+
+### Step 7: Write Tests
+
+**test/redis-driver.test.ts**:
+
+```typescript
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { RedisDriver } from '../src';
+
+let driver: RedisDriver;
+
+beforeAll(async () => {
+  driver = new RedisDriver({
+    url: process.env.REDIS_URL || 'redis://localhost:6379'
+  });
+  await driver.connect();
+});
+
+afterAll(async () => {
+  await driver.disconnect();
+});
+
+describe('RedisDriver', () => {
+  it('should check health', async () => {
+    const healthy = await driver.checkHealth();
+    expect(healthy).toBe(true);
+  });
+
+  it('should create a record', async () => {
+    const user = await driver.create('users', {
+      name: 'Alice',
+      email: 'alice@example.com'
+    });
+
+    expect(user.id).toBeDefined();
+    expect(user.name).toBe('Alice');
+    expect(user.created_at).toBeDefined();
+  });
+
+  it('should find a record by id', async () => {
+    const created = await driver.create('users', { name: 'Bob' });
+    const found = await driver.findOne('users', created.id);
+
+    expect(found).toBeDefined();
+    expect(found.name).toBe('Bob');
+  });
+
+  it('should update a record', async () => {
+    const created = await driver.create('users', { name: 'Charlie' });
+    const updated = await driver.update('users', created.id, { name: 'Charles' });
+
+    expect(updated.name).toBe('Charles');
+    expect(updated.updated_at).not.toBe(created.updated_at);
+  });
+
+  it('should delete a record', async () => {
+    const created = await driver.create('users', { name: 'Dave' });
+    await driver.delete('users', created.id);
+
+    const found = await driver.findOne('users', created.id);
+    expect(found).toBeNull();
+  });
+
+  it('should filter records', async () => {
+    await driver.create('products', { name: 'Laptop', price: 1000 });
+    await driver.create('products', { name: 'Mouse', price: 50 });
+
+    const results = await driver.find('products', {
+      filters: { price: { $gte: 100 } }
+    });
+
+    expect(results.length).toBe(1);
+    expect(results[0].name).toBe('Laptop');
+  });
+
+  it('should support pagination', async () => {
+    for (let i = 0; i < 5; i++) {
+      await driver.create('items', { name: `Item ${i}` });
+    }
+
+    const page1 = await driver.find('items', { limit: 2, skip: 0 });
+    const page2 = await driver.find('items', { limit: 2, skip: 2 });
+
+    expect(page1.length).toBe(2);
+    expect(page2.length).toBe(2);
+    expect(page1[0].id).not.toBe(page2[0].id);
+  });
+
+  it('should execute v4.0 query command', async () => {
+    await driver.create('tasks', { title: 'Task 1', status: 'done' });
+    await driver.create('tasks', { title: 'Task 2', status: 'pending' });
+
+    const result = await driver.executeQuery?.({
+      from: 'tasks',
+      filters: { status: 'done' },
+      limit: 10
+    });
+
+    expect(result?.value.length).toBe(1);
+    expect(result?.value[0].title).toBe('Task 1');
+  });
+
+  it('should execute v4.0 create command', async () => {
+    const result = await driver.executeCommand?.({
+      type: 'create',
+      object: 'orders',
+      data: { product: 'Widget', quantity: 5 }
+    });
+
+    expect(result?.success).toBe(true);
+    expect(result?.affected).toBe(1);
+    expect(result?.data.id).toBeDefined();
+  });
+});
+```
+
+### Step 8: Package and Publish
+
+**package.json**:
+```json
+{
+  "name": "@mycompany/objectql-driver-redis",
+  "version": "1.0.0",
+  "description": "Redis driver for ObjectQL",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "keywords": ["objectql", "driver", "redis"],
+  "peerDependencies": {
+    "@objectql/types": "^4.0.0"
+  },
+  "dependencies": {
+    "redis": "^4.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^1.0.0"
+  }
+}
+```
+
+Build and publish:
+```bash
+npm run build
+npm test
+npm publish --access public
+```
+
+## Production Considerations
+
+### Performance Optimization
+
+1. **Indexing**: Use Redis secondary indexes (Sets, Sorted Sets) for queries
+2. **Caching**: Implement result caching for frequently accessed data
+3. **Connection Pooling**: Reuse Redis connections
+4. **Batch Operations**: Implement pipelining for bulk operations
+
+```typescript
+// Example: Using Redis Sets for indexing
+async create(objectName: string, data: any, options?: any): Promise<any> {
+  const doc = await this.createDocument(data);
+  const key = this.generateKey(objectName, doc.id);
+
+  // Store document
+  await this.client.set(key, JSON.stringify(doc));
+
+  // Add to index
+  await this.client.sAdd(`${this.config.keyPrefix}:${objectName}:ids`, doc.id);
+
+  // Add to field indexes
+  if (data.status) {
+    await this.client.sAdd(
+      `${this.config.keyPrefix}:${objectName}:status:${data.status}`,
+      doc.id
+    );
+  }
+
+  return doc;
+}
+```
+
+### Error Handling
+
+Always implement proper error handling:
+
+```typescript
+async findOne(objectName: string, id: string | number): Promise<any> {
+  try {
+    await this.connected;
+    const key = this.generateKey(objectName, id);
+    const data = await this.client.get(key);
+
+    if (!data) {
+      return null;
+    }
+
+    return JSON.parse(data);
+  } catch (error) {
+    console.error(`[RedisDriver] Error in findOne:`, error);
+    throw new Error(`Failed to retrieve record: ${error.message}`);
+  }
+}
+```
+
+### Security
+
+1. **Sanitize Inputs**: Validate all inputs before using in Redis commands
+2. **Use TLS**: Connect to Redis over TLS in production
+3. **Authentication**: Always use Redis AUTH in production
+
+```typescript
+constructor(config: RedisDriverConfig) {
+  this.client = createClient({
+    url: config.url,
+    socket: {
+      tls: config.useTLS,
+      rejectUnauthorized: true
+    },
+    password: process.env.REDIS_PASSWORD // Never hardcode!
+  });
+}
+```
+
+## Advanced Patterns
+
+### Transaction Support
+
+```typescript
+private transactions = new Map<string, any>();
+
+async beginTransaction(): Promise<string> {
+  const txId = this.generateId();
+  const multi = this.client.multi();
+  this.transactions.set(txId, multi);
+  return txId;
+}
+
+async commitTransaction(txId: string): Promise<void> {
+  const multi = this.transactions.get(txId);
+  if (!multi) throw new Error('Transaction not found');
+  
+  await multi.exec();
+  this.transactions.delete(txId);
+}
+
+async rollbackTransaction(txId: string): Promise<void> {
+  const multi = this.transactions.get(txId);
+  if (!multi) throw new Error('Transaction not found');
+  
+  multi.discard();
+  this.transactions.delete(txId);
+}
+```
+
+### Schema Introspection
+
+```typescript
+async introspectSchema(): Promise<IntrospectedSchema> {
+  const tables: Record<string, IntrospectedTable> = {};
+
+  // Scan all keys to discover object types
+  const keys = await this.client.keys(`${this.config.keyPrefix}:*`);
+  const objectNames = new Set<string>();
+
+  for (const key of keys) {
+    const parts = key.split(':');
+    if (parts.length >= 2) {
+      objectNames.add(parts[1]);
+    }
+  }
+
+  // Introspect each object type
+  for (const objectName of objectNames) {
+    const sample = await this.find(objectName, { limit: 1 });
+    if (sample.length > 0) {
+      const columns = Object.keys(sample[0]).map(field => ({
+        name: field,
+        type: typeof sample[0][field],
+        nullable: true
+      }));
+
+      tables[objectName] = {
+        name: objectName,
+        columns,
+        foreignKeys: [],
+        primaryKeys: ['id']
+      };
+    }
+  }
+
+  return { tables };
+}
+```
+
+## Reference Implementation
+
+The complete Redis driver implementation is available at:
+- **Source**: `/packages/drivers/redis/`
+- **Tests**: `/packages/drivers/redis/test/`
+
+Study this implementation to understand best practices for:
+- Error handling
+- TypeScript typing
+- Test coverage
+- Documentation
+
+## Next Steps
+
+- **[Plugin Development](/docs/extending/plugins)** - Add cross-cutting functionality
+- **[Driver API Reference](/docs/reference/driver)** - Complete interface documentation
+- **[Testing Guide](/docs/testing)** - Write comprehensive tests for your driver
+
+---
+
+**Pro Tip**: Start simple. Implement only the core methods (find, findOne, create, update, delete, count) first. Add advanced features (transactions, aggregations, introspection) only when needed.

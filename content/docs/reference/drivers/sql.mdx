@@ -1,0 +1,631 @@
+---
+title: SQL Driver
+description: Knex.js-based SQL driver supporting PostgreSQL, MySQL, SQLite, and other SQL databases
+---
+
+# SQL Driver
+
+The SQL Driver is a production-ready Knex.js-based adapter that connects ObjectQL to relational databases including PostgreSQL, MySQL, SQLite, and other SQL databases.
+
+## Features
+
+- ✅ **ObjectStack Spec Compatible**: Implements `DriverInterface` from `@objectstack/spec`
+- ✅ **QueryAST Support**: Supports both legacy UnifiedQuery and new QueryAST formats
+- ✅ **Multiple Databases**: PostgreSQL, MySQL, SQLite, and more via Knex
+- ✅ **Transactions**: Full transaction support with begin/commit/rollback
+- ✅ **Aggregations**: COUNT, SUM, AVG, MIN, MAX with GROUP BY
+- ✅ **Schema Management**: Auto-create/update tables from metadata
+- ✅ **Introspection**: Discover existing database schemas
+- ✅ **100% Backward Compatible**: All existing code continues to work
+
+## Installation
+
+```bash
+npm install @objectql/driver-sql
+```
+
+You'll also need the appropriate database client:
+
+```bash
+# PostgreSQL
+npm install pg
+
+# MySQL
+npm install mysql2
+
+# SQLite
+npm install sqlite3
+
+# MSSQL
+npm install mssql
+```
+
+## Quick Start
+
+### PostgreSQL
+
+```typescript
+import { SqlDriver } from '@objectql/driver-sql';
+import { ObjectQL } from '@objectql/core';
+
+const driver = new SqlDriver({
+  client: 'pg',
+  connection: {
+    host: 'localhost',
+    port: 5432,
+    user: 'myuser',
+    password: 'mypassword',
+    database: 'mydb'
+  }
+});
+
+const app = new ObjectQL({
+  datasources: { default: driver }
+});
+
+await app.init();
+```
+
+### MySQL
+
+```typescript
+const driver = new SqlDriver({
+  client: 'mysql2',
+  connection: {
+    host: 'localhost',
+    port: 3306,
+    user: 'myuser',
+    password: 'mypassword',
+    database: 'mydb'
+  }
+});
+```
+
+### SQLite
+
+```typescript
+const driver = new SqlDriver({
+  client: 'sqlite3',
+  connection: {
+    filename: './data/mydb.sqlite'
+  },
+  useNullAsDefault: true
+});
+```
+
+### Connection String
+
+```typescript
+const driver = new SqlDriver({
+  client: 'pg',
+  connection: process.env.DATABASE_URL
+  // e.g., postgres://user:password@localhost:5432/dbname
+});
+```
+
+## Configuration
+
+### Basic Configuration
+
+```typescript
+interface SqlDriverConfig {
+  client: string;           // 'pg', 'mysql2', 'sqlite3', 'mssql'
+  connection: any;          // Connection config or string
+  useNullAsDefault?: boolean;  // For SQLite
+  pool?: PoolConfig;        // Connection pool settings
+  debug?: boolean;          // Enable query debugging
+}
+```
+
+### Connection Pool
+
+```typescript
+const driver = new SqlDriver({
+  client: 'pg',
+  connection: { /* ... */ },
+  pool: {
+    min: 2,
+    max: 10,
+    createTimeoutMillis: 3000,
+    acquireTimeoutMillis: 30000,
+    idleTimeoutMillis: 30000,
+    reapIntervalMillis: 1000,
+    createRetryIntervalMillis: 100
+  }
+});
+```
+
+### SSL Configuration
+
+```typescript
+const driver = new SqlDriver({
+  client: 'pg',
+  connection: {
+    host: 'db.example.com',
+    user: 'myuser',
+    password: 'mypassword',
+    database: 'mydb',
+    ssl: {
+      rejectUnauthorized: false
+    }
+  }
+});
+```
+
+## Usage
+
+### CRUD Operations
+
+```typescript
+const ctx = app.createContext({ isSystem: true });
+const users = ctx.object('users');
+
+// Create
+const user = await users.create({
+  name: 'Alice',
+  email: 'alice@example.com',
+  role: 'admin'
+});
+
+// Read
+const allUsers = await users.find({});
+
+// Read with filters
+const admins = await users.find({
+  filters: [['role', '=', 'admin']],
+  sort: [['created_at', 'desc']],
+  limit: 10
+});
+
+// Update
+await users.update(user.id, {
+  email: 'alice.new@example.com'
+});
+
+// Delete
+await users.delete(user.id);
+```
+
+### Query Features
+
+#### Filters
+
+```typescript
+// Simple filter
+const results = await users.find({
+  filters: [['age', '>', 18]]
+});
+
+// Multiple filters (AND)
+const results = await users.find({
+  filters: [
+    ['status', '=', 'active'],
+    ['role', '=', 'admin']
+  ]
+});
+
+// OR filters
+const results = await users.find({
+  filters: [
+    ['role', '=', 'admin'],
+    'or',
+    ['role', '=', 'moderator']
+  ]
+});
+
+// Complex combinations
+const results = await users.find({
+  filters: [
+    [
+      ['age', '>=', 18],
+      ['age', '<=', 65]
+    ],
+    'or',
+    ['verified', '=', true]
+  ]
+});
+```
+
+#### Supported Operators
+
+- **Comparison**: `=`, `!=`, `>`, `>=`, `<`, `<=`
+- **Set**: `in`, `not in`
+- **String**: `like`, `contains`, `startswith`, `endswith`
+- **Range**: `between`
+- **Null**: `is null`, `is not null`
+
+#### Sorting
+
+```typescript
+// Single field
+const results = await users.find({
+  sort: [['name', 'asc']]
+});
+
+// Multiple fields
+const results = await users.find({
+  sort: [
+    ['role', 'desc'],
+    ['name', 'asc']
+  ]
+});
+```
+
+#### Pagination
+
+```typescript
+// Get page 2 (skip 20, take 10)
+const page2 = await users.find({
+  skip: 20,
+  limit: 10,
+  sort: [['created_at', 'desc']]
+});
+```
+
+#### Field Projection
+
+```typescript
+// Only return specific fields
+const results = await users.find({
+  fields: ['id', 'name', 'email']
+});
+```
+
+### Aggregations
+
+```typescript
+// Count
+const count = await users.count({
+  filters: [['status', '=', 'active']]
+});
+
+// Distinct values
+const roles = await users.distinct('role');
+
+// Aggregations (using QueryAST)
+const stats = await driver.aggregate('orders', {
+  aggregations: [
+    { function: 'sum', field: 'amount', alias: 'total' },
+    { function: 'count', field: '*', alias: 'count' },
+    { function: 'avg', field: 'amount', alias: 'average' }
+  ],
+  groupBy: ['customer_id'],
+  filters: [['status', '=', 'completed']]
+});
+```
+
+### Transactions
+
+```typescript
+const trx = await driver.beginTransaction();
+
+try {
+  await driver.create('orders', {
+    customer_id: 'cust_123',
+    total: 100
+  }, { transaction: trx });
+  
+  await driver.update('inventory', 'item_456', {
+    quantity: { decrement: 1 }
+  }, { transaction: trx });
+  
+  await driver.commit(trx);
+} catch (error) {
+  await driver.rollback(trx);
+  throw error;
+}
+```
+
+### Bulk Operations
+
+```typescript
+// Create many
+const users = await driver.createMany('users', [
+  { name: 'Alice', email: 'alice@example.com' },
+  { name: 'Bob', email: 'bob@example.com' },
+  { name: 'Charlie', email: 'charlie@example.com' }
+]);
+
+// Update many
+await driver.updateMany(
+  'users',
+  [['status', '=', 'pending']],
+  { status: 'active' }
+);
+
+// Delete many
+await driver.deleteMany('users', [
+  ['last_login', '<', '2023-01-01']
+]);
+```
+
+## QueryAST Format (New in v4.0)
+
+The driver supports the new QueryAST format from `@objectstack/spec`:
+
+```typescript
+// New QueryAST format
+const results = await driver.find('users', {
+  fields: ['name', 'email'],
+  filters: [['active', '=', true]],
+  sort: [{ field: 'created_at', order: 'desc' }],
+  top: 10,  // Instead of 'limit'
+  skip: 0
+});
+
+// Aggregations
+const stats = await driver.aggregate('orders', {
+  aggregations: [
+    { function: 'sum', field: 'amount', alias: 'total' },
+    { function: 'count', field: '*', alias: 'count' }
+  ],
+  groupBy: ['customer_id'],
+  filters: [['status', '=', 'completed']]
+});
+```
+
+## Schema Management
+
+### Auto-Create Tables
+
+```typescript
+// Define schema
+app.registerObject({
+  name: 'products',
+  fields: {
+    name: { type: 'text', required: true },
+    price: { type: 'number', required: true },
+    category: { type: 'text' },
+    stock: { type: 'number', defaultValue: 0 }
+  }
+});
+
+// Tables are created automatically on init
+await app.init();
+```
+
+### Custom Indexes
+
+```typescript
+app.registerObject({
+  name: 'users',
+  fields: {
+    email: { type: 'email', unique: true },
+    name: { type: 'text', index: true },
+    status: { type: 'select', options: ['active', 'inactive'] }
+  },
+  indexes: [
+    { fields: ['status', 'created_at'] },
+    { fields: ['email'], unique: true }
+  ]
+});
+```
+
+### Introspection
+
+```typescript
+// Discover existing tables
+const schema = await driver.introspect();
+
+// Get table structure
+const userTable = await driver.introspectTable('users');
+```
+
+## Driver Metadata
+
+```typescript
+console.log(driver.name);      // 'SqlDriver'
+console.log(driver.version);   // '4.0.1'
+console.log(driver.supports);
+// {
+//   transactions: true,
+//   joins: true,
+//   aggregations: true,
+//   fullTextSearch: true (PostgreSQL),
+//   jsonFields: true
+// }
+```
+
+## Lifecycle Methods
+
+```typescript
+// Connect (optional - connection is automatic)
+await driver.connect();
+
+// Check health
+const healthy = await driver.checkHealth(); // true/false
+
+// Disconnect
+await driver.disconnect();
+```
+
+## Performance Tips
+
+1. **Use Connection Pooling**
+   ```typescript
+   pool: { min: 2, max: 10 }
+   ```
+
+2. **Create Indexes**
+   ```typescript
+   fields: {
+     email: { type: 'email', index: true }
+   }
+   ```
+
+3. **Use Bulk Operations**
+   ```typescript
+   await driver.createMany('users', records);
+   // Faster than individual creates
+   ```
+
+4. **Limit Fields**
+   ```typescript
+   fields: ['id', 'name']  // Only fetch needed columns
+   ```
+
+5. **Use Transactions for Consistency**
+   ```typescript
+   const trx = await driver.beginTransaction();
+   // ... multiple operations
+   await driver.commit(trx);
+   ```
+
+## Database-Specific Features
+
+### PostgreSQL
+
+```typescript
+// JSONB support
+app.registerObject({
+  name: 'settings',
+  fields: {
+    config: { type: 'json' }  // Stored as JSONB
+  }
+});
+
+// Full-text search
+const results = await driver.find('posts', {
+  filters: [['content', 'contains', 'ObjectQL']]
+});
+
+// Arrays
+app.registerObject({
+  name: 'posts',
+  fields: {
+    tags: { type: 'array' }
+  }
+});
+```
+
+### MySQL
+
+```typescript
+// Spatial data (MySQL 8.0+)
+app.registerObject({
+  name: 'locations',
+  fields: {
+    point: { type: 'geometry' }
+  }
+});
+```
+
+### SQLite
+
+```typescript
+// In-memory database
+const driver = new SqlDriver({
+  client: 'sqlite3',
+  connection: {
+    filename: ':memory:'
+  },
+  useNullAsDefault: true
+});
+```
+
+## Troubleshooting
+
+### Connection Errors
+
+```typescript
+try {
+  await driver.connect();
+} catch (error) {
+  console.error('Connection failed:', error.message);
+  // Check credentials, network, firewall
+}
+```
+
+### Query Debugging
+
+```typescript
+const driver = new SqlDriver({
+  client: 'pg',
+  connection: { /* ... */ },
+  debug: true  // Log all SQL queries
+});
+```
+
+### Pool Exhausted
+
+```typescript
+// Increase pool size
+pool: {
+  max: 20  // Default is 10
+}
+```
+
+## Migration from Other Drivers
+
+### From Memory to SQL
+
+```typescript
+// Development (Memory)
+const memoryDriver = new MemoryDriver();
+
+// Production (SQL)
+const sqlDriver = new SqlDriver({
+  client: 'pg',
+  connection: process.env.DATABASE_URL
+});
+
+// Same API, just swap the driver
+```
+
+### Data Migration
+
+```typescript
+// Migrate from Memory to SQL
+const memoryData = await memoryDriver.find('users');
+for (const user of memoryData) {
+  await sqlDriver.create('users', user);
+}
+```
+
+## Best Practices
+
+1. **Use Environment Variables**
+   ```typescript
+   connection: process.env.DATABASE_URL
+   ```
+
+2. **Handle Connections Properly**
+   ```typescript
+   process.on('SIGTERM', async () => {
+     await driver.disconnect();
+     process.exit(0);
+   });
+   ```
+
+3. **Use Transactions for Data Integrity**
+   ```typescript
+   const trx = await driver.beginTransaction();
+   try {
+     // Multiple operations
+     await driver.commit(trx);
+   } catch (error) {
+     await driver.rollback(trx);
+   }
+   ```
+
+4. **Monitor Query Performance**
+   ```typescript
+   debug: true  // In development
+   ```
+
+5. **Use Prepared Statements** (automatic with Knex)
+   - Protects against SQL injection
+   - Better performance for repeated queries
+
+## Related Documentation
+
+- [Driver Overview](/docs/reference/drivers)
+- [MongoDB Driver](/docs/reference/drivers/mongodb)
+- [Query Guide](/docs/guides/querying)
+- [Transaction Guide](/docs/guides/transactions)
+
+## Support
+
+- 📖 [Knex.js Documentation](https://knexjs.org/)
+- 💬 [GitHub Discussions](https://github.com/objectstack-ai/objectql/discussions)
+- 🐛 [Report Issues](https://github.com/objectstack-ai/objectql/issues)
