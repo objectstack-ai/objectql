@@ -165,8 +165,9 @@ export class MongoDriver implements Driver {
 
     /**
      * Recursively map 'id' fields to '_id' in FilterCondition objects
+     * and normalize primitive values to use $eq operator when inside logical operators
      */
-    private mapIdFieldsInFilter(filter: any): any {
+    private mapIdFieldsInFilter(filter: any, insideLogicalOp: boolean = false): any {
         if (!filter || typeof filter !== 'object') {
             return filter;
         }
@@ -177,20 +178,32 @@ export class MongoDriver implements Driver {
             // Handle logical operators
             if (key === '$and' || key === '$or') {
                 if (Array.isArray(value)) {
-                    result[key] = value.map(v => this.mapIdFieldsInFilter(v));
+                    // Pass true to indicate we're inside a logical operator
+                    result[key] = value.map(v => this.mapIdFieldsInFilter(v, true));
                 }
             } 
             // Map 'id' to '_id'
             else if (key === 'id') {
-                result['_id'] = value;
+                // If value is already an object with operators, recurse
+                if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+                    result['_id'] = this.mapIdFieldsInFilter(value, insideLogicalOp);
+                } else {
+                    // Primitive value - wrap with $eq only if inside logical operator
+                    result['_id'] = insideLogicalOp ? { $eq: value } : value;
+                }
             }
-            // Recursively handle nested objects
-            else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-                result[key] = this.mapIdFieldsInFilter(value);
-            }
-            // Keep other values as-is
-            else {
+            // Skip MongoDB operator keys (starting with $) - keep as-is
+            else if (key.startsWith('$')) {
                 result[key] = value;
+            }
+            // Recursively handle nested objects (already operator-wrapped values)
+            else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+                result[key] = this.mapIdFieldsInFilter(value, insideLogicalOp);
+            }
+            // Primitive field values
+            else {
+                // Wrap with $eq only if inside a logical operator
+                result[key] = insideLogicalOp ? { $eq: value } : value;
             }
         }
         
