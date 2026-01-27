@@ -99,6 +99,44 @@ await kernel.start();
 // }
 ```
 
+### 3. GraphQL (`@objectql/protocol-graphql`)
+
+GraphQL protocol implementation with Apollo Server integration.
+
+**Features:**
+- Automatic schema generation from metadata
+- Query and mutation resolvers
+- GraphQL introspection and playground
+- Apollo Server 4.x integration
+- Type-safe operations
+
+**Usage:**
+```typescript
+import { ObjectStackKernel } from '@objectql/runtime';
+import { GraphQLPlugin } from '@objectql/protocol-graphql';
+
+const kernel = new ObjectStackKernel([
+  new GraphQLPlugin({ 
+    port: 4000,
+    introspection: true,
+    playground: true
+  })
+]);
+await kernel.start();
+
+// Access GraphQL playground: http://localhost:4000/
+// Query example:
+// {
+//   usersList(limit: 10) {
+//     id
+//     name
+//     email
+//   }
+// }
+```
+
+**Reference**: Based on implementation by @hotlong
+
 **Available RPC Methods:**
 - `object.find(objectName, query)` - Find records
 - `object.get(objectName, id)` - Get single record

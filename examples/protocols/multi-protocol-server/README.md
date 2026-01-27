@@ -1,6 +1,6 @@
 # Multi-Protocol Server Example
 
-This example demonstrates how to run multiple protocol plugins (OData V4 and JSON-RPC 2.0) on the same ObjectStack kernel, providing different API styles for accessing the same data.
+This example demonstrates how to run multiple protocol plugins (OData V4, JSON-RPC 2.0, and GraphQL) on the same ObjectStack kernel, providing different API styles for accessing the same data.
 
 ## What This Example Shows
 
@@ -30,13 +30,13 @@ This example demonstrates how to run multiple protocol plugins (OData V4 and JSO
 │                     │                               │
 └─────────────────────┼───────────────────────────────┘
                       │
-        ┌─────────────┴────────────┐
-        │                          │
-┌───────▼────────┐        ┌────────▼──────────┐
-│ OData V4       │        │ JSON-RPC 2.0      │
-│ Plugin         │        │ Plugin            │
-│ Port: 8080     │        │ Port: 9000        │
-└────────────────┘        └───────────────────┘
+        ┌─────────────┴────────────┬─────────────┐
+        │                          │             │
+┌───────▼────────┐        ┌────────▼──────┐  ┌──▼────────┐
+│ OData V4       │        │ JSON-RPC 2.0  │  │ GraphQL   │
+│ Plugin         │        │ Plugin        │  │ Plugin    │
+│ Port: 8080     │        │ Port: 9000    │  │ Port: 4000│
+└────────────────┘        └───────────────┘  └───────────┘
 ```
 
 ## Running the Example
@@ -148,6 +148,77 @@ curl -X POST http://localhost:9000/rpc \
   -H "Content-Type: application/json" \
   -d '[
     {"jsonrpc":"2.0","method":"metadata.list","id":1},
+    {"jsonrpc":"2.0","method":"object.find","params":["users",{}],"id":2}
+  ]'
+```
+
+### GraphQL Protocol (Port 4000)
+
+#### Access GraphQL Playground
+Open in browser: `http://localhost:4000/`
+
+#### Query All Users
+```bash
+curl -X POST http://localhost:4000/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "{ usersList { id name email active } }"
+  }'
+```
+
+#### Query Single User
+```bash
+curl -X POST http://localhost:4000/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "{ users(id: \"USER_ID\") { id name email } }"
+  }'
+```
+
+#### Query with Limit
+```bash
+curl -X POST http://localhost:4000/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "{ usersList(limit: 10, offset: 0) { id name email } }"
+  }'
+```
+
+#### Create User (Mutation)
+```bash
+curl -X POST http://localhost:4000/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "mutation { createUsers(input: \"{\\\"name\\\":\\\"Eve\\\",\\\"email\\\":\\\"eve@example.com\\\"}\") { id name email } }"
+  }'
+```
+
+#### Update User (Mutation)
+```bash
+curl -X POST http://localhost:4000/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "mutation { updateUsers(id: \"USER_ID\", input: \"{\\\"name\\\":\\\"Eve Updated\\\"}\") { id name email } }"
+  }'
+```
+
+#### Delete User (Mutation)
+```bash
+curl -X POST http://localhost:4000/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "mutation { deleteUsers(id: \"USER_ID\") }"
+  }'
+```
+
+#### List All Objects (Introspection)
+```bash
+curl -X POST http://localhost:4000/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "{ listObjects }"
+  }'
+```
     {"jsonrpc":"2.0","method":"object.find","params":["users",{}],"id":2}
   ]'
 ```

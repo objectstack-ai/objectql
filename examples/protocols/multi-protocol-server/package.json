@@ -14,7 +14,8 @@
     "@objectql/types": "workspace:*",
     "@objectql/driver-memory": "workspace:*",
     "@objectql/protocol-odata-v4": "workspace:*",
-    "@objectql/protocol-json-rpc": "workspace:*"
+    "@objectql/protocol-json-rpc": "workspace:*",
+    "@objectql/protocol-graphql": "workspace:*"
   },
   "devDependencies": {
     "tsx": "^4.7.0",

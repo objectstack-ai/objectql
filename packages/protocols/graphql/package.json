@@ -1,0 +1,36 @@
+{
+  "name": "@objectql/protocol-graphql",
+  "version": "0.1.0",
+  "description": "GraphQL Protocol Plugin for ObjectStack",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@objectql/runtime": "workspace:*",
+    "@objectql/types": "workspace:*",
+    "@apollo/server": "^4.10.0",
+    "graphql": "^16.8.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3",
+    "vitest": "^1.0.4"
+  },
+  "keywords": [
+    "objectql",
+    "objectstack",
+    "graphql",
+    "protocol",
+    "plugin"
+  ],
+  "license": "MIT"
+}

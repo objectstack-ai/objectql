@@ -2,7 +2,7 @@
  * Multi-Protocol Server Example
  * 
  * This example demonstrates how to run multiple protocol plugins
- * (OData V4 and JSON-RPC 2.0) on the same ObjectStack kernel.
+ * (OData V4, JSON-RPC 2.0, and GraphQL) on the same ObjectStack kernel.
  */
 
 import { ObjectStackKernel } from '@objectql/runtime';
@@ -10,6 +10,7 @@ import { ObjectQLPlugin } from '@objectql/core';
 import { MemoryDriver } from '@objectql/driver-memory';
 import { ODataV4Plugin } from '@objectql/protocol-odata-v4';
 import { JSONRPCPlugin } from '@objectql/protocol-json-rpc';
+import { GraphQLPlugin } from '@objectql/protocol-graphql';
 
 // Define sample metadata
 const sampleMetadata = {
@@ -33,7 +34,8 @@ async function main() {
   const kernel = new ObjectStackKernel([
     new ObjectQLPlugin({ datasources: { default: memoryDriver } }),
     new ODataV4Plugin({ port: 8080, basePath: '/odata' }),
-    new JSONRPCPlugin({ port: 9000, basePath: '/rpc' })
+    new JSONRPCPlugin({ port: 9000, basePath: '/rpc' }),
+    new GraphQLPlugin({ port: 4000, introspection: true, playground: true })
   ]);
 
   for (const [name, metadata] of Object.entries(sampleMetadata)) {
