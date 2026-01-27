@@ -233,7 +233,7 @@ describe('ExcelDriver', () => {
 
         it('should filter records with equality operator', async () => {
             const results = await driver.find(TEST_OBJECT, {
-                filters: [['role', '=', 'user']]
+                where: { role: { $eq: 'user' } }
             });
             expect(results.length).toBe(2);
             expect(results.every(r => r.role === 'user')).toBe(true);
@@ -241,7 +241,7 @@ describe('ExcelDriver', () => {
 
         it('should filter records with greater than operator', async () => {
             const results = await driver.find(TEST_OBJECT, {
-                filters: [['age', '>', 25]]
+                where: { age: { $gt: 25 } }
             });
             expect(results.length).toBe(2);
             expect(results.every(r => r.age > 25)).toBe(true);
@@ -249,25 +249,26 @@ describe('ExcelDriver', () => {
 
         it('should filter records with contains operator', async () => {
             const results = await driver.find(TEST_OBJECT, {
-                filters: [['name', 'contains', 'li']]
+                where: { name: { $regex: 'li' } }
             });
             expect(results.length).toBe(2); // Alice and Charlie
         });
 
         it('should support OR filters', async () => {
             const results = await driver.find(TEST_OBJECT, {
-                filters: [
-                    ['name', '=', 'Alice'],
-                    'or',
-                    ['name', '=', 'Bob']
-                ]
+                where: {
+                    $or: [
+                        { name: { $eq: 'Alice' } },
+                        { name: { $eq: 'Bob' } }
+                    ]
+                }
             });
             expect(results.length).toBe(2);
         });
 
         it('should sort records ascending', async () => {
             const results = await driver.find(TEST_OBJECT, {
-                sort: [['age', 'asc']]
+                orderBy: [{ field: 'age', order: 'asc' }]
             });
             expect(results[0].age).toBe(25);
             expect(results[1].age).toBe(30);
@@ -276,7 +277,7 @@ describe('ExcelDriver', () => {
 
         it('should sort records descending', async () => {
             const results = await driver.find(TEST_OBJECT, {
-                sort: [['age', 'desc']]
+                orderBy: [{ field: 'age', order: 'desc' }]
             });
             expect(results[0].age).toBe(35);
             expect(results[1].age).toBe(30);
@@ -292,7 +293,7 @@ describe('ExcelDriver', () => {
 
         it('should support pagination with skip', async () => {
             const results = await driver.find(TEST_OBJECT, {
-                skip: 1,
+                offset: 1,
                 limit: 2
             });
             expect(results.length).toBe(2);
@@ -315,7 +316,7 @@ describe('ExcelDriver', () => {
 
         it('should count filtered records', async () => {
             const count = await driver.count(TEST_OBJECT, {
-                filters: [['role', '=', 'user']]
+                where: { role: { $eq: 'user' } }
             });
             expect(count).toBe(2);
         });
@@ -354,7 +355,7 @@ describe('ExcelDriver', () => {
             expect(result.modifiedCount).toBe(2);
             
             const users = await driver.find(TEST_OBJECT, {
-                filters: [['role', '=', 'member']]
+                where: { role: { $eq: 'member' } }
             });
             expect(users).toHaveLength(2);
         });
@@ -465,7 +466,7 @@ describe('ExcelDriver', () => {
 
         it('should handle filters on empty data', async () => {
             const results = await driver.find(TEST_OBJECT, {
-                filters: [['name', '=', 'Alice']]
+                where: { name: { $eq: 'Alice' } }
             });
             expect(results).toEqual([]);
         });

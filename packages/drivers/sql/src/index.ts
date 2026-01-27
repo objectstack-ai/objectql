@@ -93,20 +93,31 @@ export class SqlDriver implements Driver {
     private applyFilters(builder: Knex.QueryBuilder, filters: any) {
         if (!filters) return;
         
-        // Handle Plain Object filters (MongoDB style simple query)
-        // e.g. { name: 'John', age: 20 }
-        if (!Array.isArray(filters)) {
-            if (typeof filters === 'object') {
-                for (const [key, value] of Object.entries(filters)) {
-                    // Ignore special query properties if they leak here
-                    if (['filters', 'sort', 'limit', 'skip', 'fields'].includes(key)) continue;
-                    builder.where(key, value as any);
-                }
+        // Handle FilterCondition (MongoDB-style query)
+        if (!Array.isArray(filters) && typeof filters === 'object') {
+            // Check if it has MongoDB operators
+            const hasMongoOperators = Object.keys(filters).some(k => 
+                k.startsWith('$') || 
+                (typeof filters[k] === 'object' && filters[k] !== null && 
+                 Object.keys(filters[k]).some(op => op.startsWith('$')))
+            );
+            
+            if (hasMongoOperators) {
+                // Handle MongoDB-style FilterCondition
+                this.applyFilterCondition(builder, filters);
+                return;
+            }
+            
+            // Handle simple object filters { name: 'John', age: 20 }
+            for (const [key, value] of Object.entries(filters)) {
+                // Ignore special query properties if they leak here
+                if (['filters', 'sort', 'limit', 'skip', 'offset', 'fields', 'orderBy'].includes(key)) continue;
+                builder.where(key, value as any);
             }
             return;
         }
 
-        if (filters.length === 0) return;
+        if (!Array.isArray(filters) || filters.length === 0) return;
 
         let nextJoin = 'and';
 
@@ -158,6 +169,78 @@ export class SqlDriver implements Driver {
         }
     }
 
+    private applyFilterCondition(builder: Knex.QueryBuilder, condition: any, logicalOp: 'and' | 'or' = 'and') {
+        if (!condition || typeof condition !== 'object') return;
+
+        for (const [key, value] of Object.entries(condition)) {
+            if (key === '$and' && Array.isArray(value)) {
+                // Handle $and
+                builder.where((qb) => {
+                    for (const subCondition of value) {
+                        qb.where((subQb) => {
+                            this.applyFilterCondition(subQb, subCondition, 'and');
+                        });
+                    }
+                });
+            } else if (key === '$or' && Array.isArray(value)) {
+                // Handle $or
+                const method = logicalOp === 'or' ? 'orWhere' : 'where';
+                builder[method]((qb) => {
+                    for (const subCondition of value) {
+                        qb.orWhere((subQb) => {
+                            this.applyFilterCondition(subQb, subCondition, 'or');
+                        });
+                    }
+                });
+            } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+                // Handle field operators like { age: { $gt: 18 } }
+                const field = this.mapSortField(key);
+                for (const [op, opValue] of Object.entries(value)) {
+                    const method = logicalOp === 'or' ? 'orWhere' : 'where';
+                    switch (op) {
+                        case '$eq':
+                            builder[method](field, opValue);
+                            break;
+                        case '$ne':
+                            builder[method](field, '<>', opValue);
+                            break;
+                        case '$gt':
+                            builder[method](field, '>', opValue);
+                            break;
+                        case '$gte':
+                            builder[method](field, '>=', opValue);
+                            break;
+                        case '$lt':
+                            builder[method](field, '<', opValue);
+                            break;
+                        case '$lte':
+                            builder[method](field, '<=', opValue);
+                            break;
+                        case '$in':
+                            const methodIn = logicalOp === 'or' ? 'orWhereIn' : 'whereIn';
+                            builder[methodIn](field, opValue as any[]);
+                            break;
+                        case '$nin':
+                            const methodNotIn = logicalOp === 'or' ? 'orWhereNotIn' : 'whereNotIn';
+                            builder[methodNotIn](field, opValue as any[]);
+                            break;
+                        case '$contains':
+                            builder[method](field, 'like', `%${opValue}%`);
+                            break;
+                        default:
+                            // Unknown operator, treat as equality
+                            builder[method](field, opValue);
+                    }
+                }
+            } else {
+                // Simple field: value case
+                const field = this.mapSortField(key);
+                const method = logicalOp === 'or' ? 'orWhere' : 'where';
+                builder[method](field, value as any);
+            }
+        }
+    }
+
     private mapSortField(field: string): string {
         if (field === 'createdAt') return 'created_at';
         if (field === 'updatedAt') return 'updated_at';
@@ -172,80 +255,63 @@ export class SqlDriver implements Driver {
      * QueryAST sort is array of {field, order}, while UnifiedQuery is array of [field, order].
      * QueryAST uses 'aggregations', while legacy uses 'aggregate'.
      */
-    private normalizeQuery(query: any): any {
-        if (!query) return {};
+    /**
+     * Execute a query using QueryAST format (DriverInterface v4.0 method)
+     * 
+     * @param ast - The QueryAST representing the query
+     * @param options - Optional execution options (transaction, etc.)
+     * @returns Query results with value and count
+     */
+    async executeQuery(ast: QueryAST, options?: any): Promise<{ value: any[]; count?: number }> {
+        // QueryAST is now the same format as our internal query
+        // Just pass it directly to find
+        const results = await this.find(ast.object || '', ast, options);
         
-        const normalized: any = { ...query };
-        
-        // Normalize limit/top
-        if (normalized.top !== undefined && normalized.limit === undefined) {
-            normalized.limit = normalized.top;
-        }
-        
-        // Normalize aggregations/aggregate
-        if (normalized.aggregations !== undefined && normalized.aggregate === undefined) {
-            // Convert QueryAST aggregations format to legacy aggregate format
-            normalized.aggregate = normalized.aggregations.map((agg: any) => ({
-                func: agg.function,
-                field: agg.field,
-                alias: agg.alias
-            }));
-        }
-        
-        // Normalize sort format
-        if (normalized.sort && Array.isArray(normalized.sort)) {
-            // Check if it's already in the array format [field, order]
-            const firstSort = normalized.sort[0];
-            if (firstSort && typeof firstSort === 'object' && !Array.isArray(firstSort)) {
-                // Convert from QueryAST format {field, order} to internal format [field, order]
-                // Keep the object format as the applySort logic already handles it
-            }
-        }
-        
-        return normalized;
+        return {
+            value: results,
+            count: results.length
+        };
     }
 
     async find(objectName: string, query: any, options?: any): Promise<any[]> {
-        const normalizedQuery = this.normalizeQuery(query);
         const builder = this.getBuilder(objectName, options);
         
-        if (normalizedQuery.fields) {
-            builder.select(normalizedQuery.fields.map((f: string) => this.mapSortField(f)));
+        // Handle fields (standard: fields)
+        if (query.fields) {
+            builder.select(query.fields.map((f: string) => this.mapSortField(f)));
         } else {
             builder.select('*');
         }
 
-        if (normalizedQuery.filters) {
-            this.applyFilters(builder, normalizedQuery.filters);
+        // Handle filters - support both new format (where) and legacy format (filters)
+        const filterCondition = query.where || query.filters;
+        if (filterCondition) {
+            this.applyFilters(builder, filterCondition);
         }
 
-        if (normalizedQuery.sort && Array.isArray(normalizedQuery.sort)) {
-            for (const item of normalizedQuery.sort) {
-                let field: string | undefined;
-                let dir: string | undefined;
-
-                if (Array.isArray(item)) {
-                     [field, dir] = item;
-                } else if (typeof item === 'object' && item !== null) {
-                    // Support object format { field: 'name', order: 'asc' }
-                     field = (item as any).field;
-                     dir = (item as any).order || (item as any).direction || (item as any).dir;
-                }
-
+        // Handle sort - support both new format (orderBy) and legacy format (sort)
+        const sortArray = query.orderBy || query.sort;
+        if (sortArray && Array.isArray(sortArray)) {
+            for (const item of sortArray) {
+                // Support both {field, order} object format and [field, order] array format
+                const field = item.field || item[0];
+                const dir = item.order || item[1] || 'asc';
                 if (field) {
                     builder.orderBy(this.mapSortField(field), dir);
                 }
             }
         }
 
-        if (normalizedQuery.skip) builder.offset(normalizedQuery.skip);
-        if (normalizedQuery.limit) builder.limit(normalizedQuery.limit);
+        // Handle pagination - support both new format (offset/limit) and legacy format (skip/top)
+        const offsetValue = query.offset ?? query.skip;
+        const limitValue = query.limit ?? query.top;
+        
+        if (offsetValue !== undefined) builder.offset(offsetValue);
+        if (limitValue !== undefined) builder.limit(limitValue);
 
         const results = await builder;
         
         if (!Array.isArray(results)) {
-            // Log warning or throw better error
-            // console.warn('SqlDriver.find: results is not an array', results);
             return [];
         }
 
@@ -310,12 +376,11 @@ export class SqlDriver implements Driver {
     async count(objectName: string, filters: any, options?: any): Promise<number> {
         const builder = this.getBuilder(objectName, options);
         
-        // Handle both filter arrays and query objects
+        // Handle both filter objects and query objects
         let actualFilters = filters;
-        if (filters && !Array.isArray(filters)) {
-            // It's a query object, normalize it and extract filters
-            const normalizedQuery = this.normalizeQuery(filters);
-            actualFilters = normalizedQuery.filters || filters;
+        if (filters && (filters.where || filters.filters)) {
+            // It's a query object with 'where' or 'filters' property
+            actualFilters = filters.where || filters.filters;
         }
 
         if (actualFilters) {
@@ -345,28 +410,30 @@ export class SqlDriver implements Driver {
 
     // Aggregation
     async aggregate(objectName: string, query: any, options?: any): Promise<any> {
-        const normalizedQuery = this.normalizeQuery(query);
         const builder = this.getBuilder(objectName, options);
         
-        // 1. Filter
-        if (normalizedQuery.filters) {
-            this.applyFilters(builder, normalizedQuery.filters);
+        // 1. Filter (standard: where)
+        if (query.where) {
+            this.applyFilters(builder, query.where);
         }
 
         // 2. GroupBy
-        if (normalizedQuery.groupBy) {
-            builder.groupBy(normalizedQuery.groupBy);
+        if (query.groupBy) {
+            builder.groupBy(query.groupBy);
             // Select grouping keys
-            for (const field of normalizedQuery.groupBy) {
+            for (const field of query.groupBy) {
                 builder.select(field);
             }
         }
 
         // 3. Aggregate Functions
-        if (normalizedQuery.aggregate) {
-            for (const agg of normalizedQuery.aggregate) {
-                // func: 'sum', field: 'amount', alias: 'total'
-                const rawFunc = this.mapAggregateFunc(agg.func); 
+        // Support both new format (aggregations with 'function') and legacy format (aggregate with 'func')
+        const aggregates = query.aggregations || query.aggregate;
+        if (aggregates) {
+            for (const agg of aggregates) {
+                // Support both 'function' (new) and 'func' (legacy)
+                const funcName = agg.function || agg.func;
+                const rawFunc = this.mapAggregateFunc(funcName); 
                 if (agg.alias) {
                     builder.select(this.knex.raw(`${rawFunc}(??) as ??`, [agg.field, agg.alias]));
                 } else {
@@ -960,38 +1027,6 @@ export class SqlDriver implements Driver {
     }
 
     /**
-     * Execute a query using QueryAST (DriverInterface v4.0 method)
-     * 
-     * This is the new standard method for query execution using the
-     * ObjectStack QueryAST format. It provides a unified interface
-     * across all drivers.
-     * 
-     * @param ast - The QueryAST representing the query
-     * @param options - Optional execution options (transaction, etc.)
-     * @returns Query results with value and count
-     */
-    async executeQuery(ast: QueryAST, options?: any): Promise<{ value: any[]; count?: number }> {
-        const objectName = ast.object || '';
-        
-        // Convert QueryAST to legacy query format for internal processing
-        const legacyQuery: any = {
-            fields: ast.fields,
-            filters: this.convertFilterNodeToLegacy(ast.where),
-            sort: ast.orderBy?.map(s => [s.field, s.order]),
-            limit: ast.limit,
-            skip: ast.offset,
-        };
-        
-        // Use existing find method for execution
-        const results = await this.find(objectName, legacyQuery, options);
-        
-        return {
-            value: results,
-            count: results.length
-        };
-    }
-
-    /**
      * Execute a command (DriverInterface v4.0 method)
      * 
      * This method handles all mutation operations (create, update, delete)
@@ -1098,12 +1133,6 @@ export class SqlDriver implements Driver {
      * 
      * @private
      */
-    private convertFilterNodeToLegacy(condition?: any): any {
-        // FilterCondition is already in the modern format, just pass it through
-        // The legacy format methods can handle it directly
-        return condition;
-    }
-
     /**
      * Execute raw SQL (DriverInterface compatibility method)
      * 

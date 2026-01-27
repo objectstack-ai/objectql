@@ -630,40 +630,12 @@ export class RemoteDriver implements Driver {
      * QueryAST format uses 'top' for limit, while UnifiedQuery uses 'limit'.
      * QueryAST sort is array of {field, order}, while UnifiedQuery is array of [field, order].
      */
-    private normalizeQuery(query: any): any {
-        if (!query) return {};
-        
-        const normalized: any = { ...query };
-        
-        // Normalize limit/top
-        if (normalized.top !== undefined && normalized.limit === undefined) {
-            normalized.limit = normalized.top;
-        }
-        
-        // Normalize sort format
-        if (normalized.sort && Array.isArray(normalized.sort)) {
-            // Check if it's already in the array format [field, order]
-            const firstSort = normalized.sort[0];
-            if (firstSort && typeof firstSort === 'object' && !Array.isArray(firstSort)) {
-                // Convert from QueryAST format {field, order} to internal format [field, order]
-                normalized.sort = normalized.sort.map((item: any) => [
-                    item.field,
-                    item.order || item.direction || item.dir || 'asc'
-                ]);
-            }
-        }
-        
-        return normalized;
-    }
-
     async find(objectName: string, query: any, options?: any): Promise<any[]> {
-        const normalizedQuery = this.normalizeQuery(query);
-        return this.request('find', objectName, normalizedQuery);
+        return this.request('find', objectName, query);
     }
 
     async findOne(objectName: string, id: string | number, query?: any, options?: any): Promise<any> {
-        const normalizedQuery = query ? this.normalizeQuery(query) : undefined;
-        return this.request('findOne', objectName, { id, query: normalizedQuery }); // Note: args format must match server expectation
+        return this.request('findOne', objectName, { id, query });
     }
 
     async create(objectName: string, data: any, options?: any): Promise<any> {

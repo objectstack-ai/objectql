@@ -321,13 +321,13 @@ export class ObjectRepository {
         // If filters is already a UnifiedQuery (has UnifiedQuery-specific properties), use it as-is
         let query: UnifiedQuery;
         if (Array.isArray(filters)) {
-            query = { filters };
-        } else if (filters && typeof filters === 'object' && (filters.fields || filters.sort || filters.limit !== undefined || filters.skip !== undefined)) {
+            query = { where: filters };
+        } else if (filters && typeof filters === 'object' && (filters.fields || filters.orderBy || filters.limit !== undefined || filters.offset !== undefined)) {
             // It's already a UnifiedQuery object
             query = filters;
         } else if (filters) {
             // It's a raw filter object, wrap it
-            query = { filters };
+            query = { where: filters };
         } else {
             query = {};
         }
@@ -465,7 +465,7 @@ export class ObjectRepository {
     async updateMany(filters: any, data: any): Promise<any> {
         // Find all matching records and update them individually
         // to ensure validation and hooks are executed
-        const records = await this.find({ filters });
+        const records = await this.find({ where: filters });
         let count = 0;
         for (const record of records) {
             if (record && record._id) {
@@ -479,7 +479,7 @@ export class ObjectRepository {
     async deleteMany(filters: any): Promise<any> {
         // Find all matching records and delete them individually
         // to ensure hooks are executed
-        const records = await this.find({ filters });
+        const records = await this.find({ where: filters });
         let count = 0;
         for (const record of records) {
             if (record && record._id) {

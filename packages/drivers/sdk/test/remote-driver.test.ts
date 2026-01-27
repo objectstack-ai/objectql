@@ -45,7 +45,7 @@ describe('RemoteDriver', () => {
                 json: async () => mockResponse
             });
 
-            const result = await driver.find('user', { filters: [['name', '=', 'Alice']] });
+            const result = await driver.find('user', { where: { name: 'Alice' } });
 
             expect(global.fetch).toHaveBeenCalledWith(
                 'http://localhost:3000/api/objectql',
@@ -55,7 +55,7 @@ describe('RemoteDriver', () => {
                     body: JSON.stringify({
                         op: 'find',
                         object: 'user',
-                        args: { filters: [['name', '=', 'Alice']] }
+                        args: { where: { name: 'Alice' } }
                     })
                 })
             );
@@ -322,7 +322,7 @@ describe('RemoteDriver', () => {
                 json: async () => mockResponse
             });
 
-            const result = await driver.count('user', { filters: [['active', '=', true]] });
+            const result = await driver.count('user', { active: true });
 
             expect(global.fetch).toHaveBeenCalledWith(
                 'http://localhost:3000/api/objectql',
@@ -330,7 +330,7 @@ describe('RemoteDriver', () => {
                     body: JSON.stringify({
                         op: 'count',
                         object: 'user',
-                        args: { filters: [['active', '=', true]] }
+                        args: { active: true }
                     })
                 })
             );

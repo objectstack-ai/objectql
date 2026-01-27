@@ -166,10 +166,10 @@ export class QueryAnalyzer {
         // Build the QueryAST (without executing)
         const ast: QueryAST = {
             object: objectName,
-            where: query.filters as any, // FilterCondition format
-            orderBy: query.sort as any, // Will be converted to SortNode[] format
+            where: query.where as any, // FilterCondition format
+            orderBy: query.orderBy as any, // Will be converted to SortNode[] format
             limit: query.limit,
-            offset: query.skip,
+            offset: query.offset,
             fields: query.fields
         };
         
@@ -286,7 +286,7 @@ export class QueryAnalyzer {
     private findApplicableIndexes(schema: ObjectConfig, query: UnifiedQuery): string[] {
         const indexes: string[] = [];
         
-        if (!schema.indexes || !query.filters) {
+        if (!schema.indexes || !query.where) {
             return indexes;
         }
         
@@ -315,7 +315,7 @@ export class QueryAnalyzer {
             }
         };
         
-        extractFieldsFromFilter(query.filters);
+        extractFieldsFromFilter(query.where);
         
         // Check which indexes could be used
         const indexesArray = Array.isArray(schema.indexes) ? schema.indexes : Object.values(schema.indexes || {});
@@ -342,7 +342,7 @@ export class QueryAnalyzer {
         const warnings: string[] = [];
         
         // Warning: No filters (full table scan)
-        if (!query.filters || query.filters.length === 0) {
+        if (!query.where || Object.keys(query.where).length === 0) {
             warnings.push('No filters specified - this will scan all records');
         }
         
@@ -360,7 +360,7 @@ export class QueryAnalyzer {
         }
         
         // Warning: Complex filters without indexes
-        if (query.filters && query.filters.length > 5) {
+        if (query.where && Object.keys(query.where).length > 5) {
             const indexes = this.findApplicableIndexes(schema, query);
             if (indexes.length === 0) {
                 warnings.push('Complex filters without matching indexes - consider adding indexes');
@@ -387,10 +387,8 @@ export class QueryAnalyzer {
         }
         
         // Suggest adding indexes
-        if (query.filters && query.filters.length > 0 && indexes.length === 0) {
-            const filterFields = query.filters
-                .filter((f: any) => Array.isArray(f) && f.length >= 1)
-                .map((f: any) => String(f[0]));
+        if (query.where && Object.keys(query.where).length > 0 && indexes.length === 0) {
+            const filterFields = Object.keys(query.where).filter(k => !k.startsWith('$'));
             
             if (filterFields.length > 0) {
                 suggestions.push(`Consider adding an index on: ${filterFields.join(', ')}`);
@@ -403,10 +401,9 @@ export class QueryAnalyzer {
         }
         
         // Suggest composite index for multiple filters
-        if (query.filters && query.filters.length > 1 && indexes.length < 2) {
-            const filterFields = query.filters
-                .filter((f: any) => Array.isArray(f) && f.length >= 1)
-                .map((f: any) => String(f[0]))
+        if (query.where && Object.keys(query.where).length > 1 && indexes.length < 2) {
+            const filterFields = Object.keys(query.where)
+                .filter(k => !k.startsWith('$'))
                 .slice(0, 3); // Top 3 fields
             
             if (filterFields.length > 1) {
@@ -428,21 +425,20 @@ export class QueryAnalyzer {
         complexity += 10;
         
         // Filters add complexity
-        if (query.filters) {
-            complexity += query.filters.length * 5;
+        if (query.where) {
+            const filterCount = Object.keys(query.where).length;
+            complexity += filterCount * 5;
             
-            // Nested filters (OR conditions) add more
-            const hasNestedFilters = query.filters.some((f: any) => 
-                Array.isArray(f) && Array.isArray(f[0])
-            );
-            if (hasNestedFilters) {
+            // Nested filters (OR/AND conditions) add more
+            const hasLogicalOps = query.where.$and || query.where.$or;
+            if (hasLogicalOps) {
                 complexity += 15;
             }
         }
         
         // Sorting adds complexity
-        if (query.sort && query.sort.length > 0) {
-            complexity += query.sort.length * 3;
+        if (query.orderBy && query.orderBy.length > 0) {
+            complexity += query.orderBy.length * 3;
         }
         
         // Field selection reduces complexity slightly
@@ -468,13 +464,14 @@ export class QueryAnalyzer {
         // from the database (row count, index selectivity, etc.)
         
         // Default to unknown
-        if (!query.filters || query.filters.length === 0) {
+        if (!query.where || Object.keys(query.where).length === 0) {
             return -1; // Unknown, full scan
         }
         
         // Very rough estimate based on filter count
         const baseEstimate = 1000;
-        const filterReduction = Math.pow(0.5, query.filters.length);
+        const filterCount = Object.keys(query.where).length;
+        const filterReduction = Math.pow(0.5, filterCount);
         const estimated = Math.floor(baseEstimate * filterReduction);
         
         // Apply limit if present

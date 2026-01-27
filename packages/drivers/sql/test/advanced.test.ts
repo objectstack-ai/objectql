@@ -49,7 +49,7 @@ describe('SqlDriver Advanced Operations (SQLite)', () => {
     describe('Aggregate Operations', () => {
         it('should sum values', async () => {
             const result = await driver.aggregate('orders', {
-                filters: [['status', '=', 'completed']],
+                where: { status: 'completed' },
                 aggregate: [
                     { func: 'sum', field: 'amount', alias: 'total_amount' }
                 ]
@@ -72,7 +72,7 @@ describe('SqlDriver Advanced Operations (SQLite)', () => {
 
         it('should calculate average', async () => {
             const result = await driver.aggregate('orders', {
-                filters: [['status', '=', 'completed']],
+                where: { status: 'completed' },
                 aggregate: [
                     { func: 'avg', field: 'amount', alias: 'avg_amount' }
                 ]
@@ -132,7 +132,7 @@ describe('SqlDriver Advanced Operations (SQLite)', () => {
 
         it('should aggregate with filters and groupBy', async () => {
             const result = await driver.aggregate('orders', {
-                filters: [['status', '!=', 'cancelled']],
+                where: { status: { $ne: 'cancelled' } },
                 groupBy: ['product'],
                 aggregate: [
                     { func: 'sum', field: 'quantity', alias: 'total_quantity' }
@@ -163,40 +163,36 @@ describe('SqlDriver Advanced Operations (SQLite)', () => {
 
         it('should update many records', async () => {
             const updated = await driver.updateMany('orders', 
-                [['status', '=', 'pending']],
+                { status: 'pending' },
                 { status: 'processing' }
             );
 
             expect(updated).toBeGreaterThan(0);
 
             const results = await driver.find('orders', {
-                filters: [['status', '=', 'processing']]
+                where: { status: 'processing' }
             });
 
             expect(results.length).toBe(1); // Only 1 pending order originally
         });
 
         it('should delete many records', async () => {
-            const deleted = await driver.deleteMany('orders', 
-                [['status', '=', 'cancelled']]
-            );
+            const deleted = await driver.deleteMany('orders', { status: 'cancelled' });
 
             expect(deleted).toBe(1);
 
-            const remaining = await driver.count('orders', []);
+            const remaining = await driver.count('orders', {});
             expect(remaining).toBe(4);
         });
 
         it('should handle empty bulk update and delete', async () => {
             const updated = await driver.updateMany('orders', 
-                [['status', '=', 'nonexistent']],
+                { status: 'nonexistent' },
                 { status: 'updated' }
             );
             expect(updated).toBe(0);
 
-            const deleted = await driver.deleteMany('orders', 
-                [['id', '=', 'nonexistent']]
-            );
+            const deleted = await driver.deleteMany('orders', { id: 'nonexistent' });
             expect(deleted).toBe(0);
         });
     });
@@ -287,7 +283,7 @@ describe('SqlDriver Advanced Operations (SQLite)', () => {
 
     describe('Edge Cases and Error Handling', () => {
         it('should handle empty filters gracefully', async () => {
-            const results = await driver.find('orders', { filters: [] });
+            const results = await driver.find('orders', { where: {} });
             expect(results.length).toBe(5);
         });
 
@@ -317,16 +313,16 @@ describe('SqlDriver Advanced Operations (SQLite)', () => {
 
         it('should handle pagination with skip and limit', async () => {
             const page1 = await driver.find('orders', {
-                sort: [['id', 'asc']],
-                skip: 0,
+                orderBy: [{ field: 'id', order: 'asc' }],
+                offset: 0,
                 limit: 2
             });
             expect(page1.length).toBe(2);
             expect(page1[0].id).toBe('1');
 
             const page2 = await driver.find('orders', {
-                sort: [['id', 'asc']],
-                skip: 2,
+                orderBy: [{ field: 'id', order: 'asc' }],
+                offset: 2,
                 limit: 2
             });
             expect(page2.length).toBe(2);
@@ -335,7 +331,7 @@ describe('SqlDriver Advanced Operations (SQLite)', () => {
 
         it('should handle skip beyond total records', async () => {
             const results = await driver.find('orders', {
-                skip: 100,
+                offset: 100,
                 limit: 10
             });
             expect(results.length).toBe(0);
@@ -343,19 +339,22 @@ describe('SqlDriver Advanced Operations (SQLite)', () => {
 
         it('should handle complex nested filters', async () => {
             const results = await driver.find('orders', {
-                filters: [
-                    [
-                        ['status', '=', 'completed'],
-                        'and',
-                        ['amount', '>', 100]
-                    ],
-                    'or',
-                    [
-                        ['customer', '=', 'Alice'],
-                        'and',
-                        ['status', '=', 'pending']
+                where: {
+                    $or: [
+                        {
+                            $and: [
+                                { status: 'completed' },
+                                { amount: { $gt: 100 } }
+                            ]
+                        },
+                        {
+                            $and: [
+                                { customer: 'Alice' },
+                                { status: 'pending' }
+                            ]
+                        }
                     ]
-                ]
+                }
             });
 
             expect(results.length).toBeGreaterThan(0);
@@ -363,7 +362,7 @@ describe('SqlDriver Advanced Operations (SQLite)', () => {
 
         it('should handle contains filter', async () => {
             const results = await driver.find('orders', {
-                filters: [['product', 'contains', 'top']]
+                where: { product: { $contains: 'top' } }
             });
 
             expect(results.length).toBe(2); // Laptop matches
@@ -372,7 +371,7 @@ describe('SqlDriver Advanced Operations (SQLite)', () => {
 
         it('should handle in filter', async () => {
             const results = await driver.find('orders', {
-                filters: [['status', 'in', ['completed', 'pending']]]
+                where: { status: { $in: ['completed', 'pending'] } }
             });
 
             expect(results.length).toBe(4);
@@ -380,7 +379,7 @@ describe('SqlDriver Advanced Operations (SQLite)', () => {
 
         it('should handle nin (not in) filter', async () => {
             const results = await driver.find('orders', {
-                filters: [['status', 'nin', ['cancelled']]]
+                where: { status: { $nin: ['cancelled'] } }
             });
 
             expect(results.length).toBe(4);
@@ -388,7 +387,7 @@ describe('SqlDriver Advanced Operations (SQLite)', () => {
 
         it('should handle findOne with query parameter', async () => {
             const result = await driver.findOne('orders', null as any, {
-                filters: [['customer', '=', 'Charlie']]
+                where: { customer: 'Charlie' }
             });
 
             expect(result).toBeDefined();
@@ -401,11 +400,12 @@ describe('SqlDriver Advanced Operations (SQLite)', () => {
         });
 
         it('should handle count with complex filters', async () => {
-            const count = await driver.count('orders', [
-                ['status', '=', 'completed'],
-                'and',
-                ['amount', '>', 100]
-            ]);
+            const count = await driver.count('orders', {
+                $and: [
+                    { status: 'completed' },
+                    { amount: { $gt: 100 } }
+                ]
+            });
 
             expect(count).toBe(2); // Laptop and Monitor orders
         });

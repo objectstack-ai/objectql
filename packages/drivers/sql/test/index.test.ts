@@ -51,8 +51,8 @@ describe('SqlDriver (SQLite Integration)', () => {
     it('should find objects with filters', async () => {
         const query: UnifiedQuery = {
             fields: ['name', 'age'],
-            filters: [['age', '>', 18]],
-            sort: [['name', 'asc']]
+            where: { age: { $gt: 18 } },
+            orderBy: [{ field: 'name', order: 'asc' }]
         };
         const results = await driver.find('users', query);
         
@@ -63,11 +63,12 @@ describe('SqlDriver (SQLite Integration)', () => {
     it('should apply simple AND/OR logic', async () => {
         // age = 17 OR age > 29
         const query: UnifiedQuery = {
-            filters: [
-                ['age', '=', 17],
-                'or',
-                ['age', '>', 29]
-            ]
+            where: {
+                $or: [
+                    { age: 17 },
+                    { age: { $gt: 29 } }
+                ]
+            }
         };
         const results = await driver.find('users', query);
         const names = results.map((r: any) => r.name).sort();
@@ -76,7 +77,7 @@ describe('SqlDriver (SQLite Integration)', () => {
 
     it('should find one object by id', async () => {
         // First get an ID
-        const [alice] = await driver.find('users', { filters: [['name', '=', 'Alice']] });
+        const [alice] = await driver.find('users', { where: { name: 'Alice' } });
         expect(alice).toBeDefined();
 
         const fetched = await driver.findOne('users', alice.id);
@@ -88,13 +89,13 @@ describe('SqlDriver (SQLite Integration)', () => {
         const newItem = { name: 'Eve', age: 22 };
         await driver.create('users', newItem);
 
-        const [eve] = await driver.find('users', { filters: [['name', '=', 'Eve']] });
+        const [eve] = await driver.find('users', { where: { name: 'Eve' } });
         expect(eve).toBeDefined();
         expect(eve.age).toBe(22);
     });
 
     it('should update an object', async () => {
-        const [bob] = await driver.find('users', { filters: [['name', '=', 'Bob']] });
+        const [bob] = await driver.find('users', { where: { name: 'Bob' } });
         await driver.update('users', bob.id, { age: 18 });
 
         const updated = await driver.findOne('users', bob.id);
@@ -102,7 +103,7 @@ describe('SqlDriver (SQLite Integration)', () => {
     });
 
     it('should delete an object', async () => {
-        const [charlie] = await driver.find('users', { filters: [['name', '=', 'Charlie']] });
+        const [charlie] = await driver.find('users', { where: { name: 'Charlie' } });
         await driver.delete('users', charlie.id);
 
         const deleted = await driver.findOne('users', charlie.id);
@@ -110,7 +111,7 @@ describe('SqlDriver (SQLite Integration)', () => {
     });
 
     it('should count objects', async () => {
-        const count = await driver.count('users', [['age', '=', 17]]);
+        const count = await driver.count('users', { age: 17 });
         expect(count).toBe(2);
     });
 

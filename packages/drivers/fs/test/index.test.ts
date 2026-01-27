@@ -121,7 +121,7 @@ describe('FileSystemDriver', () => {
 
         test('should filter records with equality', async () => {
             const results = await driver.find('products', {
-                filters: [['category', '=', 'electronics']]
+                where: { category: { $eq: 'electronics' } }
             });
 
             expect(results.length).toBe(2);
@@ -130,7 +130,7 @@ describe('FileSystemDriver', () => {
 
         test('should filter records with comparison operators', async () => {
             const results = await driver.find('products', {
-                filters: [['price', '>', 100]]
+                where: { price: { $gt: 100 } }
             });
 
             expect(results.length).toBe(3);
@@ -139,7 +139,7 @@ describe('FileSystemDriver', () => {
 
         test('should filter with IN operator', async () => {
             const results = await driver.find('products', {
-                filters: [['id', 'in', ['p1', 'p3']]]
+                where: { id: { $in: ['p1', 'p3'] } }
             });
 
             expect(results.length).toBe(2);
@@ -148,7 +148,7 @@ describe('FileSystemDriver', () => {
 
         test('should filter with LIKE operator', async () => {
             const results = await driver.find('products', {
-                filters: [['name', 'like', 'a']]
+                where: { name: { $regex: 'a' } }
             });
 
             expect(results.length).toBe(2); // Laptop, Chair
@@ -156,7 +156,7 @@ describe('FileSystemDriver', () => {
 
         test('should sort records', async () => {
             const results = await driver.find('products', {
-                sort: [['price', 'asc']]
+                orderBy: [{ field: 'price', order: 'asc' }]
             });
 
             expect(results[0].name).toBe('Mouse');
@@ -165,7 +165,7 @@ describe('FileSystemDriver', () => {
 
         test('should paginate records', async () => {
             const page1 = await driver.find('products', {
-                sort: [['price', 'asc']],
+                orderBy: [{ field: 'price', order: 'asc' }],
                 limit: 2
             });
 
@@ -173,8 +173,8 @@ describe('FileSystemDriver', () => {
             expect(page1[0].name).toBe('Mouse');
 
             const page2 = await driver.find('products', {
-                sort: [['price', 'asc']],
-                skip: 2,
+                orderBy: [{ field: 'price', order: 'asc' }],
+                offset: 2,
                 limit: 2
             });
 
@@ -200,7 +200,7 @@ describe('FileSystemDriver', () => {
 
         test('should count filtered records', async () => {
             const count = await driver.count('products', {
-                filters: [['category', '=', 'electronics']]
+                where: { category: { $eq: 'electronics' } }
             });
             expect(count).toBe(2);
         });
@@ -233,14 +233,14 @@ describe('FileSystemDriver', () => {
 
             const result = await driver.updateMany(
                 'tasks',
-                [['status', '=', 'pending']],
+                { status: { $eq: 'pending' } },
                 { status: 'in_progress' }
             );
 
             expect(result.modifiedCount).toBe(2);
 
             const updated = await driver.find('tasks', {
-                filters: [['status', '=', 'in_progress']]
+                where: { status: { $eq: 'in_progress' } }
             });
             expect(updated.length).toBe(2);
         });
@@ -252,7 +252,7 @@ describe('FileSystemDriver', () => {
 
             const result = await driver.deleteMany(
                 'logs',
-                [['level', 'in', ['info', 'debug']]]
+                { level: { $in: ['info', 'debug'] } }
             );
 
             expect(result.deletedCount).toBe(2);

@@ -62,22 +62,15 @@ describe('MongoDriver', () => {
 
     it('should find objects with query', async () => {
         const query = {
-            filters: [['age', '>', 18]],
-            sort: [['name', 'asc']],
-            skip: 10,
+            where: { age: { $gt: 18 } },
+            orderBy: [{ field: 'name', order: 'asc' as const }],
+            offset: 10,
             limit: 5
         };
         
         await driver.find('users', query);
         
-        // Debugging what was actually called
-        // console.log('Find calls:', mockCollection.find.mock.calls);
-
         expect(mockDb.collection).toHaveBeenCalledWith('users');
-        
-        // We expect: find(filter, options)
-        // filter = { $and: [{ age: { $gt: 18 } }] }
-        // options = { limit: 5, skip: 10, sort: { name: 1 } }
         
         expect(mockCollection.find).toHaveBeenCalledWith(
             { age: { $gt: 18 } },
@@ -92,7 +85,12 @@ describe('MongoDriver', () => {
 
     it('should handle OR filters', async () => {
         const query = {
-            filters: [['age', '>', 18], 'or', ['role', '=', 'admin']]
+            where: {
+                $or: [
+                    { age: { $gt: 18 } },
+                    { role: 'admin' }
+                ]
+            }
         };
         await driver.find('users', query);
         
@@ -109,7 +107,7 @@ describe('MongoDriver', () => {
 
     it('should map "id" field to "_id" in filters', async () => {
         const query = {
-            filters: [['id', '=', '12345']]
+            where: { id: '12345' }
         };
         await driver.find('users', query);
         
@@ -121,7 +119,7 @@ describe('MongoDriver', () => {
 
     it('should map "id" to "_id" in sorting', async () => {
         const query = {
-            sort: [['id', 'desc']]
+            orderBy: [{ field: 'id', order: 'desc' as const }]
         };
         await driver.find('users', query);
         
@@ -192,7 +190,7 @@ describe('MongoDriver', () => {
     // Backward compatibility tests for legacy '_id' usage
     it('should accept "_id" field in filters for backward compatibility', async () => {
         const query = {
-            filters: [['_id', '=', '12345']]
+            where: { _id: '12345' }
         };
         await driver.find('users', query);
         
@@ -204,7 +202,7 @@ describe('MongoDriver', () => {
 
     it('should accept "_id" in sorting for backward compatibility', async () => {
         const query = {
-            sort: [['_id', 'asc']]
+            orderBy: [{ field: '_id', order: 'asc' as const }]
         };
         await driver.find('users', query);
         
@@ -237,19 +235,22 @@ describe('MongoDriver', () => {
 
     it('should handle nested filter groups', async () => {
         const query = {
-            filters: [
-                [
-                    ['status', '=', 'completed'],
-                    'and',
-                    ['amount', '>', 100]
-                ],
-                'or',
-                [
-                    ['customer', '=', 'Alice'],
-                    'and',
-                    ['status', '=', 'pending']
+            where: {
+                $or: [
+                    {
+                        $and: [
+                            { status: 'completed' },
+                            { amount: { $gt: 100 } }
+                        ]
+                    },
+                    {
+                        $and: [
+                            { customer: 'Alice' },
+                            { status: 'pending' }
+                        ]
+                    }
                 ]
-            ]
+            }
         };
         await driver.find('orders', query);
         
@@ -271,19 +272,22 @@ describe('MongoDriver', () => {
 
     it('should handle deeply nested filter groups', async () => {
         const query = {
-            filters: [
-                [
-                    [
-                        ['age', '>', 22],
-                        'and',
-                        ['status', '=', 'active']
-                    ],
-                    'or',
-                    ['role', '=', 'admin']
-                ],
-                'and',
-                ['name', '!=', 'Bob']
-            ]
+            where: {
+                $and: [
+                    {
+                        $or: [
+                            {
+                                $and: [
+                                    { age: { $gt: 22 } },
+                                    { status: 'active' }
+                                ]
+                            },
+                            { role: 'admin' }
+                        ]
+                    },
+                    { name: { $ne: 'Bob' } }
+                ]
+            }
         };
         await driver.find('users', query);
         
@@ -313,13 +317,17 @@ describe('MongoDriver', () => {
 
     it('should handle nested groups with implicit AND', async () => {
         const query = {
-            filters: [
-                [
-                    ['status', '=', 'active'],
-                    ['role', '=', 'admin']
-                ],
-                ['age', '>', 25]
-            ]
+            where: {
+                $and: [
+                    {
+                        $and: [
+                            { status: 'active' },
+                            { role: 'admin' }
+                        ]
+                    },
+                    { age: { $gt: 25 } }
+                ]
+            }
         };
         await driver.find('users', query);
         

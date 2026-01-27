@@ -50,7 +50,7 @@ async function main() {
 
     console.log("Querying Tasks...");
     const tasks = await ctx.object('tasks').find({
-        filters: { project: projectId }
+        where: { project: projectId }
     });
 
     console.log("📊 Project Report:", JSON.stringify({ project, tasks }, null, 2));

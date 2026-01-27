@@ -217,8 +217,6 @@ export class LocalStorageDriver implements Driver {
      * Find multiple records matching the query criteria.
      */
     async find(objectName: string, query: any = {}, options?: any): Promise<any[]> {
-        // Normalize query to support both legacy and QueryAST formats
-        const normalizedQuery = this.normalizeQuery(query);
         const keys = this.getObjectKeys(objectName);
         let results: any[] = [];
         
@@ -235,26 +233,29 @@ export class LocalStorageDriver implements Driver {
         }
         
         // Apply filters
-        if (normalizedQuery.filters) {
-            results = this.applyFilters(results, normalizedQuery.filters);
+        if (query.where) {
+            const filtersArray = this.convertFilterConditionToArray(query.where);
+            if (filtersArray) {
+                results = this.applyFilters(results, filtersArray);
+            }
         }
         
         // Apply sorting
-        if (normalizedQuery.sort && Array.isArray(normalizedQuery.sort)) {
-            results = this.applySort(results, normalizedQuery.sort);
+        if (query.orderBy && Array.isArray(query.orderBy)) {
+            results = this.applySort(results, query.orderBy);
         }
         
         // Apply pagination
-        if (normalizedQuery.skip) {
-            results = results.slice(normalizedQuery.skip);
+        if (query.offset) {
+            results = results.slice(query.offset);
         }
-        if (normalizedQuery.limit) {
-            results = results.slice(0, normalizedQuery.limit);
+        if (query.limit) {
+            results = results.slice(0, query.limit);
         }
         
         // Apply field projection
-        if (normalizedQuery.fields && Array.isArray(normalizedQuery.fields)) {
-            results = results.map(doc => this.projectFields(doc, normalizedQuery.fields));
+        if (query.fields && Array.isArray(query.fields)) {
+            results = results.map(doc => this.projectFields(doc, query.fields));
         }
         
         return results;
@@ -400,14 +401,20 @@ export class LocalStorageDriver implements Driver {
     async count(objectName: string, filters: any, options?: any): Promise<number> {
         const keys = this.getObjectKeys(objectName);
         
-        // Extract actual filters from query object if needed
-        let actualFilters = filters;
-        if (filters && !Array.isArray(filters) && filters.filters) {
-            actualFilters = filters.filters;
+        // Extract where condition from query object if needed
+        let whereCondition = filters;
+        if (filters && !Array.isArray(filters) && filters.where) {
+            whereCondition = filters.where;
         }
         
         // If no filters, return total count
-        if (!actualFilters || (Array.isArray(actualFilters) && actualFilters.length === 0)) {
+        if (!whereCondition) {
+            return keys.length;
+        }
+        
+        // Convert to array format and count matching records
+        const filtersArray = this.convertFilterConditionToArray(whereCondition);
+        if (!filtersArray || filtersArray.length === 0) {
             return keys.length;
         }
         
@@ -418,7 +425,7 @@ export class LocalStorageDriver implements Driver {
             if (data) {
                 try {
                     const doc = JSON.parse(data);
-                    if (this.matchesFilters(doc, actualFilters)) {
+                    if (this.matchesFilters(doc, filtersArray)) {
                         count++;
                     }
                 } catch (error) {
@@ -476,12 +483,21 @@ export class LocalStorageDriver implements Driver {
         const keys = this.getObjectKeys(objectName);
         let count = 0;
         
+        // Extract where condition from query object if needed
+        let whereCondition = filters;
+        if (filters && !Array.isArray(filters) && filters.where) {
+            whereCondition = filters.where;
+        }
+        
+        // Convert to array format for matchesFilters
+        const filtersArray = this.convertFilterConditionToArray(whereCondition) || [];
+        
         for (const key of keys) {
             const existing = this.storage.getItem(key);
             if (existing) {
                 try {
                     const record = JSON.parse(existing);
-                    if (this.matchesFilters(record, filters)) {
+                    if (this.matchesFilters(record, filtersArray)) {
                         const updated = {
                             ...record,
                             ...data,
@@ -508,12 +524,21 @@ export class LocalStorageDriver implements Driver {
         const keys = this.getObjectKeys(objectName);
         const keysToDelete: string[] = [];
         
+        // Extract where condition from query object if needed
+        let whereCondition = filters;
+        if (filters && !Array.isArray(filters) && filters.where) {
+            whereCondition = filters.where;
+        }
+        
+        // Convert to array format for matchesFilters
+        const filtersArray = this.convertFilterConditionToArray(whereCondition) || [];
+        
         for (const key of keys) {
             const data = this.storage.getItem(key);
             if (data) {
                 try {
                     const record = JSON.parse(data);
-                    if (this.matchesFilters(record, filters)) {
+                    if (this.matchesFilters(record, filtersArray)) {
                         keysToDelete.push(key);
                     }
                 } catch (error) {
@@ -584,18 +609,8 @@ export class LocalStorageDriver implements Driver {
     async executeQuery(ast: QueryAST, options?: any): Promise<{ value: any[]; count?: number }> {
         const objectName = ast.object || '';
         
-        // Convert QueryAST to legacy query format
-        // Note: Convert FilterCondition (MongoDB-like) to array format for localstorage driver
-        const legacyQuery: any = {
-            fields: ast.fields,
-            filters: this.convertFilterConditionToArray(ast.where),
-            sort: ast.orderBy?.map((s: SortNode) => [s.field, s.order]),
-            limit: ast.limit,
-            skip: ast.offset,
-        };
-        
-        // Use existing find method
-        const results = await this.find(objectName, legacyQuery, options);
+        // Use existing find method with QueryAST directly
+        const results = await this.find(objectName, ast, options);
         
         return {
             value: results,
@@ -794,39 +809,6 @@ export class LocalStorageDriver implements Driver {
         }
         
         return result.length > 0 ? result : undefined;
-    }
-
-    /**
-     * Normalizes query format to support both legacy UnifiedQuery and QueryAST formats.
-     * This ensures backward compatibility while supporting the new @objectstack/spec interface.
-     * 
-     * QueryAST format uses 'top' for limit, while UnifiedQuery uses 'limit'.
-     * QueryAST sort is array of {field, order}, while UnifiedQuery is array of [field, order].
-     */
-    private normalizeQuery(query: any): any {
-        if (!query) return {};
-        
-        const normalized: any = { ...query };
-        
-        // Normalize limit/top
-        if (normalized.top !== undefined && normalized.limit === undefined) {
-            normalized.limit = normalized.top;
-        }
-        
-        // Normalize sort format
-        if (normalized.sort && Array.isArray(normalized.sort)) {
-            // Check if it's already in the array format [field, order]
-            const firstSort = normalized.sort[0];
-            if (firstSort && typeof firstSort === 'object' && !Array.isArray(firstSort)) {
-                // Convert from QueryAST format {field, order} to internal format [field, order]
-                normalized.sort = normalized.sort.map((item: any) => [
-                    item.field,
-                    item.order || item.direction || item.dir || 'asc'
-                ]);
-            }
-        }
-        
-        return normalized;
     }
 
     private applyFilters(records: any[], filters: any[]): any[] {

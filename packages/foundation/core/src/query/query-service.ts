@@ -232,7 +232,7 @@ export class QueryService {
         } else if (driver.executeQuery) {
             // Fallback to query with ID filter
             const query: UnifiedQuery = {
-                filters: [['_id', '=', id]]
+                where: { _id: id }
             };
             const ast = this.buildQueryAST(objectName, query);
             const queryResult = await driver.executeQuery(ast, driverOptions);
@@ -256,19 +256,19 @@ export class QueryService {
      * Execute a count query
      * 
      * @param objectName - The object to query
-     * @param filters - Optional filters
+     * @param where - Optional filter condition
      * @param options - Query execution options
      * @returns Count of matching records
      */
     async count(
         objectName: string, 
-        filters?: Filter[], 
+        where?: Filter, 
         options: QueryOptions = {}
     ): Promise<QueryResult<number>> {
         const driver = this.getDriver(objectName);
         const startTime = options.profile ? Date.now() : 0;
         
-        const query: UnifiedQuery = filters ? { filters } : {};
+        const query: UnifiedQuery = where ? { where } : {};
         const ast = this.buildQueryAST(objectName, query);
         
         const driverOptions = {
@@ -280,7 +280,7 @@ export class QueryService {
         
         if (driver.count) {
             // Legacy driver interface
-            count = await driver.count(objectName, filters || [], driverOptions);
+            count = await driver.count(objectName, where || {}, driverOptions);
         } else if (driver.executeQuery) {
             // Use executeQuery and count results
             // Note: This is inefficient for large datasets
