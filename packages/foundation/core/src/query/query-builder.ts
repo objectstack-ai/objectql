@@ -15,7 +15,8 @@ import { FilterTranslator } from './filter-translator';
  * Query Builder
  * 
  * Builds ObjectStack QueryAST from ObjectQL UnifiedQuery.
- * This is the central query construction module for ObjectQL.
+ * Since UnifiedQuery now uses the standard protocol format directly,
+ * this is now a simple pass-through with object name injection.
  */
 export class QueryBuilder {
     private filterTranslator: FilterTranslator;
@@ -28,52 +29,20 @@ export class QueryBuilder {
      * Build a QueryAST from a UnifiedQuery
      * 
      * @param objectName - Target object name
-     * @param query - ObjectQL UnifiedQuery
+     * @param query - ObjectQL UnifiedQuery (now in standard QueryAST format)
      * @returns ObjectStack QueryAST
      */
     build(objectName: string, query: UnifiedQuery): QueryAST {
+        // UnifiedQuery now uses the same format as QueryAST
+        // Just add the object name and pass through
         const ast: QueryAST = {
             object: objectName,
+            ...query
         };
 
-        // Map fields
-        if (query.fields) {
-            ast.fields = query.fields;
-        }
-
-        // Map filters using FilterTranslator
-        if (query.filters) {
-            ast.where = this.filterTranslator.translate(query.filters);
-        }
-
-        // Map sort
-        if (query.sort) {
-            ast.orderBy = query.sort.map(([field, order]) => ({
-                field,
-                order: order as 'asc' | 'desc'
-            }));
-        }
-
-        // Map pagination
-        if (query.limit !== undefined) {
-            ast.limit = query.limit;
-        }
-        if (query.skip !== undefined) {
-            ast.offset = query.skip;
-        }
-
-        // Map groupBy
-        if (query.groupBy) {
-            ast.groupBy = query.groupBy;
-        }
-
-        // Map aggregations
-        if (query.aggregate) {
-            ast.aggregations = query.aggregate.map(agg => ({
-                function: agg.func as any,
-                field: agg.field,
-                alias: agg.alias || `${agg.func}_${agg.field}`
-            }));
+        // Ensure where is properly formatted
+        if (query.where) {
+            ast.where = this.filterTranslator.translate(query.where);
         }
 
         return ast;
