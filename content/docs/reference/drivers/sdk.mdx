@@ -151,12 +151,12 @@ new DataApiClient(config: DataApiClientConfig)
 **Config Options:**
 * `baseUrl` (string, required) - Base URL of the ObjectQL server
 * `token` (string, optional) - Authentication token
-* `headers` (Record<string, string>, optional) - Additional HTTP headers
+* `headers` (Record&lt;string, string&gt;, optional) - Additional HTTP headers
 * `timeout` (number, optional) - Request timeout in milliseconds (default: 30000)
 
 ### Methods
 
-#### `list<T>(objectName: string, params?: DataApiListParams): Promise<DataApiListResponse<T>>`
+#### `list&lt;T&gt;(objectName: string, params?: DataApiListParams): Promise&lt;DataApiListResponse&lt;T&gt;&gt;`
 
 List records with optional filtering, sorting, and pagination.
 
@@ -170,7 +170,7 @@ const users = await client.list('users', {
 });
 ```
 
-#### `get<T>(objectName: string, id: string | number): Promise<DataApiItemResponse<T>>`
+#### `get&lt;T&gt;(objectName: string, id: string | number): Promise&lt;DataApiItemResponse&lt;T&gt;&gt;`
 
 Get a single record by ID.
 
@@ -178,7 +178,7 @@ Get a single record by ID.
 const user = await client.get('users', 'user_123');
 ```
 
-#### `create<T>(objectName: string, data: DataApiCreateRequest): Promise<DataApiItemResponse<T>>`
+#### `create&lt;T&gt;(objectName: string, data: DataApiCreateRequest): Promise&lt;DataApiItemResponse&lt;T&gt;&gt;`
 
 Create a new record.
 
@@ -190,7 +190,7 @@ const newUser = await client.create('users', {
 });
 ```
 
-#### `createMany<T>(objectName: string, data: DataApiCreateManyRequest): Promise<DataApiListResponse<T>>`
+#### `createMany&lt;T&gt;(objectName: string, data: DataApiCreateManyRequest): Promise&lt;DataApiListResponse&lt;T&gt;&gt;`
 
 Create multiple records at once.
 
@@ -201,7 +201,7 @@ const newUsers = await client.createMany('users', [
 ]);
 ```
 
-#### `update<T>(objectName: string, id: string | number, data: DataApiUpdateRequest): Promise<DataApiItemResponse<T>>`
+#### `update&lt;T&gt;(objectName: string, id: string | number, data: DataApiUpdateRequest): Promise&lt;DataApiItemResponse&lt;T&gt;&gt;`
 
 Update an existing record.
 
@@ -314,7 +314,7 @@ new RemoteDriver(baseUrl: string, rpcPath?: string)
 * `executePath` (string, optional) - Custom execute endpoint path (default: /api/execute)
 * `token` (string, optional) - Authentication token (Bearer)
 * `apiKey` (string, optional) - API key for authentication
-* `headers` (Record<string, string>, optional) - Custom HTTP headers
+* `headers` (Record&lt;string, string&gt;, optional) - Custom HTTP headers
 * `timeout` (number, optional) - Request timeout in milliseconds (default: 30000)
 * `enableRetry` (boolean, optional) - Enable automatic retry on failure (default: false)
 * `maxRetries` (number, optional) - Maximum retry attempts (default: 3)
