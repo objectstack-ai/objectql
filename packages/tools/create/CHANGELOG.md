@@ -1,5 +1,16 @@
 # @objectql/create
 
+## 4.0.2
+
+### Patch Changes
+
+- **Patch Release v4.0.2**
+
+  This patch release includes:
+  - Infrastructure improvements and maintenance updates
+  - Enhanced stability and reliability
+  - Bug fixes and performance optimizations
+
 ## 4.0.1
 
 ### Patch Changes

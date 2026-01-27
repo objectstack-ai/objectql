@@ -1,5 +1,23 @@
 # @objectql/cli
 
+## 4.0.2
+
+### Patch Changes
+
+- **Patch Release v4.0.2**
+
+  This patch release includes:
+  - Infrastructure improvements and maintenance updates
+  - Enhanced stability and reliability
+  - Bug fixes and performance optimizations
+
+- Updated dependencies
+  - @objectql/core@4.0.2
+  - @objectql/driver-sql@4.0.2
+  - @objectql/platform-node@4.0.2
+  - @objectql/server@4.0.2
+  - @objectql/types@4.0.2
+
 ## 4.0.1
 
 ### Patch Changes
