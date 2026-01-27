@@ -149,9 +149,6 @@ export class MemoryDriver implements Driver {
      * Supports filtering, sorting, pagination, and field projection using Mingo.
      */
     async find(objectName: string, query: any = {}, options?: any): Promise<any[]> {
-        // Normalize query to support both legacy and QueryAST formats
-        const normalizedQuery = this.normalizeQuery(query);
-        
         // Get all records for this object type
         const pattern = `${objectName}:`;
         let records: any[] = [];
@@ -163,7 +160,7 @@ export class MemoryDriver implements Driver {
         }
         
         // Convert ObjectQL filters to MongoDB query format
-        const mongoQuery = this.convertToMongoQuery(normalizedQuery.filters);
+        const mongoQuery = this.convertToMongoQuery(query.where);
         
         // Apply filters using Mingo
         if (mongoQuery && Object.keys(mongoQuery).length > 0) {
@@ -172,21 +169,21 @@ export class MemoryDriver implements Driver {
         }
         
         // Apply sorting manually (Mingo's sort has issues with CJS builds)
-        if (normalizedQuery.sort && Array.isArray(normalizedQuery.sort) && normalizedQuery.sort.length > 0) {
-            records = this.applyManualSort(records, normalizedQuery.sort);
+        if (query.orderBy && Array.isArray(query.orderBy) && query.orderBy.length > 0) {
+            records = this.applyManualSort(records, query.orderBy);
         }
         
         // Apply pagination
-        if (normalizedQuery.skip) {
-            records = records.slice(normalizedQuery.skip);
+        if (query.offset) {
+            records = records.slice(query.offset);
         }
-        if (normalizedQuery.limit) {
-            records = records.slice(0, normalizedQuery.limit);
+        if (query.limit) {
+            records = records.slice(0, query.limit);
         }
         
         // Apply field projection
-        if (normalizedQuery.fields && Array.isArray(normalizedQuery.fields)) {
-            records = records.map(doc => this.projectFields(doc, normalizedQuery.fields));
+        if (query.fields && Array.isArray(query.fields)) {
+            records = records.map(doc => this.projectFields(doc, query.fields));
         }
         
         return records;
@@ -295,10 +292,10 @@ export class MemoryDriver implements Driver {
     async count(objectName: string, filters: any, options?: any): Promise<number> {
         const pattern = `${objectName}:`;
         
-        // Extract actual filters from query object if needed
-        let actualFilters = filters;
-        if (filters && !Array.isArray(filters) && filters.filters) {
-            actualFilters = filters.filters;
+        // Extract where condition from query object if needed
+        let whereCondition = filters;
+        if (filters && !Array.isArray(filters) && filters.where) {
+            whereCondition = filters.where;
         }
         
         // Get all records for this object type
@@ -310,12 +307,12 @@ export class MemoryDriver implements Driver {
         }
         
         // If no filters, return total count
-        if (!actualFilters || (Array.isArray(actualFilters) && actualFilters.length === 0)) {
+        if (!whereCondition || (Array.isArray(whereCondition) && whereCondition.length === 0)) {
             return records.length;
         }
         
         // Convert to MongoDB query and use Mingo to count
-        const mongoQuery = this.convertToMongoQuery(actualFilters);
+        const mongoQuery = this.convertToMongoQuery(whereCondition);
         if (mongoQuery && Object.keys(mongoQuery).length > 0) {
             const mingoQuery = new Query(mongoQuery);
             const matchedRecords = mingoQuery.find(records).all();
@@ -486,32 +483,6 @@ export class MemoryDriver implements Driver {
      * QueryAST format uses 'top' for limit, while UnifiedQuery uses 'limit'.
      * QueryAST sort is array of {field, order}, while UnifiedQuery is array of [field, order].
      */
-    private normalizeQuery(query: any): any {
-        if (!query) return {};
-        
-        const normalized: any = { ...query };
-        
-        // Normalize limit/top
-        if (normalized.top !== undefined && normalized.limit === undefined) {
-            normalized.limit = normalized.top;
-        }
-        
-        // Normalize sort format
-        if (normalized.sort && Array.isArray(normalized.sort)) {
-            // Check if it's already in the array format [field, order]
-            const firstSort = normalized.sort[0];
-            if (firstSort && typeof firstSort === 'object' && !Array.isArray(firstSort)) {
-                // Convert from QueryAST format {field, order} to internal format [field, order]
-                normalized.sort = normalized.sort.map((item: any) => [
-                    item.field,
-                    item.order || item.direction || item.dir || 'asc'
-                ]);
-            }
-        }
-        
-        return normalized;
-    }
-
     /**
      * Convert ObjectQL filters to MongoDB query format for Mingo.
      * 
@@ -759,19 +730,8 @@ export class MemoryDriver implements Driver {
     async executeQuery(ast: QueryAST, options?: any): Promise<{ value: any[]; count?: number }> {
         const objectName = ast.object || '';
         
-        // Convert QueryAST to legacy query format
-        // Note: ast.where is already in FilterCondition format (MongoDB-like with $eq, $and, etc.)
-        // which can be passed directly to Mingo, so we just pass it as-is
-        const legacyQuery: any = {
-            fields: ast.fields,
-            filters: ast.where,  // FilterCondition is already MongoDB-compatible
-            sort: ast.orderBy?.map((s: SortNode) => [s.field, s.order]),
-            limit: ast.limit,
-            offset: ast.offset,
-        };
-        
-        // Use existing find method
-        const results = await this.find(objectName, legacyQuery, options);
+        // Use existing find method with QueryAST directly
+        const results = await this.find(objectName, ast, options);
         
         return {
             value: results,
