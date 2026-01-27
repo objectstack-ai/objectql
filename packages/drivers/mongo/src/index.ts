@@ -192,9 +192,14 @@ export class MongoDriver implements Driver {
                     result['_id'] = insideLogicalOp ? { $eq: value } : value;
                 }
             }
-            // Skip MongoDB operator keys (starting with $) - keep as-is
+            // Skip MongoDB operator keys (starting with $) - but still recurse for nested mappings
             else if (key.startsWith('$')) {
-                result[key] = value;
+                // Recursively process to handle nested objects that might contain 'id' fields
+                if (typeof value === 'object' && value !== null) {
+                    result[key] = this.mapIdFieldsInFilter(value, insideLogicalOp);
+                } else {
+                    result[key] = value;
+                }
             }
             // Recursively handle nested objects (already operator-wrapped values)
             else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
