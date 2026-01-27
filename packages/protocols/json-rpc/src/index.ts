@@ -200,6 +200,11 @@ export class JSONRPCPlugin implements RuntimePlugin {
         });
 
         this.methods.set('metadata.getAll', async (metaType: string) => {
+            // Validate metaType parameter
+            if (!metaType || typeof metaType !== 'string') {
+                throw new Error('Invalid metaType parameter: must be a non-empty string');
+            }
+            
             const items = this.protocol!.getAllMetaItems(metaType);
             return Object.fromEntries(items);
         });
@@ -377,11 +382,19 @@ export class JSONRPCPlugin implements RuntimePlugin {
             // Execute method with params
             let result: any;
             if (Array.isArray(request.params)) {
+                // Positional parameters - supported
                 result = await method(...request.params);
             } else if (request.params && typeof request.params === 'object') {
-                // Named parameters - convert to positional (simplified)
+                // Named parameters
+                // NOTE: This is a simplified implementation that passes the entire params object
+                // as a single argument. Full implementation would require mapping named parameters
+                // to the method's positional parameter list based on method signatures.
+                // For production use, consider only supporting positional parameters or implementing
+                // a complete parameter mapping solution.
+                console.warn(`[JSONRPCPlugin] Named parameters not fully supported. Passing params object as single argument.`);
                 result = await method(request.params);
             } else {
+                // No parameters
                 result = await method();
             }
 

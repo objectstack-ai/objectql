@@ -412,9 +412,12 @@ export class ODataV4Plugin implements RuntimePlugin {
             return { [eqMatch[1]]: { $eq: eqMatch[2] } };
         }
         
-        // Unsupported filter expression - log warning and return empty filter
-        console.warn(`[ODataV4Plugin] Unsupported $filter expression: "${filter}". Only "field eq 'value'" is currently supported.`);
-        return {};
+        // Unsupported filter expression - throw error to make limitations explicit
+        throw new Error(
+            `Unsupported $filter expression: "${filter}". ` +
+            `This plugin currently only supports simple equality filters like "field eq 'value'". ` +
+            `For full OData filter support, a complete OData expression parser is needed.`
+        );
     }
 
     /**
@@ -436,16 +439,37 @@ export class ODataV4Plugin implements RuntimePlugin {
         const typeMap: Record<string, string> = {
             'text': 'Edm.String',
             'textarea': 'Edm.String',
+            'markdown': 'Edm.String',
+            'html': 'Edm.String',
+            'email': 'Edm.String',
+            'url': 'Edm.String',
+            'phone': 'Edm.String',
+            'password': 'Edm.String',
             'number': 'Edm.Double',
+            'currency': 'Edm.Double',
+            'percent': 'Edm.Double',
+            'autonumber': 'Edm.Int32',
             'boolean': 'Edm.Boolean',
             'date': 'Edm.Date',
             'datetime': 'Edm.DateTimeOffset',
+            'time': 'Edm.TimeOfDay',
             'select': 'Edm.String',
             'lookup': 'Edm.String',
-            'master_detail': 'Edm.String'
+            'master_detail': 'Edm.String',
+            'file': 'Edm.String',
+            'image': 'Edm.String',
+            'object': 'Edm.String',
+            'formula': 'Edm.String',
+            'summary': 'Edm.String'
         };
         
-        return typeMap[fieldType] || 'Edm.String';
+        const edmType = typeMap[fieldType];
+        if (!edmType) {
+            console.warn(`[ODataV4Plugin] Unknown field type '${fieldType}', defaulting to Edm.String`);
+            return 'Edm.String';
+        }
+        
+        return edmType;
     }
 
     /**
