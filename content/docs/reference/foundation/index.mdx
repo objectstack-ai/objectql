@@ -1,0 +1,505 @@
+---
+title: Foundation Layer Overview
+description: The core architecture of ObjectQL - Types, Core Engine, and Platform Utilities
+---
+
+# Foundation Layer Overview
+
+The Foundation Layer is the architectural backbone of ObjectQL, consisting of three tightly integrated packages that follow the **"Trinity Architecture"** pattern: Types → Core → Platform. This design ensures a clean dependency graph, prevents circular dependencies, and maintains a hallucination-free, type-safe ecosystem.
+
+## The Trinity Architecture
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    @objectql/types                      │
+│              "The Constitution" (Zero Deps)             │
+│    Pure TypeScript Interfaces, Enums, Custom Errors    │
+└─────────────────────────────────────────────────────────┘
+                          ▲
+                          │
+                          │ imports
+                          │
+┌─────────────────────────────────────────────────────────┐
+│                     @objectql/core                      │
+│                "The Runtime Engine"                     │
+│  Validator, Repository, Formula, Business Logic         │
+│           (Platform Agnostic - No Node.js)              │
+└─────────────────────────────────────────────────────────┘
+                          ▲
+                          │
+                          │ imports
+                          │
+┌─────────────────────────────────────────────────────────┐
+│                @objectql/platform-node                  │
+│              "The Node.js Bridge"                       │
+│  File System, YAML Loading, Plugin Management          │
+│         (Node.js-specific: fs, path, glob)              │
+└─────────────────────────────────────────────────────────┘
+```
+
+## Core Packages
+
+### [@objectql/types](/docs/reference/foundation/types)
+
+**Role**: The API Contract & Type System Constitution
+
+**Purpose**: Defines the **Single Source of Truth** for all TypeScript types, interfaces, and custom errors used throughout ObjectQL.
+
+**Key Principle**: Zero dependencies. This package MUST NEVER import from other packages.
+
+**What it contains**:
+- Object and field type definitions
+- Validation rule interfaces
+- Query and filter types
+- Hook and action interfaces
+- Driver abstraction layer
+- Migration and schema evolution types
+- Custom error classes
+
+**When to use**:
+- Creating new features or data models
+- Defining validation rules
+- Building custom drivers
+- Extending the ObjectQL type system
+
+```typescript
+import { ObjectConfig, FieldConfig, ValidationRule } from '@objectql/types';
+
+const project: ObjectConfig = {
+  name: 'project',
+  fields: {
+    name: { type: 'text', required: true }
+  }
+};
+```
+
+### [@objectql/core](/docs/reference/foundation/core)
+
+**Role**: The Runtime Engine & Business Logic Compiler
+
+**Purpose**: Implements the core ORM functionality, validation engine, repository pattern, and formula computation. This is where abstract intent (defined in types) becomes executable logic.
+
+**Key Principle**: Database Compiler, not ORM wrapper. Platform-agnostic with zero Node.js dependencies.
+
+**What it contains**:
+- `ObjectQL` - Main ORM class with kernel-based architecture
+- `Validator` - Metadata-driven validation engine
+- `ObjectRepository` - CRUD operations and queries
+- `Formula Engine` - Computed fields with dynamic formulas
+- `MetadataRegistry` - Dynamic schema management
+- Hooks & Actions runtime
+
+**When to use**:
+- Building applications with ObjectQL
+- Executing queries and CRUD operations
+- Running validation rules programmatically
+- Managing object repositories
+- Implementing business logic
+
+```typescript
+import { ObjectQL, Validator } from '@objectql/core';
+
+const app = new ObjectQL({
+  datasources: { default: driver }
+});
+
+await app.init();
+
+const ctx = app.createContext({ userId: 'u-1' });
+const projects = await ctx.object('project').find({
+  filters: [['status', '=', 'active']]
+});
+```
+
+### [@objectql/platform-node](/docs/reference/foundation/platform-node)
+
+**Role**: The Node.js Bridge
+
+**Purpose**: Bridges the platform-agnostic Core to Node.js-specific capabilities like file system access, YAML loading, and dynamic module discovery.
+
+**Key Principle**: Runtime-specific adapter. Contains all Node.js native module dependencies (fs, path, glob).
+
+**What it contains**:
+- `ObjectLoader` - File system metadata loader
+- YAML/YML file parsing
+- Plugin discovery and loading
+- Module system utilities
+- Convention-based file scanning
+
+**When to use**:
+- Loading metadata from `.object.yml` files
+- Auto-discovering objects in directories
+- Building Node.js-based ObjectQL applications
+- Hot-reloading metadata in development
+- Organizing metadata by feature modules
+
+```typescript
+import { ObjectLoader } from '@objectql/platform-node';
+
+const loader = new ObjectLoader(app.metadata);
+loader.load('./src/objects');
+loader.load('./src/modules/crm');
+
+await app.init();
+```
+
+## Architectural Principles
+
+### 1. Protocol-Driven Development
+
+ObjectQL is **protocol-driven, not code-driven**. The architecture enforces:
+
+- **Intent First**: Define structure in schemas/types before implementation
+- **Metadata as Code**: YAML schemas are the source of truth
+- **Type Safety**: Strict TypeScript with no `any` types
+- **AI-Friendly**: Metadata includes `ai_context` for LLM understanding
+
+### 2. Separation of Concerns
+
+Each layer has a single, well-defined responsibility:
+
+| Layer | Responsibility | Dependencies |
+|-------|---------------|--------------|
+| **Types** | Define contracts | None (zero deps) |
+| **Core** | Execute business logic | Types only |
+| **Platform** | Bridge to runtime | Types + Core |
+
+### 3. Dependency Flow
+
+Dependencies flow in **one direction only**:
+
+```
+Platform-Node → Core → Types
+     ✅           ✅      ❌ (no imports allowed)
+```
+
+**CRITICAL RULE**: The Types package enforces architectural integrity by preventing circular dependencies.
+
+### 4. Compiler Philosophy
+
+ObjectQL is a **Database Compiler**, not a runtime ORM:
+
+- **Compiles** abstract intent (AST) into optimized queries
+- **Validates** at compile-time (metadata level) and runtime
+- **Injects** security (RBAC) and validation automatically
+- **Never forgets** what developers might (permissions, validation)
+
+## How the Layers Work Together
+
+### Example: Creating a Validated Object
+
+**Step 1: Define the Type** (in `@objectql/types` or your app)
+
+```typescript
+import { ObjectConfig, CrossFieldValidationRule } from '@objectql/types';
+
+const projectConfig: ObjectConfig = {
+  name: 'project',
+  fields: {
+    start_date: { type: 'date', required: true },
+    end_date: { type: 'date', required: true },
+    status: {
+      type: 'select',
+      options: [
+        { label: 'Planning', value: 'planning' },
+        { label: 'Active', value: 'active' },
+        { label: 'Completed', value: 'completed' }
+      ]
+    }
+  },
+  validation: {
+    rules: [
+      {
+        name: 'valid_date_range',
+        type: 'cross_field',
+        rule: {
+          field: 'end_date',
+          operator: '>=',
+          compare_to: 'start_date'
+        },
+        message: 'End date must be on or after start date'
+      }
+    ]
+  }
+};
+```
+
+**Step 2: Save as YAML** (using `@objectql/platform-node`)
+
+Save to `src/objects/project.object.yml`:
+
+```yaml
+name: project
+label: Project
+fields:
+  start_date:
+    type: date
+    required: true
+  end_date:
+    type: date
+    required: true
+  status:
+    type: select
+    options:
+      - label: Planning
+        value: planning
+      - label: Active
+        value: active
+      - label: Completed
+        value: completed
+
+validation:
+  rules:
+    - name: valid_date_range
+      type: cross_field
+      rule:
+        field: end_date
+        operator: '>='
+        compare_to: start_date
+      message: End date must be on or after start date
+```
+
+**Step 3: Load and Use** (using `@objectql/core`)
+
+```typescript
+import { ObjectQL } from '@objectql/core';
+import { SqlDriver } from '@objectql/driver-sql';
+import { ObjectLoader } from '@objectql/platform-node';
+
+// Initialize Core
+const app = new ObjectQL({
+  datasources: { default: new SqlDriver({ /* config */ }) }
+});
+
+// Load Metadata from File System
+const loader = new ObjectLoader(app.metadata);
+loader.load('./src/objects');
+
+await app.init();
+
+// Use Repository (validation runs automatically)
+const ctx = app.createContext({ userId: 'u-1' });
+
+try {
+  const project = await ctx.object('project').create({
+    name: 'New Project',
+    start_date: '2024-12-31',
+    end_date: '2024-01-01',  // ❌ Invalid: before start date
+    status: 'planning'
+  });
+} catch (error) {
+  // ValidationError: End date must be on or after start date
+  console.error(error.message);
+}
+```
+
+## When to Use Each Package
+
+### Use @objectql/types When...
+
+- ✅ Defining new object schemas
+- ✅ Creating custom validation rules
+- ✅ Building type-safe query builders
+- ✅ Extending the type system
+- ✅ Creating custom drivers or plugins
+- ❌ Running queries or business logic
+- ❌ Loading metadata from files
+
+### Use @objectql/core When...
+
+- ✅ Building ObjectQL applications
+- ✅ Executing CRUD operations
+- ✅ Running validation rules
+- ✅ Computing formulas
+- ✅ Managing transactions
+- ✅ Implementing hooks and actions
+- ❌ Loading YAML files
+- ❌ Discovering plugins
+
+### Use @objectql/platform-node When...
+
+- ✅ Loading metadata from `.yml`/`.yaml` files
+- ✅ Auto-discovering objects in directories
+- ✅ Building Node.js-based applications
+- ✅ Implementing hot-reload in development
+- ✅ Loading external plugins
+- ❌ Building browser applications
+- ❌ Using in edge runtimes (Cloudflare Workers, Deno)
+
+## Installation
+
+### Install All Foundation Packages
+
+```bash
+npm install @objectql/types @objectql/core @objectql/platform-node
+```
+
+### Install Individually
+
+```bash
+# Just the types (for library authors)
+npm install @objectql/types
+
+# Core + Types (for platform-agnostic apps)
+npm install @objectql/core @objectql/types
+
+# Full stack (for Node.js apps)
+npm install @objectql/platform-node @objectql/core @objectql/types
+```
+
+## Complete Example
+
+### Project Structure
+
+```
+my-app/
+├── src/
+│   ├── objects/
+│   │   ├── user.object.yml
+│   │   └── project.object.yml
+│   ├── validations/
+│   │   └── project.validation.yml
+│   └── index.ts
+├── package.json
+└── tsconfig.json
+```
+
+### index.ts
+
+```typescript
+import { ObjectQL } from '@objectql/core';
+import { SqlDriver } from '@objectql/driver-sql';
+import { ObjectLoader } from '@objectql/platform-node';
+import * as path from 'path';
+
+// Initialize Core with Driver
+const app = new ObjectQL({
+  datasources: {
+    default: new SqlDriver({
+      client: 'pg',
+      connection: {
+        host: 'localhost',
+        database: 'myapp',
+        user: 'postgres',
+        password: 'password'
+      }
+    })
+  }
+});
+
+// Load Metadata from File System
+const loader = new ObjectLoader(app.metadata);
+loader.load(path.join(__dirname, 'objects'));
+loader.load(path.join(__dirname, 'validations'));
+
+// Initialize Kernel
+await app.init();
+
+// Use the Application
+const ctx = app.createContext({ userId: 'admin' });
+
+const projects = await ctx.object('project').find({
+  filters: [['status', '=', 'active']],
+  sort: [{ field: 'created_at', order: 'desc' }],
+  limit: 10
+});
+
+console.log(`Found ${projects.length} active projects`);
+```
+
+## Best Practices
+
+### 1. Define Types First
+
+Always start with type definitions before writing implementation:
+
+```typescript
+// ✅ Good: Type-first approach
+import { ObjectConfig } from '@objectql/types';
+
+const userConfig: ObjectConfig = {
+  name: 'user',
+  fields: {
+    email: { type: 'email', required: true }
+  }
+};
+
+// ❌ Bad: Implementation-first
+const user = { email: 'test@example.com' }; // No type safety
+```
+
+### 2. Keep Types Pure
+
+Never import from `@objectql/core` or `@objectql/platform-node` in type definitions:
+
+```typescript
+// ✅ Good: Pure type definition
+import { ObjectConfig } from '@objectql/types';
+
+export const projectConfig: ObjectConfig = { /* ... */ };
+
+// ❌ Bad: Circular dependency risk
+import { ObjectQL } from '@objectql/core';  // Don't do this in type files
+```
+
+### 3. Use YAML for Declarative Metadata
+
+Prefer YAML files over TypeScript for object definitions:
+
+```yaml
+# ✅ Good: Declarative, AI-friendly, version-controllable
+name: project
+label: Project
+fields:
+  name:
+    type: text
+    required: true
+```
+
+```typescript
+// ⚠️ Acceptable: But less maintainable for large schemas
+const project: ObjectConfig = {
+  name: 'project',
+  label: 'Project',
+  fields: {
+    name: { type: 'text', required: true }
+  }
+};
+```
+
+### 4. Organize by Feature
+
+Structure metadata files by business feature, not by type:
+
+```
+✅ Good: Feature-based
+src/
+  modules/
+    crm/
+      objects/
+      validations/
+    project/
+      objects/
+      validations/
+
+❌ Bad: Type-based
+src/
+  all-objects/
+  all-validations/
+```
+
+## Related Documentation
+
+- **[Types Reference](/docs/reference/foundation/types)** - Complete type system documentation
+- **[Core Reference](/docs/reference/foundation/core)** - Runtime engine and APIs
+- **[Platform Node Reference](/docs/reference/foundation/platform-node)** - File system and plugin utilities
+- **[Driver Development](/docs/guides/drivers/extensibility)** - Building custom drivers
+- **[Validation Guide](/docs/guides/validation)** - Metadata-driven validation
+
+## Next Steps
+
+1. **Understand the Types** → Read the [Types Reference](/docs/reference/foundation/types)
+2. **Build with Core** → Explore the [Core Reference](/docs/reference/foundation/core)
+3. **Load Metadata** → Learn about [Platform Node](/docs/reference/foundation/platform-node)
+4. **Choose a Driver** → Review [Drivers Overview](/docs/reference/drivers)
+5. **Deploy** → Check the [Deployment Guide](/docs/guides/deployment)

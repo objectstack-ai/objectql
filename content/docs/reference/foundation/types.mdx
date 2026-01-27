@@ -1,0 +1,803 @@
+---
+title: "@objectql/types"
+description: The Constitution - Type system and interfaces for ObjectQL with zero dependencies
+---
+
+# @objectql/types
+
+**The Constitution**: Pure TypeScript type definitions for the ObjectQL ecosystem. This package serves as the **Single Source of Truth** for all interfaces, enums, and custom errors used throughout ObjectQL.
+
+## Overview
+
+`@objectql/types` is the foundational contract layer that defines the API surface of ObjectQL. It contains **zero dependencies** and must never import from other packages, ensuring architectural integrity and preventing circular dependencies.
+
+## Installation
+
+```bash
+npm install @objectql/types
+```
+
+## Core Principles
+
+### 1. Zero Dependencies
+This package MUST NEVER import from other ObjectQL packages. It is the root of the dependency tree.
+
+### 2. Pure TypeScript
+Contains only TypeScript interfaces, enums, type aliases, and custom error classes. No runtime logic except error constructors.
+
+### 3. Universal Import
+Every other package (`@objectql/core`, drivers, plugins) relies on these definitions.
+
+## Type Categories
+
+### Core Types
+
+Object and field definitions for building data models:
+
+```typescript
+import { 
+  ObjectConfig, 
+  FieldConfig, 
+  FieldType,
+  ObjectDoc 
+} from '@objectql/types';
+
+const projectObject: ObjectConfig = {
+  name: 'project',
+  label: 'Project',
+  fields: {
+    name: {
+      type: 'text',
+      label: 'Project Name',
+      required: true,
+      validation: {
+        min_length: 3,
+        max_length: 100,
+        pattern: '^[a-zA-Z0-9\\s]+$',
+        message: 'Name must be 3-100 alphanumeric characters'
+      }
+    },
+    status: {
+      type: 'select',
+      options: [
+        { label: 'Planning', value: 'planning' },
+        { label: 'Active', value: 'active' },
+        { label: 'Completed', value: 'completed' }
+      ],
+      default: 'planning'
+    },
+    owner: {
+      type: 'lookup',
+      reference_to: 'users'
+    }
+  }
+};
+```
+
+**Key Types:**
+
+- `ObjectConfig` - Complete object schema definition
+- `FieldConfig` - Field configuration with validation
+- `FieldType` - Supported field data types (`text`, `number`, `email`, `lookup`, etc.)
+- `ObjectDoc` - Base interface for all document instances
+
+### Validation Types
+
+Comprehensive validation system with multiple rule types:
+
+```typescript
+import {
+  ValidationRule,
+  AnyValidationRule,
+  ValidationContext,
+  ValidationResult,
+  CrossFieldValidationRule,
+  StateMachineValidationRule
+} from '@objectql/types';
+
+// Cross-field validation
+const dateRangeRule: CrossFieldValidationRule = {
+  name: 'valid_date_range',
+  type: 'cross_field',
+  rule: {
+    field: 'end_date',
+    operator: '>=',
+    compare_to: 'start_date'
+  },
+  message: 'End date must be on or after start date',
+  severity: 'error',
+  trigger: ['create', 'update']
+};
+
+// State machine validation
+const statusRule: StateMachineValidationRule = {
+  name: 'status_transition',
+  type: 'state_machine',
+  field: 'status',
+  transitions: {
+    planning: {
+      allowed_next: ['active', 'cancelled'],
+      ai_context: {
+        rationale: 'Can start work or cancel before beginning'
+      }
+    },
+    active: {
+      allowed_next: ['completed', 'cancelled']
+    },
+    completed: {
+      allowed_next: [],
+      is_terminal: true
+    }
+  },
+  message: 'Invalid status transition from {{old_status}} to {{new_status}}'
+};
+```
+
+**Validation Rule Types:**
+
+| Type | Description | Status |
+|------|-------------|--------|
+| `cross_field` | Compare fields with operators | ✅ Fully Implemented |
+| `state_machine` | Enforce state transitions | ✅ Fully Implemented |
+| `business_rule` | Complex business rules | ⚠️ Type defined, runtime stub |
+| `uniqueness` | Uniqueness constraints | ⚠️ Type defined, runtime stub |
+| `dependency` | Related record validation | ⚠️ Type defined, runtime stub |
+| `custom` | Custom validation functions | ⚠️ Type defined, runtime stub |
+
+**Helper Types:**
+
+- `ValidationRuleType` - Types of validation rules
+- `ValidationSeverity` - `error` | `warning` | `info`
+- `ValidationTrigger` - `create` | `update` | `delete`
+- `ValidationOperator` - Comparison operators (`=`, `!=`, `>`, `>=`, `<`, `<=`, `in`, `contains`, etc.)
+- `ValidationCondition` - Condition structure for rules
+- `ValidationAiContext` - AI-friendly metadata
+- `FieldValidation` - Field-level validation config
+
+### Query Types
+
+Type-safe query definitions:
+
+```typescript
+import {
+  UnifiedQuery,
+  QueryFilter,
+  QuerySort,
+  FilterExpression
+} from '@objectql/types';
+
+const query: UnifiedQuery = {
+  filters: [
+    ['status', '=', 'active'],
+    ['created_at', '>', '2024-01-01']
+  ],
+  sort: [
+    { field: 'created_at', order: 'desc' }
+  ],
+  fields: ['_id', 'name', 'status', 'owner'],
+  limit: 10,
+  skip: 0
+};
+```
+
+**Key Types:**
+
+- `UnifiedQuery` - Complete query structure
+- `QueryFilter` - Filter array format
+- `QuerySort` - Sort specifications
+- `FilterExpression` - Individual filter conditions
+
+### Hook & Action Types
+
+Event-driven logic type definitions:
+
+```typescript
+import {
+  HookContext,
+  ActionContext,
+  HookHandler,
+  ActionHandler
+} from '@objectql/types';
+
+// Hook handler signature
+const beforeCreateHook: HookHandler = async (context: HookContext) => {
+  context.doc.created_at = new Date();
+  context.doc.created_by = context.userId;
+};
+
+// Action handler signature
+const sendEmailAction: ActionHandler = async (context: ActionContext) => {
+  const { record, params } = context;
+  await sendEmail(record.email, params.subject, params.body);
+  return { success: true };
+};
+```
+
+**Key Types:**
+
+- `HookContext` - Context provided to hook functions
+- `ActionContext` - Context provided to action functions
+- `HookHandler` - Hook function signature
+- `ActionHandler` - Action function signature
+
+### Driver Types
+
+Database driver interface abstraction:
+
+```typescript
+import {
+  Driver,
+  DriverConfig,
+  DriverCapabilities
+} from '@objectql/types';
+
+class CustomDriver implements Driver {
+  name = 'custom-driver';
+  version = '1.0.0';
+  supports: DriverCapabilities = {
+    transactions: true,
+    aggregations: true,
+    fullTextSearch: false
+  };
+
+  async find(objectName: string, query?: UnifiedQuery) {
+    // Implementation
+    return [];
+  }
+
+  async create(objectName: string, data: any) {
+    // Implementation
+    return data;
+  }
+
+  // ... other methods
+}
+```
+
+**Key Types:**
+
+- `Driver` - Database driver interface
+- `DriverConfig` - Driver configuration options
+- `DriverCapabilities` - Feature support flags
+
+### Migration & Schema Evolution Types
+
+Declarative schema change instructions:
+
+```typescript
+import {
+  MigrationConfig,
+  SchemaChangeType,
+  FieldUpdateInstruction,
+  FieldDeleteInstruction,
+  ObjectUpdateInstruction,
+  ObjectDeleteInstruction
+} from '@objectql/types';
+
+const migration: MigrationConfig = {
+  id: 'v1.2_refactor_user_fields',
+  version: '1.2.0',
+  name: 'Refactor User Fields',
+  description: 'Update user object schema and remove deprecated fields',
+  steps: [
+    {
+      id: 'rename_username_field',
+      name: 'Rename username to user_name',
+      instruction: {
+        type: 'field_update',
+        object_name: 'users',
+        field_name: 'username',
+        new_field_name: 'user_name',
+        changes: {
+          label: 'User Name',
+          description: 'Updated field name for consistency'
+        },
+        data_migration_strategy: 'auto'
+      } as FieldUpdateInstruction,
+      reversible: true
+    },
+    {
+      id: 'delete_legacy_field',
+      name: 'Remove deprecated legacy_id field',
+      instruction: {
+        type: 'field_delete',
+        object_name: 'users',
+        field_name: 'legacy_id',
+        deletion_strategy: 'archive',
+        archive_location: 'backup/users_legacy_id'
+      } as FieldDeleteInstruction,
+      reversible: true
+    }
+  ],
+  reversible: true,
+  tags: ['schema', 'refactor']
+};
+```
+
+**Key Types:**
+
+- `SchemaChangeType` - Types of schema changes
+- `SchemaChangeInstruction` - Union of all change instructions
+- `FieldUpdateInstruction` - Field modification instruction
+- `FieldDeleteInstruction` - Field removal instruction
+- `ObjectUpdateInstruction` - Object modification instruction
+- `ObjectDeleteInstruction` - Object removal instruction
+- `MigrationConfig` - Complete migration definition
+- `MigrationStep` - Single migration step
+- `MigrationStatus` - Execution status
+
+## Complete Type Reference
+
+### ObjectConfig
+
+```typescript
+interface ObjectConfig {
+  name: string;
+  label?: string;
+  description?: string;
+  icon?: string;
+  fields: Record<string, FieldConfig>;
+  datasource?: string;
+  table_name?: string;
+  enable_audit?: boolean;
+  enable_trash?: boolean;
+  enable_files?: boolean;
+  enable_workflow?: boolean;
+  validation?: {
+    rules?: AnyValidationRule[];
+    ai_context?: ValidationAiContext;
+  };
+  permissions?: any; // Defined but requires implementation
+  triggers?: any; // Hook definitions
+  actions?: any; // Custom action definitions
+}
+```
+
+### FieldConfig
+
+```typescript
+interface FieldConfig {
+  type: FieldType;
+  label?: string;
+  description?: string;
+  required?: boolean;
+  unique?: boolean;
+  indexed?: boolean;
+  defaultValue?: any;
+  readonly?: boolean;
+  hidden?: boolean;
+  
+  // Type-specific options
+  reference_to?: string; // For lookup/master_detail
+  options?: SelectOption[]; // For select
+  precision?: number; // For number/currency
+  scale?: number; // For number/currency
+  multiple?: boolean; // For select/lookup
+  
+  // Validation
+  validation?: FieldValidation;
+  
+  // AI Context
+  ai_context?: {
+    intent?: string;
+    rationale?: string;
+    examples?: string[];
+  };
+}
+```
+
+### FieldType
+
+```typescript
+type FieldType =
+  | 'text'
+  | 'textarea'
+  | 'number'
+  | 'currency'
+  | 'percent'
+  | 'boolean'
+  | 'date'
+  | 'datetime'
+  | 'email'
+  | 'url'
+  | 'phone'
+  | 'lookup'
+  | 'master_detail'
+  | 'select'
+  | 'autonumber'
+  | 'formula'
+  | 'summary'
+  | 'code'
+  | 'json'
+  | 'password'
+  | 'image'
+  | 'file'
+  | 'html';
+```
+
+### ValidationRule (Base Interface)
+
+```typescript
+interface ValidationRule {
+  name: string;
+  type: ValidationRuleType;
+  message: string | Record<string, string>;
+  error_code?: string;
+  severity?: ValidationSeverity;
+  trigger?: ValidationTrigger[];
+  fields?: string[];
+  context?: string[];
+  skip_bulk?: boolean;
+  ai_context?: ValidationAiContext;
+  apply_when?: ValidationCondition;
+  async?: boolean;
+  timeout?: number;
+}
+```
+
+### ValidationContext
+
+```typescript
+interface ValidationContext {
+  record: any;
+  previousRecord?: any;
+  operation: 'create' | 'update' | 'delete';
+  changedFields?: string[];
+  userId?: string;
+  metadata?: {
+    objectName?: string;
+    ruleName?: string;
+    [key: string]: any;
+  };
+}
+```
+
+### ValidationResult
+
+```typescript
+interface ValidationResult {
+  valid: boolean;
+  errors: ValidationRuleResult[];
+  warnings: ValidationRuleResult[];
+  info: ValidationRuleResult[];
+}
+
+interface ValidationRuleResult {
+  rule: string;
+  field?: string;
+  message: string;
+  severity: ValidationSeverity;
+  error_code?: string;
+}
+```
+
+### ValidationCondition
+
+```typescript
+interface ValidationCondition {
+  field?: string;
+  operator?: ValidationOperator;
+  value?: any;
+  compare_to?: string; // For cross-field comparison
+  expression?: string;
+  all_of?: ValidationCondition[];
+  any_of?: ValidationCondition[];
+}
+```
+
+### FieldValidation
+
+```typescript
+interface FieldValidation {
+  format?: 'email' | 'url' | 'phone' | 'date' | 'datetime';
+  protocols?: string[]; // For URL validation
+  min?: number;
+  max?: number;
+  min_length?: number;
+  max_length?: number;
+  pattern?: string; // Regex pattern
+  message?: string;
+}
+```
+
+## Usage Examples
+
+### Basic Object Definition
+
+```typescript
+import { ObjectConfig } from '@objectql/types';
+
+const contactObject: ObjectConfig = {
+  name: 'contact',
+  label: 'Contact',
+  description: 'Customer and partner contacts',
+  fields: {
+    first_name: {
+      type: 'text',
+      label: 'First Name',
+      required: true,
+      validation: {
+        min_length: 1,
+        max_length: 50
+      }
+    },
+    last_name: {
+      type: 'text',
+      label: 'Last Name',
+      required: true
+    },
+    email: {
+      type: 'email',
+      label: 'Email',
+      required: true,
+      unique: true,
+      validation: {
+        format: 'email'
+      }
+    },
+    phone: {
+      type: 'phone',
+      label: 'Phone Number',
+      validation: {
+        format: 'phone'
+      }
+    },
+    account: {
+      type: 'lookup',
+      label: 'Account',
+      reference_to: 'accounts'
+    },
+    status: {
+      type: 'select',
+      label: 'Status',
+      options: [
+        { label: 'Active', value: 'active' },
+        { label: 'Inactive', value: 'inactive' }
+      ],
+      default: 'active'
+    }
+  }
+};
+```
+
+### Complex Validation Rules
+
+```typescript
+import {
+  CrossFieldValidationRule,
+  StateMachineValidationRule,
+  BusinessRuleValidationRule
+} from '@objectql/types';
+
+// Cross-field validation with conditional logic
+const budgetRule: CrossFieldValidationRule = {
+  name: 'budget_validation',
+  type: 'cross_field',
+  rule: {
+    field: 'actual_cost',
+    operator: '<=',
+    compare_to: 'budget'
+  },
+  message: 'Actual cost cannot exceed budget',
+  severity: 'error',
+  trigger: ['create', 'update'],
+  apply_when: {
+    field: 'status',
+    operator: 'in',
+    value: ['active', 'completed']
+  }
+};
+
+// State machine with complex transitions
+const projectStatusRule: StateMachineValidationRule = {
+  name: 'project_status_flow',
+  type: 'state_machine',
+  field: 'status',
+  transitions: {
+    planning: {
+      allowed_next: ['active', 'cancelled'],
+      conditions: [{
+        field: 'budget',
+        operator: '>',
+        value: 0
+      }],
+      ai_context: {
+        intent: 'Ensure budget is set before starting',
+        rationale: 'Projects must have approved budget'
+      }
+    },
+    active: {
+      allowed_next: ['on_hold', 'completed', 'cancelled']
+    },
+    on_hold: {
+      allowed_next: ['active', 'cancelled']
+    },
+    completed: {
+      allowed_next: [],
+      is_terminal: true
+    },
+    cancelled: {
+      allowed_next: [],
+      is_terminal: true
+    }
+  },
+  message: {
+    en: 'Cannot change status from {{old_status}} to {{new_status}}',
+    'zh-CN': '无法将状态从 {{old_status}} 更改为 {{new_status}}'
+  },
+  error_code: 'INVALID_STATUS_TRANSITION'
+};
+```
+
+### Type-Safe Query Building
+
+```typescript
+import { UnifiedQuery } from '@objectql/types';
+
+const findActiveProjects: UnifiedQuery = {
+  filters: [
+    ['status', '=', 'active'],
+    ['budget', '>', 10000],
+    ['owner.department', '=', 'Engineering']
+  ],
+  sort: [
+    { field: 'priority', order: 'desc' },
+    { field: 'created_at', order: 'asc' }
+  ],
+  fields: ['_id', 'name', 'status', 'budget', 'owner'],
+  limit: 50,
+  skip: 0
+};
+```
+
+### Custom Error Handling
+
+```typescript
+import { ValidationError } from '@objectql/types';
+
+throw new ValidationError({
+  code: 'INVALID_DATE_RANGE',
+  message: 'End date must be after start date',
+  details: {
+    field: 'end_date',
+    value: '2024-01-01',
+    constraint: 'Must be >= start_date (2024-12-31)'
+  }
+});
+```
+
+## Best Practices
+
+### 1. Always Define Types First
+
+Before implementing features, define the interface in this package:
+
+```typescript
+// Step 1: Define in @objectql/types
+export interface MyFeatureConfig {
+  enabled: boolean;
+  options: Record<string, any>;
+}
+
+// Step 2: Implement in @objectql/core
+class MyFeature {
+  constructor(private config: MyFeatureConfig) {}
+}
+```
+
+### 2. Use Strict Typing
+
+Never use `any` unless absolutely necessary. Prefer `unknown` with type guards:
+
+```typescript
+// ❌ Bad
+function process(data: any) {
+  return data.value;
+}
+
+// ✅ Good
+function process(data: unknown): string {
+  if (typeof data === 'object' && data !== null && 'value' in data) {
+    return String((data as { value: unknown }).value);
+  }
+  throw new Error('Invalid data structure');
+}
+```
+
+### 3. Document AI Context
+
+Always include `ai_context` for fields and rules to improve LLM understanding:
+
+```typescript
+const userField: FieldConfig = {
+  type: 'lookup',
+  reference_to: 'users',
+  ai_context: {
+    intent: 'Track the project owner responsible for delivery',
+    rationale: 'Required for accountability and notifications',
+    examples: ['John Doe (Engineering)', 'Jane Smith (Product)']
+  }
+};
+```
+
+### 4. Version Your Types
+
+When making breaking changes, version the types:
+
+```typescript
+// v1
+export interface ObjectConfigV1 {
+  name: string;
+  fields: Record<string, FieldConfig>;
+}
+
+// v2 (breaking change)
+export interface ObjectConfig {
+  name: string;
+  label: string; // Now required
+  fields: Record<string, FieldConfig>;
+}
+
+// Maintain backward compatibility
+export type ObjectConfigV2 = ObjectConfig;
+```
+
+## Implementation Status
+
+| Category | Types Defined | Runtime Implementation |
+|----------|---------------|------------------------|
+| Core Types | ✅ Complete | ✅ @objectql/core |
+| Validation | ✅ Complete | ✅ @objectql/core (Validator) |
+| Queries | ✅ Complete | ✅ @objectql/core (Repository) |
+| Hooks & Actions | ✅ Complete | ✅ @objectql/core |
+| Drivers | ✅ Complete | ✅ All drivers |
+| Migrations | ✅ Complete | ⚠️ Partial (manual implementation) |
+| Permissions | ✅ Complete | ⚠️ Manual enforcement required |
+| Workflows | ✅ Complete | ⚠️ No runtime execution |
+
+See [Implementation Status](https://github.com/objectstack-ai/objectql/blob/main/IMPLEMENTATION_STATUS.md) for complete details.
+
+## TypeScript Configuration
+
+Recommended `tsconfig.json` settings when using `@objectql/types`:
+
+```json
+{
+  "compilerOptions": {
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictPropertyInitialization": true,
+    "noImplicitThis": true,
+    "alwaysStrict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true
+  }
+}
+```
+
+## Related Documentation
+
+- **[Foundation Overview](/docs/reference/foundation)** - Trinity architecture explanation
+- **[Core Reference](/docs/reference/foundation/core)** - Runtime implementation
+- **[Validation Guide](/docs/guides/validation)** - Using validation types
+- **[Driver Development](/docs/guides/drivers/extensibility)** - Implementing Driver interface
+- **[@objectstack/spec](https://github.com/objectstack-ai/spec)** - Formal protocol specifications
+
+## Contributing
+
+When contributing new types:
+
+1. Ensure zero dependencies are maintained
+2. Add comprehensive JSDoc comments
+3. Include usage examples
+4. Update this documentation
+5. Add to `index.ts` exports
+6. Consider backward compatibility
+
+## Support
+
+- 📖 [API Reference](/docs/api)
+- 💬 [GitHub Discussions](https://github.com/objectstack-ai/objectql/discussions)
+- 🐛 [Report Issues](https://github.com/objectstack-ai/objectql/issues)
