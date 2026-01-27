@@ -1,6 +1,6 @@
 {
   "name": "@objectql/driver-localstorage",
-  "version": "4.0.1",
+  "version": "4.0.2",
   "description": "LocalStorage driver for ObjectQL - Browser-based persistent storage",
   "keywords": [
     "objectql",
