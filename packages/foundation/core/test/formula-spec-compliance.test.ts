@@ -99,20 +99,6 @@ describe('Formula Specification Compliance', () => {
     });
   });
 
-  describe('Legacy property: formula (backward compatibility)', () => {
-    it('should work with legacy "formula" property in object config', () => {
-      // This test verifies that the loader normalizes 'formula' to 'expression'
-      // The actual normalization happens in the loader, but we can verify
-      // the engine works with the expression
-      
-      const legacyFormula = 'first_name + " " + last_name';
-      const result = engine.evaluate(legacyFormula, baseContext, 'text');
-      
-      expect(result.success).toBe(true);
-      expect(result.value).toBe('John Doe');
-    });
-  });
-
   describe('Specification examples from formula.mdx', () => {
     it('should calculate full_name as per spec example', () => {
       // From spec line 105-110

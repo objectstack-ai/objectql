@@ -283,22 +283,10 @@ function registerObject(registry: MetadataRegistry, obj: any, file: string, pack
                         f.type = 'lookup';
                     } else if (f.options) {
                         f.type = 'select';
-                    } else if (f.formula || f.expression) {
+                    } else if (f.expression) {
                         f.type = 'formula';
                     } else if (f.summary_object) {
                         f.type = 'summary';
-                    }
-                }
-                
-                // For formula fields, normalize property name to 'expression' per spec
-                // while maintaining backward compatibility with 'formula'
-                if (f.type === 'formula') {
-                    if (f.formula && !f.expression) {
-                        // Legacy: copy 'formula' to 'expression' for spec compliance
-                        f.expression = f.formula;
-                    } else if (f.expression && !f.formula) {
-                        // Spec-compliant: copy 'expression' to 'formula' for backward compat
-                        f.formula = f.expression;
                     }
                 }
             }
