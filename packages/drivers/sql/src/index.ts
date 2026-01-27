@@ -236,7 +236,7 @@ export class SqlDriver implements Driver {
                 // Simple field: value case
                 const field = this.mapSortField(key);
                 const method = logicalOp === 'or' ? 'orWhere' : 'where';
-                builder[method](field, value);
+                builder[method](field, value as any);
             }
         }
     }

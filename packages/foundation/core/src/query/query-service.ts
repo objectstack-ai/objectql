@@ -232,7 +232,7 @@ export class QueryService {
         } else if (driver.executeQuery) {
             // Fallback to query with ID filter
             const query: UnifiedQuery = {
-                filters: [['_id', '=', id]]
+                where: { _id: id }
             };
             const ast = this.buildQueryAST(objectName, query);
             const queryResult = await driver.executeQuery(ast, driverOptions);
