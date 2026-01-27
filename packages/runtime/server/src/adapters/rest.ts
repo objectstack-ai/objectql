@@ -171,7 +171,7 @@ export function createRESTHandler(app: IObjectQL, options?: RESTHandlerOptions) 
                             args.limit = queryParams.top || queryParams.limit;
                         }
                         if (queryParams.skip || queryParams.offset) {
-                            args.skip = queryParams.skip || queryParams.offset;
+                            args.offset = queryParams.skip || queryParams.offset;
                         }
                         if (queryParams.expand) {
                             args.expand = queryParams.expand;
