@@ -11,7 +11,7 @@ export function BetaBanner() {
             </span>
             <p className="text-sm font-medium">
               <span className="inline">
-                ObjectQL v2.0 is currently in Beta.{' '}
+                ObjectQL v4.0 is currently in Beta.{' '}
               </span>
               <span className="hidden sm:inline">
                 We&apos;re actively developing new features and improving stability.
