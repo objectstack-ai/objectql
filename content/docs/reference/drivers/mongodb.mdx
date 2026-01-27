@@ -1,0 +1,645 @@
+---
+title: MongoDB Driver
+description: MongoDB driver for ObjectQL with full CRUD, aggregation, and QueryAST support
+---
+
+# MongoDB Driver
+
+The MongoDB Driver is a production-ready adapter that connects ObjectQL to MongoDB databases, supporting both the legacy ObjectQL format and the new QueryAST format from `@objectstack/spec`.
+
+## Features
+
+- ✅ **100% Backward Compatible**: All existing code continues to work
+- ✅ **QueryAST Support**: Supports the new `@objectstack/spec` query format
+- ✅ **Smart ID Mapping**: Automatic conversion between `id` (API) and `_id` (MongoDB)
+- ✅ **Full-Text Search**: MongoDB text search capabilities
+- ✅ **Array & JSON Fields**: Native BSON support for complex data types
+- ✅ **Aggregation Pipelines**: Native MongoDB aggregation support
+- ✅ **Transactions**: Multi-document ACID transactions
+- ✅ **Geospatial Queries**: Location-based queries
+
+## Installation
+
+```bash
+npm install @objectql/driver-mongo
+```
+
+## Quick Start
+
+### Basic Connection
+
+```typescript
+import { MongoDriver } from '@objectql/driver-mongo';
+import { ObjectQL } from '@objectql/core';
+
+const driver = new MongoDriver({
+  url: 'mongodb://localhost:27017',
+  dbName: 'my_app'
+});
+
+const app = new ObjectQL({
+  datasources: { default: driver }
+});
+
+await app.init();
+```
+
+### With Authentication
+
+```typescript
+const driver = new MongoDriver({
+  url: 'mongodb://username:password@localhost:27017',
+  dbName: 'my_app',
+  options: {
+    authSource: 'admin'
+  }
+});
+```
+
+### MongoDB Atlas
+
+```typescript
+const driver = new MongoDriver({
+  url: 'mongodb+srv://username:password@cluster.mongodb.net',
+  dbName: 'my_app',
+  options: {
+    retryWrites: true,
+    w: 'majority'
+  }
+});
+```
+
+### Connection String (Environment Variable)
+
+```typescript
+const driver = new MongoDriver({
+  url: process.env.MONGODB_URL,
+  dbName: process.env.MONGODB_DB || 'my_app'
+});
+```
+
+## Configuration
+
+```typescript
+interface MongoDriverConfig {
+  url: string;              // MongoDB connection URL
+  dbName: string;           // Database name
+  options?: MongoClientOptions;  // MongoDB client options
+}
+```
+
+### Common Options
+
+```typescript
+const driver = new MongoDriver({
+  url: 'mongodb://localhost:27017',
+  dbName: 'my_app',
+  options: {
+    maxPoolSize: 10,        // Connection pool size
+    minPoolSize: 2,
+    maxIdleTimeMS: 30000,
+    serverSelectionTimeoutMS: 5000,
+    socketTimeoutMS: 45000,
+    retryWrites: true,
+    w: 'majority'
+  }
+});
+```
+
+## Usage
+
+### CRUD Operations
+
+```typescript
+const ctx = app.createContext({ isSystem: true });
+const users = ctx.object('users');
+
+// Create
+const user = await users.create({
+  name: 'Alice',
+  email: 'alice@example.com',
+  role: 'admin',
+  tags: ['developer', 'admin']
+});
+
+// Read
+const allUsers = await users.find({});
+
+// Read with filters
+const admins = await users.find({
+  filters: [['role', '=', 'admin']],
+  sort: [['created_at', 'desc']],
+  limit: 10
+});
+
+// Update
+await users.update(user.id, {
+  email: 'alice.new@example.com'
+});
+
+// Delete
+await users.delete(user.id);
+```
+
+### Query Features
+
+#### Filters
+
+```typescript
+// Simple filter
+const results = await users.find({
+  filters: [['age', '>', 18]]
+});
+
+// Multiple filters (AND)
+const results = await users.find({
+  filters: [
+    ['status', '=', 'active'],
+    ['role', '=', 'admin']
+  ]
+});
+
+// OR filters
+const results = await users.find({
+  filters: [
+    ['role', '=', 'admin'],
+    'or',
+    ['role', '=', 'moderator']
+  ]
+});
+
+// Array contains
+const results = await users.find({
+  filters: [['tags', 'contains', 'developer']]
+});
+```
+
+#### Supported Operators
+
+- **Comparison**: `=`, `!=`, `>`, `>=`, `<`, `<=`
+- **Set**: `in`, `not in`
+- **String**: `contains`, `startswith`, `endswith`
+- **Range**: `between`
+- **Array**: `contains`, `size`
+- **Existence**: `exists`
+
+#### Sorting
+
+```typescript
+// Single field
+const results = await users.find({
+  sort: [{ field: 'name', order: 'asc' }]
+});
+
+// Legacy format (still supported)
+const results = await users.find({
+  sort: [['name', 'asc']]
+});
+
+// Multiple fields
+const results = await users.find({
+  sort: [
+    { field: 'role', order: 'desc' },
+    { field: 'name', order: 'asc' }
+  ]
+});
+```
+
+#### Pagination
+
+```typescript
+// Get page 2 (skip 20, take 10)
+const page2 = await users.find({
+  skip: 20,
+  top: 10,  // Or use 'limit' (legacy)
+  sort: [{ field: 'created_at', order: 'desc' }]
+});
+```
+
+#### Field Projection
+
+```typescript
+// Only return specific fields
+const results = await users.find({
+  fields: ['id', 'name', 'email']
+});
+
+// Exclude fields (MongoDB-specific)
+const results = await users.find({
+  fields: { password: 0, secretKey: 0 }
+});
+```
+
+### Array Fields
+
+```typescript
+// Define schema with array
+app.registerObject({
+  name: 'posts',
+  fields: {
+    title: { type: 'text' },
+    tags: { type: 'array' },
+    comments: { type: 'array' }
+  }
+});
+
+// Create with array
+await posts.create({
+  title: 'My Post',
+  tags: ['mongodb', 'objectql'],
+  comments: [
+    { user: 'alice', text: 'Great post!' },
+    { user: 'bob', text: 'Thanks for sharing' }
+  ]
+});
+
+// Query arrays
+const results = await posts.find({
+  filters: [['tags', 'contains', 'mongodb']]
+});
+```
+
+### JSON/Object Fields
+
+```typescript
+// Define schema with JSON
+app.registerObject({
+  name: 'settings',
+  fields: {
+    config: { type: 'json' },
+    metadata: { type: 'object' }
+  }
+});
+
+// Create with complex objects
+await settings.create({
+  config: {
+    theme: 'dark',
+    language: 'en',
+    notifications: {
+      email: true,
+      push: false
+    }
+  }
+});
+
+// Query nested fields (MongoDB dot notation)
+const results = await settings.find({
+  filters: [['config.theme', '=', 'dark']]
+});
+```
+
+### Full-Text Search
+
+```typescript
+// Create text index
+app.registerObject({
+  name: 'articles',
+  fields: {
+    title: { type: 'text' },
+    content: { type: 'text' }
+  },
+  indexes: [
+    { fields: ['title', 'content'], type: 'text' }
+  ]
+});
+
+// Search
+const results = await articles.find({
+  filters: [['$text', '$search', 'ObjectQL MongoDB']]
+});
+```
+
+### Aggregations
+
+```typescript
+// Count
+const count = await users.count({
+  filters: [['status', '=', 'active']]
+});
+
+// Distinct values
+const roles = await users.distinct('role');
+
+// Aggregation pipeline
+const stats = await driver.aggregate('orders', [
+  { $match: { status: 'completed' } },
+  { $group: {
+      _id: '$customer_id',
+      total: { $sum: '$amount' },
+      count: { $sum: 1 },
+      avg: { $avg: '$amount' }
+    }
+  },
+  { $sort: { total: -1 } }
+]);
+```
+
+### Bulk Operations
+
+```typescript
+// Create many
+const users = await driver.createMany('users', [
+  { name: 'Alice', email: 'alice@example.com' },
+  { name: 'Bob', email: 'bob@example.com' },
+  { name: 'Charlie', email: 'charlie@example.com' }
+]);
+
+// Update many
+await driver.updateMany(
+  'users',
+  [['status', '=', 'pending']],
+  { status: 'active' }
+);
+
+// Delete many
+await driver.deleteMany('users', [
+  ['last_login', '<', '2023-01-01']
+]);
+```
+
+### Transactions
+
+```typescript
+const session = await driver.startSession();
+session.startTransaction();
+
+try {
+  await driver.create('orders', {
+    customer_id: 'cust_123',
+    total: 100
+  }, { session });
+  
+  await driver.update('inventory', 'item_456', {
+    quantity: -1
+  }, { session });
+  
+  await session.commitTransaction();
+} catch (error) {
+  await session.abortTransaction();
+  throw error;
+} finally {
+  await session.endSession();
+}
+```
+
+## QueryAST Format
+
+The driver supports both legacy and QueryAST formats:
+
+### Legacy Format
+
+```typescript
+const results = await driver.find('users', {
+  filters: [['age', '>', 18]],
+  sort: [['name', 'asc']],
+  limit: 10,
+  skip: 0
+});
+```
+
+### QueryAST Format
+
+```typescript
+const results = await driver.find('users', {
+  filters: [['age', '>', 18]],
+  sort: [{ field: 'name', order: 'asc' }],
+  top: 10,  // Instead of 'limit'
+  skip: 0
+});
+```
+
+## Smart ID Mapping
+
+The driver automatically converts between `id` (API) and `_id` (MongoDB):
+
+```typescript
+// Create returns 'id'
+const user = await users.create({ name: 'Alice' });
+console.log(user.id);  // "507f1f77bcf86cd799439011"
+
+// MongoDB stores as '_id'
+// Internally: { _id: ObjectId("507f1f77bcf86cd799439011"), name: "Alice" }
+
+// Find by 'id'
+const found = await users.findOne(user.id);
+
+// Query uses 'id' in API
+const results = await users.find({
+  filters: [['id', '=', user.id]]
+});
+```
+
+## Driver Metadata
+
+```typescript
+console.log(driver.name);     // 'MongoDriver'
+console.log(driver.version);  // '4.0.1'
+console.log(driver.supports);
+// {
+//   transactions: true,
+//   joins: false,
+//   fullTextSearch: true,
+//   jsonFields: true,
+//   arrayFields: true
+// }
+```
+
+## Lifecycle Methods
+
+```typescript
+// Connect (automatic on first query)
+await driver.connect();
+
+// Check health
+const healthy = await driver.checkHealth(); // true/false
+
+// Disconnect
+await driver.disconnect();
+```
+
+## Geospatial Queries
+
+```typescript
+// Define schema with geospatial field
+app.registerObject({
+  name: 'locations',
+  fields: {
+    name: { type: 'text' },
+    location: {
+      type: 'object',
+      required: true
+    }
+  },
+  indexes: [
+    { fields: ['location'], type: '2dsphere' }
+  ]
+});
+
+// Create location
+await locations.create({
+  name: 'Coffee Shop',
+  location: {
+    type: 'Point',
+    coordinates: [-73.97, 40.77]  // [longitude, latitude]
+  }
+});
+
+// Find nearby (using MongoDB query)
+const nearby = await driver.find('locations', {
+  filters: [{
+    location: {
+      $near: {
+        $geometry: {
+          type: 'Point',
+          coordinates: [-73.98, 40.76]
+        },
+        $maxDistance: 1000  // meters
+      }
+    }
+  }]
+});
+```
+
+## Performance Tips
+
+1. **Create Indexes**
+   ```typescript
+   indexes: [
+     { fields: ['email'], unique: true },
+     { fields: ['status', 'created_at'] }
+   ]
+   ```
+
+2. **Use Projection**
+   ```typescript
+   fields: ['id', 'name', 'email']  // Only fetch needed fields
+   ```
+
+3. **Batch Operations**
+   ```typescript
+   await driver.createMany('users', records);
+   // Faster than individual creates
+   ```
+
+4. **Connection Pooling**
+   ```typescript
+   options: { maxPoolSize: 10 }
+   ```
+
+5. **Use Indexes for Queries**
+   ```typescript
+   // Indexed field
+   filters: [['email', '=', 'alice@example.com']]
+   ```
+
+## Troubleshooting
+
+### Connection Issues
+
+```typescript
+try {
+  await driver.connect();
+} catch (error) {
+  console.error('Connection failed:', error.message);
+  // Check URL, credentials, network
+}
+```
+
+### Performance Issues
+
+```typescript
+// Enable profiling
+db.setProfilingLevel(1, { slowms: 100 });
+
+// Check slow queries
+db.system.profile.find().sort({ ts: -1 }).limit(10);
+```
+
+### Index Usage
+
+```typescript
+// Explain query
+const explain = await collection.find({ email: 'alice@example.com' })
+  .explain('executionStats');
+console.log(explain.executionStats);
+```
+
+## Migration from Other Drivers
+
+### From SQL to MongoDB
+
+```typescript
+// SQL Driver
+const sqlDriver = new SqlDriver({ /* ... */ });
+
+// MongoDB Driver
+const mongoDriver = new MongoDriver({
+  url: 'mongodb://localhost:27017',
+  dbName: 'my_app'
+});
+
+// Same API works with both
+const users = await driver.find('users', {
+  filters: [['status', '=', 'active']]
+});
+```
+
+### Data Migration
+
+```typescript
+// Migrate from SQL to MongoDB
+const sqlData = await sqlDriver.find('users');
+for (const user of sqlData) {
+  await mongoDriver.create('users', user);
+}
+```
+
+## Best Practices
+
+1. **Use Environment Variables**
+   ```typescript
+   url: process.env.MONGODB_URL
+   ```
+
+2. **Handle Connections Properly**
+   ```typescript
+   process.on('SIGTERM', async () => {
+     await driver.disconnect();
+     process.exit(0);
+   });
+   ```
+
+3. **Use Transactions for Data Integrity**
+   ```typescript
+   const session = await driver.startSession();
+   // Multiple operations
+   await session.commitTransaction();
+   ```
+
+4. **Create Appropriate Indexes**
+   ```typescript
+   indexes: [
+     { fields: ['email'], unique: true },
+     { fields: ['created_at'] }
+   ]
+   ```
+
+5. **Monitor Performance**
+   ```typescript
+   // Use MongoDB Atlas monitoring
+   // Or enable profiling in development
+   ```
+
+## Related Documentation
+
+- [Driver Overview](/docs/reference/drivers)
+- [SQL Driver](/docs/reference/drivers/sql)
+- [Query Guide](/docs/guides/querying)
+- [MongoDB Official Docs](https://docs.mongodb.com/)
+
+## Support
+
+- 📖 [MongoDB Node.js Driver Docs](https://www.mongodb.com/docs/drivers/node/)
+- 💬 [GitHub Discussions](https://github.com/objectstack-ai/objectql/discussions)
+- 🐛 [Report Issues](https://github.com/objectstack-ai/objectql/issues)

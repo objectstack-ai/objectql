@@ -1,0 +1,322 @@
+---
+title: Drivers Overview
+description: Complete guide to ObjectQL drivers - choose the right data storage solution for your application
+---
+
+# Drivers Overview
+
+ObjectQL drivers are pluggable data storage adapters that allow you to connect to different databases and storage systems using a unified API. Each driver implements the standard `DriverInterface` from `@objectstack/spec`, ensuring consistent behavior across all storage backends.
+
+## Available Drivers
+
+ObjectQL provides eight production-ready drivers for different use cases:
+
+### Production Drivers
+
+| Driver | Use Case | Persistence | Environment | Best For |
+|--------|----------|-------------|-------------|----------|
+| [SQL](/docs/reference/drivers/sql) | Relational databases | ✅ Yes | Server | Production apps, complex queries |
+| [MongoDB](/docs/reference/drivers/mongodb) | Document database | ✅ Yes | Server | Production apps, flexible schemas |
+| [File System](/docs/reference/drivers/fs) | JSON files | ✅ Yes | Server | Development, small datasets |
+| [Excel](/docs/reference/drivers/excel) | Excel spreadsheets | ✅ Yes | Server/Browser | Data import/export, prototyping |
+
+### Development & Testing Drivers
+
+| Driver | Use Case | Persistence | Environment | Best For |
+|--------|----------|-------------|-------------|----------|
+| [Memory](/docs/reference/drivers/memory) | In-memory storage | ❌ No | Universal | Testing, edge runtimes, prototyping |
+| [LocalStorage](/docs/reference/drivers/localstorage) | Browser storage | ✅ Yes | Browser | PWAs, offline apps, client-side state |
+| [Redis](/docs/reference/drivers/redis) | Key-value cache | ✅ Yes | Server | Caching, sessions, example implementation |
+| [SDK/Remote](/docs/reference/drivers/sdk) | HTTP API client | N/A | Universal | Client applications, microservices |
+
+## Quick Comparison
+
+### By Use Case
+
+#### Production Applications
+- **High traffic**: [SQL Driver](/docs/reference/drivers/sql) (PostgreSQL, MySQL)
+- **Flexible schemas**: [MongoDB Driver](/docs/reference/drivers/mongodb)
+- **Mixed workload**: SQL for writes, Redis for caching
+
+#### Development & Prototyping
+- **Rapid iteration**: [Memory Driver](/docs/reference/drivers/memory)
+- **With persistence**: [File System Driver](/docs/reference/drivers/fs)
+- **Data import**: [Excel Driver](/docs/reference/drivers/excel)
+
+#### Client Applications
+- **Browser apps**: [LocalStorage Driver](/docs/reference/drivers/localstorage)
+- **Mobile apps**: [SDK Driver](/docs/reference/drivers/sdk)
+- **Offline-first**: LocalStorage + SDK with sync
+
+#### Testing & CI/CD
+- **Unit tests**: [Memory Driver](/docs/reference/drivers/memory)
+- **Integration tests**: SQL or MongoDB (in Docker)
+- **No infrastructure**: Memory or File System
+
+### By Performance
+
+| Driver | Read Speed | Write Speed | Query Support | Storage Limit |
+|--------|-----------|-------------|---------------|---------------|
+| Memory | ⚡⚡⚡ | ⚡⚡⚡ | Full | RAM |
+| LocalStorage | ⚡⚡ | ⚡⚡ | Full | ~5-10MB |
+| File System | ⚡ | ⚡ | Full | Disk |
+| SQL | ⚡⚡ | ⚡ | Full (indexed) | Large |
+| MongoDB | ⚡⚡ | ⚡⚡ | Full (indexed) | Large |
+| Excel | ⚡ | ⚡ | Full | ~100k records |
+| Redis | ⚡⚡⚡ | ⚡⚡⚡ | Limited | RAM |
+| SDK | ⚡ (network) | ⚡ (network) | Full (server-side) | Server-dependent |
+
+## Core Features
+
+All ObjectQL drivers support:
+
+- ✅ **CRUD Operations**: Create, Read, Update, Delete
+- ✅ **Rich Queries**: Filters, sorting, pagination, field projection
+- ✅ **Bulk Operations**: Create, update, and delete multiple records
+- ✅ **Count & Distinct**: Aggregation operations
+- ✅ **Type Safety**: Full TypeScript support
+- ✅ **Error Handling**: Consistent error codes and messages
+
+## Driver Interface
+
+All drivers implement the standard interface from `@objectstack/spec`:
+
+```typescript
+interface DriverInterface {
+  // Driver metadata
+  readonly name: string;
+  readonly version: string;
+  readonly supports: DriverCapabilities;
+  
+  // Lifecycle
+  connect?(): Promise<void>;
+  disconnect?(): Promise<void>;
+  checkHealth?(): Promise<boolean>;
+  
+  // Query execution (v4.0)
+  executeQuery(ast: QueryAST, options?: any): Promise<QueryResult>;
+  executeCommand(command: Command, options?: any): Promise<CommandResult>;
+  
+  // Legacy CRUD (backward compatible)
+  find(objectName: string, query?: UnifiedQuery, options?: any): Promise<any[]>;
+  findOne(objectName: string, id: string, query?: UnifiedQuery, options?: any): Promise<any>;
+  create(objectName: string, data: any, options?: any): Promise<any>;
+  update(objectName: string, id: string, data: any, options?: any): Promise<any>;
+  delete(objectName: string, id: string, options?: any): Promise<boolean>;
+  count(objectName: string, filters?: FilterExpression, options?: any): Promise<number>;
+}
+```
+
+## Choosing the Right Driver
+
+### Start with These Questions
+
+1. **Do you need persistence?**
+   - Yes → SQL, MongoDB, File System, Excel, LocalStorage
+   - No → Memory
+
+2. **What's your environment?**
+   - Server (Node.js) → SQL, MongoDB, File System, Memory
+   - Browser → LocalStorage, Memory, SDK
+   - Edge (Cloudflare Workers, Deno Deploy) → Memory, SDK
+   - Universal → Memory, SDK
+
+3. **What's your data size?**
+   - < 1,000 records → Any driver
+   - 1K - 10K records → Memory, File System, Excel, LocalStorage
+   - 10K - 100K records → SQL, MongoDB, File System
+   - > 100K records → SQL, MongoDB
+
+4. **Do you need remote access?**
+   - Yes → Use SQL/MongoDB with [SDK Driver](/docs/reference/drivers/sdk)
+   - No → Use any local driver
+
+### Decision Tree
+
+```
+Start Here
+    │
+    ├─ Production App?
+    │   ├─ Yes → SQL or MongoDB
+    │   └─ No → Continue
+    │
+    ├─ Browser Only?
+    │   ├─ Yes → LocalStorage (persistent) or Memory (temporary)
+    │   └─ No → Continue
+    │
+    ├─ Need Persistence?
+    │   ├─ Yes → File System (small) or Excel (import/export)
+    │   └─ No → Memory
+    │
+    └─ Testing?
+        └─ Yes → Memory (fastest, no cleanup needed)
+```
+
+## Installation
+
+### Individual Drivers
+
+```bash
+# SQL Driver (PostgreSQL, MySQL, SQLite)
+npm install @objectql/driver-sql
+
+# MongoDB Driver
+npm install @objectql/driver-mongo
+
+# Memory Driver (included in core)
+npm install @objectql/driver-memory
+
+# File System Driver
+npm install @objectql/driver-fs
+
+# Excel Driver
+npm install @objectql/driver-excel
+
+# LocalStorage Driver (browser)
+npm install @objectql/driver-localstorage
+
+# Redis Driver (example)
+npm install @objectql/driver-redis
+
+# SDK/Remote Driver
+npm install @objectql/sdk
+```
+
+### Install Multiple Drivers
+
+```bash
+# Common stack: SQL + Memory (for testing)
+npm install @objectql/driver-sql @objectql/driver-memory
+
+# Client-server stack
+npm install @objectql/sdk @objectql/driver-localstorage
+```
+
+## Basic Usage
+
+### Single Driver Setup
+
+```typescript
+import { ObjectQL } from '@objectql/core';
+import { SqlDriver } from '@objectql/driver-sql';
+
+// Initialize driver
+const driver = new SqlDriver({
+  client: 'pg',
+  connection: {
+    host: 'localhost',
+    user: 'myuser',
+    password: 'mypassword',
+    database: 'mydb'
+  }
+});
+
+// Create ObjectQL instance
+const app = new ObjectQL({
+  datasources: {
+    default: driver
+  }
+});
+```
+
+### Multiple Drivers
+
+Use different drivers for different purposes:
+
+```typescript
+import { SqlDriver } from '@objectql/driver-sql';
+import { MemoryDriver } from '@objectql/driver-memory';
+
+const app = new ObjectQL({
+  datasources: {
+    default: new SqlDriver({ /* config */ }),
+    cache: new MemoryDriver(),
+    analytics: new MongoDriver({ /* config */ })
+  }
+});
+
+// Use different datasources per object
+app.registerObject({
+  name: 'users',
+  datasource: 'default',  // Uses SQL
+  fields: { /* ... */ }
+});
+
+app.registerObject({
+  name: 'sessions',
+  datasource: 'cache',  // Uses Memory
+  fields: { /* ... */ }
+});
+```
+
+## Migration Between Drivers
+
+### From Memory to SQL (Dev → Production)
+
+```typescript
+// Development
+const devDriver = new MemoryDriver();
+
+// Production
+const prodDriver = new SqlDriver({
+  client: 'pg',
+  connection: process.env.DATABASE_URL
+});
+
+// Same code works with both!
+const users = await driver.find('users', {
+  filters: [['active', '=', true]]
+});
+```
+
+### From LocalStorage to SDK (Client → Server)
+
+```typescript
+// Offline mode
+const offlineDriver = new LocalStorageDriver();
+
+// Online mode
+const onlineDriver = new RemoteDriver({
+  baseUrl: 'https://api.example.com'
+});
+
+// Sync data when going online
+const localData = await offlineDriver.find('tasks');
+for (const task of localData) {
+  await onlineDriver.create('tasks', task);
+}
+```
+
+## Performance Tips
+
+1. **Use the right driver for the job**
+   - Don't use File System driver for large datasets
+   - Don't use Memory driver for persistent data
+   - Don't use SQL driver for simple key-value caching
+
+2. **Optimize queries**
+   - Use `fields` to limit returned data
+   - Use `limit` and `skip` for pagination
+   - Add filters to reduce result sets
+
+3. **Batch operations**
+   - Use `createMany`, `updateMany`, `deleteMany` for bulk operations
+   - More efficient than loops with individual operations
+
+4. **Cache when appropriate**
+   - Use Memory driver as a cache layer
+   - Use Redis driver for distributed caching
+   - Implement cache invalidation strategy
+
+## Next Steps
+
+- Choose your driver from the list above
+- Follow the specific driver guide for detailed setup
+- Check the [Driver Extensibility Guide](/docs/guides/drivers/extensibility) to create custom drivers
+- Review the [Query Guide](/docs/guides/querying) for advanced query patterns
+
+## Support
+
+- 📖 [API Reference](/docs/api)
+- 💬 [GitHub Discussions](https://github.com/objectstack-ai/objectql/discussions)
+- 🐛 [Report Issues](https://github.com/objectstack-ai/objectql/issues)
