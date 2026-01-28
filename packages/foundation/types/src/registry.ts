@@ -39,12 +39,21 @@ export class MetadataRegistry {
     }
 
     get<T = any>(type: string, name: string): T {
-        return this.items[type]?.[name];
+        const item = this.items[type]?.[name];
+        if (item && item.content) {
+            return item.content;
+        }
+        return item;
     }
 
     list<T = any>(type: string): T[] {
         if (!this.items[type]) return [];
-        return Object.values(this.items[type]);
+        return Object.values(this.items[type]).map((item: any) => {
+            if (item && item.content) {
+                return item.content;
+            }
+            return item;
+        });
     }
 
     getTypes(): string[] {
@@ -52,7 +61,25 @@ export class MetadataRegistry {
     }
 
     getEntry<T = any>(type: string, name: string): T {
-        return this.get<T>(type, name);
+        return this.items[type]?.[name];
+    }
+
+    unregister(type: string, name: string) {
+        if (this.items[type]?.[name]) {
+            delete this.items[type][name];
+        }
+    }
+
+    unregisterPackage(packageName: string) {
+        for (const type of Object.keys(this.items)) {
+            for (const key of Object.keys(this.items[type])) {
+                const item = this.items[type][key];
+                // Check widely for packaging metadata (package or _package)
+                if (item.package === packageName || (item as any)._package === packageName || (item as any).packageName === packageName) {
+                    delete this.items[type][key];
+                }
+            }
+        }
     }
 }
 export type MetadataItem = any;
