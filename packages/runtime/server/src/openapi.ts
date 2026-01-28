@@ -21,8 +21,16 @@ interface OpenAPISchema {
 }
 
 export function generateOpenAPI(app: IObjectQL, routeConfig?: ApiRouteConfig): OpenAPISchema {
-    const registry = (app as any).metadata; // Direct access or via interface
-    const objects = registry.list('object') as ObjectConfig[];
+    // Get objects using public API or fallback to registry unwrapping
+    let objects: ObjectConfig[] = [];
+    if (typeof (app as any).getConfigs === 'function') {
+        objects = Object.values((app as any).getConfigs());
+    } else {
+        const registry = (app as any).metadata;
+        const items = registry.list('object') || [];
+        objects = items.map((item: any) => item.content || item);
+    }
+    
     const routes = resolveApiRoutes(routeConfig);
 
     const paths: Record<string, any> = {};

@@ -92,8 +92,9 @@ export class ObjectQL implements IObjectQL {
 
         // Stub legacy accessors
         (this.kernel as any).metadata = {
-            register: (type: string, item: any) => SchemaRegistry.registerItem(type, item),
+            register: (type: string, item: any) => SchemaRegistry.registerItem(type, item, item.id ? 'id' : 'name'),
             get: (type: string, name: string) => SchemaRegistry.getItem(type, name),
+            getEntry: (type: string, name: string) => SchemaRegistry.getItem(type, name),
             list: (type: string) => SchemaRegistry.listItems(type),
             unregister: (type: string, name: string) => {
                  // Access private static storage using any cast
@@ -318,14 +319,18 @@ export class ObjectQL implements IObjectQL {
     }
 
     getObject(name: string): ObjectConfig | undefined {
-        return (this.kernel as any).metadata.get('object', name) as ObjectConfig;
+        const item = (this.kernel as any).metadata.get('object', name);
+        return item?.content || item;
     }
 
     getConfigs(): Record<string, ObjectConfig> {
         const result: Record<string, ObjectConfig> = {};
-        const items = (this.kernel as any).metadata.list('object') as ObjectConfig[];
+        const items = (this.kernel as any).metadata.list('object') || [];
         for (const item of items) {
-            result[item.name] = item;
+            const config = item.content || item;
+            if (config?.name) {
+                result[config.name] = config;
+            }
         }
         return result;
     }
@@ -428,7 +433,8 @@ export class ObjectQL implements IObjectQL {
             }
         }
 
-        const objects = (this.kernel as any).metadata.list('object') as ObjectConfig[];
+        const registryItems = (this.kernel as any).metadata.list('object');
+        const objects = (registryItems || []).map((item: any) => item.content || item) as ObjectConfig[];
         
         // Init Datasources
         // Let's pass all objects to all configured drivers.
