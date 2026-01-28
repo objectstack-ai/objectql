@@ -196,8 +196,16 @@ export class ObjectStackKernel {
             typeof component === 'object' &&
             component !== null &&
             typeof component.name === 'string' &&
-            !this.isRuntimePlugin(component) &&
-            !this.isRuntimeDriver(component)
+            // App configs typically have 'objects' or 'label' fields
+            (component.objects !== undefined || component.label !== undefined) &&
+            // Must NOT be a plugin (no lifecycle methods)
+            typeof component.install !== 'function' &&
+            typeof component.onStart !== 'function' &&
+            typeof component.onStop !== 'function' &&
+            // Must NOT be a driver (no driver methods)
+            typeof component.connect !== 'function' &&
+            typeof component.find !== 'function' &&
+            typeof component.create !== 'function'
         );
     }
 
@@ -205,67 +213,93 @@ export class ObjectStackKernel {
     async start(): Promise<void> {
         console.log('[ObjectStackKernel] Starting kernel...');
         
-        // Phase 1: Load application manifests
-        for (const app of this.applications) {
-            console.log(`[ObjectStackKernel] Loading application: ${app.name}`);
-            if (app.objects) {
-                for (const [objName, objConfig] of Object.entries(app.objects)) {
-                    this.metadata.register('object', {
-                        type: 'object',
-                        id: objName,
-                        content: objConfig,
-                        packageName: app.name
-                    });
+        try {
+            // Phase 1: Load application manifests
+            for (const app of this.applications) {
+                console.log(`[ObjectStackKernel] Loading application: ${app.name}`);
+                if (app.objects) {
+                    for (const [objName, objConfig] of Object.entries(app.objects)) {
+                        this.metadata.register('object', {
+                            id: objName,
+                            content: objConfig,
+                            packageName: app.name
+                        } as any);
+                    }
                 }
             }
-        }
-        
-        // Phase 2: Connect drivers
-        for (const driver of this.drivers) {
-            if (driver.connect) {
-                console.log(`[ObjectStackKernel] Connecting driver: ${driver.name || 'unnamed'}`);
-                await driver.connect();
+            
+            // Phase 2: Connect drivers
+            for (const driver of this.drivers) {
+                if (driver.connect) {
+                    console.log(`[ObjectStackKernel] Connecting driver: ${driver.name || 'unnamed'}`);
+                    await driver.connect();
+                }
             }
-        }
-        
-        // Phase 3: Install all plugins
-        for (const plugin of this.plugins) {
-            if (plugin.install) {
-                console.log(`[ObjectStackKernel] Installing plugin: ${plugin.name}`);
-                await plugin.install({ engine: this });
+            
+            // Phase 3: Install all plugins
+            for (const plugin of this.plugins) {
+                if (plugin.install) {
+                    console.log(`[ObjectStackKernel] Installing plugin: ${plugin.name}`);
+                    await plugin.install({ engine: this });
+                }
             }
-        }
-        
-        // Phase 4: Start all plugins
-        for (const plugin of this.plugins) {
-            if (plugin.onStart) {
-                console.log(`[ObjectStackKernel] Starting plugin: ${plugin.name}`);
-                await plugin.onStart({ engine: this });
+            
+            // Phase 4: Start all plugins
+            for (const plugin of this.plugins) {
+                if (plugin.onStart) {
+                    console.log(`[ObjectStackKernel] Starting plugin: ${plugin.name}`);
+                    await plugin.onStart({ engine: this });
+                }
             }
+            
+            console.log('[ObjectStackKernel] Kernel started successfully');
+        } catch (error) {
+            console.error('[ObjectStackKernel] Error during kernel startup:', error);
+            // Attempt to stop any partially initialized components
+            await this.stop().catch(stopError => {
+                console.error('[ObjectStackKernel] Error during cleanup after failed startup:', stopError);
+            });
+            throw error;
         }
-        
-        console.log('[ObjectStackKernel] Kernel started successfully');
     }
 
     /** Stop the kernel */
     async stop(): Promise<void> {
         console.log('[ObjectStackKernel] Stopping kernel...');
         
+        const errors: Error[] = [];
+        
         // Stop all plugins in reverse order
         for (let i = this.plugins.length - 1; i >= 0; i--) {
             const plugin = this.plugins[i];
             if (plugin.onStop) {
-                console.log(`[ObjectStackKernel] Stopping plugin: ${plugin.name}`);
-                await plugin.onStop({ engine: this });
+                try {
+                    console.log(`[ObjectStackKernel] Stopping plugin: ${plugin.name}`);
+                    await plugin.onStop({ engine: this });
+                } catch (error) {
+                    console.error(`[ObjectStackKernel] Error stopping plugin ${plugin.name}:`, error);
+                    errors.push(error as Error);
+                }
             }
         }
         
         // Disconnect drivers
         for (const driver of this.drivers) {
             if (driver.disconnect) {
-                console.log(`[ObjectStackKernel] Disconnecting driver: ${driver.name || 'unnamed'}`);
-                await driver.disconnect();
+                try {
+                    console.log(`[ObjectStackKernel] Disconnecting driver: ${driver.name || 'unnamed'}`);
+                    await driver.disconnect();
+                } catch (error) {
+                    console.error(`[ObjectStackKernel] Error disconnecting driver ${driver.name || 'unnamed'}:`, error);
+                    errors.push(error as Error);
+                }
             }
+        }
+        
+        if (errors.length > 0) {
+            console.error(`[ObjectStackKernel] Kernel stopped with ${errors.length} error(s)`);
+            // Throw the first error to signal failure while ensuring cleanup continues
+            throw errors[0];
         }
         
         console.log('[ObjectStackKernel] Kernel stopped successfully');

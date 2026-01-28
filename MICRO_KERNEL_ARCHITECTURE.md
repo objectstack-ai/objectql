@@ -216,6 +216,21 @@ import { ODataV4Plugin } from '@objectql/protocol-odata-v4';
 import { JSONRPCPlugin } from '@objectql/protocol-json-rpc';
 import { ObjectQLPlugin } from '@objectql/core';
 
+// Define application config
+const myApp = {
+  name: 'my-app',
+  label: 'My Application',
+  objects: {
+    users: {
+      name: 'users',
+      fields: {
+        name: { type: 'text' },
+        email: { type: 'email' }
+      }
+    }
+  }
+};
+
 const kernel = new ObjectStackKernel([
   myApp,
   new SQLDriver({ /* config */ }),
