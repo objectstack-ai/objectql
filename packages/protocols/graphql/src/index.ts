@@ -19,10 +19,8 @@ import { startStandaloneServer } from '@apollo/server/standalone';
 export interface GraphQLPluginConfig {
     /** Port to listen on */
     port?: number;
-    /** Enable introspection */
+    /** Enable introspection (also enables Apollo Sandbox in development) */
     introspection?: boolean;
-    /** Enable GraphQL Playground */
-    playground?: boolean;
     /** Custom type definitions (optional) */
     typeDefs?: string;
 }
@@ -35,8 +33,8 @@ export interface GraphQLPluginConfig {
  * Key Features:
  * - Automatic schema generation from ObjectStack metadata
  * - Query and mutation resolvers
- * - Apollo Server integration
- * - GraphQL introspection and playground
+ * - Apollo Server v4+ integration
+ * - GraphQL introspection and Apollo Sandbox
  * - No direct database access - all operations through ObjectStackRuntimeProtocol
  * 
  * @example
@@ -49,7 +47,7 @@ export interface GraphQLPluginConfig {
  * ]);
  * await kernel.start();
  * 
- * // Access GraphQL playground: http://localhost:4000/
+ * // Access Apollo Sandbox: http://localhost:4000/
  * ```
  */
 export class GraphQLPlugin implements RuntimePlugin {
@@ -65,7 +63,6 @@ export class GraphQLPlugin implements RuntimePlugin {
         this.config = {
             port: config.port || 4000,
             introspection: config.introspection !== false,
-            playground: config.playground !== false,
             typeDefs: config.typeDefs || ''
         };
     }
@@ -97,15 +94,27 @@ export class GraphQLPlugin implements RuntimePlugin {
         const typeDefs = this.generateSchema();
         const resolvers = this.generateResolvers();
 
-        // Create Apollo Server
+        // Create Apollo Server with Apollo Server 4+ configuration
         this.server = new ApolloServer({
             typeDefs,
             resolvers,
             introspection: this.config.introspection,
-            // Enable playground in development
-            ...(this.config.playground && {
-                plugins: []
-            })
+            // Apollo Server 4+ uses Apollo Sandbox by default when introspection is enabled
+            // The playground config option is deprecated - Sandbox is now the default
+            includeStacktraceInErrorResponses: process.env.NODE_ENV !== 'production',
+            // Format errors with GraphQL spec-compliant structure
+            formatError: (formattedError, error) => {
+                // Return standard GraphQL error format with extensions
+                return {
+                    message: formattedError.message,
+                    locations: formattedError.locations,
+                    path: formattedError.path,
+                    extensions: {
+                        code: formattedError.extensions?.code || 'INTERNAL_SERVER_ERROR',
+                        ...formattedError.extensions
+                    }
+                };
+            }
         });
 
         // Start standalone server
@@ -114,6 +123,9 @@ export class GraphQLPlugin implements RuntimePlugin {
         });
 
         console.log(`[${this.name}] 🚀 GraphQL server ready at: ${this.serverCleanup.url}`);
+        if (this.config.introspection) {
+            console.log(`[${this.name}] 📊 Apollo Sandbox available at: ${this.serverCleanup.url}`);
+        }
     }
 
     /**

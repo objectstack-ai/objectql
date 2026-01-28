@@ -161,9 +161,15 @@ export class ObjectStackRuntimeProtocol {
     /**
      * Get all registered object types (metadata)
      * Used for schema generation in GraphQL, OData, etc.
+     * @returns Array of object names
      */
     getMetaTypes(): string[] {
-        return this.kernel.metadata.list('object');
+        // Get the type map for 'object' metadata
+        const typeMap = this.kernel.metadata.store.get('object');
+        if (!typeMap) return [];
+        
+        // Return the keys (object IDs/names)
+        return Array.from(typeMap.keys());
     }
 
     /**
@@ -178,9 +184,18 @@ export class ObjectStackRuntimeProtocol {
     /**
      * Get all metadata items of a specific type
      * @param metaType - The type of metadata (e.g., 'object', 'action', 'page')
+     * @returns Map of metadata items
      */
     getAllMetaItems(metaType: string): Map<string, unknown> {
-        return this.kernel.metadata.getAll(metaType);
+        const items = this.kernel.metadata.list(metaType);
+        const map = new Map<string, unknown>();
+        items.forEach((item: any, index: number) => {
+            // Create a map with item names/ids as keys
+            // For objects, use the name field if available
+            const key = item.name || item.id || `item_${index}`;
+            map.set(key, item);
+        });
+        return map;
     }
 
     /**
@@ -280,16 +295,33 @@ export class ObjectStackRuntimeProtocol {
 
     /**
      * Execute a custom action
-     * @param actionName - The action identifier
+     * @param actionName - The action identifier (format: "objectName:actionName")
      * @param params - Action parameters
      * @returns Action result
      */
     async executeAction(actionName: string, params?: any): Promise<any> {
-        return this.kernel.actions.execute(actionName, params);
+        // Parse action name to extract object and action
+        const parts = actionName.split(':');
+        if (parts.length !== 2) {
+            throw new Error(`Invalid action name format: "${actionName}". Expected "objectName:actionName"`);
+        }
+        
+        const [objectName, action] = parts;
+        
+        // Create action context
+        const ctx: any = {
+            objectName,
+            actionName: action,
+            data: params,
+            input: params
+        };
+        
+        return await this.kernel.actions.execute(objectName, action, ctx);
     }
 
     /**
      * Get all registered actions
+     * @returns Array of action names in format "objectName:actionName"
      */
     getActions(): string[] {
         return this.kernel.actions.list();

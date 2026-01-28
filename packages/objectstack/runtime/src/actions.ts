@@ -150,6 +150,14 @@ export class ActionManager {
     }
 
     /**
+     * List all registered action keys
+     * @returns Array of action keys in format "objectName:actionName"
+     */
+    list(): string[] {
+        return Array.from(this.actions.keys());
+    }
+
+    /**
      * Remove actions from a package
      */
     removePackage(packageName: string): void {
