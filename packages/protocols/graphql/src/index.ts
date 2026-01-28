@@ -50,7 +50,7 @@ export interface GraphQLPluginConfig {
  * // Access Apollo Sandbox: http://localhost:4000/
  * ```
  */
-export class GraphQLPlugin implements ObjectQLPlugin {
+export class GraphQLPlugin {
     name = '@objectql/protocol-graphql';
     version = '0.1.0';
     
@@ -191,7 +191,7 @@ export class GraphQLPlugin implements ObjectQLPlugin {
 
         // Generate type definitions for each object
         for (const objectName of objectTypes) {
-            const metadata = this.protocol!.getMetaItem(objectName) as any;
+            const metadata = this.protocol!.getMetaItem('object', objectName) as any;
             const pascalCaseName = this.toPascalCase(objectName);
             
             typeDefs += `  type ${pascalCaseName} {\n`;
@@ -227,7 +227,7 @@ export class GraphQLPlugin implements ObjectQLPlugin {
                 hello: () => 'Hello from GraphQL Protocol Plugin!',
                 
                 getObjectMetadata: async (_: any, args: { name: string }) => {
-                    const meta = this.protocol!.getMetaItem(args.name);
+                    const meta = this.protocol!.getMetaItem('object', args.name);
                     return JSON.stringify(meta, null, 2);
                 },
                 
@@ -254,7 +254,7 @@ export class GraphQLPlugin implements ObjectQLPlugin {
                 if (args.offset) query.offset = args.offset;
                 
                 const result = await this.protocol!.findData(objectName, query);
-                return result.value;
+                return result;
             };
 
             // Mutation resolvers

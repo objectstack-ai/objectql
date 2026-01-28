@@ -102,7 +102,7 @@ interface MethodSignature {
  * // {"jsonrpc":"2.0","method":"object.find","params":{"objectName":"users","query":{"where":{"active":true}}},"id":1}
  * ```
  */
-export class JSONRPCPlugin implements ObjectQLPlugin {
+export class JSONRPCPlugin {
     name = '@objectql/protocol-json-rpc';
     version = '0.1.0';
     
@@ -223,7 +223,8 @@ export class JSONRPCPlugin implements ObjectQLPlugin {
         });
 
         this.methods.set('object.count', async (objectName: string, filters?: any) => {
-            return await this.protocol!.countData(objectName, filters);
+            // Not supported in protocol 
+            throw new Error('Method not implemented: object.count');
         });
         this.methodSignatures.set('object.count', {
             params: ['objectName', 'filters'],
@@ -240,7 +241,7 @@ export class JSONRPCPlugin implements ObjectQLPlugin {
         });
 
         this.methods.set('metadata.get', async (objectName: string) => {
-            return this.protocol!.getMetaItem(objectName);
+            return this.protocol!.getMetaItem('object', objectName);
         });
         this.methodSignatures.set('metadata.get', {
             params: ['objectName'],
@@ -253,8 +254,7 @@ export class JSONRPCPlugin implements ObjectQLPlugin {
                 throw new Error('Invalid metaType parameter: must be a non-empty string');
             }
             
-            const items = this.protocol!.getAllMetaItems(metaType);
-            return Object.fromEntries(items);
+            return this.protocol!.getMetaItems(metaType);
         });
         this.methodSignatures.set('metadata.getAll', {
             params: ['metaType'],
@@ -263,7 +263,7 @@ export class JSONRPCPlugin implements ObjectQLPlugin {
 
         // Action methods
         this.methods.set('action.execute', async (actionName: string, params?: any) => {
-            return await this.protocol!.executeAction(actionName, params);
+            throw new Error('Method not implemented: action.execute');
         });
         this.methodSignatures.set('action.execute', {
             params: ['actionName', 'params'],
@@ -271,7 +271,7 @@ export class JSONRPCPlugin implements ObjectQLPlugin {
         });
 
         this.methods.set('action.list', async () => {
-            return this.protocol!.getActions();
+             throw new Error('Method not implemented: action.list');
         });
         this.methodSignatures.set('action.list', {
             params: [],
@@ -280,7 +280,7 @@ export class JSONRPCPlugin implements ObjectQLPlugin {
 
         // View methods
         this.methods.set('view.get', async (objectName: string, viewType?: 'list' | 'form') => {
-            return this.protocol!.getViewConfig(objectName, viewType);
+            return this.protocol!.getUiView(objectName, viewType || 'list');
         });
         this.methodSignatures.set('view.get', {
             params: ['objectName', 'viewType'],

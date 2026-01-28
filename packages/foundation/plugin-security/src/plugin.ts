@@ -44,7 +44,7 @@ interface KernelWithSecurity extends ObjectKernel {
  * - Zero-Intrusion: Can be enabled/disabled without code changes
  * - Performance-First: Pre-compiles rules, works at AST level
  */
-export class ObjectQLSecurityPlugin implements ObjectQLPlugin {
+export class ObjectQLSecurityPlugin {
   name = '@objectql/plugin-security';
   version = '4.0.1';
   

@@ -43,7 +43,7 @@ app.init().then(async () => {
     const port = 3004;
 
     // Enable CORS for development
-    server.use((req, res, next) => {
+    server.use((req: any, res: any, next: any) => {
         res.header('Access-Control-Allow-Origin', '*');
         res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
         res.header('Access-Control-Allow-Headers', 'Content-Type');

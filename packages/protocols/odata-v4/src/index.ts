@@ -48,7 +48,7 @@ export interface ODataV4PluginConfig {
  * await kernel.start();
  * ```
  */
-export class ODataV4Plugin implements ObjectQLPlugin {
+export class ODataV4Plugin {
     name = '@objectql/protocol-odata-v4';
     version = '0.1.0';
     
@@ -195,7 +195,7 @@ export class ODataV4Plugin implements ObjectQLPlugin {
 
         // Generate EntityType for each object
         for (const objectName of entityTypes) {
-            const metadata = this.protocol!.getMetaItem(objectName) as any;
+            const metadata = this.protocol!.getMetaItem('object', objectName) as any;
             edmx += `      <EntityType Name="${objectName}">
         <Key>
           <PropertyRef Name="id"/>
@@ -247,7 +247,7 @@ export class ODataV4Plugin implements ObjectQLPlugin {
         const queryParams = this.parseODataQuery(queryString);
 
         // Check if entity set exists
-        if (!this.protocol!.hasObject(entitySet)) {
+        if (!this.protocol?.getMetaItem('object', entitySet)) {
             this.sendError(res, 404, `Entity set '${entitySet}' not found`);
             return;
         }
@@ -328,8 +328,8 @@ export class ODataV4Plugin implements ObjectQLPlugin {
 
         this.sendJSON(res, 200, {
             '@odata.context': `${this.config.basePath}/$metadata#${entitySet}`,
-            '@odata.count': queryParams.$count === 'true' ? result.count : undefined,
-            value: result.value
+            '@odata.count': undefined,
+            value: result
         });
     }
 

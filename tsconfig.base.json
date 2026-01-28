@@ -10,11 +10,13 @@
     "moduleResolution": "node",
     "baseUrl": ".",
     "paths": {
-      "@objectstack/spec/data": ["./node_modules/@objectstack/spec/dist/data"],
-      "@objectstack/spec/system": ["./node_modules/@objectstack/spec/dist/system"],
-      "@objectstack/spec/api": ["./node_modules/@objectstack/spec/dist/api"],
-      "@objectstack/spec/ui": ["./node_modules/@objectstack/spec/dist/ui"],
-      "@objectstack/spec/ai": ["./node_modules/@objectstack/spec/dist/ai"]
+      "@objectstack/spec": ["./node_modules/@objectstack/spec/dist/index.d.ts"],
+      "@objectstack/spec/data": ["./node_modules/@objectstack/spec/dist/data/index.d.ts"],
+      "@objectstack/spec/system": ["./node_modules/@objectstack/spec/dist/system/index.d.ts"],
+      "@objectstack/spec/api": ["./node_modules/@objectstack/spec/dist/api/index.d.ts"],
+      "@objectstack/spec/ui": ["./node_modules/@objectstack/spec/dist/ui/index.d.ts"],
+      "@objectstack/spec/ai": ["./node_modules/@objectstack/spec/dist/ai/index.d.ts"],
+      "@objectql/types": ["packages/foundation/types/dist/index.d.ts"]
     },
     "composite": true,
     "sourceMap": true
