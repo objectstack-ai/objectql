@@ -42,8 +42,66 @@ export interface RuntimePlugin {
 }
 
 /**
+ * Driver Interface (compatible with @objectql/types Driver)
+ * Represents a database or storage driver
+ */
+export interface RuntimeDriver {
+    /** Driver name/identifier */
+    name?: string;
+    /** Connect to the database */
+    connect?: () => Promise<void>;
+    /** Disconnect from the database */
+    disconnect?: () => Promise<void>;
+    /** Any additional driver methods */
+    [key: string]: any;
+}
+
+/**
+ * Application Config (compatible with @objectql/types AppConfig)
+ * Represents an application manifest
+ */
+export interface RuntimeAppConfig {
+    /** Unique application name */
+    name: string;
+    /** Application label */
+    label?: string;
+    /** Application description */
+    description?: string;
+    /** Objects to register */
+    objects?: Record<string, any>;
+    /** Custom metadata */
+    [key: string]: any;
+}
+
+/**
+ * Kernel Component
+ * Union type for all components that can be loaded into the kernel
+ */
+export type KernelComponent = RuntimePlugin | RuntimeDriver | RuntimeAppConfig;
+
+/**
  * ObjectStack Kernel
- * The core runtime engine
+ * The core runtime engine implementing the micro-kernel pattern
+ * 
+ * The micro-kernel accepts a heterogeneous array of components:
+ * - RuntimePlugin: Protocol adapters, feature plugins
+ * - RuntimeDriver: Database/storage drivers  
+ * - RuntimeAppConfig: Application manifests
+ * 
+ * @example
+ * ```typescript
+ * import { ObjectStackKernel } from '@objectql/runtime';
+ * import { InMemoryDriver } from '@objectql/driver-memory';
+ * import { GraphQLPlugin } from '@objectql/protocol-graphql';
+ * 
+ * const kernel = new ObjectStackKernel([
+ *   { name: 'my-app', label: 'My App', objects: {...} }, // App config
+ *   new InMemoryDriver(),                                // Driver
+ *   new GraphQLPlugin({ port: 4000 })                   // Plugin
+ * ]);
+ * 
+ * await kernel.start();
+ * ```
  */
 export class ObjectStackKernel {
     /** Query interface (QL) */
@@ -60,45 +118,217 @@ export class ObjectStackKernel {
     
     /** Registered plugins */
     private plugins: RuntimePlugin[] = [];
+    
+    /** Registered drivers */
+    private drivers: RuntimeDriver[] = [];
+    
+    /** Registered applications */
+    private applications: RuntimeAppConfig[] = [];
 
-    constructor(plugins: RuntimePlugin[] = []) {
-        this.plugins = plugins;
+    /**
+     * Create a new ObjectStack kernel
+     * @param components - Array of plugins, drivers, and app configs
+     */
+    constructor(components: KernelComponent[] = []) {
         this.metadata = new MetadataRegistry();
         this.hooks = new HookManager();
         this.actions = new ActionManager();
+        
+        // Classify components by type
+        this.classifyComponents(components);
+    }
+
+    /**
+     * Classify components into plugins, drivers, and app configs
+     * @private
+     */
+    private classifyComponents(components: KernelComponent[]): void {
+        for (const component of components) {
+            if (this.isRuntimePlugin(component)) {
+                this.plugins.push(component);
+            } else if (this.isRuntimeDriver(component)) {
+                this.drivers.push(component);
+            } else if (this.isRuntimeAppConfig(component)) {
+                this.applications.push(component);
+            } else {
+                console.warn('[ObjectStackKernel] Unknown component type:', component);
+            }
+        }
+    }
+
+    /**
+     * Type guard for RuntimePlugin
+     * @private
+     */
+    private isRuntimePlugin(component: any): component is RuntimePlugin {
+        return (
+            typeof component === 'object' &&
+            component !== null &&
+            typeof component.name === 'string' &&
+            (typeof component.install === 'function' ||
+             typeof component.onStart === 'function' ||
+             typeof component.onStop === 'function')
+        );
+    }
+
+    /**
+     * Type guard for RuntimeDriver
+     * @private
+     */
+    private isRuntimeDriver(component: any): component is RuntimeDriver {
+        return (
+            typeof component === 'object' &&
+            component !== null &&
+            (typeof component.connect === 'function' ||
+             typeof component.find === 'function' ||
+             typeof component.create === 'function' ||
+             typeof component.update === 'function' ||
+             typeof component.delete === 'function')
+        );
+    }
+
+    /**
+     * Type guard for RuntimeAppConfig
+     * @private
+     */
+    private isRuntimeAppConfig(component: any): component is RuntimeAppConfig {
+        return (
+            typeof component === 'object' &&
+            component !== null &&
+            typeof component.name === 'string' &&
+            // App configs typically have 'objects' or 'label' fields
+            (component.objects !== undefined || component.label !== undefined) &&
+            // Must NOT be a plugin (no lifecycle methods)
+            typeof component.install !== 'function' &&
+            typeof component.onStart !== 'function' &&
+            typeof component.onStop !== 'function' &&
+            // Must NOT be a driver (no driver methods)
+            typeof component.connect !== 'function' &&
+            typeof component.find !== 'function' &&
+            typeof component.create !== 'function'
+        );
     }
 
     /** Start the kernel */
     async start(): Promise<void> {
-        // Install all plugins
-        for (const plugin of this.plugins) {
-            if (plugin.install) {
-                await plugin.install({ engine: this });
-            }
-        }
+        console.log('[ObjectStackKernel] Starting kernel...');
         
-        // Start all plugins
-        for (const plugin of this.plugins) {
-            if (plugin.onStart) {
-                await plugin.onStart({ engine: this });
+        try {
+            // Phase 1: Load application manifests
+            for (const app of this.applications) {
+                console.log(`[ObjectStackKernel] Loading application: ${app.name}`);
+                if (app.objects) {
+                    for (const [objName, objConfig] of Object.entries(app.objects)) {
+                        this.metadata.register('object', {
+                            id: objName,
+                            content: objConfig,
+                            packageName: app.name
+                        } as any);
+                    }
+                }
             }
+            
+            // Phase 2: Connect drivers
+            for (const driver of this.drivers) {
+                if (driver.connect) {
+                    console.log(`[ObjectStackKernel] Connecting driver: ${driver.name || 'unnamed'}`);
+                    await driver.connect();
+                }
+            }
+            
+            // Phase 3: Install all plugins
+            for (const plugin of this.plugins) {
+                if (plugin.install) {
+                    console.log(`[ObjectStackKernel] Installing plugin: ${plugin.name}`);
+                    await plugin.install({ engine: this });
+                }
+            }
+            
+            // Phase 4: Start all plugins
+            for (const plugin of this.plugins) {
+                if (plugin.onStart) {
+                    console.log(`[ObjectStackKernel] Starting plugin: ${plugin.name}`);
+                    await plugin.onStart({ engine: this });
+                }
+            }
+            
+            console.log('[ObjectStackKernel] Kernel started successfully');
+        } catch (error) {
+            console.error('[ObjectStackKernel] Error during kernel startup:', error);
+            // Attempt to stop any partially initialized components
+            await this.stop().catch(stopError => {
+                console.error('[ObjectStackKernel] Error during cleanup after failed startup:', stopError);
+            });
+            throw error;
         }
     }
 
     /** Stop the kernel */
     async stop(): Promise<void> {
+        console.log('[ObjectStackKernel] Stopping kernel...');
+        
+        const errors: Error[] = [];
+        
         // Stop all plugins in reverse order
         for (let i = this.plugins.length - 1; i >= 0; i--) {
             const plugin = this.plugins[i];
             if (plugin.onStop) {
-                await plugin.onStop({ engine: this });
+                try {
+                    console.log(`[ObjectStackKernel] Stopping plugin: ${plugin.name}`);
+                    await plugin.onStop({ engine: this });
+                } catch (error) {
+                    console.error(`[ObjectStackKernel] Error stopping plugin ${plugin.name}:`, error);
+                    errors.push(error as Error);
+                }
             }
         }
+        
+        // Disconnect drivers
+        for (const driver of this.drivers) {
+            if (driver.disconnect) {
+                try {
+                    console.log(`[ObjectStackKernel] Disconnecting driver: ${driver.name || 'unnamed'}`);
+                    await driver.disconnect();
+                } catch (error) {
+                    console.error(`[ObjectStackKernel] Error disconnecting driver ${driver.name || 'unnamed'}:`, error);
+                    errors.push(error as Error);
+                }
+            }
+        }
+        
+        if (errors.length > 0) {
+            console.error(`[ObjectStackKernel] Kernel stopped with ${errors.length} error(s)`);
+            // Throw the first error to signal failure while ensuring cleanup continues
+            throw errors[0];
+        }
+        
+        console.log('[ObjectStackKernel] Kernel stopped successfully');
     }
 
     /** Seed initial data */
     async seed(): Promise<void> {
         // Stub implementation
+    }
+    
+    /**
+     * Get a registered driver by name or type
+     * @param nameOrType - Driver name or type identifier
+     * @returns The driver instance or undefined
+     */
+    getDriver(nameOrType?: string): RuntimeDriver | undefined {
+        if (!nameOrType) {
+            // Return the first driver (default)
+            return this.drivers[0];
+        }
+        return this.drivers.find(d => d.name === nameOrType);
+    }
+    
+    /**
+     * Get all registered drivers
+     * @returns Array of all drivers
+     */
+    getAllDrivers(): RuntimeDriver[] {
+        return [...this.drivers];
     }
 
     /** Find records */

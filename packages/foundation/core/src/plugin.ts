@@ -107,10 +107,28 @@ export class ObjectQLPlugin implements RuntimePlugin {
     
     const kernel = ctx.engine as ExtendedKernel;
     
+    // Get datasources - either from config or from kernel drivers
+    let datasources = this.config.datasources;
+    if (!datasources) {
+      // Try to get drivers from kernel (micro-kernel pattern)
+      const drivers = kernel.getAllDrivers?.();
+      if (drivers && drivers.length > 0) {
+        datasources = {};
+        drivers.forEach((driver: any, index: number) => {
+          // Use driver name if available, otherwise use 'default' for first driver
+          const driverName = driver.name || (index === 0 ? 'default' : `driver_${index + 1}`);
+          datasources![driverName] = driver;
+        });
+        console.log(`[${this.name}] Using drivers from kernel:`, Object.keys(datasources));
+      } else {
+        console.warn(`[${this.name}] No datasources configured and no drivers found in kernel. Repository and QueryService will not be available.`);
+      }
+    }
+    
     // Register QueryService and QueryAnalyzer if enabled
-    if (this.config.enableQueryService !== false && this.config.datasources) {
+    if (this.config.enableQueryService !== false && datasources) {
       const queryService = new QueryService(
-        this.config.datasources,
+        datasources,
         kernel.metadata
       );
       kernel.queryService = queryService;
@@ -125,8 +143,8 @@ export class ObjectQLPlugin implements RuntimePlugin {
     }
     
     // Register components based on configuration
-    if (this.config.enableRepository !== false) {
-      await this.registerRepository(ctx.engine);
+    if (this.config.enableRepository !== false && datasources) {
+      await this.registerRepository(ctx.engine, datasources);
     }
     
     // Install validator plugin if enabled
@@ -161,14 +179,7 @@ export class ObjectQLPlugin implements RuntimePlugin {
    * Register the Repository pattern
    * @private
    */
-  private async registerRepository(kernel: ObjectStackKernel): Promise<void> {
-    if (!this.config.datasources) {
-      console.log(`[${this.name}] No datasources configured, skipping repository registration`);
-      return;
-    }
-
-    const datasources = this.config.datasources;
-
+  private async registerRepository(kernel: ObjectStackKernel, datasources: Record<string, Driver>): Promise<void> {
     // Helper function to get the driver for an object
     const getDriver = (objectName: string): Driver => {
       const objectConfig = kernel.metadata.get<any>('object', objectName);
