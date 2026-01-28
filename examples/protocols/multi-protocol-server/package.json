@@ -9,16 +9,16 @@
     "dev": "tsx watch src/index.ts"
   },
   "dependencies": {
-    "@objectql/runtime": "workspace:*",
     "@objectql/core": "workspace:*",
-    "@objectql/types": "workspace:*",
     "@objectql/driver-memory": "workspace:*",
-    "@objectql/protocol-odata-v4": "workspace:*",
+    "@objectql/protocol-graphql": "workspace:*",
     "@objectql/protocol-json-rpc": "workspace:*",
-    "@objectql/protocol-graphql": "workspace:*"
+    "@objectql/protocol-odata-v4": "workspace:*",
+    "@objectql/runtime": "workspace:*",
+    "@objectql/types": "workspace:*"
   },
   "devDependencies": {
-    "tsx": "^4.7.0",
+    "tsx": "^4.21.0",
     "typescript": "^5.3.3"
   }
 }
