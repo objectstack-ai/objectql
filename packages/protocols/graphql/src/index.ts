@@ -19,10 +19,8 @@ import { startStandaloneServer } from '@apollo/server/standalone';
 export interface GraphQLPluginConfig {
     /** Port to listen on */
     port?: number;
-    /** Enable introspection */
+    /** Enable introspection (also enables Apollo Sandbox in development) */
     introspection?: boolean;
-    /** Enable GraphQL Playground */
-    playground?: boolean;
     /** Custom type definitions (optional) */
     typeDefs?: string;
 }
@@ -35,8 +33,8 @@ export interface GraphQLPluginConfig {
  * Key Features:
  * - Automatic schema generation from ObjectStack metadata
  * - Query and mutation resolvers
- * - Apollo Server integration
- * - GraphQL introspection and playground
+ * - Apollo Server v4+ integration
+ * - GraphQL introspection and Apollo Sandbox
  * - No direct database access - all operations through ObjectStackRuntimeProtocol
  * 
  * @example
@@ -49,7 +47,7 @@ export interface GraphQLPluginConfig {
  * ]);
  * await kernel.start();
  * 
- * // Access GraphQL playground: http://localhost:4000/
+ * // Access Apollo Sandbox: http://localhost:4000/
  * ```
  */
 export class GraphQLPlugin implements RuntimePlugin {
@@ -65,7 +63,6 @@ export class GraphQLPlugin implements RuntimePlugin {
         this.config = {
             port: config.port || 4000,
             introspection: config.introspection !== false,
-            playground: config.playground !== false,
             typeDefs: config.typeDefs || ''
         };
     }

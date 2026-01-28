@@ -466,8 +466,11 @@ export class JSONRPCPlugin implements RuntimePlugin {
                 const signature = this.methodSignatures.get(request.method);
                 if (signature && signature.params.length > 0) {
                     // Map named params to positional array
-                    const positionalParams = signature.params.map(paramName => {
-                        return request.params[paramName];
+                    const positionalParams = signature.params.map((paramName, index) => {
+                        const value = request.params[paramName];
+                        // Note: undefined values are allowed - the method will handle validation
+                        // If you need stricter validation, check required params here
+                        return value;
                     });
                     result = await method(...positionalParams);
                 } else {

@@ -414,6 +414,9 @@ export class ODataV4Plugin implements RuntimePlugin {
         // Remove leading/trailing whitespace
         filter = filter.trim();
 
+        // Validate parentheses are balanced before parsing
+        this.validateParentheses(filter);
+
         // Handle logical operators (and, or)
         const andMatch = this.splitByLogicalOperator(filter, ' and ');
         if (andMatch.length > 1) {
@@ -495,6 +498,56 @@ export class ODataV4Plugin implements RuntimePlugin {
             `Supported operators: eq, ne, gt, ge, lt, le, and, or, not. ` +
             `Supported functions: contains, startswith, endswith, substringof.`
         );
+    }
+
+    /**
+     * Validate that parentheses in filter are balanced
+     * @throws Error if parentheses are mismatched
+     */
+    private validateParentheses(filter: string): void {
+        let depth = 0;
+        let inQuotes = false;
+
+        for (let i = 0; i < filter.length; i++) {
+            const char = filter[i];
+            
+            // Track quoted strings
+            if (char === "'" && (i === 0 || filter[i - 1] !== '\\')) {
+                inQuotes = !inQuotes;
+                continue;
+            }
+
+            // Track parentheses depth (outside quotes)
+            if (!inQuotes) {
+                if (char === '(') {
+                    depth++;
+                } else if (char === ')') {
+                    depth--;
+                    // Check for negative depth (closing before opening)
+                    if (depth < 0) {
+                        throw new Error(
+                            `Invalid $filter expression: Mismatched parentheses. ` +
+                            `Found closing ')' without matching opening '(' at position ${i}.`
+                        );
+                    }
+                }
+            }
+        }
+
+        // Check final depth is zero
+        if (depth !== 0) {
+            throw new Error(
+                `Invalid $filter expression: Mismatched parentheses. ` +
+                `${depth} unclosed opening parenthesis(es).`
+            );
+        }
+
+        // Check quotes are balanced
+        if (inQuotes) {
+            throw new Error(
+                `Invalid $filter expression: Unclosed quoted string.`
+            );
+        }
     }
 
     /**
