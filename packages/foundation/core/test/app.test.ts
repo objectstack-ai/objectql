@@ -269,6 +269,8 @@ describe('ObjectQL App', () => {
             const entry: Metadata = {
                 type: 'object',
                 id: 'todo',
+                // @ts-ignore
+                name: 'todo', // Ensure SchemaRegistry keys it correctly
                 package: 'test-package',
                 content: obj
             };

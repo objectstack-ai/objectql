@@ -48,6 +48,10 @@ export class ObjectQL implements IObjectQL {
     private ql: any;
     private kernelPlugins: any[] = [];
     
+    // Local Action and Hook Registry (shim for missing/inaccessible Kernel functionality)
+    private localActions = new Map<string, any>();
+    private localHooks = new Map<string, any[]>();
+    
     // Store config for lazy loading in init()
     private config: ObjectQLConfig;
 
@@ -86,21 +90,83 @@ export class ObjectQL implements IObjectQL {
             register: (type: string, item: any) => SchemaRegistry.registerItem(type, item),
             get: (type: string, name: string) => SchemaRegistry.getItem(type, name),
             list: (type: string) => SchemaRegistry.listItems(type),
-            unregister: (type: string, name: string) => console.warn('unregister not impl', type, name),
-            unregisterPackage: (name: string) => console.warn('unregisterPackage not impl', name)
+            unregister: (type: string, name: string) => {
+                 // Access private static storage using any cast
+                 const metadata = (SchemaRegistry as any).metadata;
+                 if (metadata instanceof Map) {
+                     const collection = metadata.get(type);
+                     if (collection instanceof Map) {
+                         collection.delete(name);
+                     }
+                 }
+            },
+            unregisterPackage: (packageName: string) => {
+                 const metadata = (SchemaRegistry as any).metadata;
+                 if (metadata instanceof Map) {
+                     for (const [type, collection] of metadata.entries()) {
+                         if (collection instanceof Map) {
+                             for (const [key, item] of collection.entries()) {
+                                 // console.log(`[App] Check ${type} ${key} pkg=${(item as any).package}`);
+                                 if ((item as any).package === packageName) {
+                                     collection.delete(key);
+                                 }
+                             }
+                         }
+                     }
+                 } else {
+                     console.warn('Metadata is not a Map');
+                 }
+            }
         };
         (this.kernel as any).hooks = {
-            register: (event: string, objectName: string, handler: any) => {
-                // TODO: Map to ObjectQL hooks properly
-                this.ql.registerHook(`${event}:${objectName}`, handler);
+            register: (event: string, objectName: string, handler: any, packageName?: string) => {
+                const key = `${event}:${objectName}`;
+                if (!this.localHooks.has(key)) {
+                    this.localHooks.set(key, []);
+                }
+                const handlers = this.localHooks.get(key)!;
+                // Store wrapper to track package
+                (handler as any)._package = packageName;
+                handlers.push(handler);
             },
-            removePackage: () => {},
-            trigger: () => Promise.resolve()
+            removePackage: (packageName: string) => {
+                for (const handlers of this.localHooks.values()) {
+                    // Remove handlers belonging to package
+                    for (let i = handlers.length - 1; i >= 0; i--) {
+                        if ((handlers[i] as any)._package === packageName) {
+                            handlers.splice(i, 1);
+                        }
+                    }
+                }
+            },
+            trigger: async (event: string, objectName: string, ctx: any) => {
+                const key = `${event}:${objectName}`;
+                const handlers = this.localHooks.get(key) || [];
+                for (const handler of handlers) {
+                    await handler(ctx);
+                }
+            }
         };
         (this.kernel as any).actions = {
-            register: () => {},
-            removePackage: () => {},
-            execute: () => Promise.resolve()
+            register: (objectName: string, actionName: string, handler: any, packageName?: string) => {
+                const key = `${objectName}:${actionName}`;
+                (handler as any)._package = packageName;
+                this.localActions.set(key, handler);
+            },
+            removePackage: (packageName: string) => {
+                for (const [key, handler] of this.localActions.entries()) {
+                    if ((handler as any)._package === packageName) {
+                        this.localActions.delete(key);
+                    }
+                }
+            },
+            execute: async (objectName: string, actionName: string, ctx: any) => {
+                const handler = this.localActions.get(`${objectName}:${actionName}`);
+                if (handler) {
+                    return handler(ctx);
+                }
+                throw new Error(`Action '${actionName}' on object '${objectName}' not found`);
+            }
         };
         
         // Register initial metadata if provided
@@ -362,17 +428,20 @@ export class ObjectQL implements IObjectQL {
         const ctx = this.createContext({ isSystem: true });
 
         for (const entry of dataEntries) {
+            // Unwrapping metadata content if present
+            const dataContent = (entry as any).content || entry;
+
             // Expected format:
             // 1. { object: 'User', records: [...] }
             // 2. [ record1, record2 ] (with name property added by loader inferred from filename)
             
-            let objectName = entry.object;
-            let records = entry.records;
+            let objectName = dataContent.object;
+            let records = dataContent.records;
 
-            if (Array.isArray(entry)) {
-                records = entry;
-                if (!objectName && (entry as any).name) {
-                    objectName = (entry as any).name;
+            if (Array.isArray(dataContent)) {
+                records = dataContent;
+                if (!objectName && (dataContent as any).name) {
+                    objectName = (dataContent as any).name;
                 }
             }
 
