@@ -75,12 +75,12 @@ export class ValidatorPlugin implements Plugin {
     
     // Register validation middleware for queries (if enabled)
     if (this.config.enableQueryValidation !== false) {
-      this.registerQueryValidation(kernel);
+      this.registerQueryValidation(ctx);
     }
     
     // Register validation middleware for mutations (if enabled)
     if (this.config.enableMutationValidation !== false) {
-      this.registerMutationValidation(kernel);
+      this.registerMutationValidation(ctx);
     }
     
     console.log(`[${this.name}] Validator plugin installed`);
@@ -90,10 +90,10 @@ export class ValidatorPlugin implements Plugin {
    * Register query validation middleware
    * @private
    */
-  private registerQueryValidation(kernel: KernelWithValidator): void {
-    // Check if kernel supports middleware hooks
-    if (typeof (kernel as any).use === 'function') {
-      (kernel as any).use('beforeQuery', async (context: any) => {
+  private registerQueryValidation(ctx: PluginContext): void {
+    // Check if context supports hook registration
+    if (typeof (ctx as any).hook === 'function') {
+      (ctx as any).hook('beforeQuery', async (context: any) => {
         // Query validation logic
         // In a real implementation, this would validate query parameters
         // For now, this is a placeholder that demonstrates the integration pattern
@@ -112,10 +112,10 @@ export class ValidatorPlugin implements Plugin {
    * Register mutation validation middleware
    * @private
    */
-  private registerMutationValidation(kernel: KernelWithValidator): void {
-    // Check if kernel supports middleware hooks
-    if (typeof (kernel as any).use === 'function') {
-      (kernel as any).use('beforeMutation', async (context: any) => {
+  private registerMutationValidation(ctx: PluginContext): void {
+    // Check if context supports hook registration
+    if (typeof (ctx as any).hook === 'function') {
+      (ctx as any).hook('beforeMutation', async (context: any) => {
         // Mutation validation logic
         // This would validate data before create/update operations
         if (context.data && context.metadata?.validation_rules) {

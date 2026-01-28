@@ -67,7 +67,7 @@ export class FormulaPlugin implements Plugin {
     
     // Register formula evaluation middleware if auto-evaluation is enabled
     if (this.config.autoEvaluateOnQuery !== false) {
-      this.registerFormulaMiddleware(kernel);
+      this.registerFormulaMiddleware(ctx);
     }
     
     console.log(`[${this.name}] Formula plugin installed`);
@@ -107,11 +107,11 @@ export class FormulaPlugin implements Plugin {
    * Register formula evaluation middleware
    * @private
    */
-  private registerFormulaMiddleware(kernel: KernelWithFormulas): void {
-    // Check if kernel supports middleware hooks
-    if (typeof (kernel as any).use === 'function') {
+  private registerFormulaMiddleware(ctx: PluginContext): void {
+    // Check if context supports hook registration
+    if (typeof (ctx as any).hook === 'function') {
       // Register middleware to evaluate formulas after queries
-      (kernel as any).use('afterQuery', async (context: any) => {
+      (ctx as any).hook('afterQuery', async (context: any) => {
         // Formula evaluation logic would go here
         // This would automatically compute formula fields after data is retrieved
         if (context.results && context.metadata?.fields) {
