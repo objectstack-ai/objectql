@@ -186,8 +186,6 @@ describe('Formula Integration', () => {
           },
         },
       });
-
-      await app.init();
     });
 
     it('should calculate complex financial formulas', async () => {
@@ -261,8 +259,6 @@ describe('Formula Integration', () => {
           },
         },
       });
-
-      await app.init();
     });
 
     it('should handle formula evaluation errors gracefully', async () => {
