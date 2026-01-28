@@ -128,7 +128,7 @@ function sanitizeGraphQLName(name: string): string {
  * Generate GraphQL schema from ObjectQL metadata
  */
 export function generateGraphQLSchema(app: IObjectQL): GraphQLSchema {
-    const objects = app.metadata.list<ObjectConfig>('object');
+    const objects = app.metadata.list('object') as any[];
     
     // Validate that there are objects to generate schema from
     if (!objects || objects.length === 0) {
@@ -172,7 +172,7 @@ export function generateGraphQLSchema(app: IObjectQL): GraphQLSchema {
             id: { type: new GraphQLNonNull(GraphQLString) }
         };
         
-        for (const [fieldName, fieldConfig] of Object.entries(config.fields)) {
+        for (const [fieldName, fieldConfig] of Object.entries(config.fields as Record<string, any>)) {
             const sanitizedFieldName = sanitizeGraphQLName(fieldName);
             const gqlType = mapFieldTypeToGraphQL(fieldConfig, false) as GraphQLOutputType;
             fields[sanitizedFieldName] = {
@@ -190,7 +190,7 @@ export function generateGraphQLSchema(app: IObjectQL): GraphQLSchema {
         // Create input type for mutations
         const inputFields: Record<string, any> = {};
         
-        for (const [fieldName, fieldConfig] of Object.entries(config.fields)) {
+        for (const [fieldName, fieldConfig] of Object.entries(config.fields as Record<string, any>)) {
             const sanitizedFieldName = sanitizeGraphQLName(fieldName);
             const gqlType = mapFieldTypeToGraphQL(fieldConfig, true) as GraphQLInputType;
             inputFields[sanitizedFieldName] = {

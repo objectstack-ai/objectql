@@ -14,7 +14,7 @@ A plugin in ObjectQL is a **composable module** that:
 1. **Hooks into lifecycle events**: beforeQuery, afterQuery, beforeMutation, afterMutation
 2. **Extends the kernel**: Adds new capabilities to the ObjectStack runtime
 3. **Operates transparently**: Can be enabled/disabled without code changes
-4. **Follows the protocol**: Implements the `RuntimePlugin` interface from `@objectql/runtime`
+4. **Follows the protocol**: Implements the `RuntimePlugin` interface from `@objectstack/runtime`
 
 ### When to Create a Plugin
 
@@ -38,10 +38,10 @@ Create a plugin when you need to:
 
 ### RuntimePlugin Interface
 
-Defined in `@objectql/runtime`:
+Defined in `@objectstack/runtime`:
 
 ```typescript
-import type { RuntimePlugin, RuntimeContext } from '@objectql/runtime';
+import type { RuntimePlugin, RuntimeContext } from '@objectstack/runtime';
 
 export interface RuntimePlugin {
   /** Unique plugin identifier */
@@ -141,7 +141,7 @@ Let's build a comprehensive audit logging plugin that tracks all data mutations.
 mkdir objectql-plugin-audit
 cd objectql-plugin-audit
 npm init -y
-npm install @objectql/runtime
+npm install @objectstack/runtime
 npm install -D typescript @types/node vitest
 ```
 
@@ -346,7 +346,7 @@ export class FileAuditStorage implements AuditStorage {
 
 **src/index.ts**:
 ```typescript
-import type { RuntimePlugin, RuntimeContext, ObjectStackKernel } from '@objectql/runtime';
+import type { RuntimePlugin, RuntimeContext, ObjectStackKernel } from '@objectstack/runtime';
 import type { AuditPluginConfig, AuditLogEntry, AuditStorage } from './types';
 import { MemoryAuditStorage } from './storage/memory-storage';
 import { FileAuditStorage } from './storage/file-storage';
@@ -670,7 +670,7 @@ export * from './storage/file-storage';
 ```typescript
 import { describe, it, expect, beforeEach } from 'vitest';
 import { AuditLogPlugin } from '../src';
-import { ObjectStackKernel } from '@objectql/runtime';
+import { ObjectStackKernel } from '@objectstack/runtime';
 
 describe('AuditLogPlugin', () => {
   let plugin: AuditLogPlugin;

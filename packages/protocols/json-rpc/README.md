@@ -29,10 +29,10 @@ pnpm add @objectql/protocol-json-rpc
 ### Basic Setup
 
 ```typescript
-import { ObjectStackKernel } from '@objectql/runtime';
+import { ObjectKernel } from '@objectstack/runtime';
 import { JSONRPCPlugin } from '@objectql/protocol-json-rpc';
 
-const kernel = new ObjectStackKernel([
+const kernel = new ObjectKernel([
   new JSONRPCPlugin({
     port: 9000,
     basePath: '/rpc',

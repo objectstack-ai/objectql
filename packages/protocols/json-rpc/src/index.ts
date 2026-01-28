@@ -6,8 +6,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import type { RuntimePlugin, RuntimeContext } from '@objectql/runtime';
-import { ObjectStackRuntimeProtocol } from '@objectql/runtime';
+import type { ObjectQLPlugin } from '@objectstack/runtime';
+import { ObjectStackProtocolImplementation } from '@objectstack/runtime';
 import { IncomingMessage, ServerResponse, createServer, Server } from 'http';
 
 /**
@@ -59,7 +59,7 @@ interface MethodSignature {
 /**
  * JSON-RPC 2.0 Protocol Plugin
  * 
- * Implements the RuntimePlugin interface to provide JSON-RPC 2.0 protocol support.
+ * Implements the ObjectQLPlugin interface to provide JSON-RPC 2.0 protocol support.
  * 
  * Key Features:
  * - Full JSON-RPC 2.0 specification compliance
@@ -68,7 +68,7 @@ interface MethodSignature {
  * - Built-in introspection methods (system.listMethods, system.describe)
  * - CRUD operations mapped to RPC methods
  * - Named and positional parameter support
- * - No direct database access - all operations through ObjectStackRuntimeProtocol
+ * - No direct database access - all operations through ObjectStackProtocolImplementation
  * 
  * Available RPC Methods:
  * - object.find(objectName, query) - Find multiple records
@@ -85,10 +85,10 @@ interface MethodSignature {
  * 
  * @example
  * ```typescript
- * import { ObjectStackKernel } from '@objectql/runtime';
+ * import { ObjectKernel } from '@objectstack/runtime';
  * import { JSONRPCPlugin } from '@objectql/protocol-json-rpc';
  * 
- * const kernel = new ObjectStackKernel([
+ * const kernel = new ObjectKernel([
  *   new JSONRPCPlugin({ port: 9000, basePath: '/rpc' })
  * ]);
  * await kernel.start();
@@ -102,12 +102,12 @@ interface MethodSignature {
  * // {"jsonrpc":"2.0","method":"object.find","params":{"objectName":"users","query":{"where":{"active":true}}},"id":1}
  * ```
  */
-export class JSONRPCPlugin implements RuntimePlugin {
+export class JSONRPCPlugin implements ObjectQLPlugin {
     name = '@objectql/protocol-json-rpc';
     version = '0.1.0';
     
     private server?: Server;
-    private protocol?: ObjectStackRuntimeProtocol;
+    private protocol?: ObjectStackProtocolImplementation;
     private config: Required<JSONRPCPluginConfig>;
     private methods: Map<string, Function>;
     private methodSignatures: Map<string, MethodSignature>;
@@ -127,11 +127,11 @@ export class JSONRPCPlugin implements RuntimePlugin {
     /**
      * Install hook - called during kernel initialization
      */
-    async install(ctx: RuntimeContext): Promise<void> {
+    async install(ctx: any): Promise<void> {
         console.log(`[${this.name}] Installing JSON-RPC 2.0 protocol plugin...`);
         
         // Initialize the protocol bridge
-        this.protocol = new ObjectStackRuntimeProtocol(ctx.engine);
+        this.protocol = new ObjectStackProtocolImplementation(ctx.engine);
         
         // Register RPC methods
         this.registerMethods();
@@ -142,7 +142,7 @@ export class JSONRPCPlugin implements RuntimePlugin {
     /**
      * Start hook - called when kernel starts
      */
-    async onStart(ctx: RuntimeContext): Promise<void> {
+    async onStart(ctx: any): Promise<void> {
         if (!this.protocol) {
             throw new Error('Protocol not initialized. Install hook must be called first.');
         }
@@ -164,7 +164,7 @@ export class JSONRPCPlugin implements RuntimePlugin {
     /**
      * Stop hook - called when kernel stops
      */
-    async onStop(ctx: RuntimeContext): Promise<void> {
+    async onStop(ctx: any): Promise<void> {
         if (this.server) {
             console.log(`[${this.name}] Stopping JSON-RPC 2.0 server...`);
             await new Promise<void>((resolve, reject) => {

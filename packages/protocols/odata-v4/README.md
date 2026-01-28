@@ -28,10 +28,10 @@ pnpm add @objectql/protocol-odata-v4
 ### Basic Setup
 
 ```typescript
-import { ObjectStackKernel } from '@objectql/runtime';
+import { ObjectKernel } from '@objectstack/runtime';
 import { ODataV4Plugin } from '@objectql/protocol-odata-v4';
 
-const kernel = new ObjectStackKernel([
+const kernel = new ObjectKernel([
   new ODataV4Plugin({
     port: 8080,
     basePath: '/odata',

@@ -139,7 +139,7 @@ const projectPermissions: PermissionConfig = {
 
 ```typescript
 import { ObjectQLSecurityPlugin } from '@objectql/plugin-security';
-import { createKernel } from '@objectql/runtime';
+import { createKernel } from '@objectstack/runtime';
 
 const kernel = createKernel({
   plugins: [

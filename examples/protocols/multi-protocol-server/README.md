@@ -289,7 +289,7 @@ class MyProtocolPlugin implements RuntimePlugin {
   private protocol?: ObjectStackRuntimeProtocol;
 
   async install(ctx: RuntimeContext) {
-    const { ObjectStackRuntimeProtocol } = await import('@objectql/runtime');
+    const { ObjectStackRuntimeProtocol } = await import('@objectstack/runtime');
     this.protocol = new ObjectStackRuntimeProtocol(ctx.engine);
   }
 
@@ -301,7 +301,7 @@ class MyProtocolPlugin implements RuntimePlugin {
 
 2. Add to kernel:
 ```typescript
-const kernel = new ObjectStackKernel([
+const kernel = new ObjectKernel([
   new ObjectQLPlugin({ datasources: { default: memoryDriver } }),
   new ODataV4Plugin({ port: 8080 }),
   new JSONRPCPlugin({ port: 9000 }),

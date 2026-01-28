@@ -130,7 +130,7 @@ export class QueryService {
      * @private
      */
     private getSchema(objectName: string): ObjectConfig {
-        const obj = this.metadata.get<ObjectConfig>('object', objectName);
+        const obj = this.metadata.get('object', objectName);
         if (!obj) {
             throw new Error(`Object '${objectName}' not found in metadata`);
         }

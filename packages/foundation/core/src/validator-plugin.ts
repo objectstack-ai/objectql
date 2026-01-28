@@ -6,13 +6,13 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import type { RuntimePlugin, RuntimeContext, ObjectStackKernel } from '@objectql/runtime';
+import type { Plugin, PluginContext, ObjectKernel } from '@objectstack/runtime';
 import { Validator, ValidatorOptions } from './validator';
 
 /**
  * Extended ObjectStack Kernel with validator capability
  */
-interface KernelWithValidator extends ObjectStackKernel {
+interface KernelWithValidator extends ObjectKernel {
     validator?: Validator;
 }
 
@@ -39,8 +39,9 @@ export interface ValidatorPluginConfig extends ValidatorOptions {
  * Wraps the ObjectQL Validator engine as an ObjectStack plugin.
  * Registers validation middleware hooks into the kernel lifecycle.
  */
-export class ValidatorPlugin implements RuntimePlugin {
+export class ValidatorPlugin implements Plugin {
   name = '@objectql/validator';
+  type = 'validator' as const;
   version = '4.0.0';
   
   private validator: Validator;
@@ -64,8 +65,8 @@ export class ValidatorPlugin implements RuntimePlugin {
    * Install the plugin into the kernel
    * Registers validation middleware for queries and mutations
    */
-  async install(ctx: RuntimeContext): Promise<void> {
-    const kernel = ctx.engine as KernelWithValidator;
+  async init(ctx: PluginContext): Promise<void> {
+    const kernel = (ctx as any).app as KernelWithValidator;
     
     console.log(`[${this.name}] Installing validator plugin...`);
     

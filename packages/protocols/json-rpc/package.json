@@ -16,7 +16,7 @@
     "test": "vitest"
   },
   "dependencies": {
-    "@objectql/runtime": "workspace:*",
+    "@objectstack/runtime": "latest",
     "@objectql/types": "workspace:*"
   },
   "devDependencies": {

@@ -20,9 +20,9 @@
     "test": "jest"
   },
   "dependencies": {
-    "@objectql/types": "workspace:*",
     "@objectql/core": "workspace:*",
-    "@objectstack/spec": "^0.4.1",
+    "@objectql/types": "workspace:*",
+    "@objectstack/spec": "^0.6.0",
     "fast-glob": "^3.3.2",
     "js-yaml": "^4.1.1"
   },

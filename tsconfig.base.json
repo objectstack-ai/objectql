@@ -8,6 +8,14 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "moduleResolution": "node",
+    "baseUrl": ".",
+    "paths": {
+      "@objectstack/spec/data": ["./node_modules/@objectstack/spec/dist/data"],
+      "@objectstack/spec/system": ["./node_modules/@objectstack/spec/dist/system"],
+      "@objectstack/spec/api": ["./node_modules/@objectstack/spec/dist/api"],
+      "@objectstack/spec/ui": ["./node_modules/@objectstack/spec/dist/ui"],
+      "@objectstack/spec/ai": ["./node_modules/@objectstack/spec/dist/ai"]
+    },
     "composite": true,
     "sourceMap": true
   },

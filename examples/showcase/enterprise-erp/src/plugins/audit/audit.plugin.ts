@@ -6,38 +6,22 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-// Import RuntimePlugin types from @objectql/core instead of @objectql/runtime
+// Import ObjectQLPlugin types from @objectql/core instead of @objectstack/runtime
 // to avoid ESM/CJS compatibility issues
-interface RuntimeContext {
-    engine: any; // ObjectStackKernel
-}
+type RuntimeContext = any;
 
-interface RuntimePlugin {
+interface ObjectQLPlugin {
     name: string;
-    install?: (ctx: RuntimeContext) => void | Promise<void>;
-    onStart?: (ctx: RuntimeContext) => void | Promise<void>;
+    init: (ctx: any) => void | Promise<void>;
 }
 
-const AuditLogPlugin: RuntimePlugin = {
+const AuditLogPlugin: ObjectQLPlugin = {
     name: 'audit-log',
     
-    async install(ctx: RuntimeContext) {
-        console.log('[AuditLogPlugin] Installing...');
+    async init(ctx: any) {
+        console.log('[AuditLogPlugin] Init...');
         // Plugin installation logic here
-    },
-    
-    async onStart(ctx: RuntimeContext) {
-        console.log('[AuditLogPlugin] Starting...');
-        
-        // TODO: Register event handlers using the runtime context
-        // The RuntimeContext provides:
-        // - ctx.engine for accessing the kernel
-        
-        // For now, we'll just log that the plugin is started
-        console.log('[AuditLogPlugin] Plugin started');
-        
-        // Note: The new plugin system uses RuntimeContext instead of PluginContextData
-        // This will need to be enhanced when the full events API is available
+        console.log('[AuditLogPlugin] Plugin initialized');
     }
 };
 

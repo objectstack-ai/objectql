@@ -11,7 +11,7 @@
  * - Plugins (protocol adapters, features)
  */
 
-import { ObjectStackKernel } from '@objectql/runtime';
+import { ObjectStackKernel } from '@objectstack/runtime';
 import { ObjectQLPlugin } from '@objectql/core';
 import { MemoryDriver } from '@objectql/driver-memory';
 import { ODataV4Plugin } from '@objectql/protocol-odata-v4';

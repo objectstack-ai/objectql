@@ -6,15 +6,15 @@
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { ODataV4Plugin } from './index';
-import { ObjectStackKernel } from '@objectql/runtime';
+import { ObjectKernel } from '@objectstack/runtime';
 
 describe('ODataV4Plugin', () => {
-  let kernel: ObjectStackKernel;
+  let kernel: ObjectKernel;
   let plugin: ODataV4Plugin;
 
   beforeEach(() => {
     // Create kernel with test metadata
-    kernel = new ObjectStackKernel([]);
+    kernel = new ObjectKernel([]);
     
     kernel.metadata.register('object', 'users', {
       name: 'users',

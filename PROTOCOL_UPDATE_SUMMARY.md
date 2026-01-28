@@ -261,7 +261,7 @@ new GraphQLPlugin({
 ## Testing Checklist
 
 ### ✅ Build Verification
-- [x] @objectql/runtime builds successfully
+- [x] @objectstack/runtime builds successfully
 - [x] @objectql/protocol-odata-v4 builds successfully
 - [x] @objectql/protocol-json-rpc builds successfully
 - [x] @objectql/protocol-graphql builds successfully

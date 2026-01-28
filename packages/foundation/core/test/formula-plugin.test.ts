@@ -7,7 +7,7 @@
  */
 
 import { FormulaPlugin } from '../src/formula-plugin';
-import { ObjectStackKernel } from '@objectql/runtime';
+import { ObjectKernel } from '@objectstack/runtime';
 
 describe('FormulaPlugin', () => {
     let plugin: FormulaPlugin;
@@ -55,16 +55,16 @@ describe('FormulaPlugin', () => {
 
     describe('Installation', () => {
         it('should install successfully with mock kernel', async () => {
-            const ctx = { engine: mockKernel };
-            await plugin.install(ctx);
+            const ctx = { app: mockKernel };
+            await plugin.init(ctx);
             
             // Verify that formula provider was registered
             expect(mockKernel.registerFormulaProvider).toHaveBeenCalled();
         });
 
         it('should register formula provider with evaluate function', async () => {
-            const ctx = { engine: mockKernel };
-            await plugin.install(ctx);
+            const ctx = { app: mockKernel };
+            await plugin.init(ctx);
             
             expect(mockKernel.registerFormulaProvider).toHaveBeenCalledWith(
                 expect.objectContaining({
@@ -77,9 +77,9 @@ describe('FormulaPlugin', () => {
 
         it('should register formula middleware when auto-evaluation is enabled', async () => {
             const pluginWithAuto = new FormulaPlugin({ autoEvaluateOnQuery: true });
-            const ctx = { engine: mockKernel };
+            const ctx = { app: mockKernel };
             
-            await pluginWithAuto.install(ctx);
+            await pluginWithAuto.init(ctx);
             
             // Check that middleware was registered
             expect(mockKernel.use).toHaveBeenCalledWith('afterQuery', expect.any(Function));
@@ -87,9 +87,9 @@ describe('FormulaPlugin', () => {
 
         it('should not register formula middleware when auto-evaluation is disabled', async () => {
             const pluginNoAuto = new FormulaPlugin({ autoEvaluateOnQuery: false });
-            const ctx = { engine: mockKernel };
+            const ctx = { app: mockKernel };
             
-            await pluginNoAuto.install(ctx);
+            await pluginNoAuto.init(ctx);
             
             // Should not have registered afterQuery hook
             const afterQueryCalls = mockKernel.use.mock.calls.filter(
@@ -102,10 +102,10 @@ describe('FormulaPlugin', () => {
             const kernelNoProvider = {
                 use: jest.fn(),
             };
-            const ctx = { engine: kernelNoProvider };
+            const ctx = { app: kernelNoProvider };
             
             // Should not throw error and should set formulaEngine property
-            await expect(plugin.install(ctx)).resolves.not.toThrow();
+            await expect(plugin.init(ctx)).resolves.not.toThrow();
             expect((kernelNoProvider as any).formulaEngine).toBeDefined();
         });
 
@@ -113,17 +113,17 @@ describe('FormulaPlugin', () => {
             const kernelNoMiddleware = {
                 registerFormulaProvider: jest.fn(),
             };
-            const ctx = { engine: kernelNoMiddleware };
+            const ctx = { app: kernelNoMiddleware };
             
             // Should not throw error
-            await expect(plugin.install(ctx)).resolves.not.toThrow();
+            await expect(plugin.init(ctx)).resolves.not.toThrow();
         });
     });
 
     describe('Formula Provider', () => {
         it('should provide evaluate function that works', async () => {
-            const ctx = { engine: mockKernel };
-            await plugin.install(ctx);
+            const ctx = { app: mockKernel };
+            await plugin.init(ctx);
             
             // Get the registered provider
             const provider = mockKernel.registerFormulaProvider.mock.calls[0][0];
@@ -152,8 +152,8 @@ describe('FormulaPlugin', () => {
         });
 
         it('should provide validate function that works', async () => {
-            const ctx = { engine: mockKernel };
-            await plugin.install(ctx);
+            const ctx = { app: mockKernel };
+            await plugin.init(ctx);
             
             // Get the registered provider
             const provider = mockKernel.registerFormulaProvider.mock.calls[0][0];
@@ -167,8 +167,8 @@ describe('FormulaPlugin', () => {
         });
 
         it('should provide extractMetadata function that works', async () => {
-            const ctx = { engine: mockKernel };
-            await plugin.install(ctx);
+            const ctx = { app: mockKernel };
+            await plugin.init(ctx);
             
             // Get the registered provider
             const provider = mockKernel.registerFormulaProvider.mock.calls[0][0];

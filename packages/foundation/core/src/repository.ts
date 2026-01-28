@@ -7,7 +7,7 @@
  */
 
 import { ObjectQLContext, IObjectQL, ObjectConfig, Driver, UnifiedQuery, ActionContext, HookAPI, RetrievalHookContext, MutationHookContext, UpdateHookContext, ValidationContext, ValidationError, ValidationRuleResult, FormulaContext, Filter } from '@objectql/types';
-import type { ObjectStackKernel } from '@objectql/runtime';
+import type { ObjectKernel } from '@objectstack/runtime';
 import { Data } from '@objectstack/spec';
 type QueryAST = Data.QueryAST;
 type SortNode = Data.SortNode;
@@ -19,9 +19,14 @@ import { QueryBuilder } from './query';
  * Extended ObjectStack Kernel with optional ObjectQL plugin capabilities.
  * These properties are attached by ValidatorPlugin and FormulaPlugin during installation.
  */
-interface ExtendedKernel extends ObjectStackKernel {
+interface ExtendedKernel extends ObjectKernel {
     validator?: Validator;
     formulaEngine?: FormulaEngine;
+    create?: (objectName: string, data: any) => Promise<any>;
+    update?: (objectName: string, id: string, data: any) => Promise<any>;
+    delete?: (objectName: string, id: string) => Promise<any>;
+    find?: (objectName: string, query: any) => Promise<any>;
+    get?: (objectName: string, id: string) => Promise<any>;
 }
 
 export class ObjectRepository {
@@ -67,7 +72,7 @@ export class ObjectRepository {
         return this.app.datasource(datasourceName);
     }
     
-    private getKernel(): ObjectStackKernel {
+    private getKernel(): ObjectKernel {
         return this.app.getKernel();
     }
 
@@ -274,7 +279,7 @@ export class ObjectRepository {
 
         // Build QueryAST and execute via kernel
         const ast = this.buildQueryAST(hookCtx.query || {});
-        const kernelResult = await this.getKernel().find(this.objectName, ast);
+        const kernelResult = await (this.getKernel() as any).find(this.objectName, ast);
         const results = kernelResult.value;
         
         // Evaluate formulas for each result
@@ -300,7 +305,7 @@ export class ObjectRepository {
             await this.app.triggerHook('beforeFind', this.objectName, hookCtx);
             
             // Use kernel.get() for direct ID lookup
-            const result = await this.getKernel().get(this.objectName, String(idOrQuery));
+            const result = await (this.getKernel() as any).get(this.objectName, String(idOrQuery));
 
             // Evaluate formulas if result exists
             const resultWithFormulas = result ? this.evaluateFormulas(result) : result;
@@ -344,7 +349,7 @@ export class ObjectRepository {
 
         // Build QueryAST and execute via kernel to get count
         const ast = this.buildQueryAST(hookCtx.query || {});
-        const kernelResult = await this.getKernel().find(this.objectName, ast);
+        const kernelResult = await (this.getKernel() as any).find(this.objectName, ast);
         const result = kernelResult.count;
 
         hookCtx.result = result;
@@ -372,7 +377,7 @@ export class ObjectRepository {
         await this.validateRecord('create', finalDoc);
         
         // Execute via kernel
-        const result = await this.getKernel().create(this.objectName, finalDoc);
+        const result = await (this.getKernel() as any).create(this.objectName, finalDoc);
         
         hookCtx.result = result;
         await this.app.triggerHook('afterCreate', this.objectName, hookCtx);
@@ -399,7 +404,7 @@ export class ObjectRepository {
         await this.validateRecord('update', hookCtx.data, previousData);
 
         // Execute via kernel
-        const result = await this.getKernel().update(this.objectName, String(id), hookCtx.data);
+        const result = await (this.getKernel() as any).update(this.objectName, String(id), hookCtx.data);
 
         hookCtx.result = result;
         await this.app.triggerHook('afterUpdate', this.objectName, hookCtx);
@@ -421,7 +426,7 @@ export class ObjectRepository {
         await this.app.triggerHook('beforeDelete', this.objectName, hookCtx);
 
         // Execute via kernel
-        const result = await this.getKernel().delete(this.objectName, String(id));
+        const result = await (this.getKernel() as any).delete(this.objectName, String(id));
 
         hookCtx.result = result;
         await this.app.triggerHook('afterDelete', this.objectName, hookCtx);

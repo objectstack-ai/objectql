@@ -11,7 +11,6 @@ module.exports = {
   testEnvironment: 'node',
   testMatch: ['**/test/**/*.test.ts'],
   moduleNameMapper: {
-    '^@objectql/runtime$': '<rootDir>/../../objectstack/runtime/src',
     '^@objectql/(.*)$': '<rootDir>/../$1/src',
   },
   transform: {
@@ -23,7 +22,5 @@ module.exports = {
       }
     }],
   },
-  transformIgnorePatterns: [
-    'node_modules/(?!(@objectstack))',
-  ],
+  transformIgnorePatterns: [],
 };

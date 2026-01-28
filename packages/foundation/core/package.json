@@ -22,9 +22,11 @@
     "test": "jest"
   },
   "dependencies": {
+    "@objectstack/runtime": "latest",
     "@objectql/types": "workspace:*",
-    "@objectstack/spec": "^0.4.1",
-    "@objectql/runtime": "workspace:*",
+    "@objectstack/spec": "^0.6.0",
+    "@objectstack/objectql": "^0.6.0",
+    "@objectstack/core": "^0.6.0",
     "js-yaml": "^4.1.0",
     "openai": "^4.28.0"
   },

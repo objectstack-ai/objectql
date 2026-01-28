@@ -2,11 +2,11 @@
 
 > **Implementation Status**: ✅ **Production Ready** - All core features fully implemented and tested. See [Implementation Status](https://github.com/objectstack-ai/objectql/blob/main/IMPLEMENTATION_STATUS.md) for complete details.
 
-The core ORM and runtime engine for ObjectQL. This package handles object querying, CRUD operations, database driver coordination, transaction management, and **metadata-driven validation**. As of version 4.0.0, it wraps the **ObjectStackKernel** for plugin architecture and lifecycle management.
+The core ORM and runtime engine for ObjectQL. This package handles object querying, CRUD operations, database driver coordination, transaction management, and **metadata-driven validation**. As of version 4.0.0, it wraps the **ObjectKernel** for plugin architecture and lifecycle management.
 
 ## Features
 
-- ✅ **Plugin Architecture**: Built on top of `@objectql/runtime` with kernel-based plugin system
+- ✅ **Plugin Architecture**: Built on top of `@objectstack/runtime` with kernel-based plugin system
 - ✅ **Unified Query Language**: A generic way to query data across different databases (SQL, Mongo, etc.)
 - ✅ **Repository Pattern**: `ObjectRepository` for managing object records
 - ✅ **Driver Agnostic**: Abstraction layer for database drivers
@@ -19,12 +19,12 @@ The core ORM and runtime engine for ObjectQL. This package handles object queryi
 ## Installation
 
 ```bash
-npm install @objectql/core @objectql/types @objectql/runtime @objectstack/spec
+npm install @objectql/core @objectql/types @objectstack/runtime @objectstack/spec
 ```
 
 ## Architecture
 
-ObjectQL now wraps the `ObjectStackKernel` from `@objectql/runtime`, providing:
+ObjectQL now wraps the `ObjectKernel` from `@objectstack/runtime`, providing:
 
 - **Kernel-based lifecycle management**: Initialization, startup, and shutdown
 - **Plugin system**: Extensible architecture with `ObjectQLPlugin`

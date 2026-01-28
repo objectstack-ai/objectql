@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import type { RuntimePlugin, RuntimeContext, ObjectStackKernel } from '@objectql/runtime';
+import type { ObjectQLPlugin, ObjectKernel } from '@objectstack/runtime';
 import type { SecurityPluginConfig, SecurityContext, PermissionAuditLog } from './types';
 import { PermissionLoader } from './permission-loader';
 import { PermissionGuard } from './permission-guard';
@@ -16,7 +16,7 @@ import { FieldMasker } from './field-masker';
 /**
  * Extended ObjectStack Kernel with security capabilities
  */
-interface KernelWithSecurity extends ObjectStackKernel {
+interface KernelWithSecurity extends ObjectKernel {
   security?: {
     loader: PermissionLoader;
     guard: PermissionGuard;
@@ -44,7 +44,7 @@ interface KernelWithSecurity extends ObjectStackKernel {
  * - Zero-Intrusion: Can be enabled/disabled without code changes
  * - Performance-First: Pre-compiles rules, works at AST level
  */
-export class ObjectQLSecurityPlugin implements RuntimePlugin {
+export class ObjectQLSecurityPlugin implements ObjectQLPlugin {
   name = '@objectql/plugin-security';
   version = '4.0.1';
   
@@ -77,7 +77,7 @@ export class ObjectQLSecurityPlugin implements RuntimePlugin {
    * Install the plugin into the kernel
    * This is called during kernel initialization
    */
-  async install(ctx: RuntimeContext): Promise<void> {
+  async install(ctx: any): Promise<void> {
     const kernel = ctx.engine as KernelWithSecurity;
     
     console.log(`[${this.name}] Installing security plugin...`);
@@ -121,7 +121,7 @@ export class ObjectQLSecurityPlugin implements RuntimePlugin {
   /**
    * Called when the kernel starts
    */
-  async onStart(ctx: RuntimeContext): Promise<void> {
+  async onStart(ctx: any): Promise<void> {
     console.log(`[${this.name}] Security plugin started`);
   }
   

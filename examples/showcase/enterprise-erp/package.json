@@ -32,18 +32,18 @@
   },
   "peerDependencies": {
     "@objectql/core": "workspace:*",
-    "@objectql/types": "workspace:*",
     "@objectql/driver-sql": "workspace:*",
     "@objectql/platform-node": "workspace:*",
+    "@objectql/types": "workspace:*",
     "sqlite3": "^5.1.7"
   },
   "devDependencies": {
-    "@objectql/core": "workspace:*",
-    "@objectql/types": "workspace:*",
     "@objectql/cli": "workspace:*",
+    "@objectql/core": "workspace:*",
     "@objectql/driver-sql": "workspace:*",
     "@objectql/platform-node": "workspace:*",
-    "@objectstack/spec": "^0.4.1",
+    "@objectql/types": "workspace:*",
+    "@objectstack/spec": "^0.6.0",
     "@types/jest": "^30.0.0",
     "@types/node": "^20.0.0",
     "jest": "^30.2.0",

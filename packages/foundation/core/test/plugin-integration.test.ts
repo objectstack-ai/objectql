@@ -29,15 +29,15 @@ describe('ObjectQLPlugin Integration', () => {
             registerFormulaProvider: jest.fn(),
         };
         
-        mockContext = { engine: mockKernel };
+        mockContext = { app: mockKernel };
         
         // Setup mock implementations
         (ValidatorPlugin as jest.Mock).mockImplementation(() => ({
-            install: jest.fn().mockResolvedValue(undefined),
+            init: jest.fn().mockResolvedValue(undefined),
         }));
         
         (FormulaPlugin as jest.Mock).mockImplementation(() => ({
-            install: jest.fn().mockResolvedValue(undefined),
+            init: jest.fn().mockResolvedValue(undefined),
         }));
     });
 
@@ -89,32 +89,32 @@ describe('ObjectQLPlugin Integration', () => {
     describe('Installation - Conditional Plugin Loading', () => {
         it('should install validator plugin when enabled', async () => {
             plugin = new ObjectQLPlugin({ enableValidator: true });
-            await plugin.install(mockContext);
+            await plugin.init(mockContext);
             
             expect(ValidatorPlugin).toHaveBeenCalled();
             const validatorInstance = (ValidatorPlugin as jest.Mock).mock.results[0].value;
-            expect(validatorInstance.install).toHaveBeenCalledWith(mockContext);
+            expect(validatorInstance.init).toHaveBeenCalledWith(mockContext);
         });
 
         it('should not install validator plugin when disabled', async () => {
             plugin = new ObjectQLPlugin({ enableValidator: false });
-            await plugin.install(mockContext);
+            await plugin.init(mockContext);
             
             expect(ValidatorPlugin).not.toHaveBeenCalled();
         });
 
         it('should install formula plugin when enabled', async () => {
             plugin = new ObjectQLPlugin({ enableFormulas: true });
-            await plugin.install(mockContext);
+            await plugin.init(mockContext);
             
             expect(FormulaPlugin).toHaveBeenCalled();
             const formulaInstance = (FormulaPlugin as jest.Mock).mock.results[0].value;
-            expect(formulaInstance.install).toHaveBeenCalledWith(mockContext);
+            expect(formulaInstance.init).toHaveBeenCalledWith(mockContext);
         });
 
         it('should not install formula plugin when disabled', async () => {
             plugin = new ObjectQLPlugin({ enableFormulas: false });
-            await plugin.install(mockContext);
+            await plugin.init(mockContext);
             
             expect(FormulaPlugin).not.toHaveBeenCalled();
         });
@@ -130,7 +130,7 @@ describe('ObjectQLPlugin Integration', () => {
                 validatorConfig,
             });
             
-            await plugin.install(mockContext);
+            await plugin.init(mockContext);
             
             expect(ValidatorPlugin).toHaveBeenCalledWith(validatorConfig);
         });
@@ -146,7 +146,7 @@ describe('ObjectQLPlugin Integration', () => {
                 formulaConfig,
             });
             
-            await plugin.install(mockContext);
+            await plugin.init(mockContext);
             
             expect(FormulaPlugin).toHaveBeenCalledWith(formulaConfig);
         });
@@ -157,7 +157,7 @@ describe('ObjectQLPlugin Integration', () => {
                 enableFormulas: true,
             });
             
-            await plugin.install(mockContext);
+            await plugin.init(mockContext);
             
             expect(ValidatorPlugin).toHaveBeenCalled();
             expect(FormulaPlugin).toHaveBeenCalled();
@@ -171,7 +171,7 @@ describe('ObjectQLPlugin Integration', () => {
                 enableAI: false,
             });
             
-            await plugin.install(mockContext);
+            await plugin.init(mockContext);
             
             expect(ValidatorPlugin).not.toHaveBeenCalled();
             expect(FormulaPlugin).not.toHaveBeenCalled();
@@ -191,7 +191,7 @@ describe('ObjectQLPlugin Integration', () => {
     describe('Default Configuration', () => {
         it('should enable all features by default', async () => {
             plugin = new ObjectQLPlugin();
-            await plugin.install(mockContext);
+            await plugin.init(mockContext);
             
             // Validator and Formula should be installed by default
             expect(ValidatorPlugin).toHaveBeenCalled();
@@ -203,7 +203,7 @@ describe('ObjectQLPlugin Integration', () => {
                 // Explicitly not setting enableValidator or enableFormulas
             });
             
-            await plugin.install(mockContext);
+            await plugin.init(mockContext);
             
             // Both should still be installed
             expect(ValidatorPlugin).toHaveBeenCalled();

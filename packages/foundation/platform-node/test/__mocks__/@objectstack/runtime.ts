@@ -1,5 +1,5 @@
 /**
- * Mock for @objectql/runtime
+ * Mock for @objectstack/runtime
  * This mock is needed because the npm package has issues with Jest
  * and we want to focus on testing ObjectQL's logic, not the kernel integration.
  * 
@@ -80,7 +80,7 @@ class MockActionManager {
     }
 }
 
-export class ObjectStackKernel {
+export class ObjectKernel {
     public ql: unknown = null;
     public metadata: MockMetadataRegistry;
     public hooks: MockHookManager;
@@ -198,16 +198,16 @@ export class ObjectStackKernel {
     }
 }
 
-export class ObjectStackRuntimeProtocol {}
+export class ObjectStackProtocolImplementation {}
 
-export interface RuntimeContext {
-    engine: ObjectStackKernel;
+export interface any {
+    engine: ObjectKernel;
 }
 
-export interface RuntimePlugin {
+export interface ObjectQLPlugin {
     name: string;
-    install?: (ctx: RuntimeContext) => void | Promise<void>;
-    onStart?: (ctx: RuntimeContext) => void | Promise<void>;
+    install?: (ctx: any) => void | Promise<void>;
+    onStart?: (ctx: any) => void | Promise<void>;
 }
 
 // Export MetadataRegistry

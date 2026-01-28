@@ -8,8 +8,8 @@
  * Based on reference implementation by @hotlong
  */
 
-import type { RuntimePlugin, RuntimeContext } from '@objectql/runtime';
-import { ObjectStackRuntimeProtocol } from '@objectql/runtime';
+import type { ObjectQLPlugin } from '@objectstack/runtime';
+import { ObjectStackProtocolImplementation } from '@objectstack/runtime';
 import { ApolloServer } from '@apollo/server';
 import { startStandaloneServer } from '@apollo/server/standalone';
 
@@ -28,21 +28,21 @@ export interface GraphQLPluginConfig {
 /**
  * GraphQL Protocol Plugin
  * 
- * Implements the RuntimePlugin interface to provide GraphQL protocol support.
+ * Implements the ObjectQLPlugin interface to provide GraphQL protocol support.
  * 
  * Key Features:
  * - Automatic schema generation from ObjectStack metadata
  * - Query and mutation resolvers
  * - Apollo Server v4+ integration
  * - GraphQL introspection and Apollo Sandbox
- * - No direct database access - all operations through ObjectStackRuntimeProtocol
+ * - No direct database access - all operations through ObjectStackProtocolImplementation
  * 
  * @example
  * ```typescript
- * import { ObjectStackKernel } from '@objectql/runtime';
+ * import { ObjectKernel } from '@objectstack/runtime';
  * import { GraphQLPlugin } from '@objectql/protocol-graphql';
  * 
- * const kernel = new ObjectStackKernel([
+ * const kernel = new ObjectKernel([
  *   new GraphQLPlugin({ port: 4000, introspection: true })
  * ]);
  * await kernel.start();
@@ -50,12 +50,12 @@ export interface GraphQLPluginConfig {
  * // Access Apollo Sandbox: http://localhost:4000/
  * ```
  */
-export class GraphQLPlugin implements RuntimePlugin {
+export class GraphQLPlugin implements ObjectQLPlugin {
     name = '@objectql/protocol-graphql';
     version = '0.1.0';
     
     private server?: ApolloServer;
-    private protocol?: ObjectStackRuntimeProtocol;
+    private protocol?: ObjectStackProtocolImplementation;
     private config: Required<GraphQLPluginConfig>;
     private serverCleanup?: { url: string };
 
@@ -70,11 +70,11 @@ export class GraphQLPlugin implements RuntimePlugin {
     /**
      * Install hook - called during kernel initialization
      */
-    async install(ctx: RuntimeContext): Promise<void> {
+    async install(ctx: any): Promise<void> {
         console.log(`[${this.name}] Installing GraphQL protocol plugin...`);
         
         // Initialize the protocol bridge
-        this.protocol = new ObjectStackRuntimeProtocol(ctx.engine);
+        this.protocol = new ObjectStackProtocolImplementation(ctx.engine);
         
         console.log(`[${this.name}] Protocol bridge initialized`);
     }
@@ -83,7 +83,7 @@ export class GraphQLPlugin implements RuntimePlugin {
      * Start hook - called when kernel starts
      * This is where we start the GraphQL server
      */
-    async onStart(ctx: RuntimeContext): Promise<void> {
+    async onStart(ctx: any): Promise<void> {
         if (!this.protocol) {
             throw new Error('Protocol not initialized. Install hook must be called first.');
         }
@@ -131,7 +131,7 @@ export class GraphQLPlugin implements RuntimePlugin {
     /**
      * Stop hook - called when kernel stops
      */
-    async onStop(ctx: RuntimeContext): Promise<void> {
+    async onStop(ctx: any): Promise<void> {
         if (this.server) {
             console.log(`[${this.name}] Stopping GraphQL server...`);
             await this.server.stop();

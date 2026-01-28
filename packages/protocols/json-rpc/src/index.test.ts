@@ -6,15 +6,15 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { JSONRPCPlugin } from './index';
-import { ObjectStackKernel } from '@objectql/runtime';
+import { ObjectKernel } from '@objectstack/runtime';
 
 describe('JSONRPCPlugin', () => {
-  let kernel: ObjectStackKernel;
+  let kernel: ObjectKernel;
   let plugin: JSONRPCPlugin;
 
   beforeEach(() => {
     // Create kernel with test metadata
-    kernel = new ObjectStackKernel([]);
+    kernel = new ObjectKernel([]);
     
     kernel.metadata.register('object', 'users', {
       name: 'users',

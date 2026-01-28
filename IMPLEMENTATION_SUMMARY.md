@@ -331,7 +331,7 @@ async install(ctx: RuntimeContext): Promise<void> {
 ## Usage Example
 
 ```typescript
-import { ObjectStackKernel } from '@objectql/runtime';
+import { ObjectStackKernel } from '@objectstack/runtime';
 import { ObjectQLPlugin } from '@objectql/core';
 import { MemoryDriver } from '@objectql/driver-memory';
 import { ODataV4Plugin } from '@objectql/protocol-odata-v4';

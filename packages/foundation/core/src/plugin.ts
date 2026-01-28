@@ -6,8 +6,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import type { RuntimePlugin, RuntimeContext } from '@objectql/runtime';
-import type { ObjectStackKernel } from '@objectql/runtime';
+import { type PluginContext } from '@objectstack/runtime';
+import type { ObjectKernel } from '@objectstack/runtime';
 import { ValidatorPlugin, ValidatorPluginConfig } from './validator-plugin';
 import { FormulaPlugin, FormulaPluginConfig } from './formula-plugin';
 import { QueryService } from './query/query-service';
@@ -17,7 +17,15 @@ import type { Driver } from '@objectql/types';
 /**
  * Extended ObjectStack Kernel with ObjectQL services
  */
-interface ExtendedKernel extends ObjectStackKernel {
+interface ExtendedKernel extends ObjectKernel {
+    metadata?: any;
+    actions?: any;
+    getAllDrivers?: () => Driver[];
+    create?: (objectName: string, data: any) => Promise<any>;
+    update?: (objectName: string, id: string, data: any) => Promise<any>;
+    delete?: (objectName: string, id: string) => Promise<any>;
+    find?: (objectName: string, query: any) => Promise<any>;
+    get?: (objectName: string, id: string) => Promise<any>;
     queryService?: QueryService;
     queryAnalyzer?: QueryAnalyzer;
 }
@@ -78,15 +86,15 @@ export interface ObjectQLPluginConfig {
 /**
  * ObjectQL Plugin
  * 
- * Implements the RuntimePlugin interface from @objectql/runtime
+ * Implements the RuntimePlugin interface from @objectstack/runtime
  * to provide ObjectQL's enhanced features (Repository, Validator, Formula, AI)
  * on top of the ObjectStack kernel.
  */
-export class ObjectQLPlugin implements RuntimePlugin {
+export class ObjectQLPlugin {
   name = '@objectql/core';
   version = '4.0.0';
   
-  constructor(private config: ObjectQLPluginConfig = {}) {
+  constructor(private config: ObjectQLPluginConfig = {}, ql?: any) {
     // Set defaults
     this.config = {
       enableRepository: true,
@@ -102,10 +110,10 @@ export class ObjectQLPlugin implements RuntimePlugin {
    * Install the plugin into the kernel
    * This is called during kernel initialization
    */
-  async install(ctx: RuntimeContext): Promise<void> {
+  async init(ctx: PluginContext): Promise<void> {
     console.log(`[${this.name}] Installing plugin...`);
     
-    const kernel = ctx.engine as ExtendedKernel;
+    const kernel = (ctx as any).app as ExtendedKernel;
     
     // Get datasources - either from config or from kernel drivers
     let datasources = this.config.datasources;
@@ -144,23 +152,23 @@ export class ObjectQLPlugin implements RuntimePlugin {
     
     // Register components based on configuration
     if (this.config.enableRepository !== false && datasources) {
-      await this.registerRepository(ctx.engine, datasources);
+      await this.registerRepository((ctx as any).app, datasources);
     }
     
     // Install validator plugin if enabled
     if (this.config.enableValidator !== false) {
       const validatorPlugin = new ValidatorPlugin(this.config.validatorConfig || {});
-      await validatorPlugin.install(ctx);
+      await validatorPlugin.init(ctx);
     }
     
     // Install formula plugin if enabled
     if (this.config.enableFormulas !== false) {
       const formulaPlugin = new FormulaPlugin(this.config.formulaConfig || {});
-      await formulaPlugin.install(ctx);
+      await formulaPlugin.init(ctx);
     }
     
     if (this.config.enableAI !== false) {
-      await this.registerAI(ctx.engine);
+      await this.registerAI((ctx as any).app);
     }
     
     console.log(`[${this.name}] Plugin installed successfully`);
@@ -170,7 +178,7 @@ export class ObjectQLPlugin implements RuntimePlugin {
    * Called when the kernel starts
    * This is the initialization phase
    */
-  async onStart(ctx: RuntimeContext): Promise<void> {
+  async onStart(ctx: any): Promise<void> {
     console.log(`[${this.name}] Starting plugin...`);
     // Additional startup logic can be added here
   }
@@ -179,10 +187,10 @@ export class ObjectQLPlugin implements RuntimePlugin {
    * Register the Repository pattern
    * @private
    */
-  private async registerRepository(kernel: ObjectStackKernel, datasources: Record<string, Driver>): Promise<void> {
+  private async registerRepository(kernel: any, datasources: Record<string, Driver>): Promise<void> {
     // Helper function to get the driver for an object
     const getDriver = (objectName: string): Driver => {
-      const objectConfig = kernel.metadata.get<any>('object', objectName);
+      const objectConfig = (kernel as any).metadata.get('object', objectName);
       const datasourceName = objectConfig?.datasource || 'default';
       const driver = datasources[datasourceName];
       if (!driver) {
@@ -227,7 +235,7 @@ export class ObjectQLPlugin implements RuntimePlugin {
    * Register AI integration
    * @private
    */
-  private async registerAI(kernel: ObjectStackKernel): Promise<void> {
+  private async registerAI(kernel: any): Promise<void> {
     // TODO: Implement AI registration
     // For now, this is a placeholder to establish the structure
     console.log(`[${this.name}] AI integration registered`);

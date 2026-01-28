@@ -31,8 +31,8 @@ export interface IObjectQL {
     executeAction(objectName: string, actionName: string, ctx: ActionContext): Promise<any>;
     
     /**
-     * Get the underlying ObjectStackKernel instance
-     * @returns The ObjectStackKernel instance
+     * Get the underlying ObjectKernel instance
+     * @returns The ObjectKernel instance
      */
-    getKernel(): any; // Using 'any' to avoid circular dependency with @objectql/runtime
+    getKernel(): any; // Using 'any' to avoid circular dependency with @objectstack/runtime
 }

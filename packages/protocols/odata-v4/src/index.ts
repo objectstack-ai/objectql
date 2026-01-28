@@ -6,8 +6,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import type { RuntimePlugin, RuntimeContext } from '@objectql/runtime';
-import { ObjectStackRuntimeProtocol } from '@objectql/runtime';
+import type { ObjectQLPlugin } from '@objectstack/runtime';
+import { ObjectStackProtocolImplementation } from '@objectstack/runtime';
 import { IncomingMessage, ServerResponse, createServer, Server } from 'http';
 
 /**
@@ -27,7 +27,7 @@ export interface ODataV4PluginConfig {
 /**
  * OData V4 Protocol Plugin
  * 
- * Implements the RuntimePlugin interface to provide OData V4 protocol support.
+ * Implements the ObjectQLPlugin interface to provide OData V4 protocol support.
  * 
  * Key Features:
  * - Automatic metadata document generation ($metadata)
@@ -35,25 +35,25 @@ export interface ODataV4PluginConfig {
  * - Entity set queries with $filter, $select, $orderby, $top, $skip
  * - Single entity retrieval by key
  * - Create, Update, Delete operations
- * - No direct database access - all operations through ObjectStackRuntimeProtocol
+ * - No direct database access - all operations through ObjectStackProtocolImplementation
  * 
  * @example
  * ```typescript
- * import { ObjectStackKernel } from '@objectql/runtime';
+ * import { ObjectKernel } from '@objectstack/runtime';
  * import { ODataV4Plugin } from '@objectql/protocol-odata-v4';
  * 
- * const kernel = new ObjectStackKernel([
+ * const kernel = new ObjectKernel([
  *   new ODataV4Plugin({ port: 8080, basePath: '/odata' })
  * ]);
  * await kernel.start();
  * ```
  */
-export class ODataV4Plugin implements RuntimePlugin {
+export class ODataV4Plugin implements ObjectQLPlugin {
     name = '@objectql/protocol-odata-v4';
     version = '0.1.0';
     
     private server?: Server;
-    private protocol?: ObjectStackRuntimeProtocol;
+    private protocol?: ObjectStackProtocolImplementation;
     private config: Required<ODataV4PluginConfig>;
 
     constructor(config: ODataV4PluginConfig = {}) {
@@ -68,11 +68,11 @@ export class ODataV4Plugin implements RuntimePlugin {
     /**
      * Install hook - called during kernel initialization
      */
-    async install(ctx: RuntimeContext): Promise<void> {
+    async install(ctx: any): Promise<void> {
         console.log(`[${this.name}] Installing OData V4 protocol plugin...`);
         
         // Initialize the protocol bridge
-        this.protocol = new ObjectStackRuntimeProtocol(ctx.engine);
+        this.protocol = new ObjectStackProtocolImplementation(ctx.engine);
         
         console.log(`[${this.name}] Protocol bridge initialized`);
     }
@@ -81,7 +81,7 @@ export class ODataV4Plugin implements RuntimePlugin {
      * Start hook - called when kernel starts
      * This is where we start the HTTP server
      */
-    async onStart(ctx: RuntimeContext): Promise<void> {
+    async onStart(ctx: any): Promise<void> {
         if (!this.protocol) {
             throw new Error('Protocol not initialized. Install hook must be called first.');
         }
@@ -103,7 +103,7 @@ export class ODataV4Plugin implements RuntimePlugin {
     /**
      * Stop hook - called when kernel stops
      */
-    async onStop(ctx: RuntimeContext): Promise<void> {
+    async onStop(ctx: any): Promise<void> {
         if (this.server) {
             console.log(`[${this.name}] Stopping OData V4 server...`);
             await new Promise<void>((resolve, reject) => {

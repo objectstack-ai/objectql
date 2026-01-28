@@ -6,14 +6,14 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import type { RuntimePlugin, RuntimeContext, ObjectStackKernel } from '@objectql/runtime';
+import type { Plugin, PluginContext, ObjectKernel } from '@objectstack/runtime';
 import { FormulaEngine } from './formula-engine';
 import type { FormulaEngineConfig } from '@objectql/types';
 
 /**
  * Extended ObjectStack Kernel with formula engine capability
  */
-interface KernelWithFormulas extends ObjectStackKernel {
+interface KernelWithFormulas extends ObjectKernel {
     formulaEngine?: FormulaEngine;
 }
 
@@ -34,9 +34,8 @@ export interface FormulaPluginConfig extends FormulaEngineConfig {
  * Wraps the ObjectQL Formula Engine as an ObjectStack plugin.
  * Registers formula evaluation capabilities into the kernel.
  */
-export class FormulaPlugin implements RuntimePlugin {
-  name = '@objectql/formulas';
-  version = '4.0.0';
+export class FormulaPlugin implements Plugin {
+  name = '@objectql/formulas';  type = 'formula' as const;  version = '4.0.0';
   
   private engine: FormulaEngine;
   private config: FormulaPluginConfig;
@@ -55,8 +54,8 @@ export class FormulaPlugin implements RuntimePlugin {
    * Install the plugin into the kernel
    * Registers formula evaluation capabilities
    */
-  async install(ctx: RuntimeContext): Promise<void> {
-    const kernel = ctx.engine as KernelWithFormulas;
+  async init(ctx: PluginContext): Promise<void> {
+    const kernel = (ctx as any).app as KernelWithFormulas;
     
     console.log(`[${this.name}] Installing formula plugin...`);
     
