@@ -7,16 +7,16 @@
  */
 
 /**
- * Re-export MetadataRegistry and MetadataItem from @objectql/runtime
+ * Re-export MetadataRegistry and MetadataItem from @objectstack/runtime
  * 
  * As of Week 3 refactoring, metadata management has been moved to the
- * @objectql/runtime package to enable sharing across the ecosystem.
+ * @objectstack/runtime package to enable sharing across the ecosystem.
  */
 export { MetadataRegistry, MetadataItem } from '../../../objectstack/runtime/dist';
 
 /**
  * Legacy Metadata interface - kept for backward compatibility
- * @deprecated Use MetadataItem from @objectql/runtime instead
+ * @deprecated Use MetadataItem from @objectstack/runtime instead
  */
 export interface Metadata {
     type: string;

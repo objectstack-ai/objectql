@@ -1,5 +1,5 @@
 /**
- * @objectql/runtime
+ * @objectstack/runtime
  * ObjectStack Runtime Types
  * 
  * This package defines the runtime types for the ObjectStack ecosystem.
@@ -90,7 +90,7 @@ export type KernelComponent = RuntimePlugin | RuntimeDriver | RuntimeAppConfig;
  * 
  * @example
  * ```typescript
- * import { ObjectStackKernel } from '@objectql/runtime';
+ * import { ObjectStackKernel } from '@objectstack/runtime';
  * import { InMemoryDriver } from '@objectql/driver-memory';
  * import { GraphQLPlugin } from '@objectql/protocol-graphql';
  * 

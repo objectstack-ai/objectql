@@ -6,8 +6,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import type { RuntimePlugin, RuntimeContext } from '@objectql/runtime';
-import { ObjectStackRuntimeProtocol } from '@objectql/runtime';
+import type { RuntimePlugin, RuntimeContext } from '@objectstack/runtime';
+import { ObjectStackRuntimeProtocol } from '@objectstack/runtime';
 import { IncomingMessage, ServerResponse, createServer, Server } from 'http';
 
 /**
@@ -39,7 +39,7 @@ export interface ODataV4PluginConfig {
  * 
  * @example
  * ```typescript
- * import { ObjectStackKernel } from '@objectql/runtime';
+ * import { ObjectStackKernel } from '@objectstack/runtime';
  * import { ODataV4Plugin } from '@objectql/protocol-odata-v4';
  * 
  * const kernel = new ObjectStackKernel([

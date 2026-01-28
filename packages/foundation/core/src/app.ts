@@ -22,7 +22,7 @@ import {
     ActionContext,
     LoaderPlugin
 } from '@objectql/types';
-import { ObjectStackKernel, type RuntimePlugin } from '@objectql/runtime';
+import { ObjectStackKernel, type RuntimePlugin } from '@objectstack/runtime';
 import { ObjectRepository } from './repository';
 import { ObjectQLPlugin } from './plugin';
 import { convertIntrospectedSchemaToObjects } from './util';

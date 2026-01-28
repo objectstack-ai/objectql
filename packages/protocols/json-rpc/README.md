@@ -29,7 +29,7 @@ pnpm add @objectql/protocol-json-rpc
 ### Basic Setup
 
 ```typescript
-import { ObjectStackKernel } from '@objectql/runtime';
+import { ObjectStackKernel } from '@objectstack/runtime';
 import { JSONRPCPlugin } from '@objectql/protocol-json-rpc';
 
 const kernel = new ObjectStackKernel([

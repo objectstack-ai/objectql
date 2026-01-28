@@ -6,7 +6,7 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { JSONRPCPlugin } from './index';
-import { ObjectStackKernel } from '@objectql/runtime';
+import { ObjectStackKernel } from '@objectstack/runtime';
 
 describe('JSONRPCPlugin', () => {
   let kernel: ObjectStackKernel;

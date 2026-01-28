@@ -34,5 +34,5 @@ export interface IObjectQL {
      * Get the underlying ObjectStackKernel instance
      * @returns The ObjectStackKernel instance
      */
-    getKernel(): any; // Using 'any' to avoid circular dependency with @objectql/runtime
+    getKernel(): any; // Using 'any' to avoid circular dependency with @objectstack/runtime
 }

@@ -1,5 +1,5 @@
 /**
- * Mock for @objectql/runtime
+ * Mock for @objectstack/runtime
  * This mock is needed because the npm package has issues with Jest
  * and we want to focus on testing ObjectQL's logic, not the kernel integration.
  * 

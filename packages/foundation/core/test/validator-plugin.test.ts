@@ -7,7 +7,7 @@
  */
 
 import { ValidatorPlugin } from '../src/validator-plugin';
-import { ObjectStackKernel } from '@objectql/runtime';
+import { ObjectStackKernel } from '@objectstack/runtime';
 
 describe('ValidatorPlugin', () => {
     let plugin: ValidatorPlugin;

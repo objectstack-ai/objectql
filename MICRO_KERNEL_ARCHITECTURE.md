@@ -178,7 +178,7 @@ The kernel follows a strict 4-phase initialization:
 ### Pattern 1: Simple Single-Protocol Server
 
 ```typescript
-import { ObjectStackKernel } from '@objectql/runtime';
+import { ObjectStackKernel } from '@objectstack/runtime';
 import { MemoryDriver } from '@objectql/driver-memory';
 import { GraphQLPlugin } from '@objectql/protocol-graphql';
 import { ObjectQLPlugin } from '@objectql/core';
@@ -209,7 +209,7 @@ await kernel.start();
 ### Pattern 2: Multi-Protocol Server
 
 ```typescript
-import { ObjectStackKernel } from '@objectql/runtime';
+import { ObjectStackKernel } from '@objectstack/runtime';
 import { SQLDriver } from '@objectql/driver-sql';
 import { GraphQLPlugin } from '@objectql/protocol-graphql';
 import { ODataV4Plugin } from '@objectql/protocol-odata-v4';
@@ -423,7 +423,7 @@ The micro-kernel pattern makes testing easy:
 
 ```typescript
 import { describe, it, expect } from 'vitest';
-import { ObjectStackKernel } from '@objectql/runtime';
+import { ObjectStackKernel } from '@objectstack/runtime';
 import { MemoryDriver } from '@objectql/driver-memory';
 
 describe('My Application', () => {
@@ -467,7 +467,7 @@ await app.init();
 
 **After:**
 ```typescript
-import { ObjectStackKernel } from '@objectql/runtime';
+import { ObjectStackKernel } from '@objectstack/runtime';
 import appConfig from './objectstack.config';
 
 const kernel = new ObjectStackKernel([

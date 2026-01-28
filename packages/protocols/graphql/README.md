@@ -29,7 +29,7 @@ pnpm add @objectql/protocol-graphql @apollo/server graphql
 ### Basic Setup
 
 ```typescript
-import { ObjectStackKernel } from '@objectql/runtime';
+import { ObjectStackKernel } from '@objectstack/runtime';
 import { GraphQLPlugin } from '@objectql/protocol-graphql';
 
 const kernel = new ObjectStackKernel([
@@ -276,7 +276,7 @@ All data operations use the protocol bridge:
 Run GraphQL alongside other protocols:
 
 ```typescript
-import { ObjectStackKernel } from '@objectql/runtime';
+import { ObjectStackKernel } from '@objectstack/runtime';
 import { GraphQLPlugin } from '@objectql/protocol-graphql';
 import { ODataV4Plugin } from '@objectql/protocol-odata-v4';
 import { JSONRPCPlugin } from '@objectql/protocol-json-rpc';

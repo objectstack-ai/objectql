@@ -25,7 +25,7 @@
   },
   "dependencies": {
     "@objectql/types": "workspace:*",
-    "@objectql/runtime": "workspace:*",
+    "@objectstack/runtime": "workspace:*",
     "@objectstack/spec": "^0.4.1"
   },
   "devDependencies": {

@@ -7,7 +7,7 @@
  */
 
 import { ObjectQLContext, IObjectQL, ObjectConfig, Driver, UnifiedQuery, ActionContext, HookAPI, RetrievalHookContext, MutationHookContext, UpdateHookContext, ValidationContext, ValidationError, ValidationRuleResult, FormulaContext, Filter } from '@objectql/types';
-import type { ObjectStackKernel } from '@objectql/runtime';
+import type { ObjectStackKernel } from '@objectstack/runtime';
 import { Data } from '@objectstack/spec';
 type QueryAST = Data.QueryAST;
 type SortNode = Data.SortNode;

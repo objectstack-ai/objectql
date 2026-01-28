@@ -1,7 +1,7 @@
 {
-  "name": "@objectql/runtime",
+  "name": "@objectstack/runtime",
   "version": "0.4.1",
-  "description": "ObjectQL Runtime - Core Runtime Types",
+  "description": "ObjectStack Runtime - Core Runtime Types",
   "keywords": [
     "objectql",
     "runtime",

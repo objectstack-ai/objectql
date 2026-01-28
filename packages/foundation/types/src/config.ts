@@ -39,7 +39,7 @@ export interface ObjectQLConfig {
     modules?: string[];
     /**
      * List of plugins to load. 
-     * Must implement the RuntimePlugin interface from @objectql/runtime.
+     * Must implement the RuntimePlugin interface from @objectstack/runtime.
      * String plugins (package names) are not supported in core.
      */
     plugins?: (RuntimePlugin | string)[];

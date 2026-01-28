@@ -8,8 +8,8 @@
  * Based on reference implementation by @hotlong
  */
 
-import type { RuntimePlugin, RuntimeContext } from '@objectql/runtime';
-import { ObjectStackRuntimeProtocol } from '@objectql/runtime';
+import type { RuntimePlugin, RuntimeContext } from '@objectstack/runtime';
+import { ObjectStackRuntimeProtocol } from '@objectstack/runtime';
 import { ApolloServer } from '@apollo/server';
 import { startStandaloneServer } from '@apollo/server/standalone';
 
@@ -39,7 +39,7 @@ export interface GraphQLPluginConfig {
  * 
  * @example
  * ```typescript
- * import { ObjectStackKernel } from '@objectql/runtime';
+ * import { ObjectStackKernel } from '@objectstack/runtime';
  * import { GraphQLPlugin } from '@objectql/protocol-graphql';
  * 
  * const kernel = new ObjectStackKernel([

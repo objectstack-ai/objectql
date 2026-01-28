@@ -1,4 +1,4 @@
-# @objectql/runtime
+# @objectstack/runtime
 
 ObjectStack Runtime - Core Runtime Types and Micro-Kernel
 
@@ -25,7 +25,7 @@ The ObjectStack kernel follows the **micro-kernel pattern**, accepting a heterog
 ### Example Usage
 
 ```typescript
-import { ObjectStackKernel } from '@objectql/runtime';
+import { ObjectStackKernel } from '@objectstack/runtime';
 import { InMemoryDriver } from '@objectql/driver-memory';
 import { GraphQLPlugin } from '@objectql/protocol-graphql';
 import { ObjectQLPlugin } from '@objectql/core';
@@ -89,7 +89,7 @@ The kernel initializes components in a specific order:
 Plugins implement the `RuntimePlugin` interface:
 
 ```typescript
-import type { RuntimePlugin, RuntimeContext } from '@objectql/runtime';
+import type { RuntimePlugin, RuntimeContext } from '@objectstack/runtime';
 
 export class MyPlugin implements RuntimePlugin {
   name = '@my-org/my-plugin';
@@ -117,7 +117,7 @@ export class MyPlugin implements RuntimePlugin {
 The `ObjectStackRuntimeProtocol` class provides a standardized API for protocol plugins to interact with the kernel without direct database access:
 
 ```typescript
-import { ObjectStackRuntimeProtocol } from '@objectql/runtime';
+import { ObjectStackRuntimeProtocol } from '@objectstack/runtime';
 
 // In your plugin's install hook:
 async install(ctx: RuntimeContext): Promise<void> {

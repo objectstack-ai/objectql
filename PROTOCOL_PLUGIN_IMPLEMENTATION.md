@@ -196,7 +196,7 @@ export class MyProtocolPlugin implements RuntimePlugin {
   // 1. 安装阶段：初始化桥接器
   // Install phase: Initialize bridge
   async install(ctx: RuntimeContext): Promise<void> {
-    const { ObjectStackRuntimeProtocol } = await import('@objectql/runtime');
+    const { ObjectStackRuntimeProtocol } = await import('@objectstack/runtime');
     this.protocol = new ObjectStackRuntimeProtocol(ctx.engine);
   }
 
@@ -302,7 +302,7 @@ packages/protocols/my-protocol/
 
 #### 步骤 2: 实现 RuntimePlugin (Implement RuntimePlugin)
 ```typescript
-import type { RuntimePlugin, RuntimeContext, ObjectStackRuntimeProtocol } from '@objectql/runtime';
+import type { RuntimePlugin, RuntimeContext, ObjectStackRuntimeProtocol } from '@objectstack/runtime';
 
 export class MyProtocolPlugin implements RuntimePlugin {
   name = '@objectql/protocol-my-protocol';
@@ -311,7 +311,7 @@ export class MyProtocolPlugin implements RuntimePlugin {
   private protocol?: ObjectStackRuntimeProtocol;
 
   async install(ctx: RuntimeContext): Promise<void> {
-    const { ObjectStackRuntimeProtocol } = await import('@objectql/runtime');
+    const { ObjectStackRuntimeProtocol } = await import('@objectstack/runtime');
     this.protocol = new ObjectStackRuntimeProtocol(ctx.engine);
   }
 

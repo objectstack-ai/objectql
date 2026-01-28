@@ -6,7 +6,7 @@ This directory contains protocol plugin implementations for the ObjectStack ecos
 
 ### Key Principles
 
-1. **Plugin Interface**: All protocols implement `RuntimePlugin` from `@objectql/runtime`
+1. **Plugin Interface**: All protocols implement `RuntimePlugin` from `@objectstack/runtime`
 2. **Bridge Layer**: Must instantiate `ObjectStackRuntimeProtocol` for kernel interaction
 3. **No Direct DB Access**: All data operations go through the protocol bridge methods
 4. **Lifecycle Management**: Plugins initialize in `onStart` lifecycle hook
@@ -14,7 +14,7 @@ This directory contains protocol plugin implementations for the ObjectStack ecos
 ### Protocol Bridge Pattern
 
 ```typescript
-import { RuntimePlugin, RuntimeContext, ObjectStackRuntimeProtocol } from '@objectql/runtime';
+import { RuntimePlugin, RuntimeContext, ObjectStackRuntimeProtocol } from '@objectstack/runtime';
 
 export class MyProtocolPlugin implements RuntimePlugin {
   name = '@objectql/protocol-my-protocol';
@@ -47,7 +47,7 @@ Full OData V4 protocol implementation with automatic metadata generation.
 
 **Usage:**
 ```typescript
-import { ObjectStackKernel } from '@objectql/runtime';
+import { ObjectStackKernel } from '@objectstack/runtime';
 import { ODataV4Plugin } from '@objectql/protocol-odata-v4';
 
 const kernel = new ObjectStackKernel([
@@ -77,7 +77,7 @@ Full JSON-RPC 2.0 specification compliant implementation.
 
 **Usage:**
 ```typescript
-import { ObjectStackKernel } from '@objectql/runtime';
+import { ObjectStackKernel } from '@objectstack/runtime';
 import { JSONRPCPlugin } from '@objectql/protocol-json-rpc';
 
 const kernel = new ObjectStackKernel([
@@ -112,7 +112,7 @@ GraphQL protocol implementation with Apollo Server integration.
 
 **Usage:**
 ```typescript
-import { ObjectStackKernel } from '@objectql/runtime';
+import { ObjectStackKernel } from '@objectstack/runtime';
 import { GraphQLPlugin } from '@objectql/protocol-graphql';
 
 const kernel = new ObjectStackKernel([
@@ -193,7 +193,7 @@ packages/protocols/my-protocol/
 ### Step 2: Implement RuntimePlugin
 
 ```typescript
-import type { RuntimePlugin, RuntimeContext, ObjectStackRuntimeProtocol } from '@objectql/runtime';
+import type { RuntimePlugin, RuntimeContext, ObjectStackRuntimeProtocol } from '@objectstack/runtime';
 
 export class MyProtocolPlugin implements RuntimePlugin {
   name = '@objectql/protocol-my-protocol';
@@ -204,7 +204,7 @@ export class MyProtocolPlugin implements RuntimePlugin {
   constructor(private config: MyProtocolConfig = {}) {}
 
   async install(ctx: RuntimeContext): Promise<void> {
-    const { ObjectStackRuntimeProtocol } = await import('@objectql/runtime');
+    const { ObjectStackRuntimeProtocol } = await import('@objectstack/runtime');
     this.protocol = new ObjectStackRuntimeProtocol(ctx.engine);
   }
 

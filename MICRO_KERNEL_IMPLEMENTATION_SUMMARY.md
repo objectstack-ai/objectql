@@ -11,7 +11,7 @@ This document summarizes the implementation of the micro-kernel protocol for Obj
 
 ## What Changed
 
-### 1. Runtime Package (`@objectql/runtime`)
+### 1. Runtime Package (`@objectstack/runtime`)
 
 **File**: `packages/objectstack/runtime/src/index.ts`
 
@@ -114,7 +114,7 @@ They continue to implement the `RuntimePlugin` interface and work seamlessly wit
 ### Basic Single-Protocol Server
 
 ```typescript
-import { ObjectStackKernel } from '@objectql/runtime';
+import { ObjectStackKernel } from '@objectstack/runtime';
 import { MemoryDriver } from '@objectql/driver-memory';
 import { GraphQLPlugin } from '@objectql/protocol-graphql';
 import { ObjectQLPlugin } from '@objectql/core';
@@ -144,7 +144,7 @@ await kernel.start();
 ### Multi-Protocol Server (Production Pattern)
 
 ```typescript
-import { ObjectStackKernel } from '@objectql/runtime';
+import { ObjectStackKernel } from '@objectstack/runtime';
 import { SQLDriver } from '@objectql/driver-sql';
 import { GraphQLPlugin } from '@objectql/protocol-graphql';
 import { ODataV4Plugin } from '@objectql/protocol-odata-v4';
@@ -202,7 +202,7 @@ process.on('SIGINT', async () => {
 ## Testing Results
 
 ### Build Verification
-- ✅ `@objectql/runtime` builds successfully
+- ✅ `@objectstack/runtime` builds successfully
 - ✅ `@objectql/core` builds successfully
 - ✅ `@objectql/protocol-graphql` builds successfully
 - ✅ `@objectql/protocol-odata-v4` builds successfully
@@ -237,7 +237,7 @@ await app.init();
 
 **After (ObjectStack 4.x)**:
 ```typescript
-import { ObjectStackKernel } from '@objectql/runtime';
+import { ObjectStackKernel } from '@objectstack/runtime';
 import appConfig from './objectstack.config';
 
 const kernel = new ObjectStackKernel([

@@ -14,7 +14,7 @@
     "@objectql/protocol-graphql": "workspace:*",
     "@objectql/protocol-json-rpc": "workspace:*",
     "@objectql/protocol-odata-v4": "workspace:*",
-    "@objectql/runtime": "workspace:*",
+    "@objectstack/runtime": "workspace:*",
     "@objectql/types": "workspace:*"
   },
   "devDependencies": {

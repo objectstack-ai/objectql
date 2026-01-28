@@ -6,7 +6,7 @@
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { ODataV4Plugin } from './index';
-import { ObjectStackKernel } from '@objectql/runtime';
+import { ObjectStackKernel } from '@objectstack/runtime';
 
 describe('ODataV4Plugin', () => {
   let kernel: ObjectStackKernel;

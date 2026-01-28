@@ -289,7 +289,7 @@ class MyProtocolPlugin implements RuntimePlugin {
   private protocol?: ObjectStackRuntimeProtocol;
 
   async install(ctx: RuntimeContext) {
-    const { ObjectStackRuntimeProtocol } = await import('@objectql/runtime');
+    const { ObjectStackRuntimeProtocol } = await import('@objectstack/runtime');
     this.protocol = new ObjectStackRuntimeProtocol(ctx.engine);
   }
 
