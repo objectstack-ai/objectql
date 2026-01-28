@@ -55,7 +55,7 @@ export class FormulaPlugin implements Plugin {
    * Registers formula evaluation capabilities
    */
   async init(ctx: PluginContext): Promise<void> {
-    const kernel = (ctx as any).app as KernelWithFormulas;
+    const kernel = ((ctx as any).getKernel ? (ctx as any).getKernel() : (ctx as any).app) as KernelWithFormulas;
     
     console.log(`[${this.name}] Installing formula plugin...`);
     

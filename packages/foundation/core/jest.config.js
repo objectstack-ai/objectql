@@ -14,13 +14,16 @@ module.exports = {
     '^@objectql/(.*)$': '<rootDir>/../$1/src',
   },
   transform: {
-    '^.+\\.ts$': ['ts-jest', {
+    '^.+\\.(t|j)sx?$': ['ts-jest', {
       isolatedModules: true,
       tsconfig: {
         esModuleInterop: true,
         allowSyntheticDefaultImports: true,
+        allowJs: true,
       }
     }],
   },
-  transformIgnorePatterns: [],
+  transformIgnorePatterns: [
+    "/node_modules/(?!(@objectstack|.pnpm))"
+  ],
 };

@@ -295,12 +295,12 @@ describe('ObjectQL App', () => {
 
     describe('Plugin System', () => {
         it('should initialize runtime plugins on init', async () => {
-            const installFn = jest.fn();
-            const onStartFn = jest.fn();
+            const initFn = jest.fn();
+            const startFn = jest.fn();
             const mockPlugin = {
                 name: 'test-plugin',
-                install: installFn,
-                onStart: onStartFn
+                init: initFn,
+                start: startFn
             };
 
             const app = new ObjectQL({
@@ -309,14 +309,14 @@ describe('ObjectQL App', () => {
             });
 
             await app.init();
-            expect(installFn).toHaveBeenCalled();
-            expect(onStartFn).toHaveBeenCalled();
+            expect(initFn).toHaveBeenCalled();
+            expect(startFn).toHaveBeenCalled();
         });
 
         it('should use plugin method', () => {
             const mockPlugin = {
                 name: 'test-plugin',
-                install: jest.fn()
+                init: jest.fn()
             };
 
             const app = new ObjectQL({ datasources: {} });

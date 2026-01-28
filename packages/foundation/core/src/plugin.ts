@@ -113,7 +113,8 @@ export class ObjectQLPlugin {
   async init(ctx: PluginContext): Promise<void> {
     console.log(`[${this.name}] Installing plugin...`);
     
-    const kernel = (ctx as any).app as ExtendedKernel;
+    // Support both new kernel context (getKernel) and legacy app property
+    const kernel = ((ctx as any).getKernel ? (ctx as any).getKernel() : (ctx as any).app) as ExtendedKernel;
     
     // Get datasources - either from config or from kernel drivers
     let datasources = this.config.datasources;
@@ -152,23 +153,23 @@ export class ObjectQLPlugin {
     
     // Register components based on configuration
     if (this.config.enableRepository !== false && datasources) {
-      await this.registerRepository((ctx as any).app, datasources);
+      await this.registerRepository(kernel, datasources);
     }
     
     // Install validator plugin if enabled
     if (this.config.enableValidator !== false) {
       const validatorPlugin = new ValidatorPlugin(this.config.validatorConfig || {});
-      await validatorPlugin.init(ctx);
+      validatorPlugin.init(ctx);
     }
     
     // Install formula plugin if enabled
     if (this.config.enableFormulas !== false) {
       const formulaPlugin = new FormulaPlugin(this.config.formulaConfig || {});
-      await formulaPlugin.init(ctx);
+      formulaPlugin.init(ctx);
     }
     
     if (this.config.enableAI !== false) {
-      await this.registerAI((ctx as any).app);
+      await this.registerAI(kernel);
     }
     
     console.log(`[${this.name}] Plugin installed successfully`);

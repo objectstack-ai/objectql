@@ -66,7 +66,7 @@ export class ValidatorPlugin implements Plugin {
    * Registers validation middleware for queries and mutations
    */
   async init(ctx: PluginContext): Promise<void> {
-    const kernel = (ctx as any).app as KernelWithValidator;
+    const kernel = ((ctx as any).getKernel ? (ctx as any).getKernel() : (ctx as any).app) as KernelWithValidator;
     
     console.log(`[${this.name}] Installing validator plugin...`);
     

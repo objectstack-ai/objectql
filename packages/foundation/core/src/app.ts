@@ -83,7 +83,12 @@ export class ObjectQL implements IObjectQL {
         }
         
         // Create the kernel with registered plugins
-        this.kernel = new (ObjectKernel as any)(this.kernelPlugins);
+        this.kernel = new (ObjectKernel as any)();
+        for (const plugin of this.kernelPlugins) {
+             if ((this.kernel as any).use) {
+                 (this.kernel as any).use(plugin);
+             }
+        }
 
         // Stub legacy accessors
         (this.kernel as any).metadata = {
@@ -118,7 +123,8 @@ export class ObjectQL implements IObjectQL {
                  }
             }
         };
-        (this.kernel as any).hooks = {
+        const kernelHooks = (this.kernel as any).hooks || {};
+        Object.assign(kernelHooks, {
             register: (event: string, objectName: string, handler: any, packageName?: string) => {
                 const key = `${event}:${objectName}`;
                 if (!this.localHooks.has(key)) {
@@ -146,7 +152,10 @@ export class ObjectQL implements IObjectQL {
                     await handler(ctx);
                 }
             }
-        };
+        });
+        if (!(this.kernel as any).hooks) {
+            (this.kernel as any).hooks = kernelHooks;
+        }
         (this.kernel as any).actions = {
             register: (objectName: string, actionName: string, handler: any, packageName?: string) => {
                 const key = `${objectName}:${actionName}`;
@@ -192,6 +201,9 @@ export class ObjectQL implements IObjectQL {
     
     use(plugin: Plugin) {
         this.kernelPlugins.push(plugin);
+        if (this.kernel && (this.kernel as any).use) {
+            (this.kernel as any).use(plugin);
+        }
     }
 
     removePackage(name: string) {
@@ -387,11 +399,26 @@ export class ObjectQL implements IObjectQL {
         
         // TEMPORARY: Set driver for backward compatibility during migration
         // This allows the kernel mock to delegate to the driver
+        const defaultDriver = this.datasources['default'];
         if (typeof (this.kernel as any).setDriver === 'function') {
-            const defaultDriver = this.datasources['default'];
             if (defaultDriver) {
                 (this.kernel as any).setDriver(defaultDriver);
             }
+        }
+
+        // TEMPORARY: Patch kernel with CRUD methods dynamically if missing
+        // This ensures the repository can delegate to the kernel even if using the new @objectstack/core kernel
+        if (typeof (this.kernel as any).create !== 'function' && defaultDriver) {
+             (this.kernel as any).create = (object: string, doc: any, options: any) => defaultDriver.create(object, doc, options);
+             (this.kernel as any).update = (object: string, id: any, doc: any, options: any) => defaultDriver.update(object, id, doc, options);
+             (this.kernel as any).delete = (object: string, id: any, options: any) => defaultDriver.delete(object, id, options);
+             (this.kernel as any).find = async (object: string, query: any, options: any) => {
+                 const res = await defaultDriver.find(object, query, options);
+                 return { value: res || [] };
+             };
+             (this.kernel as any).findOne = (object: string, id: any, options: any) => defaultDriver.findOne(object, id, options);
+             (this.kernel as any).get = (object: string, id: any) => defaultDriver.findOne(object, id); 
+             (this.kernel as any).count = (object: string, query: any, options: any) => defaultDriver.count(object, query, options);
         }
 
         // Load In-Memory Objects (Dynamic Layer)
