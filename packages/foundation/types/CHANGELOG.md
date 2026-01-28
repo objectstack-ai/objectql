@@ -1,5 +1,17 @@
 # @objectql/types
 
+## 4.0.3
+
+### Patch Changes
+
+- **Patch Release v4.0.3**
+
+  This patch release includes:
+  - Enhanced metadata handling and object retrieval logic
+  - Improved package configurations across all drivers
+  - Infrastructure improvements and maintenance updates
+  - Bug fixes and performance optimizations
+
 ## 4.0.2
 
 ### Patch Changes

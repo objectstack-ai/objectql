@@ -1,5 +1,24 @@
 # @objectql/cli
 
+## 4.0.3
+
+### Patch Changes
+
+- **Patch Release v4.0.3**
+
+  This patch release includes:
+  - Enhanced metadata handling and object retrieval logic
+  - Improved package configurations across all drivers
+  - Infrastructure improvements and maintenance updates
+  - Bug fixes and performance optimizations
+
+- Updated dependencies
+  - @objectql/core@4.0.3
+  - @objectql/driver-sql@4.0.3
+  - @objectql/platform-node@4.0.3
+  - @objectql/server@4.0.3
+  - @objectql/types@4.0.3
+
 ## 4.0.2
 
 ### Patch Changes
