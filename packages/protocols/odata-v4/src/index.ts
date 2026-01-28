@@ -394,30 +394,153 @@ export class ODataV4Plugin implements RuntimePlugin {
     /**
      * Parse OData $filter expression to ObjectQL where clause
      * 
-     * NOTE: This is a simplified implementation for demonstration purposes.
-     * Production use requires a full OData filter parser supporting:
+     * Supports OData V4 filter operations:
      * - Comparison operators: eq, ne, gt, ge, lt, le
      * - Logical operators: and, or, not
-     * - String functions: contains, startswith, endswith
-     * - Arithmetic operators: add, sub, mul, div, mod
+     * - String functions: contains, startswith, endswith, substringof
+     * - Grouping with parentheses
      * 
-     * Currently only supports: field eq 'value'
-     * 
-     * TODO: Implement full OData filter expression parser
+     * Examples:
+     * - "name eq 'John'" -> { name: { $eq: 'John' } }
+     * - "age gt 18" -> { age: { $gt: 18 } }
+     * - "name eq 'John' and age gt 18" -> { $and: [{ name: { $eq: 'John' } }, { age: { $gt: 18 } }] }
+     * - "contains(name, 'John')" -> { name: { $contains: 'John' } }
      */
     private parseODataFilter(filter: string): any {
-        // Simple implementation: "name eq 'John'" -> { name: { $eq: 'John' } }
-        const eqMatch = filter.match(/(\w+)\s+eq\s+'([^']+)'/);
-        if (eqMatch) {
-            return { [eqMatch[1]]: { $eq: eqMatch[2] } };
+        if (!filter || filter.trim() === '') {
+            return {};
         }
-        
-        // Unsupported filter expression - throw error to make limitations explicit
+
+        // Remove leading/trailing whitespace
+        filter = filter.trim();
+
+        // Handle logical operators (and, or)
+        const andMatch = this.splitByLogicalOperator(filter, ' and ');
+        if (andMatch.length > 1) {
+            return {
+                $and: andMatch.map(part => this.parseODataFilter(part))
+            };
+        }
+
+        const orMatch = this.splitByLogicalOperator(filter, ' or ');
+        if (orMatch.length > 1) {
+            return {
+                $or: orMatch.map(part => this.parseODataFilter(part))
+            };
+        }
+
+        // Handle NOT operator
+        if (filter.startsWith('not ')) {
+            return {
+                $not: this.parseODataFilter(filter.substring(4).trim())
+            };
+        }
+
+        // Handle parentheses
+        if (filter.startsWith('(') && filter.endsWith(')')) {
+            return this.parseODataFilter(filter.substring(1, filter.length - 1));
+        }
+
+        // Handle string functions
+        const containsMatch = filter.match(/contains\((\w+),\s*'([^']+)'\)/i);
+        if (containsMatch) {
+            return { [containsMatch[1]]: { $contains: containsMatch[2] } };
+        }
+
+        const startswithMatch = filter.match(/startswith\((\w+),\s*'([^']+)'\)/i);
+        if (startswithMatch) {
+            return { [startswithMatch[1]]: { $startsWith: startswithMatch[2] } };
+        }
+
+        const endswithMatch = filter.match(/endswith\((\w+),\s*'([^']+)'\)/i);
+        if (endswithMatch) {
+            return { [endswithMatch[1]]: { $endsWith: endswithMatch[2] } };
+        }
+
+        const substringofMatch = filter.match(/substringof\('([^']+)',\s*(\w+)\)/i);
+        if (substringofMatch) {
+            return { [substringofMatch[2]]: { $contains: substringofMatch[1] } };
+        }
+
+        // Handle comparison operators
+        const comparisonRegex = /(\w+)\s+(eq|ne|gt|ge|lt|le)\s+('([^']+)'|(\d+\.?\d*)|true|false|null)/i;
+        const compMatch = filter.match(comparisonRegex);
+        if (compMatch) {
+            const field = compMatch[1];
+            const operator = compMatch[2].toLowerCase();
+            let value: any = compMatch[4] || compMatch[5];
+
+            // Parse value type
+            if (compMatch[3] === 'true') value = true;
+            else if (compMatch[3] === 'false') value = false;
+            else if (compMatch[3] === 'null') value = null;
+            else if (compMatch[5]) value = parseFloat(compMatch[5]);
+
+            // Map OData operators to ObjectQL operators
+            const operatorMap: Record<string, string> = {
+                'eq': '$eq',
+                'ne': '$ne',
+                'gt': '$gt',
+                'ge': '$gte',
+                'lt': '$lt',
+                'le': '$lte'
+            };
+
+            return { [field]: { [operatorMap[operator]]: value } };
+        }
+
+        // Unsupported filter expression
         throw new Error(
             `Unsupported $filter expression: "${filter}". ` +
-            `This plugin currently only supports simple equality filters like "field eq 'value'". ` +
-            `For full OData filter support, a complete OData expression parser is needed.`
+            `Supported operators: eq, ne, gt, ge, lt, le, and, or, not. ` +
+            `Supported functions: contains, startswith, endswith, substringof.`
         );
+    }
+
+    /**
+     * Split filter string by logical operator, respecting parentheses and quoted strings
+     */
+    private splitByLogicalOperator(filter: string, operator: string): string[] {
+        const parts: string[] = [];
+        let current = '';
+        let depth = 0;
+        let inQuotes = false;
+        let i = 0;
+
+        while (i < filter.length) {
+            const char = filter[i];
+            
+            // Track quoted strings
+            if (char === "'" && (i === 0 || filter[i - 1] !== '\\')) {
+                inQuotes = !inQuotes;
+                current += char;
+                i++;
+                continue;
+            }
+
+            // Track parentheses depth
+            if (!inQuotes) {
+                if (char === '(') depth++;
+                if (char === ')') depth--;
+
+                // Check for operator at depth 0
+                if (depth === 0 && filter.substring(i, i + operator.length) === operator) {
+                    parts.push(current.trim());
+                    current = '';
+                    i += operator.length;
+                    continue;
+                }
+            }
+
+            current += char;
+            i++;
+        }
+
+        if (current.trim()) {
+            parts.push(current.trim());
+        }
+
+        return parts.length > 1 ? parts : [filter];
     }
 
     /**

@@ -97,15 +97,27 @@ export class GraphQLPlugin implements RuntimePlugin {
         const typeDefs = this.generateSchema();
         const resolvers = this.generateResolvers();
 
-        // Create Apollo Server
+        // Create Apollo Server with Apollo Server 4+ configuration
         this.server = new ApolloServer({
             typeDefs,
             resolvers,
             introspection: this.config.introspection,
-            // Enable playground in development
-            ...(this.config.playground && {
-                plugins: []
-            })
+            // Apollo Server 4+ uses Apollo Sandbox by default when introspection is enabled
+            // The playground config option is deprecated - Sandbox is now the default
+            includeStacktraceInErrorResponses: process.env.NODE_ENV !== 'production',
+            // Format errors with GraphQL spec-compliant structure
+            formatError: (formattedError, error) => {
+                // Return standard GraphQL error format with extensions
+                return {
+                    message: formattedError.message,
+                    locations: formattedError.locations,
+                    path: formattedError.path,
+                    extensions: {
+                        code: formattedError.extensions?.code || 'INTERNAL_SERVER_ERROR',
+                        ...formattedError.extensions
+                    }
+                };
+            }
         });
 
         // Start standalone server
@@ -114,6 +126,9 @@ export class GraphQLPlugin implements RuntimePlugin {
         });
 
         console.log(`[${this.name}] 🚀 GraphQL server ready at: ${this.serverCleanup.url}`);
+        if (this.config.introspection) {
+            console.log(`[${this.name}] 📊 Apollo Sandbox available at: ${this.serverCleanup.url}`);
+        }
     }
 
     /**

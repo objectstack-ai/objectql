@@ -49,6 +49,14 @@ interface JSONRPCResponse {
 }
 
 /**
+ * Method signature for parameter mapping
+ */
+interface MethodSignature {
+    params: string[];
+    description?: string;
+}
+
+/**
  * JSON-RPC 2.0 Protocol Plugin
  * 
  * Implements the RuntimePlugin interface to provide JSON-RPC 2.0 protocol support.
@@ -59,6 +67,7 @@ interface JSONRPCResponse {
  * - Notification support (requests without id)
  * - Built-in introspection methods (system.listMethods, system.describe)
  * - CRUD operations mapped to RPC methods
+ * - Named and positional parameter support
  * - No direct database access - all operations through ObjectStackRuntimeProtocol
  * 
  * Available RPC Methods:
@@ -70,6 +79,7 @@ interface JSONRPCResponse {
  * - object.count(objectName, filters) - Count records
  * - metadata.list() - List all objects
  * - metadata.get(objectName) - Get object metadata
+ * - action.execute(actionName, params) - Execute custom action
  * - system.listMethods() - List available methods (if introspection enabled)
  * - system.describe(method) - Describe method signature (if introspection enabled)
  * 
@@ -83,9 +93,13 @@ interface JSONRPCResponse {
  * ]);
  * await kernel.start();
  * 
- * // Client request:
+ * // Client request (positional):
  * // POST /rpc
  * // {"jsonrpc":"2.0","method":"object.find","params":["users",{"where":{"active":true}}],"id":1}
+ * 
+ * // Client request (named):
+ * // POST /rpc
+ * // {"jsonrpc":"2.0","method":"object.find","params":{"objectName":"users","query":{"where":{"active":true}}},"id":1}
  * ```
  */
 export class JSONRPCPlugin implements RuntimePlugin {
@@ -96,6 +110,7 @@ export class JSONRPCPlugin implements RuntimePlugin {
     private protocol?: ObjectStackRuntimeProtocol;
     private config: Required<JSONRPCPluginConfig>;
     private methods: Map<string, Function>;
+    private methodSignatures: Map<string, MethodSignature>;
 
     constructor(config: JSONRPCPluginConfig = {}) {
         this.config = {
@@ -106,6 +121,7 @@ export class JSONRPCPlugin implements RuntimePlugin {
         };
         
         this.methods = new Map();
+        this.methodSignatures = new Map();
     }
 
     /**
@@ -162,41 +178,73 @@ export class JSONRPCPlugin implements RuntimePlugin {
     }
 
     /**
-     * Register all available RPC methods
+     * Register all available RPC methods with their signatures
      */
     private registerMethods(): void {
         // Object CRUD methods
         this.methods.set('object.find', async (objectName: string, query?: any) => {
             return await this.protocol!.findData(objectName, query);
         });
+        this.methodSignatures.set('object.find', {
+            params: ['objectName', 'query'],
+            description: 'Find records matching query'
+        });
 
         this.methods.set('object.get', async (objectName: string, id: string) => {
             return await this.protocol!.getData(objectName, id);
+        });
+        this.methodSignatures.set('object.get', {
+            params: ['objectName', 'id'],
+            description: 'Get a single record by ID'
         });
 
         this.methods.set('object.create', async (objectName: string, data: any) => {
             return await this.protocol!.createData(objectName, data);
         });
+        this.methodSignatures.set('object.create', {
+            params: ['objectName', 'data'],
+            description: 'Create a new record'
+        });
 
         this.methods.set('object.update', async (objectName: string, id: string, data: any) => {
             return await this.protocol!.updateData(objectName, id, data);
+        });
+        this.methodSignatures.set('object.update', {
+            params: ['objectName', 'id', 'data'],
+            description: 'Update an existing record'
         });
 
         this.methods.set('object.delete', async (objectName: string, id: string) => {
             return await this.protocol!.deleteData(objectName, id);
         });
+        this.methodSignatures.set('object.delete', {
+            params: ['objectName', 'id'],
+            description: 'Delete a record'
+        });
 
         this.methods.set('object.count', async (objectName: string, filters?: any) => {
             return await this.protocol!.countData(objectName, filters);
+        });
+        this.methodSignatures.set('object.count', {
+            params: ['objectName', 'filters'],
+            description: 'Count records matching filters'
         });
 
         // Metadata methods
         this.methods.set('metadata.list', async () => {
             return this.protocol!.getMetaTypes();
         });
+        this.methodSignatures.set('metadata.list', {
+            params: [],
+            description: 'List all registered objects'
+        });
 
         this.methods.set('metadata.get', async (objectName: string) => {
             return this.protocol!.getMetaItem(objectName);
+        });
+        this.methodSignatures.set('metadata.get', {
+            params: ['objectName'],
+            description: 'Get metadata for a specific object'
         });
 
         this.methods.set('metadata.getAll', async (metaType: string) => {
@@ -208,19 +256,35 @@ export class JSONRPCPlugin implements RuntimePlugin {
             const items = this.protocol!.getAllMetaItems(metaType);
             return Object.fromEntries(items);
         });
+        this.methodSignatures.set('metadata.getAll', {
+            params: ['metaType'],
+            description: 'Get all metadata items of a specific type'
+        });
 
         // Action methods
         this.methods.set('action.execute', async (actionName: string, params?: any) => {
             return await this.protocol!.executeAction(actionName, params);
         });
+        this.methodSignatures.set('action.execute', {
+            params: ['actionName', 'params'],
+            description: 'Execute a custom action'
+        });
 
         this.methods.set('action.list', async () => {
             return this.protocol!.getActions();
+        });
+        this.methodSignatures.set('action.list', {
+            params: [],
+            description: 'List all registered actions'
         });
 
         // View methods
         this.methods.set('view.get', async (objectName: string, viewType?: 'list' | 'form') => {
             return this.protocol!.getViewConfig(objectName, viewType);
+        });
+        this.methodSignatures.set('view.get', {
+            params: ['objectName', 'viewType'],
+            description: 'Get view configuration for an object'
         });
 
         // Introspection methods (if enabled)
@@ -228,15 +292,28 @@ export class JSONRPCPlugin implements RuntimePlugin {
             this.methods.set('system.listMethods', async () => {
                 return Array.from(this.methods.keys());
             });
+            this.methodSignatures.set('system.listMethods', {
+                params: [],
+                description: 'List all available methods'
+            });
 
             this.methods.set('system.describe', async (methodName: string) => {
-                return this.getMethodSignature(methodName);
+                const signature = this.methodSignatures.get(methodName);
+                if (!signature) {
+                    throw new Error(`Method not found: ${methodName}`);
+                }
+                return signature;
+            });
+            this.methodSignatures.set('system.describe', {
+                params: ['methodName'],
+                description: 'Get method signature and description'
             });
         }
     }
 
     /**
-     * Get method signature for introspection
+     * Get method signature for introspection (deprecated - use methodSignatures map)
+     * @deprecated Use this.methodSignatures.get(methodName) instead
      */
     private getMethodSignature(methodName: string): any {
         const signatures: Record<string, any> = {
@@ -382,17 +459,22 @@ export class JSONRPCPlugin implements RuntimePlugin {
             // Execute method with params
             let result: any;
             if (Array.isArray(request.params)) {
-                // Positional parameters - supported
+                // Positional parameters - pass directly
                 result = await method(...request.params);
             } else if (request.params && typeof request.params === 'object') {
-                // Named parameters
-                // NOTE: This is a simplified implementation that passes the entire params object
-                // as a single argument. Full implementation would require mapping named parameters
-                // to the method's positional parameter list based on method signatures.
-                // For production use, consider only supporting positional parameters or implementing
-                // a complete parameter mapping solution.
-                console.warn(`[JSONRPCPlugin] Named parameters not fully supported. Passing params object as single argument.`);
-                result = await method(request.params);
+                // Named parameters - map to positional based on method signature
+                const signature = this.methodSignatures.get(request.method);
+                if (signature && signature.params.length > 0) {
+                    // Map named params to positional array
+                    const positionalParams = signature.params.map(paramName => {
+                        return request.params[paramName];
+                    });
+                    result = await method(...positionalParams);
+                } else {
+                    // No signature or no params - pass params object as single argument
+                    // This handles methods that accept a single object parameter
+                    result = await method(request.params);
+                }
             } else {
                 // No parameters
                 result = await method();
