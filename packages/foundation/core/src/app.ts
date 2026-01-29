@@ -93,9 +93,25 @@ export class ObjectQL implements IObjectQL {
         // Stub legacy accessors
         (this.kernel as any).metadata = {
             register: (type: string, item: any) => SchemaRegistry.registerItem(type, item, item.id ? 'id' : 'name'),
-            get: (type: string, name: string) => SchemaRegistry.getItem(type, name),
+            get: (type: string, name: string) => {
+                const item = SchemaRegistry.getItem(type, name) as any;
+                // Unwrap content if it exists (matching MetadataRegistry behavior)
+                if (item && item.content) {
+                    return item.content;
+                }
+                return item;
+            },
             getEntry: (type: string, name: string) => SchemaRegistry.getItem(type, name),
-            list: (type: string) => SchemaRegistry.listItems(type),
+            list: (type: string) => {
+                const items = SchemaRegistry.listItems(type);
+                // Unwrap content for each item (matching MetadataRegistry behavior)
+                return items.map((item: any) => {
+                    if (item && item.content) {
+                        return item.content;
+                    }
+                    return item;
+                });
+            },
             unregister: (type: string, name: string) => {
                  // Access private static storage using any cast
                  const metadata = (SchemaRegistry as any).metadata;
