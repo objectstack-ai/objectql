@@ -24,12 +24,24 @@ export class SchemaRegistry {
     
     static getItem(type: string, id: string): any {
         const typeMap = SchemaRegistry.metadata.get(type);
-        return typeMap ? typeMap.get(id) : undefined;
+        const item = typeMap ? typeMap.get(id) : undefined;
+        // Unwrap content if present, matching MetadataRegistry behavior
+        if (item && item.content) {
+            return item.content;
+        }
+        return item;
     }
     
     static listItems(type: string): any[] {
         const typeMap = SchemaRegistry.metadata.get(type);
-        return typeMap ? Array.from(typeMap.values()) : [];
+        if (!typeMap) return [];
+        // Unwrap content from each item, matching MetadataRegistry behavior
+        return Array.from(typeMap.values()).map((item: any) => {
+            if (item && item.content) {
+                return item.content;
+            }
+            return item;
+        });
     }
     
     static unregisterPackage(packageName: string): void {
