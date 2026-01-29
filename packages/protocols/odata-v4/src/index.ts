@@ -38,7 +38,7 @@ export interface ODataV4PluginConfig {
  * 
  * @example
  * ```typescript
- * import { ObjectKernel } from '@objectstack/runtime';
+ * import { ObjectKernel } from '@objectstack/core';
  * import { ODataV4Plugin } from '@objectql/protocol-odata-v4';
  * 
  * const kernel = new ObjectKernel([
