@@ -1,0 +1,13 @@
+{
+  "title": "AI Protocol",
+  "pages": [
+    "agent",
+    "conversation",
+    "cost",
+    "model-registry",
+    "nlq",
+    "orchestration",
+    "predictive",
+    "rag-pipeline"
+  ]
+}

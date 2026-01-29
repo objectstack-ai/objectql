@@ -1,0 +1,13 @@
+{
+  "title": "Protocol Reference",
+  "pages": [
+    "data",
+    "ui",
+    "automation",
+    "system",
+    "permission",
+    "ai",
+    "api",
+    "driver"
+  ]
+}

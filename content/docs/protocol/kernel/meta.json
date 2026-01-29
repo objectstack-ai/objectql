@@ -1,0 +1,10 @@
+{
+  "title": "Kernel Protocol",
+  "pages": [
+    "context",
+    "logger",
+    "manifest",
+    "plugin",
+    "scoped-storage"
+  ]
+}

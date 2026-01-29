@@ -1,0 +1,18 @@
+{
+  "title": "System Protocol",
+  "pages": [
+    "audit",
+    "context",
+    "data-engine",
+    "datasource",
+    "driver",
+    "events",
+    "feature",
+    "job",
+    "logger",
+    "manifest",
+    "plugin",
+    "scoped-storage",
+    "translation"
+  ]
+}
