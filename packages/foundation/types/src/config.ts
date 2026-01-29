@@ -9,7 +9,7 @@
 import { MetadataRegistry } from "./registry";
 import { Driver } from "./driver";
 import { ObjectConfig } from "./object";
-import type { ObjectQLPlugin } from "@objectstack/runtime";
+import type { ObjectQLPlugin } from "@objectstack/objectql";
 
 export interface ObjectQLConfig {
     registry?: MetadataRegistry;

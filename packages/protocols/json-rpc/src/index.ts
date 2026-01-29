@@ -6,8 +6,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import type { ObjectQLPlugin } from '@objectstack/runtime';
-import { ObjectStackProtocolImplementation } from '@objectstack/runtime';
+import type { ObjectQLPlugin } from '@objectstack/objectql';
+import { ObjectStackProtocolImplementation } from '@objectstack/objectql';
 import { IncomingMessage, ServerResponse, createServer, Server } from 'http';
 
 /**

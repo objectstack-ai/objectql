@@ -5,6 +5,7 @@ packages:
   - packages/tools/*
   - packages/objectstack/*
   - packages/protocols/*
+  - ../spec/packages/*
   - examples/quickstart/*
   - examples/integrations/*
   - examples/showcase/*

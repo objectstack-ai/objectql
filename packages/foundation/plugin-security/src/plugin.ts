@@ -6,7 +6,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import type { ObjectQLPlugin, ObjectKernel } from '@objectstack/runtime';
+import type { ObjectQLPlugin } from '@objectstack/objectql';
+import type { ObjectKernel } from '@objectstack/runtime';
 import type { SecurityPluginConfig, SecurityContext, PermissionAuditLog } from './types';
 import { PermissionLoader } from './permission-loader';
 import { PermissionGuard } from './permission-guard';

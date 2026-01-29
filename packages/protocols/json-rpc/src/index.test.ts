@@ -16,13 +16,31 @@ describe('JSONRPCPlugin', () => {
     // Create kernel with test metadata
     kernel = new ObjectKernel([]);
     
-    kernel.metadata.register('object', 'users', {
-      name: 'users',
-      fields: {
-        name: { type: 'text' },
-        email: { type: 'email' }
+    // Stub metadata for testing
+    (kernel as any).metadata = {
+      register: (type: string, name: string, item: any) => {
+         // mock register
+      },
+      list: (type: string) => {
+         return []
       }
-    });
+    };
+    
+    // Mock the specific user object we need
+    if (typeof (kernel as any).metadata.register === 'function') {
+        const users = {
+            name: 'users',
+            fields: {
+                name: { type: 'text' },
+                email: { type: 'email' }
+            }
+        };
+        // Mock list to return this user
+        (kernel as any).metadata.list = (type: string) => {
+             if (type === 'object') return [{ content: users }];
+             return [];
+        };
+    }
 
     // Create plugin instance
     plugin = new JSONRPCPlugin({

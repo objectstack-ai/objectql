@@ -8,8 +8,8 @@
  * Based on reference implementation by @hotlong
  */
 
-import type { ObjectQLPlugin } from '@objectstack/runtime';
-import { ObjectStackProtocolImplementation } from '@objectstack/runtime';
+import type { ObjectQLPlugin } from '@objectstack/objectql';
+import { ObjectStackProtocolImplementation } from '@objectstack/objectql';
 import { ApolloServer } from '@apollo/server';
 import { startStandaloneServer } from '@apollo/server/standalone';
 
