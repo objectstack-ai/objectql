@@ -6,8 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import type { ObjectQLPlugin } from '@objectstack/objectql';
-import type { ObjectKernel } from '@objectstack/runtime';
+import type { RuntimePlugin, RuntimeContext } from '@objectql/types';
 import type { SecurityPluginConfig, SecurityContext, PermissionAuditLog } from './types';
 import { PermissionLoader } from './permission-loader';
 import { PermissionGuard } from './permission-guard';
@@ -17,7 +16,7 @@ import { FieldMasker } from './field-masker';
 /**
  * Extended ObjectStack Kernel with security capabilities
  */
-interface KernelWithSecurity extends ObjectKernel {
+interface KernelWithSecurity {
   security?: {
     loader: PermissionLoader;
     guard: PermissionGuard;
@@ -25,6 +24,7 @@ interface KernelWithSecurity extends ObjectKernel {
     masker: FieldMasker;
     config: SecurityPluginConfig;
   };
+  use?: (hookName: string, handler: (context: any) => Promise<void>) => void;
 }
 
 /**
@@ -45,7 +45,7 @@ interface KernelWithSecurity extends ObjectKernel {
  * - Zero-Intrusion: Can be enabled/disabled without code changes
  * - Performance-First: Pre-compiles rules, works at AST level
  */
-export class ObjectQLSecurityPlugin {
+export class ObjectQLSecurityPlugin implements RuntimePlugin {
   name = '@objectql/plugin-security';
   version = '4.0.1';
   
@@ -78,8 +78,8 @@ export class ObjectQLSecurityPlugin {
    * Install the plugin into the kernel
    * This is called during kernel initialization
    */
-  async install(ctx: any): Promise<void> {
-    const kernel = ctx.engine as KernelWithSecurity;
+  async install(ctx: RuntimeContext): Promise<void> {
+    const kernel = (ctx.engine || ctx.getKernel?.()) as KernelWithSecurity;
     
     console.log(`[${this.name}] Installing security plugin...`);
     
@@ -122,7 +122,7 @@ export class ObjectQLSecurityPlugin {
   /**
    * Called when the kernel starts
    */
-  async onStart(ctx: any): Promise<void> {
+  async onStart(ctx: RuntimeContext): Promise<void> {
     console.log(`[${this.name}] Security plugin started`);
   }
   

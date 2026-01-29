@@ -13,5 +13,14 @@ module.exports = {
   collectCoverageFrom: ['src/**/*.ts'],
   moduleNameMapper: {
     '^@objectql/types$': '<rootDir>/../../foundation/types/src',
-  }
+  },
+  transform: {
+    '^.+\\.ts$': ['ts-jest', {
+      isolatedModules: true,
+      tsconfig: {
+        esModuleInterop: true,
+        allowSyntheticDefaultImports: true,
+      }
+    }],
+  },
 };

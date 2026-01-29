@@ -6,7 +6,7 @@
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { GraphQLPlugin } from './index';
-import { ObjectKernel } from '@objectstack/runtime';
+import { ObjectKernel } from '@objectstack/core';
 
 describe('GraphQLPlugin', () => {
   let kernel: ObjectKernel;

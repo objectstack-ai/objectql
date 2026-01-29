@@ -1,33 +1,44 @@
 # ObjectStack Protocol Plugins
 
-This directory contains protocol plugin implementations for the ObjectStack ecosystem. Each protocol plugin implements the `RuntimePlugin` interface and uses the `ObjectStackRuntimeProtocol` bridge layer to interact with the kernel.
+This directory contains protocol plugin implementations for the ObjectStack ecosystem. Each protocol plugin implements the `RuntimePlugin` interface defined in `@objectql/types`.
 
 ## Architecture Overview
 
 ### Key Principles
 
-1. **Plugin Interface**: All protocols implement `RuntimePlugin` from `@objectstack/runtime`
-2. **Bridge Layer**: Must instantiate `ObjectStackRuntimeProtocol` for kernel interaction
-3. **No Direct DB Access**: All data operations go through the protocol bridge methods
-4. **Lifecycle Management**: Plugins initialize in `onStart` lifecycle hook
+1. **Plugin Interface**: All protocols implement `RuntimePlugin` from `@objectql/types`
+2. **Direct Engine Access**: Plugins access the kernel/engine directly through the RuntimeContext
+3. **No Direct DB Access**: All data operations go through kernel methods (find, create, update, delete)
+4. **Lifecycle Management**: Plugins follow install → onStart → onStop lifecycle
 
-### Protocol Bridge Pattern
+### Plugin Implementation Pattern
 
 ```typescript
-import { RuntimePlugin, RuntimeContext, ObjectStackRuntimeProtocol } from '@objectstack/runtime';
+import type { RuntimePlugin, RuntimeContext } from '@objectql/types';
 
 export class MyProtocolPlugin implements RuntimePlugin {
   name = '@objectql/protocol-my-protocol';
-  private protocol?: ObjectStackRuntimeProtocol;
+  version = '1.0.0';
+  
+  private engine?: any;
 
   async install(ctx: RuntimeContext): Promise<void> {
-    // Initialize the protocol bridge
-    this.protocol = new ObjectStackRuntimeProtocol(ctx.engine);
+    // Store engine reference for later use
+    this.engine = ctx.engine;
+    
+    // Initialize plugin resources
+    console.log('Plugin installed');
   }
 
   async onStart(ctx: RuntimeContext): Promise<void> {
     // Start your protocol server
-    // Use this.protocol.findData(), this.protocol.createData(), etc.
+    // Use this.engine.find(), this.engine.create(), etc.
+    console.log('Plugin started');
+  }
+  
+  async onStop(ctx: RuntimeContext): Promise<void> {
+    // Cleanup resources
+    console.log('Plugin stopped');
   }
 }
 ```
@@ -101,14 +112,14 @@ await kernel.start();
 
 ### 3. GraphQL (`@objectql/protocol-graphql`)
 
-GraphQL protocol implementation with Apollo Server integration.
+Full GraphQL implementation with automatic schema generation and Apollo Server integration.
 
 **Features:**
-- Automatic schema generation from metadata
+- Automatic GraphQL schema generation from metadata
 - Query and mutation resolvers
-- GraphQL introspection and playground
-- Apollo Server 4.x integration
-- Type-safe operations
+- Apollo Server v4+ with Apollo Sandbox
+- Introspection support
+- Type-safe resolvers
 
 **Usage:**
 ```typescript
@@ -117,16 +128,15 @@ import { GraphQLPlugin } from '@objectql/protocol-graphql';
 
 const kernel = new ObjectKernel([
   new GraphQLPlugin({ 
-    port: 4000,
-    introspection: true,
-    playground: true
+    port: 4000, 
+    introspection: true
   })
 ]);
 await kernel.start();
 
-// Access GraphQL playground: http://localhost:4000/
+// Access Apollo Sandbox: http://localhost:4000/
 // Query example:
-// {
+// query {
 //   usersList(limit: 10) {
 //     id
 //     name
@@ -135,9 +145,9 @@ await kernel.start();
 // }
 ```
 
-**Reference**: Based on implementation by @hotlong
+## RuntimePlugin Interface
 
-**Available RPC Methods:**
+All protocol plugins implement the `RuntimePlugin` interface from `@objectql/types`:
 - `object.find(objectName, query)` - Find records
 - `object.get(objectName, id)` - Get single record
 - `object.create(objectName, data)` - Create record
@@ -150,7 +160,57 @@ await kernel.start();
 - `system.listMethods()` - List available methods
 - `system.describe(method)` - Get method signature
 
-## ObjectStackRuntimeProtocol API
+## RuntimePlugin Interface
+
+All protocol plugins implement the `RuntimePlugin` interface from `@objectql/types`:
+
+```typescript
+export interface RuntimePlugin {
+  /** Unique plugin identifier */
+  name: string;
+  
+  /** Plugin version (optional) */
+  version?: string;
+  
+  /** Install hook - called during kernel initialization */
+  install?(ctx: RuntimeContext): void | Promise<void>;
+  
+  /** Start hook - called when kernel starts */
+  onStart?(ctx: RuntimeContext): void | Promise<void>;
+  
+  /** Stop hook - called when kernel stops */
+  onStop?(ctx: RuntimeContext): void | Promise<void>;
+}
+```
+
+### RuntimeContext
+
+The RuntimeContext provides access to the kernel/engine:
+
+```typescript
+export interface RuntimeContext {
+  /** The ObjectStack kernel/engine instance */
+  engine: any;
+}
+```
+
+### Engine API
+
+The engine provides the following methods for protocol plugins:
+
+**Metadata Operations:**
+- `engine.metadata.getTypes()` - Get list of registered types
+- `engine.metadata.list(type)` - Get items of a specific type
+- `engine.metadata.get(type, name)` - Get a specific metadata item
+
+**CRUD Operations:**
+- `engine.find(objectName, query)` - Find records
+- `engine.get(objectName, id)` - Get single record
+- `engine.create(objectName, data)` - Create record
+- `engine.update(objectName, id, data)` - Update record
+- `engine.delete(objectName, id)` - Delete record
+
+## Creating a Custom Protocol Plugin
 
 The bridge layer provides these methods for protocol implementations:
 

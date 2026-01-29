@@ -6,8 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import type { ObjectQLPlugin } from '@objectstack/objectql';
-import { ObjectStackProtocolImplementation } from '@objectstack/objectql';
+import type { RuntimePlugin, RuntimeContext } from '@objectql/types';
 import { IncomingMessage, ServerResponse, createServer, Server } from 'http';
 
 /**
@@ -27,7 +26,7 @@ export interface ODataV4PluginConfig {
 /**
  * OData V4 Protocol Plugin
  * 
- * Implements the ObjectQLPlugin interface to provide OData V4 protocol support.
+ * Implements the RuntimePlugin interface to provide OData V4 protocol support.
  * 
  * Key Features:
  * - Automatic metadata document generation ($metadata)
@@ -39,7 +38,7 @@ export interface ODataV4PluginConfig {
  * 
  * @example
  * ```typescript
- * import { ObjectKernel } from '@objectstack/runtime';
+ * import { ObjectKernel } from '@objectstack/core';
  * import { ODataV4Plugin } from '@objectql/protocol-odata-v4';
  * 
  * const kernel = new ObjectKernel([
@@ -48,12 +47,12 @@ export interface ODataV4PluginConfig {
  * await kernel.start();
  * ```
  */
-export class ODataV4Plugin {
+export class ODataV4Plugin implements RuntimePlugin {
     name = '@objectql/protocol-odata-v4';
     version = '0.1.0';
     
     private server?: Server;
-    private protocol?: ObjectStackProtocolImplementation;
+    private engine?: any;
     private config: Required<ODataV4PluginConfig>;
 
     constructor(config: ODataV4PluginConfig = {}) {
@@ -68,11 +67,11 @@ export class ODataV4Plugin {
     /**
      * Install hook - called during kernel initialization
      */
-    async install(ctx: any): Promise<void> {
+    async install(ctx: RuntimeContext): Promise<void> {
         console.log(`[${this.name}] Installing OData V4 protocol plugin...`);
         
-        // Initialize the protocol bridge
-        this.protocol = new ObjectStackProtocolImplementation(ctx.engine);
+        // Store reference to the engine for later use
+        this.engine = ctx.engine || (ctx as any).getKernel?.();
         
         console.log(`[${this.name}] Protocol bridge initialized`);
     }
@@ -81,8 +80,8 @@ export class ODataV4Plugin {
      * Start hook - called when kernel starts
      * This is where we start the HTTP server
      */
-    async onStart(ctx: any): Promise<void> {
-        if (!this.protocol) {
+    async onStart(ctx: RuntimeContext): Promise<void> {
+        if (!this.engine) {
             throw new Error('Protocol not initialized. Install hook must be called first.');
         }
 
@@ -103,7 +102,7 @@ export class ODataV4Plugin {
     /**
      * Stop hook - called when kernel stops
      */
-    async onStop(ctx: any): Promise<void> {
+    async onStop(ctx: RuntimeContext): Promise<void> {
         if (this.server) {
             console.log(`[${this.name}] Stopping OData V4 server...`);
             await new Promise<void>((resolve, reject) => {
@@ -114,6 +113,111 @@ export class ODataV4Plugin {
             });
             this.server = undefined;
         }
+    }
+
+    /**
+     * Helper: Get list of registered object types from metadata
+     */
+    private getMetaTypes(): string[] {
+        if (!this.engine?.metadata) return [];
+        
+        if (typeof this.engine.metadata.getTypes === 'function') {
+            const types = this.engine.metadata.getTypes();
+            return types.filter((t: string) => {
+                const items = this.engine.metadata.list(t);
+                return items && items.length > 0;
+            }).filter((t: string) => t === 'object');
+        }
+        
+        if (typeof this.engine.metadata.list === 'function') {
+            try {
+                const objects = this.engine.metadata.list('object');
+                return objects.map((obj: any) => obj.name || obj.id).filter(Boolean);
+            } catch (e) {
+                return [];
+            }
+        }
+        
+        return [];
+    }
+    
+    /**
+     * Helper: Get metadata item
+     */
+    private getMetaItem(type: string, name: string): any {
+        if (!this.engine?.metadata) return null;
+        
+        if (typeof this.engine.metadata.get === 'function') {
+            return this.engine.metadata.get(type, name);
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Helper: Get data by ID
+     */
+    private async getData(objectName: string, id: string): Promise<any> {
+        if (!this.engine) return null;
+        
+        if (typeof this.engine.get === 'function') {
+            return await this.engine.get(objectName, id);
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Helper: Find data with query
+     */
+    private async findData(objectName: string, query: any): Promise<any[]> {
+        if (!this.engine) return [];
+        
+        if (typeof this.engine.find === 'function') {
+            const result = await this.engine.find(objectName, query);
+            return Array.isArray(result) ? result : (result?.value || []);
+        }
+        
+        return [];
+    }
+    
+    /**
+     * Helper: Create data
+     */
+    private async createData(objectName: string, data: any): Promise<any> {
+        if (!this.engine) return null;
+        
+        if (typeof this.engine.create === 'function') {
+            return await this.engine.create(objectName, data);
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Helper: Update data
+     */
+    private async updateData(objectName: string, id: string, data: any): Promise<any> {
+        if (!this.engine) return null;
+        
+        if (typeof this.engine.update === 'function') {
+            return await this.engine.update(objectName, id, data);
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Helper: Delete data
+     */
+    private async deleteData(objectName: string, id: string): Promise<boolean> {
+        if (!this.engine) return false;
+        
+        if (typeof this.engine.delete === 'function') {
+            return await this.engine.delete(objectName, id);
+        }
+        
+        return false;
     }
 
     /**
@@ -164,7 +268,7 @@ export class ODataV4Plugin {
      * Returns list of available entity sets
      */
     private async handleServiceDocument(req: IncomingMessage, res: ServerResponse): Promise<void> {
-        const entityTypes = this.protocol!.getMetaTypes();
+        const entityTypes = this.getMetaTypes();
         
         const serviceDoc = {
             '@odata.context': `${this.config.basePath}/$metadata`,
@@ -183,7 +287,7 @@ export class ODataV4Plugin {
      * Generates EDMX XML schema from ObjectStack metadata
      */
     private async handleMetadataDocument(req: IncomingMessage, res: ServerResponse): Promise<void> {
-        const entityTypes = this.protocol!.getMetaTypes();
+        const entityTypes = this.getMetaTypes();
         const namespace = this.config.namespace;
         
         // Build EDMX XML
@@ -195,7 +299,7 @@ export class ODataV4Plugin {
 
         // Generate EntityType for each object
         for (const objectName of entityTypes) {
-            const metadata = this.protocol!.getMetaItem('object', objectName) as any;
+            const metadata = this.getMetaItem('object', objectName) as any;
             edmx += `      <EntityType Name="${objectName}">
         <Key>
           <PropertyRef Name="id"/>
@@ -247,7 +351,7 @@ export class ODataV4Plugin {
         const queryParams = this.parseODataQuery(queryString);
 
         // Check if entity set exists
-        if (!this.protocol?.getMetaItem('object', entitySet)) {
+        if (!this.getMetaItem('object', entitySet)) {
             this.sendError(res, 404, `Entity set '${entitySet}' not found`);
             return;
         }
@@ -284,7 +388,7 @@ export class ODataV4Plugin {
      * Handle GET request for a single entity
      */
     private async handleGetEntity(res: ServerResponse, entitySet: string, id: string): Promise<void> {
-        const entity = await this.protocol!.getData(entitySet, id);
+        const entity = await this.getData(entitySet, id);
         
         if (!entity) {
             this.sendError(res, 404, 'Entity not found');
@@ -324,7 +428,7 @@ export class ODataV4Plugin {
             query.offset = parseInt(queryParams.$skip);
         }
 
-        const result = await this.protocol!.findData(entitySet, query);
+        const result = await this.findData(entitySet, query);
 
         this.sendJSON(res, 200, {
             '@odata.context': `${this.config.basePath}/$metadata#${entitySet}`,
@@ -338,7 +442,7 @@ export class ODataV4Plugin {
      */
     private async handleCreateEntity(req: IncomingMessage, res: ServerResponse, entitySet: string): Promise<void> {
         const body = await this.readBody(req);
-        const entity = await this.protocol!.createData(entitySet, body);
+        const entity = await this.createData(entitySet, body);
 
         this.sendJSON(res, 201, {
             '@odata.context': `${this.config.basePath}/$metadata#${entitySet}/$entity`,
@@ -351,7 +455,7 @@ export class ODataV4Plugin {
      */
     private async handleUpdateEntity(req: IncomingMessage, res: ServerResponse, entitySet: string, id: string): Promise<void> {
         const body = await this.readBody(req);
-        const entity = await this.protocol!.updateData(entitySet, id, body);
+        const entity = await this.updateData(entitySet, id, body);
 
         this.sendJSON(res, 200, {
             '@odata.context': `${this.config.basePath}/$metadata#${entitySet}/$entity`,
@@ -363,7 +467,7 @@ export class ODataV4Plugin {
      * Handle DELETE request to delete entity
      */
     private async handleDeleteEntity(res: ServerResponse, entitySet: string, id: string): Promise<void> {
-        await this.protocol!.deleteData(entitySet, id);
+        await this.deleteData(entitySet, id);
         res.writeHead(204);
         res.end();
     }

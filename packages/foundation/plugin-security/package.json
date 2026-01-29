@@ -24,9 +24,8 @@
     "test": "jest --passWithNoTests"
   },
   "dependencies": {
-    "@objectstack/runtime": "workspace:*",
     "@objectql/types": "workspace:*",
-    "@objectstack/spec": "workspace:*"
+    "@objectstack/core": "^0.6.1"
   },
   "devDependencies": {
     "typescript": "^5.3.0"

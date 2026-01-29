@@ -200,14 +200,14 @@ export class ObjectKernel {
 
 export class ObjectStackProtocolImplementation {}
 
-export interface any {
+export interface PluginContext {
     engine: ObjectKernel;
 }
 
 export interface ObjectQLPlugin {
     name: string;
-    install?: (ctx: any) => void | Promise<void>;
-    onStart?: (ctx: any) => void | Promise<void>;
+    install?: (ctx: PluginContext) => void | Promise<void>;
+    onStart?: (ctx: PluginContext) => void | Promise<void>;
 }
 
 // Export MetadataRegistry
