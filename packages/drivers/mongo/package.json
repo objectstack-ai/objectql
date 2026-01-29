@@ -21,7 +21,6 @@
   },
   "dependencies": {
     "@objectql/types": "workspace:*",
-    "@objectstack/spec": "workspace:*",
     "mongodb": "^5.9.2"
   },
   "devDependencies": {

@@ -43,7 +43,6 @@
     "@objectql/driver-sql": "workspace:*",
     "@objectql/platform-node": "workspace:*",
     "@objectql/types": "workspace:*",
-    "@objectstack/spec": "workspace:*",
     "@types/jest": "^30.0.0",
     "@types/node": "^20.0.0",
     "jest": "^30.2.0",

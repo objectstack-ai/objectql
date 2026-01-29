@@ -21,7 +21,6 @@
   },
   "dependencies": {
     "@objectql/types": "workspace:*",
-    "@objectstack/spec": "workspace:*",
     "exceljs": "^4.4.0"
   },
   "devDependencies": {
