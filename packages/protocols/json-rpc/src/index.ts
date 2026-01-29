@@ -84,7 +84,7 @@ interface MethodSignature {
  * 
  * @example
  * ```typescript
- * import { ObjectKernel } from '@objectstack/runtime';
+ * import { ObjectKernel } from '@objectstack/core';
  * import { JSONRPCPlugin } from '@objectql/protocol-json-rpc';
  * 
  * const kernel = new ObjectKernel([

@@ -38,7 +38,7 @@ export interface GraphQLPluginConfig {
  * 
  * @example
  * ```typescript
- * import { ObjectKernel } from '@objectstack/runtime';
+ * import { ObjectKernel } from '@objectstack/core';
  * import { GraphQLPlugin } from '@objectql/protocol-graphql';
  * 
  * const kernel = new ObjectKernel([
