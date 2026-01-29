@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { Validator } from '@objectql/core';
+import { Validator } from '@objectql/plugin-validator';
 import {
     ValidationContext,
     AnyValidationRule,
