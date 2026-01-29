@@ -8,8 +8,7 @@
  * Based on reference implementation by @hotlong
  */
 
-import type { ObjectQLPlugin } from '@objectstack/objectql';
-import { ObjectStackProtocolImplementation } from '@objectstack/objectql';
+import type { RuntimePlugin, RuntimeContext } from '@objectql/types';
 import { ApolloServer } from '@apollo/server';
 import { startStandaloneServer } from '@apollo/server/standalone';
 
@@ -28,7 +27,7 @@ export interface GraphQLPluginConfig {
 /**
  * GraphQL Protocol Plugin
  * 
- * Implements the ObjectQLPlugin interface to provide GraphQL protocol support.
+ * Implements the RuntimePlugin interface to provide GraphQL protocol support.
  * 
  * Key Features:
  * - Automatic schema generation from ObjectStack metadata
@@ -50,12 +49,12 @@ export interface GraphQLPluginConfig {
  * // Access Apollo Sandbox: http://localhost:4000/
  * ```
  */
-export class GraphQLPlugin {
+export class GraphQLPlugin implements RuntimePlugin {
     name = '@objectql/protocol-graphql';
     version = '0.1.0';
     
     private server?: ApolloServer;
-    private protocol?: ObjectStackProtocolImplementation;
+    private engine?: any;
     private config: Required<GraphQLPluginConfig>;
     private serverCleanup?: { url: string };
 
@@ -70,11 +69,11 @@ export class GraphQLPlugin {
     /**
      * Install hook - called during kernel initialization
      */
-    async install(ctx: any): Promise<void> {
+    async install(ctx: RuntimeContext): Promise<void> {
         console.log(`[${this.name}] Installing GraphQL protocol plugin...`);
         
-        // Initialize the protocol bridge
-        this.protocol = new ObjectStackProtocolImplementation(ctx.engine);
+        // Store reference to the engine for later use
+        this.engine = ctx.engine || (ctx as any).getKernel?.();
         
         console.log(`[${this.name}] Protocol bridge initialized`);
     }
@@ -83,8 +82,8 @@ export class GraphQLPlugin {
      * Start hook - called when kernel starts
      * This is where we start the GraphQL server
      */
-    async onStart(ctx: any): Promise<void> {
-        if (!this.protocol) {
+    async onStart(ctx: RuntimeContext): Promise<void> {
+        if (!this.engine) {
             throw new Error('Protocol not initialized. Install hook must be called first.');
         }
 
@@ -131,7 +130,7 @@ export class GraphQLPlugin {
     /**
      * Stop hook - called when kernel stops
      */
-    async onStop(ctx: any): Promise<void> {
+    async onStop(ctx: RuntimeContext): Promise<void> {
         if (this.server) {
             console.log(`[${this.name}] Stopping GraphQL server...`);
             await this.server.stop();
@@ -141,10 +140,121 @@ export class GraphQLPlugin {
     }
 
     /**
+     * Helper: Get list of registered object types from metadata
+     */
+    private getMetaTypes(): string[] {
+        if (!this.engine?.metadata) return [];
+        
+        // Try modern metadata API first
+        if (typeof this.engine.metadata.getTypes === 'function') {
+            const types = this.engine.metadata.getTypes();
+            // Filter to only 'object' types
+            return types.filter((t: string) => {
+                const items = this.engine.metadata.list(t);
+                return items && items.length > 0;
+            }).filter((t: string) => t === 'object');
+        }
+        
+        // Fallback to list method if available
+        if (typeof this.engine.metadata.list === 'function') {
+            try {
+                const objects = this.engine.metadata.list('object');
+                return objects.map((obj: any) => obj.name || obj.id).filter(Boolean);
+            } catch (e) {
+                return [];
+            }
+        }
+        
+        return [];
+    }
+    
+    /**
+     * Helper: Get metadata item
+     */
+    private getMetaItem(type: string, name: string): any {
+        if (!this.engine?.metadata) return null;
+        
+        if (typeof this.engine.metadata.get === 'function') {
+            return this.engine.metadata.get(type, name);
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Helper: Get data by ID
+     */
+    private async getData(objectName: string, id: string): Promise<any> {
+        if (!this.engine) return null;
+        
+        // Try modern kernel API
+        if (typeof this.engine.get === 'function') {
+            return await this.engine.get(objectName, id);
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Helper: Find data with query
+     */
+    private async findData(objectName: string, query: any): Promise<any[]> {
+        if (!this.engine) return [];
+        
+        // Try modern kernel API
+        if (typeof this.engine.find === 'function') {
+            const result = await this.engine.find(objectName, query);
+            // Handle both array response and {value, count} response
+            return Array.isArray(result) ? result : (result?.value || []);
+        }
+        
+        return [];
+    }
+    
+    /**
+     * Helper: Create data
+     */
+    private async createData(objectName: string, data: any): Promise<any> {
+        if (!this.engine) return null;
+        
+        if (typeof this.engine.create === 'function') {
+            return await this.engine.create(objectName, data);
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Helper: Update data
+     */
+    private async updateData(objectName: string, id: string, data: any): Promise<any> {
+        if (!this.engine) return null;
+        
+        if (typeof this.engine.update === 'function') {
+            return await this.engine.update(objectName, id, data);
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Helper: Delete data
+     */
+    private async deleteData(objectName: string, id: string): Promise<boolean> {
+        if (!this.engine) return false;
+        
+        if (typeof this.engine.delete === 'function') {
+            return await this.engine.delete(objectName, id);
+        }
+        
+        return false;
+    }
+
+    /**
      * Generate GraphQL schema from ObjectStack metadata
      */
     private generateSchema(): string {
-        const objectTypes = this.protocol!.getMetaTypes();
+        const objectTypes = this.getMetaTypes();
         
         let typeDefs = `#graphql
   type Query {
@@ -191,7 +301,7 @@ export class GraphQLPlugin {
 
         // Generate type definitions for each object
         for (const objectName of objectTypes) {
-            const metadata = this.protocol!.getMetaItem('object', objectName) as any;
+            const metadata = this.getMetaItem('object', objectName) as any;
             const pascalCaseName = this.toPascalCase(objectName);
             
             typeDefs += `  type ${pascalCaseName} {\n`;
@@ -220,19 +330,19 @@ export class GraphQLPlugin {
      * Generate GraphQL resolvers
      */
     private generateResolvers(): any {
-        const objectTypes = this.protocol!.getMetaTypes();
+        const objectTypes = this.getMetaTypes();
         
         const resolvers: any = {
             Query: {
                 hello: () => 'Hello from GraphQL Protocol Plugin!',
                 
                 getObjectMetadata: async (_: any, args: { name: string }) => {
-                    const meta = this.protocol!.getMetaItem('object', args.name);
+                    const meta = this.getMetaItem('object', args.name);
                     return JSON.stringify(meta, null, 2);
                 },
                 
                 listObjects: () => {
-                    return this.protocol!.getMetaTypes();
+                    return this.getMetaTypes();
                 }
             },
             Mutation: {}
@@ -245,7 +355,7 @@ export class GraphQLPlugin {
 
             // Query resolvers
             resolvers.Query[camelCaseName] = async (_: any, args: { id: string }) => {
-                return await this.protocol!.getData(objectName, args.id);
+                return await this.getData(objectName, args.id);
             };
 
             resolvers.Query[`${camelCaseName}List`] = async (_: any, args: { limit?: number; offset?: number }) => {
@@ -253,23 +363,23 @@ export class GraphQLPlugin {
                 if (args.limit) query.limit = args.limit;
                 if (args.offset) query.offset = args.offset;
                 
-                const result = await this.protocol!.findData(objectName, query);
+                const result = await this.findData(objectName, query);
                 return result;
             };
 
             // Mutation resolvers
             resolvers.Mutation[`create${pascalCaseName}`] = async (_: any, args: { input: string }) => {
                 const data = JSON.parse(args.input);
-                return await this.protocol!.createData(objectName, data);
+                return await this.createData(objectName, data);
             };
 
             resolvers.Mutation[`update${pascalCaseName}`] = async (_: any, args: { id: string; input: string }) => {
                 const data = JSON.parse(args.input);
-                return await this.protocol!.updateData(objectName, args.id, data);
+                return await this.updateData(objectName, args.id, data);
             };
 
             resolvers.Mutation[`delete${pascalCaseName}`] = async (_: any, args: { id: string }) => {
-                return await this.protocol!.deleteData(objectName, args.id);
+                return await this.deleteData(objectName, args.id);
             };
         }
 

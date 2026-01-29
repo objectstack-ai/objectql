@@ -17,7 +17,6 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@objectstack/runtime": "workspace:*",
     "@objectql/types": "workspace:*",
     "@apollo/server": "^4.10.0",
     "graphql": "^16.8.1"

@@ -6,8 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import type { ObjectQLPlugin } from '@objectstack/objectql';
-import { ObjectStackProtocolImplementation } from '@objectstack/objectql';
+import type { RuntimePlugin, RuntimeContext } from '@objectql/types';
 import { IncomingMessage, ServerResponse, createServer, Server } from 'http';
 
 /**
@@ -59,7 +58,7 @@ interface MethodSignature {
 /**
  * JSON-RPC 2.0 Protocol Plugin
  * 
- * Implements the ObjectQLPlugin interface to provide JSON-RPC 2.0 protocol support.
+ * Implements the RuntimePlugin interface to provide JSON-RPC 2.0 protocol support.
  * 
  * Key Features:
  * - Full JSON-RPC 2.0 specification compliance
@@ -102,12 +101,12 @@ interface MethodSignature {
  * // {"jsonrpc":"2.0","method":"object.find","params":{"objectName":"users","query":{"where":{"active":true}}},"id":1}
  * ```
  */
-export class JSONRPCPlugin {
+export class JSONRPCPlugin implements RuntimePlugin {
     name = '@objectql/protocol-json-rpc';
     version = '0.1.0';
     
     private server?: Server;
-    private protocol?: ObjectStackProtocolImplementation;
+    private engine?: any;
     private config: Required<JSONRPCPluginConfig>;
     private methods: Map<string, Function>;
     private methodSignatures: Map<string, MethodSignature>;
@@ -127,11 +126,11 @@ export class JSONRPCPlugin {
     /**
      * Install hook - called during kernel initialization
      */
-    async install(ctx: any): Promise<void> {
+    async install(ctx: RuntimeContext): Promise<void> {
         console.log(`[${this.name}] Installing JSON-RPC 2.0 protocol plugin...`);
         
-        // Initialize the protocol bridge
-        this.protocol = new ObjectStackProtocolImplementation(ctx.engine);
+        // Store reference to the engine for later use
+        this.engine = ctx.engine || (ctx as any).getKernel?.();
         
         // Register RPC methods
         this.registerMethods();
@@ -142,8 +141,8 @@ export class JSONRPCPlugin {
     /**
      * Start hook - called when kernel starts
      */
-    async onStart(ctx: any): Promise<void> {
-        if (!this.protocol) {
+    async onStart(ctx: RuntimeContext): Promise<void> {
+        if (!this.engine) {
             throw new Error('Protocol not initialized. Install hook must be called first.');
         }
 
@@ -164,7 +163,7 @@ export class JSONRPCPlugin {
     /**
      * Stop hook - called when kernel stops
      */
-    async onStop(ctx: any): Promise<void> {
+    async onStop(ctx: RuntimeContext): Promise<void> {
         if (this.server) {
             console.log(`[${this.name}] Stopping JSON-RPC 2.0 server...`);
             await new Promise<void>((resolve, reject) => {
@@ -178,12 +177,147 @@ export class JSONRPCPlugin {
     }
 
     /**
+     * Helper: Get list of registered object types from metadata
+     */
+    private getMetaTypes(): string[] {
+        if (!this.engine?.metadata) return [];
+        
+        if (typeof this.engine.metadata.getTypes === 'function') {
+            const types = this.engine.metadata.getTypes();
+            return types.filter((t: string) => {
+                const items = this.engine.metadata.list(t);
+                return items && items.length > 0;
+            }).filter((t: string) => t === 'object');
+        }
+        
+        if (typeof this.engine.metadata.list === 'function') {
+            try {
+                const objects = this.engine.metadata.list('object');
+                return objects.map((obj: any) => obj.name || obj.id).filter(Boolean);
+            } catch (e) {
+                return [];
+            }
+        }
+        
+        return [];
+    }
+    
+    /**
+     * Helper: Get metadata item
+     */
+    private getMetaItem(type: string, name: string): any {
+        if (!this.engine?.metadata) return null;
+        
+        if (typeof this.engine.metadata.get === 'function') {
+            return this.engine.metadata.get(type, name);
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Helper: Get all metadata items of a type
+     */
+    private getMetaItems(type: string): any[] {
+        if (!this.engine?.metadata) return [];
+        
+        if (typeof this.engine.metadata.list === 'function') {
+            try {
+                return this.engine.metadata.list(type);
+            } catch (e) {
+                return [];
+            }
+        }
+        
+        return [];
+    }
+    
+    /**
+     * Helper: Get UI view
+     */
+    private getUiView(objectName: string, viewType: 'list' | 'form'): any {
+        if (!this.engine) return null;
+        
+        if (typeof this.engine.getView === 'function') {
+            return this.engine.getView(objectName, viewType);
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Helper: Get data by ID
+     */
+    private async getData(objectName: string, id: string): Promise<any> {
+        if (!this.engine) return null;
+        
+        if (typeof this.engine.get === 'function') {
+            return await this.engine.get(objectName, id);
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Helper: Find data with query
+     */
+    private async findData(objectName: string, query: any): Promise<any[]> {
+        if (!this.engine) return [];
+        
+        if (typeof this.engine.find === 'function') {
+            const result = await this.engine.find(objectName, query);
+            return Array.isArray(result) ? result : (result?.value || []);
+        }
+        
+        return [];
+    }
+    
+    /**
+     * Helper: Create data
+     */
+    private async createData(objectName: string, data: any): Promise<any> {
+        if (!this.engine) return null;
+        
+        if (typeof this.engine.create === 'function') {
+            return await this.engine.create(objectName, data);
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Helper: Update data
+     */
+    private async updateData(objectName: string, id: string, data: any): Promise<any> {
+        if (!this.engine) return null;
+        
+        if (typeof this.engine.update === 'function') {
+            return await this.engine.update(objectName, id, data);
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Helper: Delete data
+     */
+    private async deleteData(objectName: string, id: string): Promise<boolean> {
+        if (!this.engine) return false;
+        
+        if (typeof this.engine.delete === 'function') {
+            return await this.engine.delete(objectName, id);
+        }
+        
+        return false;
+    }
+
+    /**
      * Register all available RPC methods with their signatures
      */
     private registerMethods(): void {
         // Object CRUD methods
         this.methods.set('object.find', async (objectName: string, query?: any) => {
-            return await this.protocol!.findData(objectName, query);
+            return await this.findData(objectName, query);
         });
         this.methodSignatures.set('object.find', {
             params: ['objectName', 'query'],
@@ -191,7 +325,7 @@ export class JSONRPCPlugin {
         });
 
         this.methods.set('object.get', async (objectName: string, id: string) => {
-            return await this.protocol!.getData(objectName, id);
+            return await this.getData(objectName, id);
         });
         this.methodSignatures.set('object.get', {
             params: ['objectName', 'id'],
@@ -199,7 +333,7 @@ export class JSONRPCPlugin {
         });
 
         this.methods.set('object.create', async (objectName: string, data: any) => {
-            return await this.protocol!.createData(objectName, data);
+            return await this.createData(objectName, data);
         });
         this.methodSignatures.set('object.create', {
             params: ['objectName', 'data'],
@@ -207,7 +341,7 @@ export class JSONRPCPlugin {
         });
 
         this.methods.set('object.update', async (objectName: string, id: string, data: any) => {
-            return await this.protocol!.updateData(objectName, id, data);
+            return await this.updateData(objectName, id, data);
         });
         this.methodSignatures.set('object.update', {
             params: ['objectName', 'id', 'data'],
@@ -215,7 +349,7 @@ export class JSONRPCPlugin {
         });
 
         this.methods.set('object.delete', async (objectName: string, id: string) => {
-            return await this.protocol!.deleteData(objectName, id);
+            return await this.deleteData(objectName, id);
         });
         this.methodSignatures.set('object.delete', {
             params: ['objectName', 'id'],
@@ -233,7 +367,7 @@ export class JSONRPCPlugin {
 
         // Metadata methods
         this.methods.set('metadata.list', async () => {
-            return this.protocol!.getMetaTypes();
+            return this.getMetaTypes();
         });
         this.methodSignatures.set('metadata.list', {
             params: [],
@@ -241,7 +375,7 @@ export class JSONRPCPlugin {
         });
 
         this.methods.set('metadata.get', async (objectName: string) => {
-            return this.protocol!.getMetaItem('object', objectName);
+            return this.getMetaItem('object', objectName);
         });
         this.methodSignatures.set('metadata.get', {
             params: ['objectName'],
@@ -254,7 +388,7 @@ export class JSONRPCPlugin {
                 throw new Error('Invalid metaType parameter: must be a non-empty string');
             }
             
-            return this.protocol!.getMetaItems(metaType);
+            return this.getMetaItems(metaType);
         });
         this.methodSignatures.set('metadata.getAll', {
             params: ['metaType'],
@@ -280,7 +414,7 @@ export class JSONRPCPlugin {
 
         // View methods
         this.methods.set('view.get', async (objectName: string, viewType?: 'list' | 'form') => {
-            return this.protocol!.getUiView(objectName, viewType || 'list');
+            return this.getUiView(objectName, viewType || 'list');
         });
         this.methodSignatures.set('view.get', {
             params: ['objectName', 'viewType'],
