@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@objectql/types": "workspace:*",
+    "@objectstack/spec": "^0.6.1",
     "@apollo/server": "^4.10.0",
     "graphql": "^16.8.1"
   },

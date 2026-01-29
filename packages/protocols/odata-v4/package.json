@@ -17,7 +17,8 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@objectql/types": "workspace:*"
+    "@objectql/types": "workspace:*",
+    "@objectstack/spec": "^0.6.1"
   },
   "devDependencies": {
     "typescript": "^5.3.3",
