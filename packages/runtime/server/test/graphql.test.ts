@@ -45,11 +45,13 @@ class MockDriver implements Driver {
         
         // Apply offset and limit if provided (QueryAST uses 'offset', not 'skip')
         if (query) {
-            if (query.offset) {
-                items = items.slice(query.offset);
-            }
-            if (query.limit) {
-                items = items.slice(0, query.limit);
+            const offset = query.offset || 0;
+            const limit = query.limit;
+            
+            if (limit !== undefined) {
+                items = items.slice(offset, offset + limit);
+            } else if (offset) {
+                items = items.slice(offset);
             }
         }
         

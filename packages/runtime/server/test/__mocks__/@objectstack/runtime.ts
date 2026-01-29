@@ -136,6 +136,11 @@ export class ObjectKernel {
             if (query.top !== undefined) {
                 unifiedQuery.limit = query.top;
             }
+            // QueryAST uses 'offset', pass it through
+            if (query.offset !== undefined) {
+                unifiedQuery.offset = query.offset;
+            }
+            // Legacy support: also handle 'skip' if present
             if (query.skip !== undefined) {
                 unifiedQuery.skip = query.skip;
             }
@@ -183,8 +188,8 @@ export class ObjectKernel {
     async delete(objectName: string, id: string): Promise<boolean> {
         // Delegate to driver during migration phase
         if (this.driver) {
-            await this.driver.delete(objectName, id, {});
-            return true;
+            const result = await this.driver.delete(objectName, id, {});
+            return result > 0; // Driver returns count of deleted records
         }
         return true;
     }

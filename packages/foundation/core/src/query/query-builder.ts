@@ -36,14 +36,20 @@ export class QueryBuilder {
         // UnifiedQuery now uses the same format as QueryAST
         // Just add the object name and pass through
         const ast: QueryAST = {
-            object: objectName,
-            ...query
+            object: objectName
         };
 
-        // Ensure where is properly formatted
-        if (query.where) {
-            ast.where = this.filterTranslator.translate(query.where);
-        }
+        // Map UnifiedQuery properties to QueryAST
+        if (query.fields) ast.fields = query.fields;
+        if (query.where) ast.where = this.filterTranslator.translate(query.where);
+        if (query.orderBy) ast.orderBy = query.orderBy;
+        if (query.offset !== undefined) ast.offset = query.offset;
+        if (query.limit !== undefined) ast.top = query.limit; // UnifiedQuery uses 'limit', QueryAST uses 'top'
+        if (query.expand) ast.expand = query.expand;
+        if (query.groupBy) ast.groupBy = query.groupBy;
+        if (query.aggregations) ast.aggregations = query.aggregations;
+        if (query.having) ast.having = query.having;
+        if (query.distinct) ast.distinct = query.distinct;
 
         return ast;
     }
