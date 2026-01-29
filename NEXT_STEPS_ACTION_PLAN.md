@@ -164,14 +164,14 @@ export class ObjectStackRuntimeProtocol {
   // Query Methods
   async findData(objectName: string, query?: any): Promise<{ value: any[]; count: number }> {
     if (!this.kernel.find) {
-      throw new Error('Kernel does not support find operation');
+      throw new Error('The kernel does not support the find operation');
     }
     return await this.kernel.find(objectName, query || {});
   }
   
   async getData(objectName: string, id: string): Promise<any> {
     if (!this.kernel.get) {
-      throw new Error('Kernel does not support get operation');
+      throw new Error('The kernel does not support the get operation');
     }
     return await this.kernel.get(objectName, id);
   }
@@ -184,21 +184,21 @@ export class ObjectStackRuntimeProtocol {
   // Mutation Methods
   async createData(objectName: string, data: any): Promise<any> {
     if (!this.kernel.create) {
-      throw new Error('Kernel does not support create operation');
+      throw new Error('The kernel does not support the create operation');
     }
     return await this.kernel.create(objectName, data);
   }
   
   async updateData(objectName: string, id: string, data: any): Promise<any> {
     if (!this.kernel.update) {
-      throw new Error('Kernel does not support update operation');
+      throw new Error('The kernel does not support the update operation');
     }
     return await this.kernel.update(objectName, id, data);
   }
   
   async deleteData(objectName: string, id: string): Promise<boolean> {
     if (!this.kernel.delete) {
-      throw new Error('Kernel does not support delete operation');
+      throw new Error('The kernel does not support the delete operation');
     }
     return await this.kernel.delete(objectName, id);
   }
@@ -338,7 +338,7 @@ import type Redis from 'ioredis';
 export interface RedisPermissionStorageConfig {
   redis: Redis;
   keyPrefix?: string;
-  ttl?: number; // Time to live in seconds
+  ttl?: number; // Time to live in seconds (sliding expiration - refreshed on each access)
 }
 
 export class RedisPermissionStorage {
@@ -369,20 +369,31 @@ export class RedisPermissionStorage {
       await this.redis.del(key);
     } else {
       // Delete all permissions for role
+      // Using SCAN instead of KEYS for production safety (non-blocking)
       const pattern = `${this.keyPrefix}${role}:*`;
-      const keys = await this.redis.keys(pattern);
-      if (keys.length > 0) {
-        await this.redis.del(...keys);
-      }
+      await this.scanAndDelete(pattern);
     }
   }
   
   async clear(): Promise<void> {
+    // Using SCAN instead of KEYS for production safety (non-blocking)
     const pattern = `${this.keyPrefix}*`;
-    const keys = await this.redis.keys(pattern);
-    if (keys.length > 0) {
-      await this.redis.del(...keys);
-    }
+    await this.scanAndDelete(pattern);
+  }
+  
+  /**
+   * Safely delete keys matching pattern using SCAN (non-blocking)
+   * @private
+   */
+  private async scanAndDelete(pattern: string): Promise<void> {
+    let cursor = '0';
+    do {
+      const [newCursor, keys] = await this.redis.scan(cursor, 'MATCH', pattern, 'COUNT', 100);
+      cursor = newCursor;
+      if (keys.length > 0) {
+        await this.redis.del(...keys);
+      }
+    } while (cursor !== '0');
   }
 }
 ```
