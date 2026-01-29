@@ -33,6 +33,7 @@
   "dependencies": {
     "@objectql/types": "workspace:*",
     "@objectql/core": "workspace:*",
+    "@objectql/plugin-validator": "workspace:*",
     "@objectql/server": "workspace:*",
     "@objectql/driver-sql": "workspace:*",
     "@objectql/platform-node": "workspace:*",

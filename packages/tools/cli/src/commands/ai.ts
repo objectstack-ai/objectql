@@ -12,7 +12,8 @@ import * as yaml from 'js-yaml';
 import * as readline from 'readline';
 import chalk from 'chalk';
 import OpenAI from 'openai';
-import { Validator, ObjectQLAgent } from '@objectql/core';
+import { ObjectQLAgent } from '@objectql/core';
+import { Validator } from '@objectql/plugin-validator';
 import { glob } from 'fast-glob';
 
 /**

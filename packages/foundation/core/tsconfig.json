@@ -10,6 +10,8 @@
     "dist"
   ],
   "references": [
-    { "path": "../types" }
+    { "path": "../types" },
+    { "path": "../plugin-validator" },
+    { "path": "../plugin-formula" }
   ]
 }
