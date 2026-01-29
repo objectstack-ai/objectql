@@ -90,12 +90,26 @@ export class ObjectQL implements IObjectQL {
              }
         }
 
+        // Helper to unwrap content property (matching MetadataRegistry behavior)
+        const unwrapContent = (item: any) => {
+            if (item && item.content) {
+                return item.content;
+            }
+            return item;
+        };
+
         // Stub legacy accessors
         (this.kernel as any).metadata = {
             register: (type: string, item: any) => SchemaRegistry.registerItem(type, item, item.id ? 'id' : 'name'),
-            get: (type: string, name: string) => SchemaRegistry.getItem(type, name),
+            get: (type: string, name: string) => {
+                const item = SchemaRegistry.getItem(type, name) as any;
+                return unwrapContent(item);
+            },
             getEntry: (type: string, name: string) => SchemaRegistry.getItem(type, name),
-            list: (type: string) => SchemaRegistry.listItems(type),
+            list: (type: string) => {
+                const items = SchemaRegistry.listItems(type);
+                return items.map(unwrapContent);
+            },
             unregister: (type: string, name: string) => {
                  // Access private static storage using any cast
                  const metadata = (SchemaRegistry as any).metadata;
