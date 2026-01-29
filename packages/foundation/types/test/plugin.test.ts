@@ -5,8 +5,7 @@
  * the RuntimePlugin interface as defined in @objectql/types
  */
 
-import { describe, it, expect } from 'vitest';
-import type { RuntimePlugin, RuntimeContext } from '@objectql/types';
+import type { RuntimePlugin, RuntimeContext } from '../src/plugin';
 
 // Mock RuntimeContext for testing
 const createMockContext = (): RuntimeContext => {
