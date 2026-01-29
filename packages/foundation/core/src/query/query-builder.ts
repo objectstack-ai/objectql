@@ -8,7 +8,15 @@
 
 import type { UnifiedQuery } from '@objectql/types';
 import { Data } from '@objectstack/spec';
-type QueryAST = Data.QueryAST;
+
+// Local QueryAST type extension to include all properties we need
+interface QueryAST extends Data.QueryAST {
+    top?: number;
+    expand?: Record<string, any>;
+    aggregations?: any[];
+    having?: any;
+}
+
 import { FilterTranslator } from './filter-translator';
 
 /**
