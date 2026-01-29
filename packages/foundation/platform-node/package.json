@@ -27,7 +27,6 @@
     "js-yaml": "^4.1.1"
   },
   "devDependencies": {
-    "@objectql/plugin-validator": "workspace:*",
     "typescript": "^5.3.0"
   }
 }
