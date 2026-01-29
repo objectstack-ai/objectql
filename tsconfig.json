@@ -2,6 +2,8 @@
   "files": [],
   "references": [
     { "path": "./packages/foundation/types" },
+    { "path": "./packages/foundation/plugin-validator" },
+    { "path": "./packages/foundation/plugin-formula" },
     { "path": "./packages/foundation/core" },
     { "path": "./packages/drivers/mongo" },
     { "path": "./packages/drivers/sql" },
