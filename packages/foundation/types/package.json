@@ -26,15 +26,9 @@
     "generate:schemas": "node scripts/generate-schemas.js",
     "test": "jest --passWithNoTests"
   },
-  "peerDependencies": {
-    "@objectstack/runtime": "workspace:*",
-    "@objectstack/spec": "workspace:*"
-  },
-  "dependencies": {
-    "@objectstack/spec": "workspace:*"
-  },
+  "peerDependencies": {},
+  "dependencies": {},
   "devDependencies": {
-    "@objectstack/runtime": "workspace:*",
     "ts-json-schema-generator": "^2.4.0",
     "zod": "^3.23.8"
   }

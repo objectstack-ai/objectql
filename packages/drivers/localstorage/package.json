@@ -20,8 +20,7 @@
     "test": "jest"
   },
   "dependencies": {
-    "@objectql/types": "workspace:*",
-    "@objectstack/spec": "workspace:*"
+    "@objectql/types": "workspace:*"
   },
   "devDependencies": {
     "@types/jest": "^29.0.0",
