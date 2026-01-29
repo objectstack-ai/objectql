@@ -209,21 +209,56 @@ export class QueryTrimmer {
     // Remove whitespace for easier parsing
     const normalized = formula.trim();
     
-    // Pattern 1: Simple field comparison (e.g., "status == 'active'")
+    // Pattern 1: Logical OR (check first since it has lower precedence)
+    // Split on || but not inside quotes
+    const orParts = this.splitOnOperator(normalized, '||');
+    if (orParts.length > 1) {
+      const filters = orParts.map(part => this.formulaToFilter(part, user)).filter(f => Object.keys(f).length > 0);
+      if (filters.length > 1) {
+        return { $or: filters };
+      } else if (filters.length === 1) {
+        return filters[0];
+      }
+    }
+    
+    // Pattern 2: Logical AND
+    const andParts = this.splitOnOperator(normalized, '&&');
+    if (andParts.length > 1) {
+      const filters = andParts.map(part => this.formulaToFilter(part, user)).filter(f => Object.keys(f).length > 0);
+      if (filters.length > 1) {
+        return { $and: filters };
+      } else if (filters.length === 1) {
+        return filters[0];
+      }
+    }
+    
+    // Pattern 3: Simple field comparison (e.g., "status == 'active'")
     const simpleCompareMatch = normalized.match(/^(\w+)\s*(==|!=|>|>=|<|<=)\s*(.+)$/);
     if (simpleCompareMatch) {
       const field = simpleCompareMatch[1];
       const operator = simpleCompareMatch[2];
-      let value = simpleCompareMatch[3].trim();
+      let value: any = simpleCompareMatch[3].trim();
       
       // Remove quotes from string values
       if ((value.startsWith("'") && value.endsWith("'")) || 
           (value.startsWith('"') && value.endsWith('"'))) {
         value = value.slice(1, -1);
+      } else if (/^\d+$/.test(value)) {
+        // Parse numeric values
+        value = parseInt(value, 10);
+      } else if (/^\d+\.\d+$/.test(value)) {
+        // Parse float values
+        value = parseFloat(value);
+      } else if (value === 'true') {
+        value = true;
+      } else if (value === 'false') {
+        value = false;
+      } else if (value === 'null') {
+        value = null;
       }
       
       // Resolve user context
-      if (value.startsWith('$current_user.')) {
+      if (typeof value === 'string' && value.startsWith('$current_user.')) {
         const path = value.substring('$current_user.'.length);
         value = this.getFieldValue(user, path);
       }
@@ -231,28 +266,6 @@ export class QueryTrimmer {
       // Convert to MongoDB filter
       const mongoOp = this.jsOperatorToMongoOperator(operator);
       return this.operatorToMongoFilter(field, mongoOp, value);
-    }
-    
-    // Pattern 2: Logical AND (e.g., "status == 'active' && owner == $current_user.id")
-    const andMatch = normalized.match(/^(.+)\s+&&\s+(.+)$/);
-    if (andMatch) {
-      const left = this.formulaToFilter(andMatch[1], user);
-      const right = this.formulaToFilter(andMatch[2], user);
-      
-      if (Object.keys(left).length > 0 && Object.keys(right).length > 0) {
-        return { $and: [left, right] };
-      }
-    }
-    
-    // Pattern 3: Logical OR (e.g., "status == 'active' || status == 'pending'")
-    const orMatch = normalized.match(/^(.+)\s+\|\|\s+(.+)$/);
-    if (orMatch) {
-      const left = this.formulaToFilter(orMatch[1], user);
-      const right = this.formulaToFilter(orMatch[2], user);
-      
-      if (Object.keys(left).length > 0 && Object.keys(right).length > 0) {
-        return { $or: [left, right] };
-      }
     }
     
     // Pattern 4: Field existence check (e.g., "owner" or "!owner")
@@ -267,6 +280,61 @@ export class QueryTrimmer {
     
     // Unable to convert formula to filter
     throw new Error(`Unsupported formula pattern: ${formula}`);
+  }
+  
+  /**
+   * Split formula on an operator, respecting quotes
+   */
+  private splitOnOperator(formula: string, operator: string): string[] {
+    const parts: string[] = [];
+    let current = '';
+    let inQuote = false;
+    let quoteChar = '';
+    
+    for (let i = 0; i < formula.length; i++) {
+      const char = formula[i];
+      const nextChar = formula[i + 1];
+      
+      // Handle quotes
+      if ((char === '"' || char === "'") && (i === 0 || formula[i - 1] !== '\\')) {
+        if (!inQuote) {
+          inQuote = true;
+          quoteChar = char;
+        } else if (char === quoteChar) {
+          inQuote = false;
+          quoteChar = '';
+        }
+        current += char;
+        continue;
+      }
+      
+      // Check for operator
+      if (!inQuote) {
+        if (operator === '||' && char === '|' && nextChar === '|') {
+          if (current.trim()) {
+            parts.push(current.trim());
+          }
+          current = '';
+          i++; // Skip next character
+          continue;
+        } else if (operator === '&&' && char === '&' && nextChar === '&') {
+          if (current.trim()) {
+            parts.push(current.trim());
+          }
+          current = '';
+          i++; // Skip next character
+          continue;
+        }
+      }
+      
+      current += char;
+    }
+    
+    if (current.trim()) {
+      parts.push(current.trim());
+    }
+    
+    return parts.length > 0 ? parts : [formula];
   }
   
   /**

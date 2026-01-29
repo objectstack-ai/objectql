@@ -431,4 +431,104 @@ describe('CLI Commands', () => {
             expect(originalContent).toBeDefined();
         });
     });
+
+    describe('test command', () => {
+        beforeEach(() => {
+            // Create a test package.json for testing
+            const packageJson = {
+                name: 'test-project',
+                version: '1.0.0',
+                scripts: {
+                    test: 'echo "test script"'
+                }
+            };
+            
+            fs.writeFileSync(
+                path.join(testDir, 'package.json'),
+                JSON.stringify(packageJson, null, 2),
+                'utf-8'
+            );
+        });
+
+        it('should detect missing test runner', async () => {
+            const packageJson = {
+                name: 'test-project',
+                version: '1.0.0',
+                scripts: {}
+            };
+            
+            fs.writeFileSync(
+                path.join(testDir, 'package.json'),
+                JSON.stringify(packageJson, null, 2),
+                'utf-8'
+            );
+            
+            // Mock console.log to capture output
+            const consoleSpy = jest.spyOn(console, 'log');
+            
+            const { test } = require('../src/commands/test');
+            await test({ dir: testDir });
+            
+            // Should show no test configuration message
+            expect(consoleSpy).toHaveBeenCalledWith(
+                expect.stringContaining('No test configuration found')
+            );
+            
+            consoleSpy.mockRestore();
+        });
+    });
+
+    describe('doctor command', () => {
+        it('should check Node.js version', async () => {
+            const consoleSpy = jest.spyOn(console, 'log');
+            
+            const { doctorCommand } = require('../src/commands/doctor');
+            await doctorCommand();
+            
+            // Should print Node.js version
+            expect(consoleSpy).toHaveBeenCalledWith(
+                expect.stringContaining('Node.js:')
+            );
+            
+            consoleSpy.mockRestore();
+        });
+
+        it('should check for package.json', async () => {
+            const originalCwd = process.cwd();
+            
+            try {
+                // Change to test directory
+                process.chdir(testDir);
+                
+                // Create a minimal package.json
+                const packageJson = {
+                    name: 'test-project',
+                    version: '1.0.0',
+                    dependencies: {
+                        '@objectql/core': '^4.0.0'
+                    }
+                };
+                
+                fs.writeFileSync(
+                    path.join(testDir, 'package.json'),
+                    JSON.stringify(packageJson, null, 2),
+                    'utf-8'
+                );
+                
+                const consoleSpy = jest.spyOn(console, 'log');
+                
+                const { doctorCommand } = require('../src/commands/doctor');
+                await doctorCommand();
+                
+                // Should detect package.json
+                expect(consoleSpy).toHaveBeenCalledWith(
+                    expect.stringContaining('package.json')
+                );
+                
+                consoleSpy.mockRestore();
+            } finally {
+                process.chdir(originalCwd);
+            }
+        });
+    });
 });
