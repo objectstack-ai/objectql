@@ -13,10 +13,18 @@ module.exports = {
   moduleNameMapper: {
   },
   transform: {
-    '^.+\\.ts$': ['ts-jest', {
+    '^.+\\.(t|j)sx?$': ['ts-jest', {
       isolatedModules: true,
+      tsconfig: {
+        esModuleInterop: true,
+        allowSyntheticDefaultImports: true,
+        allowJs: true,
+      }
     }],
   },
+  transformIgnorePatterns: [
+    "/node_modules/(?!(@objectstack|.pnpm))"
+  ],
   collectCoverageFrom: [
     'src/**/*.ts',
     '!src/**/*.d.ts',

@@ -11,13 +11,22 @@ module.exports = {
     testEnvironment: 'node',
     testMatch: ['**/*.test.ts'],
     moduleNameMapper: {
-        '^@objectstack/runtime$': '<rootDir>/../../../../spec/packages/runtime/src',
-        '^@objectstack/core$': '<rootDir>/../../../../spec/packages/core/src',
-        '^@objectstack/objectql$': '<rootDir>/../../../../spec/packages/objectql/src',
+        '^@objectstack/runtime$': '<rootDir>/test/__mocks__/@objectstack/runtime.ts',
+        '^@objectstack/core$': '<rootDir>/test/__mocks__/@objectstack/core.ts',
+        '^@objectstack/objectql$': '<rootDir>/test/__mocks__/@objectstack/objectql.ts',
         '^@objectql/types$': '<rootDir>/../../foundation/types/src',
         '^@objectql/core$': '<rootDir>/../../foundation/core/src',
         '^@objectql/driver-sql$': '<rootDir>/../../drivers/sql/src',
         '^@objectql/driver-mongo$': '<rootDir>/../../drivers/mongo/src',
         '^(.*)\\.js$': '$1',
-    }
+    },
+    transform: {
+        '^.+\\.ts$': ['ts-jest', {
+            isolatedModules: true,
+            tsconfig: {
+                esModuleInterop: true,
+                allowSyntheticDefaultImports: true,
+            }
+        }],
+    },
 };

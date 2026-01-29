@@ -1,13 +1,13 @@
 {
   "compilerOptions": {
     "target": "ES2019",
-    "module": "commonjs",
+    "module": "nodenext",
     "declaration": true,
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "moduleResolution": "node",
+    "moduleResolution": "nodenext",
     "baseUrl": ".",
     "paths": {
       "@objectstack/spec": ["./node_modules/@objectstack/spec/dist/index.d.ts"],

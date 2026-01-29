@@ -32,13 +32,15 @@ class MockDriver implements Driver {
             items = items.filter(item => this.matchesFilter(item, query.filters));
         }
         
-        // Apply skip and top/limit if provided (QueryAST uses 'top' for limit)
+        // Apply skip and top/limit if provided (QueryAST uses 'top' for limit, also support 'offset')
         if (query) {
-            if (query.skip) {
-                items = items.slice(query.skip);
-            }
-            if (query.top || query.limit) {
-                items = items.slice(0, query.top || query.limit);
+            const skip = query.offset || query.skip || 0;
+            const limit = query.top || query.limit;
+            
+            if (limit !== undefined) {
+                items = items.slice(skip, skip + limit);
+            } else if (skip) {
+                items = items.slice(skip);
             }
         }
         
