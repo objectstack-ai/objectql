@@ -30,3 +30,7 @@ export * from './query';
 // Export utilities
 export * from './util';
 export * from './ai-agent';
+
+// Re-export plugin classes for backward compatibility
+export { Validator, ValidatorPlugin } from '@objectql/plugin-validator';
+export { FormulaEngine, FormulaPlugin } from '@objectql/plugin-formula';
