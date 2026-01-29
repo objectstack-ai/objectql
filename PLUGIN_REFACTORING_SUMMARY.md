@@ -6,7 +6,7 @@
 
 ## Executive Summary
 
-The formula engine and validator have been successfully refactored from the monolithic `@objectql/core` package into two separate, dedicated plugin packages. This architectural improvement follows the micro-kernel pattern and provides better modularity while maintaining 100% backward compatibility.
+The formula engine and validator have been successfully refactored from the monolithic `@objectql/core` package into two separate, dedicated plugin packages. This architectural improvement follows the micro-kernel pattern and provides better modularity with clean separation of concerns.
 
 ## Changes Implemented
 
@@ -45,12 +45,12 @@ The formula engine and validator have been successfully refactored from the mono
 
 #### @objectql/core (v4.0.2)
 - **Changes**:
-  - Added dependencies on new plugin packages
-  - Re-exports components for backward compatibility
+  - Added dependencies on new plugin packages (for internal use)
+  - **Does NOT re-export components** - clean separation enforced
   - Updated imports in repository.ts, ai-agent.ts, plugin.ts
   - Removed 1,317 lines of code (moved to plugins)
 - **Tests**: 121 tests across 7 suites (all passing)
-- **Migration**: Zero breaking changes for existing users
+- **Migration**: Breaking change - users must update imports
 
 ## Architecture Benefits
 
@@ -75,8 +75,7 @@ The formula engine and validator have been successfully refactored from the mono
 @objectql/core (lean, focused)
 ├── Core repository logic
 ├── Query builder
-├── AI agent
-└── Re-exports plugins for compatibility
+└── AI agent
 ```
 
 ## Key Advantages
@@ -86,7 +85,7 @@ The formula engine and validator have been successfully refactored from the mono
 3. **Maintainability**: Each plugin can be developed and tested independently
 4. **Versioning**: Plugins can be versioned separately from core
 5. **Consistency**: Follows the established plugin pattern (@objectql/plugin-security)
-6. **Backward Compatibility**: Existing code works without modification
+6. **Clean Separation**: No re-exports, explicit dependencies required
 
 ## Testing Coverage
 
@@ -105,14 +104,15 @@ The formula engine and validator have been successfully refactored from the mono
 
 ## Migration Path
 
-### For Existing Users (No Changes Required)
-```typescript
-// This still works!
-import { FormulaEngine, Validator } from '@objectql/core';
-```
+### Required Import Updates
 
-### For New Projects (Recommended)
+Users must update their imports to use the new packages:
+
 ```typescript
+// Before
+import { FormulaEngine, Validator } from '@objectql/core';
+
+// After
 import { FormulaEngine } from '@objectql/plugin-formula';
 import { Validator } from '@objectql/plugin-validator';
 ```
@@ -169,7 +169,7 @@ The new architecture:
 - Improves code organization and maintainability
 - Enables better bundle optimization
 - Follows established patterns in the codebase
-- Maintains 100% backward compatibility
+- Enforces clean separation with explicit dependencies
 - Passes all 282 existing tests
 - Has zero security vulnerabilities
 
@@ -182,4 +182,4 @@ This change positions ObjectQL for better scalability and makes it easier for us
 2. Update changelog for v4.0.2
 3. Publish new packages to npm
 4. Update main documentation site
-5. Consider deprecation timeline for core re-exports (suggested: v5.0.0)
+5. Notify users of breaking changes in release notes

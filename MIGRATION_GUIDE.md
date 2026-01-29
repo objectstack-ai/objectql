@@ -33,27 +33,18 @@ This change improves modularity and allows applications to include only the feat
   └── ValidatorPlugin
 
 @objectql/core
-  └── [re-exports above for backward compatibility]
+  └── [core repository and query logic only]
 ```
 
 ### Breaking Changes
 
-**None for most users!** The `@objectql/core` package continues to re-export these components for backward compatibility.
+**Important:** The `@objectql/core` package no longer re-exports formula and validator components. You must update your imports to use the new packages directly.
 
 ## Migration Path
 
-### Option 1: No Changes Required (Recommended for Quick Migration)
+### Required Changes
 
-If you're currently importing from `@objectql/core`, your code will continue to work without changes:
-
-```typescript
-// This still works!
-import { FormulaEngine, Validator } from '@objectql/core';
-```
-
-### Option 2: Use New Packages (Recommended for New Code)
-
-For better tree-shaking and explicit dependencies, update your imports:
+You must update your imports to use the new packages:
 
 **Before:**
 ```typescript
@@ -69,7 +60,7 @@ import { Validator, ValidatorPlugin } from '@objectql/plugin-validator';
 
 ### Installing the New Packages
 
-If you want to use the new packages directly:
+Install the plugins you need:
 
 ```bash
 pnpm add @objectql/plugin-formula @objectql/plugin-validator
@@ -161,13 +152,6 @@ All existing tests have been migrated to the new packages and continue to pass. 
 - **Formula Tests**: 109 tests across 4 test suites
 - **Validator Tests**: 52 tests across 3 test suites
 - **Core Tests**: 121 tests across 7 test suites
-
-## Deprecation Timeline
-
-- **v4.0.2**: Re-exports added to `@objectql/core` for backward compatibility
-- **v5.0.0**: Re-exports will be removed (planned)
-
-We recommend migrating to the new packages at your convenience before v5.0.0.
 
 ## Support
 

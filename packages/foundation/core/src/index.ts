@@ -24,11 +24,6 @@ export * from './repository';
 export * from './app';
 export * from './plugin';
 
-// Re-export plugin components for backward compatibility
-// These are now in separate packages but we maintain the same exports
-export * from '@objectql/plugin-validator';
-export * from '@objectql/plugin-formula';
-
 // Export query-specific modules (ObjectQL core competency)
 export * from './query';
 
