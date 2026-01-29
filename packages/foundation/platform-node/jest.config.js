@@ -11,9 +11,11 @@ module.exports = {
   testEnvironment: 'node',
   testMatch: ['**/test/**/*.test.ts'],
   moduleNameMapper: {
-    '^@objectstack/runtime$': '<rootDir>/../../objectstack/runtime/src',
-    '^@objectstack/runtime$': '<rootDir>/test/__mocks__/@objectstack/runtime.ts',
+    '^@objectstack/runtime$': '<rootDir>/../../../../spec/packages/runtime/src',
+    '^@objectstack/core$': '<rootDir>/../../../../spec/packages/core/src',
+    '^@objectstack/objectql$': '<rootDir>/../../../../spec/packages/objectql/src',
     '^@objectql/(.*)$': '<rootDir>/../$1/src',
+    '^(.*)\\.js$': '$1',
   },
   transform: {
     '^.+\\.ts$': ['ts-jest', {
