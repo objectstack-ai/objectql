@@ -123,6 +123,7 @@ export namespace Data {
      * QueryAST - Abstract Syntax Tree for queries
      */
     export interface QueryAST {
+        object?: string;
         fields?: string[];
         where?: FilterCondition;
         orderBy?: SortNode[];
@@ -130,6 +131,7 @@ export namespace Data {
         limit?: number;
         aggregations?: AggregationNode[];
         groupBy?: string[];
+        distinct?: boolean;
     }
 }
 

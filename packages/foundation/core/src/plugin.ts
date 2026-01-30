@@ -18,14 +18,14 @@ import type { Driver } from '@objectql/types';
  * Extended ObjectStack Kernel with ObjectQL services
  */
 interface ExtendedKernel extends ObjectKernel {
-    metadata?: any;
-    actions?: any;
+    metadata: any;
+    actions: any;
     getAllDrivers?: () => Driver[];
-    create?: (objectName: string, data: any) => Promise<any>;
-    update?: (objectName: string, id: string, data: any) => Promise<any>;
-    delete?: (objectName: string, id: string) => Promise<any>;
-    find?: (objectName: string, query: any) => Promise<any>;
-    get?: (objectName: string, id: string) => Promise<any>;
+    create: (objectName: string, data: any) => Promise<any>;
+    update: (objectName: string, id: string, data: any) => Promise<any>;
+    delete: (objectName: string, id: string) => Promise<any>;
+    find: (objectName: string, query: any) => Promise<any>;
+    get: (objectName: string, id: string) => Promise<any>;
     queryService?: QueryService;
     queryAnalyzer?: QueryAnalyzer;
 }

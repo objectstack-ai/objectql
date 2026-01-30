@@ -23,11 +23,11 @@ import { QueryCompiler } from './optimizations/QueryCompiler';
 interface ExtendedKernel extends ObjectKernel {
     validator?: Validator;
     formulaEngine?: FormulaEngine;
-    create?: (objectName: string, data: any) => Promise<any>;
-    update?: (objectName: string, id: string, data: any) => Promise<any>;
-    delete?: (objectName: string, id: string) => Promise<any>;
-    find?: (objectName: string, query: any) => Promise<any>;
-    get?: (objectName: string, id: string) => Promise<any>;
+    create: (objectName: string, data: any) => Promise<Record<string, any>>;
+    update: (objectName: string, id: string, data: any) => Promise<Record<string, any>>;
+    delete: (objectName: string, id: string) => Promise<boolean>;
+    find: (objectName: string, query: any) => Promise<{ value: Record<string, any>[]; count: number }>;
+    get: (objectName: string, id: string) => Promise<Record<string, any>>;
 }
 
 export class ObjectRepository {
