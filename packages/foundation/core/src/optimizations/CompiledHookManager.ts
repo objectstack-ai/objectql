@@ -50,7 +50,8 @@ export class CompiledHookManager {
         }
         
         if (pattern.includes('*')) {
-            const regex = new RegExp('^' + pattern.replace('*', '.*') + '$');
+            // Use global replace to handle all occurrences of *
+            const regex = new RegExp('^' + pattern.replace(/\*/g, '.*') + '$');
             return eventTypes.filter(event => regex.test(event));
         }
 
