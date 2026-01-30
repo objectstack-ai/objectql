@@ -7,12 +7,12 @@
  */
 
 import { ObjectQLPlugin } from '../src/plugin';
-import { ValidatorPlugin } from '../src/validator-plugin';
-import { FormulaPlugin } from '../src/formula-plugin';
+import { ValidatorPlugin } from '@objectql/plugin-validator';
+import { FormulaPlugin } from '@objectql/plugin-formula';
 
 // Mock the sub-plugins
-jest.mock('../src/validator-plugin');
-jest.mock('../src/formula-plugin');
+jest.mock('@objectql/plugin-validator');
+jest.mock('@objectql/plugin-formula');
 
 describe('ObjectQLPlugin Integration', () => {
     let plugin: ObjectQLPlugin;

@@ -132,12 +132,26 @@ export interface BusinessRuleConstraint {
     expression?: string;
     /** Relationships needed for the rule */
     relationships?: Record<string, ValidationRelationship>;
-    /** Logical AND conditions */
-    all_of?: ValidationCondition[];
-    /** Logical OR conditions */
-    any_of?: ValidationCondition[];
-    /** Required field condition */
-    then_require?: ValidationCondition[];
+    /** 
+     * Logical AND conditions (all must be true).
+     * Can be an array of field names (checks if fields are present and non-empty)
+     * or ValidationCondition objects for more complex validations.
+     */
+    all_of?: (string | ValidationCondition)[];
+    /** 
+     * Logical OR conditions (at least one must be true).
+     * Can be an array of field names (checks if at least one field is present and non-empty)
+     * or ValidationCondition objects for more complex validations.
+     */
+    any_of?: (string | ValidationCondition)[];
+    /** Conditional field check - if this field is truthy, then_require fields must be present */
+    if_field?: string;
+    /** 
+     * Required fields when if_field condition is met.
+     * Can be an array of field names (checks if fields are present and non-empty)
+     * or ValidationCondition objects for more complex validations.
+     */
+    then_require?: (string | ValidationCondition)[];
 }
 
 /**
@@ -198,11 +212,22 @@ export interface ValidationRule {
 
 /**
  * Cross-field validation rule.
+ * Supports two formats:
+ * 1. Using the 'rule' property with a ValidationCondition object
+ * 2. Shorthand format with field, operator, and value/compare_to properties directly on the rule
  */
 export interface CrossFieldValidationRule extends ValidationRule {
     type: 'cross_field';
     /** The validation rule to apply */
     rule?: ValidationCondition;
+    /** Shorthand: Field to check (alternative to using rule property) */
+    field?: string;
+    /** Shorthand: Comparison operator (alternative to using rule property) */
+    operator?: ValidationOperator;
+    /** Shorthand: Value to compare against (mutually exclusive with compare_to) */
+    value?: any;
+    /** Shorthand: Field name to compare against for cross-field validation (mutually exclusive with value) */
+    compare_to?: string;
 }
 
 /**

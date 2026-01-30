@@ -35,7 +35,9 @@ export interface FormulaPluginConfig extends FormulaEngineConfig {
  * Registers formula evaluation capabilities into the kernel.
  */
 export class FormulaPlugin implements Plugin {
-  name = '@objectql/formulas';  type = 'formula' as const;  version = '4.0.0';
+  name = '@objectql/formulas';
+  type = 'formula' as const;
+  version = '4.0.0';
   
   private engine: FormulaEngine;
   private config: FormulaPluginConfig;

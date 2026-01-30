@@ -23,14 +23,10 @@ export type DriverOptions = System.DriverOptions;
 export * from './repository';
 export * from './app';
 export * from './plugin';
-export * from './validator-plugin';
-export * from './formula-plugin';
 
 // Export query-specific modules (ObjectQL core competency)
 export * from './query';
 
 // Export utilities
-export * from './validator';
 export * from './util';
 export * from './ai-agent';
-export * from './formula-engine';

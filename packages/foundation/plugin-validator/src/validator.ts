@@ -314,11 +314,25 @@ export class Validator {
         rule: CrossFieldValidationRule,
         context: ValidationContext
     ): Promise<ValidationRuleResult> {
-        if (!rule.rule) {
+        let condition: ValidationCondition;
+
+        // Support shorthand format (field, operator, value/compare_to directly on rule)
+        if (rule.field && rule.operator !== undefined) {
+            condition = {
+                field: rule.field,
+                operator: rule.operator,
+                value: rule.value,
+                compare_to: rule.compare_to,
+            };
+        } else if (rule.rule) {
+            // Use the rule property
+            condition = rule.rule;
+        } else {
+            // No validation condition specified
             return { rule: rule.name, valid: true };
         }
 
-        const valid = this.evaluateCondition(rule.rule, context.record);
+        const valid = this.evaluateCondition(condition, context.record);
 
         return {
             rule: rule.name,
@@ -535,7 +549,13 @@ export class Validator {
 
         // Evaluate all_of conditions (all must be true)
         if (constraint.all_of && constraint.all_of.length > 0) {
-            valid = constraint.all_of.every(condition => this.evaluateCondition(condition, context.record));
+            valid = constraint.all_of.every(condition => {
+                // Handle string (field name) or ValidationCondition object
+                if (typeof condition === 'string') {
+                    return this.isFieldPresent(context.record, condition);
+                }
+                return this.evaluateCondition(condition, context.record);
+            });
             
             if (!valid) {
                 return {
@@ -550,7 +570,13 @@ export class Validator {
 
         // Evaluate any_of conditions (at least one must be true)
         if (constraint.any_of && constraint.any_of.length > 0) {
-            valid = constraint.any_of.some(condition => this.evaluateCondition(condition, context.record));
+            valid = constraint.any_of.some(condition => {
+                // Handle string (field name) or ValidationCondition object
+                if (typeof condition === 'string') {
+                    return this.isFieldPresent(context.record, condition);
+                }
+                return this.evaluateCondition(condition, context.record);
+            });
             
             if (!valid) {
                 return {
@@ -573,17 +599,34 @@ export class Validator {
 
         // Evaluate then_require conditions (conditional required fields)
         if (constraint.then_require && constraint.then_require.length > 0) {
-            for (const condition of constraint.then_require) {
-                const conditionMet = this.evaluateCondition(condition, context.record);
-                
-                if (!conditionMet) {
-                    return {
-                        rule: rule.name,
-                        valid: false,
-                        message: this.formatMessage(rule.message, context.record),
-                        error_code: rule.error_code,
-                        severity: rule.severity || 'error',
-                    };
+            // Check if the if_field condition is met
+            let shouldCheckRequiredFields = true;
+            if (constraint.if_field) {
+                // Only check required fields if if_field is truthy
+                const ifFieldValue = context.record[constraint.if_field];
+                shouldCheckRequiredFields = Boolean(ifFieldValue);
+            }
+
+            if (shouldCheckRequiredFields) {
+                for (const condition of constraint.then_require) {
+                    let conditionMet: boolean;
+                    
+                    // Handle string (field name) or ValidationCondition object
+                    if (typeof condition === 'string') {
+                        conditionMet = this.isFieldPresent(context.record, condition);
+                    } else {
+                        conditionMet = this.evaluateCondition(condition, context.record);
+                    }
+                    
+                    if (!conditionMet) {
+                        return {
+                            rule: rule.name,
+                            valid: false,
+                            message: this.formatMessage(rule.message, context.record),
+                            error_code: rule.error_code,
+                            severity: rule.severity || 'error',
+                        };
+                    }
                 }
             }
         }
@@ -648,8 +691,17 @@ export class Validator {
     /**
      * Compare two values using an operator.
      */
-    private compareValues(a: any, operator: ValidationOperator, b: any): boolean {
-        switch (operator) {
+    private compareValues(a: any, operator: ValidationOperator | string, b: any): boolean {
+        // Normalize operator aliases
+        let normalizedOperator = operator;
+        if (operator === 'eq') normalizedOperator = '=';
+        if (operator === 'ne' || operator === 'neq') normalizedOperator = '!=';
+        if (operator === 'gt') normalizedOperator = '>';
+        if (operator === 'gte') normalizedOperator = '>=';
+        if (operator === 'lt') normalizedOperator = '<';
+        if (operator === 'lte') normalizedOperator = '<=';
+
+        switch (normalizedOperator) {
             case '=':
                 return a === b;
             case '!=':
@@ -701,6 +753,16 @@ export class Validator {
             default:
                 return false;
         }
+    }
+
+    /**
+     * Check if a field is present and has a non-empty value.
+     * A field is considered present if it exists in the record and is not null, undefined, or empty string.
+     * Note: Falsy values like false, 0, or empty arrays are considered present.
+     */
+    private isFieldPresent(record: ObjectDoc, fieldName: string): boolean {
+        const value = record[fieldName];
+        return value !== null && value !== undefined && value !== '';
     }
 
     /**

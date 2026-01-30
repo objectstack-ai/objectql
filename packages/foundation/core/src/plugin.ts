@@ -8,8 +8,8 @@
 
 import { type PluginContext } from '@objectstack/core';
 import type { ObjectKernel } from '@objectstack/runtime';
-import { ValidatorPlugin, ValidatorPluginConfig } from './validator-plugin';
-import { FormulaPlugin, FormulaPluginConfig } from './formula-plugin';
+import { ValidatorPlugin, ValidatorPluginConfig } from '@objectql/plugin-validator';
+import { FormulaPlugin, FormulaPluginConfig } from '@objectql/plugin-formula';
 import { QueryService } from './query/query-service';
 import { QueryAnalyzer } from './query/query-analyzer';
 import type { Driver } from '@objectql/types';

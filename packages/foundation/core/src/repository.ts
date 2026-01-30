@@ -11,8 +11,8 @@ import type { ObjectKernel } from '@objectstack/runtime';
 import { Data } from '@objectstack/spec';
 type QueryAST = Data.QueryAST;
 type SortNode = Data.SortNode;
-import { Validator } from './validator';
-import { FormulaEngine } from './formula-engine';
+import { Validator } from '@objectql/plugin-validator';
+import { FormulaEngine } from '@objectql/plugin-formula';
 import { QueryBuilder } from './query';
 
 /**
