@@ -1,0 +1,27 @@
+{
+  "name": "@objectstack/core",
+  "version": "0.6.1",
+  "description": "ObjectStack Core - Plugin interfaces and kernel components",
+  "keywords": [
+    "objectstack",
+    "core",
+    "plugin",
+    "kernel"
+  ],
+  "license": "MIT",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "jest --passWithNoTests"
+  },
+  "dependencies": {
+    "@objectstack/runtime": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0"
+  }
+}

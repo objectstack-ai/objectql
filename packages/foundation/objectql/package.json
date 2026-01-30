@@ -1,0 +1,26 @@
+{
+  "name": "@objectstack/objectql",
+  "version": "0.6.1",
+  "description": "ObjectStack ObjectQL - Schema registry and protocol implementation",
+  "keywords": [
+    "objectstack",
+    "objectql",
+    "schema",
+    "registry",
+    "protocol"
+  ],
+  "license": "MIT",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "jest --passWithNoTests"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "typescript": "^5.3.0"
+  }
+}
