@@ -40,6 +40,10 @@ export function registerToolsCommands(program: Command) {
     program
         .command('test')
         .description('Run tests')
+        .option('-w, --watch', 'Run tests in watch mode')
+        .option('-c, --coverage', 'Generate coverage report')
+        .option('-r, --runner <runner>', 'Test runner to use (jest or vitest)')
+        .option('-d, --dir <path>', 'Directory to run tests from', '.')
         .action(async (options) => {
             await test(options);
         });

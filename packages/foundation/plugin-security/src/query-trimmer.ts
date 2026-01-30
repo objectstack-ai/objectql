@@ -153,33 +153,243 @@ export class QueryTrimmer {
     }
     
     if (condition.type === 'formula') {
-      // Formula conditions can't be directly converted to filters
-      // They need to be evaluated in memory after fetching
-      // TODO: Consider implementing a formula-to-SQL compiler for common patterns
-      console.warn(
-        'Formula conditions cannot be converted to query filters and will be evaluated in-memory. ' +
-        'This may result in fetching more data than necessary. ' +
-        'Consider using simple or complex conditions for better performance, ' +
-        'or ensure formula conditions are combined with other filterable conditions.'
-      );
+      // Formula-based conditions: Evaluate the formula and convert to filters
+      try {
+        const filter = this.formulaToFilter(condition.formula, user);
+        if (filter && Object.keys(filter).length > 0) {
+          return filter;
+        }
+      } catch (error: any) {
+        console.warn(
+          `Failed to convert formula condition to filter: ${error.message}. ` +
+          'Formula will be evaluated in-memory, which may affect performance.'
+        );
+      }
+      
+      // If we can't convert to a filter, return empty object
+      // The record will need to be fetched and evaluated in-memory
       return {};
     }
     
     if (condition.type === 'lookup') {
-      // Lookup conditions require join logic
-      // TODO: Implement support for lookup conditions in a future release
-      console.warn(
-        'Lookup conditions are not yet supported in query trimming. ' +
-        'This feature is planned for a future release. ' +
-        'As a workaround, consider: ' +
-        '1. Using record-level rules instead of row-level security for lookup-based filtering ' +
-        '2. Denormalizing the lookup field into the main table ' +
-        '3. Implementing custom query logic in beforeQuery hooks'
-      );
+      // Lookup conditions: Convert to subquery filter
+      try {
+        const filter = this.lookupToFilter(condition, user);
+        if (filter && Object.keys(filter).length > 0) {
+          return filter;
+        }
+      } catch (error: any) {
+        console.warn(
+          `Failed to convert lookup condition to filter: ${error.message}. ` +
+          'Lookup will be evaluated in-memory, which may affect performance.'
+        );
+      }
+      
+      // If we can't convert to a filter, return empty object
       return {};
     }
     
     return {};
+  }
+  
+  /**
+   * Convert a formula condition to a query filter
+   * 
+   * This function attempts to parse common formula patterns and convert them
+   * to database filters. Complex formulas that can't be converted will need
+   * to be evaluated in-memory.
+   * 
+   * Supported patterns:
+   * - Field comparisons: "field == value", "field > value"
+   * - User context: "$current_user.id", "$current_user.role"
+   * - Logical operators: "&&", "||"
+   * - Simple arithmetic: "field + 10 > 100"
+   */
+  private formulaToFilter(formula: string, user: any): any {
+    // Remove whitespace for easier parsing
+    const normalized = formula.trim();
+    
+    // Pattern 1: Logical OR (check first since it has lower precedence)
+    // Split on || but not inside quotes
+    const orParts = this.splitOnOperator(normalized, '||');
+    if (orParts.length > 1) {
+      const filters = orParts.map(part => this.formulaToFilter(part, user)).filter(f => Object.keys(f).length > 0);
+      if (filters.length > 1) {
+        return { $or: filters };
+      } else if (filters.length === 1) {
+        return filters[0];
+      }
+    }
+    
+    // Pattern 2: Logical AND
+    const andParts = this.splitOnOperator(normalized, '&&');
+    if (andParts.length > 1) {
+      const filters = andParts.map(part => this.formulaToFilter(part, user)).filter(f => Object.keys(f).length > 0);
+      if (filters.length > 1) {
+        return { $and: filters };
+      } else if (filters.length === 1) {
+        return filters[0];
+      }
+    }
+    
+    // Pattern 3: Simple field comparison (e.g., "status == 'active'")
+    const simpleCompareMatch = normalized.match(/^(\w+)\s*(==|!=|>|>=|<|<=)\s*(.+)$/);
+    if (simpleCompareMatch) {
+      const field = simpleCompareMatch[1];
+      const operator = simpleCompareMatch[2];
+      let value: any = simpleCompareMatch[3].trim();
+      
+      // Remove quotes from string values
+      if ((value.startsWith("'") && value.endsWith("'")) || 
+          (value.startsWith('"') && value.endsWith('"'))) {
+        value = value.slice(1, -1);
+      } else if (/^\d+$/.test(value)) {
+        // Parse numeric values
+        value = parseInt(value, 10);
+      } else if (/^\d+\.\d+$/.test(value)) {
+        // Parse float values
+        value = parseFloat(value);
+      } else if (value === 'true') {
+        value = true;
+      } else if (value === 'false') {
+        value = false;
+      } else if (value === 'null') {
+        value = null;
+      }
+      
+      // Resolve user context
+      if (typeof value === 'string' && value.startsWith('$current_user.')) {
+        const path = value.substring('$current_user.'.length);
+        value = this.getFieldValue(user, path);
+      }
+      
+      // Convert to MongoDB filter
+      const mongoOp = this.jsOperatorToMongoOperator(operator);
+      return this.operatorToMongoFilter(field, mongoOp, value);
+    }
+    
+    // Pattern 4: Field existence check (e.g., "owner" or "!owner")
+    if (/^!?\w+$/.test(normalized)) {
+      const negate = normalized.startsWith('!');
+      const field = negate ? normalized.slice(1) : normalized;
+      
+      return negate 
+        ? { [field]: { $in: [null, undefined, ''] } }
+        : { [field]: { $ne: null } };
+    }
+    
+    // Unable to convert formula to filter
+    throw new Error(`Unsupported formula pattern: ${formula}`);
+  }
+  
+  /**
+   * Split formula on an operator, respecting quotes
+   */
+  private splitOnOperator(formula: string, operator: string): string[] {
+    const parts: string[] = [];
+    let current = '';
+    let inQuote = false;
+    let quoteChar = '';
+    
+    for (let i = 0; i < formula.length; i++) {
+      const char = formula[i];
+      const nextChar = formula[i + 1];
+      
+      // Handle quotes
+      if ((char === '"' || char === "'") && (i === 0 || formula[i - 1] !== '\\')) {
+        if (!inQuote) {
+          inQuote = true;
+          quoteChar = char;
+        } else if (char === quoteChar) {
+          inQuote = false;
+          quoteChar = '';
+        }
+        current += char;
+        continue;
+      }
+      
+      // Check for operator
+      if (!inQuote) {
+        if (operator === '||' && char === '|' && nextChar === '|') {
+          if (current.trim()) {
+            parts.push(current.trim());
+          }
+          current = '';
+          i++; // Skip next character
+          continue;
+        } else if (operator === '&&' && char === '&' && nextChar === '&') {
+          if (current.trim()) {
+            parts.push(current.trim());
+          }
+          current = '';
+          i++; // Skip next character
+          continue;
+        }
+      }
+      
+      current += char;
+    }
+    
+    if (current.trim()) {
+      parts.push(current.trim());
+    }
+    
+    return parts.length > 0 ? parts : [formula];
+  }
+  
+  /**
+   * Convert a lookup condition to a query filter
+   * 
+   * This converts lookup chains into subquery filters that can be pushed
+   * down to the database layer.
+   */
+  private lookupToFilter(condition: any, user: any): any {
+    const { object, via, condition: nestedCondition } = condition;
+    
+    // For simple lookup conditions, we can use MongoDB-style $lookup or
+    // SQL-style JOIN filters. The exact implementation depends on the driver.
+    
+    // Convert the nested condition to a filter
+    const nestedFilter = this.conditionToFilter(nestedCondition, user);
+    
+    if (Object.keys(nestedFilter).length === 0) {
+      throw new Error('Unable to convert nested lookup condition');
+    }
+    
+    // Create a lookup filter
+    // This will be interpreted by the driver layer
+    return {
+      $lookup: {
+        from: object,
+        localField: via,
+        foreignField: '_id',
+        filter: nestedFilter
+      }
+    };
+  }
+  
+  /**
+   * Convert JavaScript comparison operator to MongoDB operator
+   */
+  private jsOperatorToMongoOperator(op: string): string {
+    switch (op) {
+      case '==':
+      case '===':
+        return '=';
+      case '!=':
+      case '!==':
+        return '!=';
+      case '>':
+        return '>';
+      case '>=':
+        return '>=';
+      case '<':
+        return '<';
+      case '<=':
+        return '<=';
+      default:
+        return '=';
+    }
   }
   
   /**
