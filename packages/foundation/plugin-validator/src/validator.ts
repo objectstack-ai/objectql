@@ -757,7 +757,8 @@ export class Validator {
 
     /**
      * Check if a field is present and has a non-empty value.
-     * A field is considered present if it exists and is not null, undefined, or empty string.
+     * A field is considered present if it exists in the record and is not null, undefined, or empty string.
+     * Note: Falsy values like false, 0, or empty arrays are considered present.
      */
     private isFieldPresent(record: ObjectDoc, fieldName: string): boolean {
         const value = record[fieldName];
