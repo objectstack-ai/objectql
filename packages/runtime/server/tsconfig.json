@@ -3,11 +3,8 @@
   "compilerOptions": {
     "outDir": "dist",
     "rootDir": "src",
-    "composite": true
+    "baseUrl": ".",
+    "composite": false
   },
-  "include": ["src/**/*"],
-  "references": [
-    { "path": "../../foundation/types" },
-    { "path": "../../foundation/core" }
-  ]
+  "include": ["src/**/*"]
 }

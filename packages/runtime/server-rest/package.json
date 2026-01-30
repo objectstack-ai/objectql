@@ -21,6 +21,8 @@
   },
   "dependencies": {
     "@objectql/server": "workspace:*",
+    "@objectql/server-storage": "workspace:*",
+    "@objectql/server-metadata": "workspace:*",
     "@objectql/types": "workspace:*"
   },
   "devDependencies": {

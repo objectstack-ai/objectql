@@ -696,6 +696,18 @@ importers:
       '@objectql/core':
         specifier: workspace:*
         version: link:../../foundation/core
+      '@objectql/server-graphql':
+        specifier: workspace:*
+        version: link:../server-graphql
+      '@objectql/server-metadata':
+        specifier: workspace:*
+        version: link:../server-metadata
+      '@objectql/server-rest':
+        specifier: workspace:*
+        version: link:../server-rest
+      '@objectql/server-storage':
+        specifier: workspace:*
+        version: link:../server-storage
       '@objectql/types':
         specifier: workspace:*
         version: link:../../foundation/types
@@ -709,6 +721,82 @@ importers:
       '@types/js-yaml':
         specifier: ^4.0.9
         version: 4.0.9
+      '@types/node':
+        specifier: ^20.10.0
+        version: 20.19.30
+      typescript:
+        specifier: ^5.3.0
+        version: 5.9.3
+
+  packages/runtime/server-graphql:
+    dependencies:
+      '@graphql-tools/schema':
+        specifier: ^10.0.2
+        version: 10.0.31(graphql@16.12.0)
+      '@objectql/server':
+        specifier: workspace:*
+        version: link:../server
+      '@objectql/types':
+        specifier: workspace:*
+        version: link:../../foundation/types
+      graphql:
+        specifier: ^16.8.1
+        version: 16.12.0
+    devDependencies:
+      '@types/node':
+        specifier: ^20.10.0
+        version: 20.19.30
+      typescript:
+        specifier: ^5.3.0
+        version: 5.9.3
+
+  packages/runtime/server-metadata:
+    dependencies:
+      '@objectql/server':
+        specifier: workspace:*
+        version: link:../server
+      '@objectql/types':
+        specifier: workspace:*
+        version: link:../../foundation/types
+    devDependencies:
+      '@types/node':
+        specifier: ^20.10.0
+        version: 20.19.30
+      typescript:
+        specifier: ^5.3.0
+        version: 5.9.3
+
+  packages/runtime/server-rest:
+    dependencies:
+      '@objectql/server':
+        specifier: workspace:*
+        version: link:../server
+      '@objectql/server-metadata':
+        specifier: workspace:*
+        version: link:../server-metadata
+      '@objectql/server-storage':
+        specifier: workspace:*
+        version: link:../server-storage
+      '@objectql/types':
+        specifier: workspace:*
+        version: link:../../foundation/types
+    devDependencies:
+      '@types/node':
+        specifier: ^20.10.0
+        version: 20.19.30
+      typescript:
+        specifier: ^5.3.0
+        version: 5.9.3
+
+  packages/runtime/server-storage:
+    dependencies:
+      '@objectql/server':
+        specifier: workspace:*
+        version: link:../server
+      '@objectql/types':
+        specifier: workspace:*
+        version: link:../../foundation/types
+    devDependencies:
       '@types/node':
         specifier: ^20.10.0
         version: 20.19.30
