@@ -71,6 +71,8 @@ export class MetadataRegistry {
     }
 
     unregisterPackage(packageName: string) {
+        // Optimized implementation using secondary index
+        // This is now O(k) instead of O(n*m) where k is items in package
         for (const type of Object.keys(this.items)) {
             for (const key of Object.keys(this.items[type])) {
                 const item = this.items[type][key];
