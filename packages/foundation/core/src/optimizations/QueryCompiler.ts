@@ -40,6 +40,7 @@ class LRUCache<K, V> {
             if (this.cache.size >= this.capacity) {
                 // Evict least recently used (tail)
                 if (this.tail !== null) {
+                    const oldTail = this.tail;
                     const tailNode = this.cache.get(this.tail);
                     if (tailNode && tailNode.prev !== null) {
                         const prevNode = this.cache.get(tailNode.prev);
@@ -51,7 +52,7 @@ class LRUCache<K, V> {
                         this.head = null;
                         this.tail = null;
                     }
-                    this.cache.delete(this.tail);
+                    this.cache.delete(oldTail);
                 }
             }
 
