@@ -100,7 +100,7 @@ export class DependencyGraph {
             dfs(obj);
         }
 
-        return stack.reverse();
+        return stack;
     }
 
     /**

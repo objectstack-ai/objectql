@@ -78,49 +78,46 @@ export class LazyMetadataLoader {
      * Predictive preload: load related objects in the background
      */
     private predictivePreload(objectName: string): void {
-        const metadata = this.cache.get(objectName);
-        if (!metadata) return;
+        // Run preloading asynchronously after current call stack to avoid blocking
+        setImmediate(() => {
+            const metadata = this.cache.get(objectName);
+            if (!metadata) return;
 
-        // Extract related object names from various sources
-        const relatedObjects = new Set<string>();
+            // Extract related object names from various sources
+            const relatedObjects = new Set<string>();
 
-        // 1. From explicit relatedObjects field
-        if (metadata.relatedObjects) {
-            metadata.relatedObjects.forEach(obj => relatedObjects.add(obj));
-        }
+            // 1. From explicit relatedObjects field
+            if (metadata.relatedObjects) {
+                metadata.relatedObjects.forEach(obj => relatedObjects.add(obj));
+            }
 
-        // 2. From lookup/master-detail fields
-        if (metadata.fields) {
-            for (const field of Object.values(metadata.fields)) {
-                if (field.type === 'lookup' || field.type === 'master_detail') {
-                    if (field.reference_to) {
-                        relatedObjects.add(field.reference_to);
+            // 2. From lookup/master-detail fields
+            if (metadata.fields) {
+                for (const field of Object.values(metadata.fields)) {
+                    if (field.type === 'lookup' || field.type === 'master_detail') {
+                        if (field.reference_to) {
+                            relatedObjects.add(field.reference_to);
+                        }
                     }
                 }
             }
-        }
 
-        // Preload related objects asynchronously (don't await)
-        for (const relatedObject of relatedObjects) {
-            if (!this.loaded.has(relatedObject) && !this.loading.has(relatedObject)) {
-                // Fire and forget - preload in background
-                this.loadSingle(relatedObject).catch(() => {
-                    // Ignore errors in background preloading
-                });
+            // Preload related objects asynchronously (don't await)
+            for (const relatedObject of relatedObjects) {
+                if (!this.loaded.has(relatedObject) && !this.loading.has(relatedObject)) {
+                    // Fire and forget - preload in background
+                    this.loadSingle(relatedObject).catch(() => {
+                        // Ignore errors in background preloading
+                    });
+                }
             }
-        }
+        });
     }
 
     /**
      * Get metadata for an object (loads on-demand if not cached)
      */
     async get(objectName: string): Promise<ObjectMetadata> {
-        // Try cache first
-        if (this.loaded.has(objectName)) {
-            const cached = this.cache.get(objectName);
-            if (cached) return cached;
-        }
-
         // Load on first access
         const metadata = await this.loadSingle(objectName);
         

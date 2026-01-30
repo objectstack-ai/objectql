@@ -126,16 +126,26 @@ export class SQLQueryOptimizer {
         // If we're filtering on the joined table, we can use INNER JOIN
         if (ast.filters) {
             const filterFields = this.extractFilterFields(ast.filters);
-            const schema = this.schemas.get(join.table);
             
-            if (schema) {
-                const hasFilterOnJoinTable = filterFields.some(field => 
-                    schema.fields[field] !== undefined
-                );
-                
-                if (hasFilterOnJoinTable) {
-                    return 'inner'; // Convert LEFT to INNER for better performance
+            // Check if any filter field references the joined table
+            const hasFilterOnJoinTable = filterFields.some(field => {
+                // Handle table-prefixed fields like "accounts.type"
+                if (field.includes('.')) {
+                    const [table] = field.split('.');
+                    return table === join.table;
                 }
+                
+                // Also check if the field exists in the joined table schema
+                const schema = this.schemas.get(join.table);
+                if (schema) {
+                    return schema.fields[field] !== undefined;
+                }
+                
+                return false;
+            });
+            
+            if (hasFilterOnJoinTable) {
+                return 'inner'; // Convert LEFT to INNER for better performance
             }
         }
 
