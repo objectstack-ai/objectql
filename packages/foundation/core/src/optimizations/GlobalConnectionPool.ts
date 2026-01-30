@@ -122,6 +122,13 @@ export class GlobalConnectionPool {
             return idleConnection;
         }
 
+        // Verify we can create a new connection (double-check to prevent race conditions)
+        const totalConns = this.totalConnections();
+        const driverConns = this.getDriverConnections(driverName);
+        if (totalConns >= this.limits.total || driverConns >= this.limits.perDriver) {
+            throw new Error(`Connection pool limit reached for driver: ${driverName}`);
+        }
+
         // Create new connection
         const connectionId = `${driverName}-${Date.now()}-${Math.random()}`;
         const connection: Connection = {

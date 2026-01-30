@@ -36,6 +36,7 @@ export class LazyMetadataLoader {
     private cache = new Map<string, ObjectMetadata>();
     private loaded = new Set<string>();
     private loading = new Map<string, Promise<ObjectMetadata>>();
+    private preloadScheduled = new Set<string>(); // Track objects with scheduled preloads
     private loader: MetadataLoader;
 
     constructor(loader: MetadataLoader) {
@@ -78,6 +79,12 @@ export class LazyMetadataLoader {
      * Predictive preload: load related objects in the background
      */
     private predictivePreload(objectName: string): void {
+        // Avoid redundant preload scheduling for the same object
+        if (this.preloadScheduled.has(objectName)) {
+            return;
+        }
+        this.preloadScheduled.add(objectName);
+        
         // Run preloading asynchronously after current call stack to avoid blocking
         setImmediate(() => {
             const metadata = this.cache.get(objectName);
@@ -147,6 +154,7 @@ export class LazyMetadataLoader {
     invalidate(objectName: string): void {
         this.cache.delete(objectName);
         this.loaded.delete(objectName);
+        this.preloadScheduled.delete(objectName);
     }
 
     /**
@@ -156,6 +164,7 @@ export class LazyMetadataLoader {
         this.cache.clear();
         this.loaded.clear();
         this.loading.clear();
+        this.preloadScheduled.clear();
     }
 
     /**
