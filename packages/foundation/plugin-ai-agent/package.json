@@ -18,8 +18,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc",
-    "test": "jest"
+    "build": "tsc"
   },
   "dependencies": {
     "@objectql/types": "workspace:*",
