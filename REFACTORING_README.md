@@ -51,39 +51,37 @@ This directory contains comprehensive documentation for refactoring ObjectQL int
 
 ### What Changes
 
-**ObjectQL becomes a KERNEL (stays in this repo):**
+**ObjectQL becomes a COMPLETE FRAMEWORK (stays in this repo):**
 - ✅ `@objectql/types` - Protocol contract
 - ✅ `@objectql/core` - Runtime engine
-- ✅ `@objectql/platform-node` - Node.js bridge (optional)
-- ✅ `@objectql/plugin-security` - Security plugin (optional)
+- ✅ `@objectql/platform-node` - Node.js bridge
+- ✅ `@objectql/plugin-security` - Security plugin
+- ✅ **All 8 drivers** - SQL, MongoDB, Memory, Redis, Excel, FS, LocalStorage, SDK
+- ✅ **All tools** - CLI, Create, VS Code extension
+- ✅ **All examples** - Quickstart, showcase, integrations
 
-**Ecosystem MOVES to separate repositories:**
-- 📦 Runtime → `objectstack-runtime`
-- 📦 Protocols → `objectstack-protocols`
-- 📦 Drivers → `objectql-drivers`
-- 📦 Tools → `objectql-tools`
-- 📦 Examples → `objectql-examples`
+**ObjectStack Ecosystem MOVES to separate repositories:**
+- 📦 Runtime → `objectstack-runtime` (HTTP server adapters)
+- 📦 Protocols → `objectstack-protocols` (GraphQL, JSON-RPC, OData)
 
 ### Why This Matters
 
 **Before (v4.x):**
-- 🐌 Build time: 5 minutes
-- 🐌 Test suite: 10 minutes
-- 📦 Install everything (150K LOC)
+- 🏗️ All in one repository
+- 📦 ObjectQL + ObjectStack mixed together
 
 **After (v5.x):**
-- ⚡ Build time: 30 seconds (10x faster)
-- ⚡ Test suite: 1 minute (10x faster)
-- 📦 Install only what you need (~60K LOC)
+- 🏗️ ObjectQL = Complete framework in one repository
+- 📦 ObjectStack = Separate ecosystem (runtime + protocols)
+- ⚡ Cleaner architecture, easier to understand
 
 ### Timeline
 
-**Total: 16 weeks to ObjectQL 5.0**
-- Week 1-2: Create repositories
-- Week 3-4: Migrate packages
-- Week 5: Clean up kernel
-- Week 6-12: Implement 10 optimizations
-- Week 13-16: Align ecosystem
+**Total: 12 weeks to ObjectQL 5.0** (revised scope)
+- Week 1-2: Create ObjectStack repositories
+- Week 3: Migrate ObjectStack packages
+- Week 4-10: Implement 10 optimizations
+- Week 11-12: Testing and v5.0 release
 
 ---
 

@@ -1,13 +1,12 @@
 # ObjectQL Refactoring - Implementation Checklist (Revised)
 
-**Version:** 1.1 (Simplified - User Feedback)  
+**Version:** 1.1 (Revised based on user feedback)  
 **Date:** 2026-01-30  
 **Reference:** [KERNEL_REFACTORING_RECOMMENDATION.md](./KERNEL_REFACTORING_RECOMMENDATION.md)
 
-**User Feedback:** "我不希望拆得这么细，objectql相关的还是放在这个仓库中"  
-Translation: "I don't want to split it so finely, objectql-related things should remain in this repository"
+**User Feedback:** "我不希望拆得这么细，objectql相关的还是放在这个仓库中" (Keep ObjectQL components together)
 
-**Revised Strategy:** Extract only ObjectStack ecosystem components (runtime + protocols), keep all ObjectQL components together.
+This is a practical, actionable checklist for implementing the **simplified** refactoring. Only ObjectStack components are extracted.
 
 ---
 
@@ -16,24 +15,21 @@ Translation: "I don't want to split it so finely, objectql-related things should
 ### Critical Decisions
 
 - [ ] **Decision 1:** Review and approve the revised refactoring strategy
-  - [ ] Read [KERNEL_REFACTORING_SUMMARY.md](./KERNEL_REFACTORING_SUMMARY.md) (bilingual, ~10 min)
-  - [ ] Review [KERNEL_REFACTORING_RECOMMENDATION.md](./KERNEL_REFACTORING_RECOMMENDATION.md) (comprehensive)
-  - [ ] Approve strategy
+  - [ ] Read [KERNEL_REFACTORING_SUMMARY.md](./KERNEL_REFACTORING_SUMMARY.md) (bilingual)
+  - [ ] Review [KERNEL_REFACTORING_RECOMMENDATION.md](./KERNEL_REFACTORING_RECOMMENDATION.md)
+  - [ ] Approve or request changes
 
-- [x] **Decision 2:** Keep ObjectQL components together? ✅ **YES (Confirmed)**
-  - All drivers stay in ObjectQL repo
-  - All tools stay in ObjectQL repo  
-  - All examples stay in ObjectQL repo
+- [x] **Decision 2:** Keep ObjectQL components together? ✅ **YES (User confirmed)**
+  - All drivers, tools, examples stay in ObjectQL repository
 
-- [x] **Decision 3:** Extract ObjectStack components? ✅ **YES (Confirmed)**
-  - Runtime server → separate repo
-  - Protocol plugins → separate repo
+- [x] **Decision 3:** Extract only ObjectStack components? ✅ **YES (User confirmed)**
+  - Only runtime server and protocol plugins move to separate repos
 
 ---
 
 ## Phase 1: Repository Setup (Week 1-2)
 
-### 1.1 Create New Repositories (2 repos only)
+### 1.1 Create New Repositories (Only 2 repos)
 
 - [ ] Create `objectstack-ai/objectstack-runtime`
   ```bash
@@ -49,59 +45,87 @@ Translation: "I don't want to split it so finely, objectql-related things should
     --license mit
   ```
 
-### 1.2 Initialize objectstack-runtime Repository
+### 1.2 Initialize Monorepo Structure
 
-- [ ] Clone and initialize
+For each new repository, set up the basic structure:
+
+- [ ] **objectstack-runtime**
   ```bash
-  git clone https://github.com/objectstack-ai/objectstack-runtime
   cd objectstack-runtime
   pnpm init
-  ```
-
-- [ ] Create monorepo structure
-  ```bash
-  mkdir -p packages/server
+  mkdir -p packages/server packages/worker packages/lambda
   echo 'packages:\n  - "packages/*"' > pnpm-workspace.yaml
   cp ../objectql/tsconfig.base.json .
   cp ../objectql/.gitignore .
   ```
 
-- [ ] Set up CI/CD
+- [ ] **objectstack-protocols**
   ```bash
-  mkdir -p .github/workflows
-  # Copy CI workflow from objectql or create new one
-  ```
-
-### 1.3 Initialize objectstack-protocols Repository
-
-- [ ] Clone and initialize
-  ```bash
-  git clone https://github.com/objectstack-ai/objectstack-protocols
   cd objectstack-protocols
   pnpm init
-  ```
-
-- [ ] Create monorepo structure
-  ```bash
   mkdir -p packages/graphql packages/json-rpc packages/odata-v4
   echo 'packages:\n  - "packages/*"' > pnpm-workspace.yaml
   cp ../objectql/tsconfig.base.json .
-  cp ../objectql/.gitignore .
   ```
 
-- [ ] Set up CI/CD
+- [ ] **objectql-drivers**
   ```bash
-  mkdir -p .github/workflows
-  # Copy CI workflow from objectql or create new one
+  cd objectql-drivers
+  pnpm init
+  mkdir -p packages/sql packages/mongo packages/memory packages/redis
+  mkdir -p packages/excel packages/fs packages/localstorage packages/sdk
+  echo 'packages:\n  - "packages/*"' > pnpm-workspace.yaml
+  cp ../objectql/tsconfig.base.json .
   ```
+
+- [ ] **objectql-tools**
+  ```bash
+  cd objectql-tools
+  pnpm init
+  mkdir -p packages/cli packages/create packages/vscode
+  echo 'packages:\n  - "packages/*"' > pnpm-workspace.yaml
+  cp ../objectql/tsconfig.base.json .
+  ```
+
+- [ ] **objectql-examples**
+  ```bash
+  cd objectql-examples
+  mkdir -p quickstart/hello-world showcase/project-tracker
+  mkdir -p integrations/express-server protocols/multi-protocol-server
+  ```
+
+### 1.3 Set Up CI/CD
+
+- [ ] Create shared GitHub Actions workflow template
+  ```yaml
+  # .github/workflows/ci.yml
+  name: CI
+  on: [push, pull_request]
+  jobs:
+    test:
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v3
+        - uses: pnpm/action-setup@v2
+        - uses: actions/setup-node@v3
+        - run: pnpm install
+        - run: pnpm run build
+        - run: pnpm run test
+  ```
+
+- [ ] Copy CI workflow to all new repositories
+  - [ ] objectstack-runtime
+  - [ ] objectstack-protocols
+  - [ ] objectql-drivers
+  - [ ] objectql-tools
 
 ---
 
-## Phase 2: Package Migration (Week 3)
+## Phase 2: Package Migration (Week 3-4)
 
-### 2.1 Migrate Runtime Server
+### 2.1 Migrate Runtime Packages
 
-- [ ] Split runtime/server from objectql repo
+- [ ] Split `packages/runtime/server` from objectql repo
   ```bash
   cd objectql
   git subtree split -P packages/runtime/server -b migrate-runtime-server
@@ -113,17 +137,10 @@ Translation: "I don't want to split it so finely, objectql-related things should
   git subtree add --squash --prefix=packages/server ../objectql migrate-runtime-server
   ```
 
-- [ ] Update package.json in objectstack-runtime/packages/server
+- [ ] Update `package.json` in `objectstack-runtime/packages/server`
   - [ ] Change name to `@objectstack/runtime`
-  - [ ] Update dependencies:
-    ```json
-    {
-      "peerDependencies": {
-        "@objectql/types": "^5.0.0",
-        "@objectql/core": "^5.0.0"
-      }
-    }
-    ```
+  - [ ] Update dependencies from `workspace:*` to `^5.0.0` for kernel packages
+  - [ ] Add peer dependencies for `@objectql/types` and `@objectql/core`
 
 - [ ] Test the migrated package
   ```bash
@@ -133,9 +150,9 @@ Translation: "I don't want to split it so finely, objectql-related things should
   pnpm run test
   ```
 
-### 2.2 Migrate Protocol Plugins
+### 2.2 Migrate Protocol Packages
 
-- [ ] Split protocols/graphql
+- [ ] Split `packages/protocols/graphql`
   ```bash
   cd objectql
   git subtree split -P packages/protocols/graphql -b migrate-protocol-graphql
@@ -143,7 +160,7 @@ Translation: "I don't want to split it so finely, objectql-related things should
   git subtree add --squash --prefix=packages/graphql ../objectql migrate-protocol-graphql
   ```
 
-- [ ] Split protocols/json-rpc
+- [ ] Split `packages/protocols/json-rpc`
   ```bash
   cd objectql
   git subtree split -P packages/protocols/json-rpc -b migrate-protocol-jsonrpc
@@ -151,7 +168,7 @@ Translation: "I don't want to split it so finely, objectql-related things should
   git subtree add --squash --prefix=packages/json-rpc ../objectql migrate-protocol-jsonrpc
   ```
 
-- [ ] Split protocols/odata-v4
+- [ ] Split `packages/protocols/odata-v4`
   ```bash
   cd objectql
   git subtree split -P packages/protocols/odata-v4 -b migrate-protocol-odata
@@ -160,89 +177,142 @@ Translation: "I don't want to split it so finely, objectql-related things should
   ```
 
 - [ ] Update all protocol package.json files
-  - [ ] Update names to `@objectstack/protocol-*`
-  - [ ] Update dependencies to `^5.0.0` for ObjectQL packages
+  - [ ] Update package names to `@objectstack/protocol-*`
+  - [ ] Update dependencies to `^5.0.0` for kernel packages
   - [ ] Test each protocol package
 
-### 2.3 Publish Initial Versions
+### 2.3 Migrate Driver Packages
 
-- [ ] Publish `@objectstack/runtime@1.0.0`
+For each of the 8 drivers, repeat this process:
+
+- [ ] `@objectql/driver-sql`
   ```bash
-  cd objectstack-runtime/packages/server
-  npm publish --access public
+  git subtree split -P packages/drivers/sql -b migrate-driver-sql
+  cd ../objectql-drivers
+  git subtree add --squash --prefix=packages/sql ../objectql migrate-driver-sql
   ```
 
+- [ ] `@objectql/driver-mongo`
+- [ ] `@objectql/driver-memory`
+- [ ] `@objectql/driver-redis`
+- [ ] `@objectql/driver-excel`
+- [ ] `@objectql/driver-fs`
+- [ ] `@objectql/driver-localstorage`
+- [ ] `@objectql/driver-sdk`
+
+- [ ] Update all driver package.json files
+  - [ ] Keep package names as `@objectql/driver-*`
+  - [ ] Update dependencies to `^5.0.0` for kernel packages
+  - [ ] Test each driver
+
+### 2.4 Migrate Tools Packages
+
+- [ ] `@objectql/cli`
+  ```bash
+  git subtree split -P packages/tools/cli -b migrate-tool-cli
+  cd ../objectql-tools
+  git subtree add --squash --prefix=packages/cli ../objectql migrate-tool-cli
+  ```
+
+- [ ] `@objectql/create`
+  ```bash
+  git subtree split -P packages/tools/create -b migrate-tool-create
+  cd ../objectql-tools
+  git subtree add --squash --prefix=packages/create ../objectql migrate-tool-create
+  ```
+
+- [ ] `vscode-objectql`
+  ```bash
+  git subtree split -P packages/tools/vscode-objectql -b migrate-tool-vscode
+  cd ../objectql-tools
+  git subtree add --squash --prefix=packages/vscode ../objectql migrate-tool-vscode
+  ```
+
+### 2.5 Migrate Examples
+
+- [ ] Copy all examples to objectql-examples repo
+  ```bash
+  cp -r objectql/examples/* objectql-examples/
+  ```
+
+- [ ] Update all example dependencies to use new package locations
+
+### 2.6 Publish Initial Versions
+
+- [ ] Publish `@objectstack/runtime@1.0.0`
 - [ ] Publish `@objectstack/protocol-graphql@1.0.0`
 - [ ] Publish `@objectstack/protocol-json-rpc@1.0.0`
 - [ ] Publish `@objectstack/protocol-odata-v4@1.0.0`
+- [ ] Publish all 8 driver packages as `@objectql/driver-*@5.0.0`
+- [ ] Publish `@objectql/cli@5.0.0`
+- [ ] Publish `create-objectql@5.0.0`
 
 ---
 
-## Phase 3: ObjectQL Cleanup (Week 3-4)
+## Phase 3: ObjectQL Kernel Cleanup (Week 5)
 
-### 3.1 Remove Migrated Packages from ObjectQL
+### 3.1 Remove Migrated Packages
 
-- [ ] Delete migrated ObjectStack packages
+- [ ] Delete migrated packages from objectql repo
   ```bash
-  cd objectql
-  git rm -r packages/runtime/server
-  git rm -r packages/protocols/graphql
-  git rm -r packages/protocols/json-rpc
-  git rm -r packages/protocols/odata-v4
+  rm -rf packages/runtime
+  rm -rf packages/protocols
+  rm -rf packages/drivers
+  rm -rf packages/tools
+  rm -rf examples
   ```
 
 - [ ] Update `pnpm-workspace.yaml`
   ```yaml
   packages:
     - "packages/foundation/*"
-    - "packages/drivers/*"
-    - "packages/tools/*"
-    # Removed: packages/runtime/*, packages/protocols/*
+    # Removed: drivers, runtime, protocols, tools
   ```
 
 - [ ] Update root `package.json`
   - [ ] Remove scripts for moved packages
+  - [ ] Remove devDependencies for driver-specific tools
   - [ ] Update version to `5.0.0`
+
+- [ ] Update `.gitignore` if needed
 
 ### 3.2 Update Documentation
 
 - [ ] Update `README.md`
-  - [ ] Remove references to runtime server package
-  - [ ] Add links to objectstack-runtime repo
-  - [ ] Add links to objectstack-protocols repo
+  - [ ] Remove references to moved packages
+  - [ ] Add links to new repositories
   - [ ] Update installation instructions
   - [ ] Update architecture diagrams
 
 - [ ] Create `MIGRATION.md`
   - [ ] Document changes from v4.x to v5.x
   - [ ] Provide code migration examples
-  - [ ] List new package locations for ObjectStack components
+  - [ ] List new package locations
 
 - [ ] Update `ARCHITECTURE.md`
-  - [ ] Document ObjectQL as full-stack framework
-  - [ ] Document ObjectStack as separate ecosystem
-  - [ ] Link to external repositories
+  - [ ] Focus on kernel architecture only
+  - [ ] Remove driver/protocol implementation details
+  - [ ] Link to external repositories for those topics
 
 ### 3.3 Update CI/CD
 
-- [ ] Update `.github/workflows/` to reflect new structure
-- [ ] Remove runtime-specific test jobs
+- [ ] Update `.github/workflows/` to only test kernel packages
+- [ ] Remove driver-specific test jobs
 - [ ] Remove protocol-specific test jobs
-- [ ] Ensure all ObjectQL packages (drivers, tools) still tested
 
 ### 3.4 Commit and Tag
 
 - [ ] Commit all cleanup changes
   ```bash
   git add .
-  git commit -m "refactor: ObjectQL 5.0 - Extract ObjectStack to separate repositories"
+  git commit -m "refactor: ObjectQL 5.0 - Extract ecosystem to separate repositories"
   git tag v5.0.0-alpha.1
   git push origin main --tags
   ```
 
 ---
 
-## Phase 4: Kernel Optimizations (Week 4-10)
+## Phase 4: Kernel Optimizations (Week 6-12)
 
 ### 4.1 Optimization 1: Indexed Metadata Registry
 
@@ -256,7 +326,7 @@ Translation: "I don't want to split it so finely, objectql-related things should
 **Expected Result:**
 ```
 Before: unregisterPackage() = 10ms with 1000 items
-After:  unregisterPackage() = 1ms with 1000 items  
+After:  unregisterPackage() = 1ms with 1000 items
 ```
 
 ### 4.2 Optimization 2: Query AST Compilation + LRU Cache
@@ -406,25 +476,26 @@ After:  metadata memory = 50MB (off-heap)
 
 ---
 
-## Phase 5: Ecosystem Alignment (Week 11-12)
+## Phase 5: Ecosystem Alignment (Week 13-16)
 
-### 5.1 Update ObjectStack Packages
+### 5.1 Update External Packages
 
 - [ ] Update objectstack-runtime to depend on `@objectql/types@^5.0.0`
 - [ ] Update objectstack-protocols to depend on `@objectql/types@^5.0.0`
-- [ ] Test integration between ObjectQL and ObjectStack
+- [ ] Update objectql-drivers to depend on `@objectql/types@^5.0.0`
+- [ ] Update objectql-tools to depend on `@objectql/core@^5.0.0`
 
 ### 5.2 Create Migration Guide
 
 - [ ] Write `MIGRATION-v4-to-v5.md`
-  - [ ] Installation changes for ObjectStack components
-  - [ ] Import path changes (runtime + protocols)
+  - [ ] Installation changes
+  - [ ] Import path changes
+  - [ ] Breaking changes
   - [ ] Code examples (before/after)
-  - [ ] Breaking changes list
 
 ### 5.3 Update Examples
 
-- [ ] Update examples to use new ObjectStack package structure
+- [ ] Update all examples to use new package structure
 - [ ] Test all examples
 - [ ] Update example documentation
 
@@ -435,11 +506,8 @@ After:  metadata memory = 50MB (off-heap)
 - [ ] Update CHANGELOG.md
 - [ ] Publish `@objectql/types@5.0.0`
 - [ ] Publish `@objectql/core@5.0.0`
-- [ ] Publish `@objectql/platform-node@5.0.0`
-- [ ] Publish `@objectql/plugin-security@5.0.0`
-- [ ] Publish all 8 driver packages as `@objectql/driver-*@5.0.0`
-- [ ] Publish `@objectql/cli@5.0.0`
-- [ ] Publish `create-objectql@5.0.0`
+- [ ] Publish `@objectql/platform-node@5.0.0` (if kept)
+- [ ] Publish `@objectql/plugin-security@5.0.0` (if kept)
 - [ ] Tag release
   ```bash
   git tag v5.0.0
@@ -464,15 +532,15 @@ After:  metadata memory = 50MB (off-heap)
 | Metadata operation latency | 0.1ms | 0.01ms | _______ | ⏳ |
 | Query planning time | 1ms | 0.1ms | _______ | ⏳ |
 | Hook execution overhead | 0.5ms | 0.1ms | _______ | ⏳ |
-| Build time (ObjectQL) | 5min | 4min | _______ | ⏳ |
-| Test suite (ObjectQL) | 10min | 8min | _______ | ⏳ |
+| Kernel build time | 5min | 30sec | _______ | ⏳ |
+| Kernel test suite | 10min | 1min | _______ | ⏳ |
 
 ### Code Quality Metrics
 
 | Metric | Baseline | Target | Actual | Status |
 |--------|----------|--------|--------|--------|
-| ObjectQL LOC | ~150K | ~130K | _______ | ⏳ |
-| Number of repositories | 1 | 3 | _______ | ⏳ |
+| Kernel LOC | ~150K | ~60K | _______ | ⏳ |
+| Kernel dependencies | 15+ | <5 | _______ | ⏳ |
 | Test coverage | 80% | 90% | _______ | ⏳ |
 
 ---
@@ -482,8 +550,7 @@ After:  metadata memory = 50MB (off-heap)
 Use this space to track decisions, blockers, and learnings:
 
 **Decisions Made:**
-- User confirmed: Keep all ObjectQL components together
-- Extract only ObjectStack components (runtime + protocols)
+- 
 
 **Blockers:**
 - 
@@ -495,5 +562,5 @@ Use this space to track decisions, blockers, and learnings:
 
 **Status:** 🚀 Ready to Begin  
 **Owner:** @hotlong  
-**Timeline:** 12 weeks to ObjectQL 5.0 (revised from 16 weeks)
+**Timeline:** 16 weeks to ObjectQL 5.0
 

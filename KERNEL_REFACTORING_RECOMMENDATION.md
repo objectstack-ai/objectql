@@ -13,129 +13,189 @@ This document provides specific recommendations for refactoring ObjectQL into a 
 **User Request (Translated):**
 > "I want to develop the entire ecosystem based on objectstack spec. If needed, I can optimize and upgrade its kernel code. I believe that the plugin ecosystem and runtime should not be in this project. You can give me specific improvement requirements for objectstack, and I can adjust the kernel project."
 
-**Key Recommendations:**
-1. ✅ **Keep in ObjectQL:** Foundation layer + Driver interfaces + Core abstractions
-2. 📦 **Move to Separate Repos:** Runtime server, Protocol plugins, Tools, Examples
+**Updated Feedback (Revised Strategy):**
+> "我不希望拆得这么细，objectql相关的还是放在这个仓库中"  
+> (Translation: "I don't want to split it so finely, objectql-related things should still remain in this repository")
+
+**Key Recommendations (Revised):**
+1. ✅ **Keep in ObjectQL:** Foundation + Drivers + Tools + Examples (all ObjectQL components)
+2. 📦 **Move to Separate Repos:** Only ObjectStack ecosystem (runtime server, protocol plugins)
 3. 🚀 **Kernel Optimizations:** 10 specific improvements identified
-4. 📋 **Migration Strategy:** Phased approach with backward compatibility
+4. 📋 **Migration Strategy:** Minimal extraction, focus on ObjectStack separation
 
 ---
 
 ## 1. Scope Definition: What is "The Kernel"?
 
-### 1.1 Core Philosophy
+### 1.1 Core Philosophy (Revised)
 
-ObjectQL Kernel should be the **minimal, universal foundation** that implements:
+ObjectQL should remain a **complete, full-featured framework** that includes all ObjectQL-specific components. Only the ObjectStack-specific ecosystem components should be separated.
 
 ```typescript
-// The essence of ObjectQL
+// ObjectQL remains complete
 Metadata Definition (YAML/JSON) 
     → Query AST
-    → Driver Interface
+    → Driver Implementations (all 8 drivers)
+    → Tools (CLI, Create, VSCode)
+    → Examples
     → CRUD Operations
     → Validation & Security
 ```
 
-**Guiding Principles:**
-- ✅ **Zero Runtime Dependencies:** No Node.js-specific modules in core
-- ✅ **Driver Agnostic:** Abstract interface, not concrete implementations
-- ✅ **Protocol Independent:** Core should not know about GraphQL, REST, etc.
-- ✅ **Tool Independent:** No CLI, scaffolding, or IDE extensions in kernel
-- ✅ **Pure TypeScript:** Universal compatibility (Node.js, Browser, Edge, Deno)
+**Revised Guiding Principles:**
+- ✅ **Keep ObjectQL Together:** All @objectql/* packages stay in this repository
+- ✅ **Separate ObjectStack:** Only @objectstack/* packages move to separate repos
+- ✅ **Minimal Extraction:** Only extract runtime server and protocol plugins
+- ✅ **Full Stack:** ObjectQL remains a complete, batteries-included framework
 
-### 1.2 Current State vs. Ideal State
+### 1.2 Current State vs. Revised State
 
-| Component | Current Location | Ideal State | Reason |
-|-----------|-----------------|-------------|---------|
-| **Foundation (types, core)** | ✅ In ObjectQL | ✅ Stay | Pure kernel logic |
-| **Platform-Node** | ✅ In ObjectQL | ⚠️ Extract or Keep | Bridge layer - debatable |
-| **Plugin-Security** | ✅ In ObjectQL | ⚠️ Extract or Keep | Security is kernel concern? |
-| **Drivers (8 packages)** | ✅ In ObjectQL | ❌ Move Out | Implementations, not interfaces |
-| **Runtime Server** | ✅ In ObjectQL | ❌ Move Out | Runtime concern, not kernel |
-| **Protocol Plugins** | ✅ In ObjectQL | ❌ Move Out | Ecosystem, not kernel |
-| **Tools (CLI, Create, VSCode)** | ✅ In ObjectQL | ❌ Move Out | Developer tools, not kernel |
-| **Examples & Apps** | ✅ In ObjectQL | ❌ Move Out | Demonstrations, not kernel |
-
+| Component | Current Location | Revised State | Reason |
+|-----------|-----------------|---------------|---------|
+| **Foundation (types, core)** | ✅ In ObjectQL | ✅ Stay | Core kernel logic |
+| **Platform-Node** | ✅ In ObjectQL | ✅ Stay | Essential bridge |
+| **Plugin-Security** | ✅ In ObjectQL | ✅ Stay | Security is kernel |
+| **Drivers (8 packages)** | ✅ In ObjectQL | ✅ Stay | ObjectQL components |
+| **Tools (CLI, create, vscode)** | ✅ In ObjectQL | ✅ Stay | ObjectQL components |
+| **Examples** | ✅ In ObjectQL | ✅ Stay | ObjectQL components |
+| **Runtime Server** | ✅ In ObjectQL | ❌ Move | ObjectStack ecosystem |
+| **Protocol Plugins** | ✅ In ObjectQL | ❌ Move | ObjectStack ecosystem |
 ---
 
-## 2. Components to KEEP in ObjectQL Kernel
+## 2. Components to KEEP in ObjectQL Repository (Revised)
 
-### 2.1 Foundation Layer (Must Keep)
+### 2.1 Foundation Layer (Keep All)
 
 **Package: `@objectql/types`**
 - **Role:** The Constitutional Document - Pure TypeScript interfaces
-- **Why Keep:** Defines the ObjectStack protocol contract
+- **Why Keep:** Defines the ObjectQL protocol contract
 - **Dependencies:** `@objectstack/spec`, `@objectstack/objectql`
 - **Size:** ~50 files, ~10K LOC
-- **Status:** ✅ Already minimal, zero implementation logic
+- **Status:** ✅ Core component
 
 **Package: `@objectql/core`**
 - **Role:** The Universal Runtime Engine
 - **Why Keep:** Implements metadata validation, query AST compilation, repository pattern
 - **Dependencies:** `@objectql/types`, `@objectstack/*`, `js-yaml`, `openai`
 - **Size:** ~150 files, ~50K LOC
-- **Status:** ⚠️ Needs optimization (see Section 3)
-
-### 2.2 Optional: Platform Bridge (Decision Required)
+- **Status:** ✅ Core component (needs optimization - see Section 4)
 
 **Package: `@objectql/platform-node`**
 - **Role:** Node.js-specific utilities (file system, YAML loading, plugin discovery)
-- **Why Keep (Option A):** Essential for metadata loading in Node.js environments
-- **Why Move (Option B):** Violates "zero Node.js dependencies" principle
-- **Recommendation:** 
-  - **Short-term:** Keep as optional peer dependency
-  - **Long-term:** Extract to `@objectstack/platform-node` or make it a separate runtime concern
+- **Why Keep:** Essential for metadata loading in Node.js environments
+- **Status:** ✅ Keep (user confirmed all ObjectQL components stay)
 
 **Package: `@objectql/plugin-security`**
 - **Role:** RBAC, Field-Level Security (FLS), Row-Level Security (RLS)
-- **Why Keep (Option A):** Security is a kernel responsibility
-- **Why Move (Option B):** Should be a pluggable concern, not baked into kernel
-- **Recommendation:**
-  - **If security is mandatory:** Keep in kernel with AST-level enforcement
-  - **If security is optional:** Move to `@objectstack/plugin-security`
+- **Why Keep:** Security is a kernel responsibility
+- **Status:** ✅ Keep (user confirmed all ObjectQL components stay)
 
-### 2.3 Driver Interface (Abstraction Only)
+### 2.2 Driver Layer (Keep All Implementations)
 
-**What to Keep:**
-```typescript
-// File: packages/foundation/types/src/driver.ts
-export interface Driver {
-  // CRUD operations
-  find(objectName: string, query: QueryAST): Promise<any[]>;
-  findOne(objectName: string, id: string): Promise<any>;
-  create(objectName: string, data: any): Promise<any>;
-  update(objectName: string, id: string, data: any): Promise<any>;
-  delete(objectName: string, id: string): Promise<void>;
-  count(objectName: string, filters: FilterCondition): Promise<number>;
-  
-  // Advanced (optional)
-  executeQuery?(ast: QueryAST): Promise<QueryResult>;
-  executeCommand?(command: Command): Promise<CommandResult>;
-  
-  // Lifecycle
-  connect?(): Promise<void>;
-  disconnect?(): Promise<void>;
-}
+**All 8 Driver Packages - KEEP IN REPOSITORY:**
+- `@objectql/driver-sql` - PostgreSQL, MySQL, SQLite, MSSQL via Knex
+- `@objectql/driver-mongo` - MongoDB with native aggregation
+- `@objectql/driver-memory` - In-memory (Mingo) for testing
+- `@objectql/driver-redis` - Redis key-value store
+- `@objectql/driver-excel` - Excel file (.xlsx) data source
+- `@objectql/driver-fs` - JSON file-based storage
+- `@objectql/driver-localstorage` - Browser LocalStorage
+- `@objectql/driver-sdk` - HTTP remote client
 
-// Keep: Interface definitions, types, enums
-// Remove: Concrete implementations (SQL, MongoDB, etc.)
-```
+**Why Keep All Drivers:**
+- User feedback: "objectql相关的还是放在这个仓库中" (objectql-related things should remain in this repository)
+- Drivers are core ObjectQL functionality
+- Simpler for users to install and use
+- Centralized testing and version management
 
-**What to Move:**
-- All 8 driver implementations (`@objectql/driver-*`) → Separate `objectql-drivers` monorepo
+### 2.3 Tools Layer (Keep All)
+
+**All Tools - KEEP IN REPOSITORY:**
+- `@objectql/cli` - Command-line interface for development
+- `@objectql/create` - Project scaffolding tool
+- `vscode-objectql` - VS Code extension with IntelliSense
+
+**Why Keep Tools:**
+- Essential part of ObjectQL developer experience
+- Tightly coupled with core functionality
+- Easier to maintain version compatibility
+
+### 2.4 Examples (Keep All)
+
+**All Examples - KEEP IN REPOSITORY:**
+- `examples/quickstart/*` - Hello world and starter examples
+- `examples/showcase/*` - Project tracker, enterprise ERP
+- `examples/integrations/*` - Express server, browser integration
+- `examples/protocols/*` - Multi-protocol server examples
+
+**Why Keep Examples:**
+- Part of ObjectQL documentation and learning materials
+- Demonstrate ObjectQL features and best practices
 
 ---
 
-## 3. Components to MOVE OUT of ObjectQL Kernel
+## 3. Components to MOVE OUT (ObjectStack Ecosystem Only)
 
-### 3.1 Runtime Layer → `@objectstack/runtime` Repository
+### 3.1 Runtime Layer → `objectstack-runtime` Repository
 
 **Packages to Move:**
 - `packages/runtime/server` → New repo: `objectstack-runtime`
 
 **Why Move:**
-- Runtime orchestration is ecosystem concern, not kernel
+- This is ObjectStack-specific, not core ObjectQL
+- Runtime orchestration is ecosystem concern
 - HTTP server adapters (Express, NestJS) are implementation details
+- Server layer depends on protocol plugins
+
+**New Repository Structure:**
+```
+objectstack-runtime/
+├── packages/
+│   ├── server/           # HTTP server adapters
+│   ├── worker/           # Cloudflare Workers adapter (future)
+│   └── lambda/           # AWS Lambda adapter (future)
+└── examples/
+    ├── express-server/
+    └── nextjs-app/
+```
+
+### 3.2 Protocol Plugins → `objectstack-protocols` Repository
+
+**Packages to Move:**
+- `packages/protocols/graphql` → `@objectstack/protocol-graphql`
+- `packages/protocols/json-rpc` → `@objectstack/protocol-json-rpc`
+- `packages/protocols/odata-v4` → `@objectstack/protocol-odata-v4`
+
+**Why Move:**
+- These are ObjectStack-specific protocol bindings
+- Protocol bindings are ecosystem extensions, not ObjectQL core features
+- Each protocol has heavy external dependencies (Apollo, OData libraries)
+- Allows independent versioning and release cycles
+
+**New Repository Structure:**
+```
+objectstack-protocols/
+├── packages/
+│   ├── graphql/          # Apollo Server integration
+│   ├── json-rpc/         # JSON-RPC 2.0 binding
+│   ├── odata-v4/         # OData V4 REST protocol
+│   ├── grpc/             # gRPC protocol (future)
+│   └── rest-openapi/     # REST + OpenAPI (future)
+└── examples/
+    └── multi-protocol-server/
+```
+
+### 3.3 Summary: What Gets Extracted
+
+**ONLY 2 New Repositories (Minimal Extraction):**
+1. `objectstack-runtime` - Runtime server adapters
+2. `objectstack-protocols` - Protocol plugins (GraphQL, OData, JSON-RPC)
+
+**Everything Else STAYS in ObjectQL:**
+- Foundation (types, core, platform-node, plugin-security)
+- All 8 drivers
+- All tools (CLI, create, vscode)
+- All examples
 - Server layer depends on protocol plugins (circular dependency risk)
 
 **New Repository Structure:**
@@ -177,77 +237,9 @@ objectstack-protocols/
     └── multi-protocol-server/
 ```
 
-### 3.3 Driver Implementations → `objectql-drivers` Repository
-
-**Packages to Move:**
-- All 8 driver implementations:
-  - `@objectql/driver-sql`
-  - `@objectql/driver-mongo`
-  - `@objectql/driver-memory`
-  - `@objectql/driver-redis`
-  - `@objectql/driver-excel`
-  - `@objectql/driver-fs`
-  - `@objectql/driver-localstorage`
-  - `@objectql/driver-sdk`
-
-**Why Move:**
-- Drivers are implementation details, not abstractions
-- Each driver has unique dependencies (Knex, MongoDB client, ExcelJS)
-- Separating allows driver-specific versioning and testing
-
-**New Repository Structure:**
-```
-objectql-drivers/
-├── packages/
-│   ├── sql/              # PostgreSQL, MySQL, SQLite, MSSQL
-│   ├── mongo/            # MongoDB
-│   ├── memory/           # In-memory (Mingo)
-│   ├── redis/            # Redis key-value
-│   ├── excel/            # Excel spreadsheets
-│   ├── fs/               # File system JSON storage
-│   ├── localstorage/     # Browser LocalStorage
-│   └── sdk/              # HTTP remote client
-├── templates/
-│   └── driver-template/  # Template for new drivers
-└── tests/
-    └── driver-compliance-tests/ # TCK (Technology Compatibility Kit)
-```
-
-### 3.4 Developer Tools → `objectql-tools` Repository
-
-**Packages to Move:**
-- `packages/tools/cli` → `@objectql/cli`
-- `packages/tools/create` → `create-objectql`
-- `packages/tools/vscode-objectql` → VS Code marketplace
-
-**Why Move:**
-- Tools are developer experience, not runtime kernel
-- CLI has heavy dependencies (inquirer, AI libraries, etc.)
-- Allows independent tool evolution
-
-**New Repository Structure:**
-```
-objectql-tools/
-├── packages/
-│   ├── cli/              # ObjectQL CLI
-│   ├── create/           # Project scaffolding
-│   ├── vscode/           # VS Code extension
-│   └── language-server/  # LSP implementation (future)
-└── templates/
-    ├── starter/
-    ├── hello-world/
-    └── enterprise/
-```
-
-### 3.5 Examples & Documentation → Dedicated Repositories
-
-**Move:**
-- `examples/*` → `objectql-examples` repository
-- `apps/site` → `objectql.org` website repository (already separate?)
-
 ---
 
-## 4. ObjectQL Kernel Optimizations (Post-Refactoring)
+## 4. ObjectQL Kernel Optimizations
 
 After the separation, focus on these **10 kernel improvements**:
 
@@ -664,10 +656,10 @@ Example `package.json` for `@objectstack/runtime`:
 
 4. ✅ Publish ObjectQL 5.0.0 (kernel-only release)
 
-### Phase 5: Ecosystem Alignment (Week 13-16)
+### Phase 4: Ecosystem Alignment (Week 10-12)
 
 **Tasks:**
-1. ✅ Update all external packages to depend on `@objectql/types@^5.0.0`
+1. ✅ Update ObjectStack packages to depend on `@objectql/types@^5.0.0`
 
 2. ✅ Create migration guide for users:
    ```typescript
@@ -677,10 +669,10 @@ Example `package.json` for `@objectstack/runtime`:
    import { GraphQLServer } from '@objectql/server';
    
    // New (v5.x)
-   import { ObjectQLCore } from '@objectql/core'; // Same
-   import { SQLDriver } from '@objectql/driver-sql'; // Now external package
-   import { Server } from '@objectstack/runtime'; // New package
-   import { GraphQLProtocol } from '@objectstack/protocol-graphql'; // New package
+   import { ObjectQLCore } from '@objectql/core'; // Same, in ObjectQL repo
+   import { SQLDriver } from '@objectql/driver-sql'; // Same, in ObjectQL repo
+   import { Server } from '@objectstack/runtime'; // NEW: Moved to ObjectStack
+   import { GraphQLProtocol } from '@objectstack/protocol-graphql'; // NEW: Moved to ObjectStack
    ```
 
 3. ✅ Update examples to use new package structure
@@ -691,16 +683,33 @@ Example `package.json` for `@objectstack/runtime`:
 
 ## 7. Repository Structure (Post-Refactoring)
 
-### ObjectQL Kernel Repository
+### ObjectQL Repository (Revised - Full Stack)
 
 ```
 objectql/
 ├── packages/
-│   └── foundation/
-│       ├── types/           # @objectql/types
-│       ├── core/            # @objectql/core (optimized)
-│       ├── platform-node/   # @objectql/platform-node (optional)
-│       └── plugin-security/ # @objectql/plugin-security (optional)
+│   ├── foundation/
+│   │   ├── types/           # @objectql/types
+│   │   ├── core/            # @objectql/core (optimized)
+│   │   ├── platform-node/   # @objectql/platform-node
+│   │   └── plugin-security/ # @objectql/plugin-security
+│   ├── drivers/
+│   │   ├── sql/             # @objectql/driver-sql
+│   │   ├── mongo/           # @objectql/driver-mongo
+│   │   ├── memory/          # @objectql/driver-memory
+│   │   ├── redis/           # @objectql/driver-redis
+│   │   ├── excel/           # @objectql/driver-excel
+│   │   ├── fs/              # @objectql/driver-fs
+│   │   ├── localstorage/    # @objectql/driver-localstorage
+│   │   └── sdk/             # @objectql/driver-sdk
+│   └── tools/
+│       ├── cli/             # @objectql/cli
+│       ├── create/          # create-objectql
+│       └── vscode-objectql/ # VS Code extension
+├── examples/
+│   ├── quickstart/
+│   ├── showcase/
+│   └── integrations/
 ├── docs/
 │   ├── kernel-api.md
 │   ├── driver-interface.md
@@ -709,15 +718,14 @@ objectql/
 │   ├── metadata-ops.bench.ts
 │   ├── query-compilation.bench.ts
 │   └── validation.bench.ts
-└── README.md
 ```
 
-**Lines of Code:** ~60K (down from ~150K)  
-**Dependencies:** Minimal (only @objectstack/spec)  
-**Build Time:** <10 seconds  
-**Test Suite:** <30 seconds
+**Lines of Code:** ~130K (down from ~150K - only ObjectStack components removed)  
+**Dependencies:** @objectstack/spec + driver dependencies  
+**Build Time:** ~4 minutes (slight improvement)  
+**Test Suite:** ~8 minutes (slight improvement)
 
-### External Repositories
+### External Repositories (ObjectStack Ecosystem Only)
 
 **objectstack-runtime**
 ```
@@ -740,84 +748,61 @@ objectstack-protocols/
 └── examples/
 ```
 
-**objectql-drivers**
-```
-objectql-drivers/
-├── packages/
-│   ├── sql/                 # Knex-based SQL
-│   ├── mongo/               # MongoDB
-│   ├── memory/              # In-memory
-│   └── [6 more drivers...]
-├── templates/
-│   └── driver-template/     # For new drivers
-└── tests/
-    └── compliance/          # TCK (Technology Compatibility Kit)
-```
-
-**objectql-tools**
-```
-objectql-tools/
-├── packages/
-│   ├── cli/                 # ObjectQL CLI
-│   ├── create/              # create-objectql
-│   └── vscode/              # VS Code extension
-└── templates/
-    ├── starter/
-    └── hello-world/
-```
-
 ---
 
-## 8. Benefits of This Refactoring
+## 8. Benefits of This Refactoring (Revised)
 
-### 8.1 For Kernel Developers
+### 8.1 For ObjectQL Repository
 
-✅ **Faster Development Cycles**
-- Build time: 5 minutes → 30 seconds
-- Test suite: 10 minutes → 1 minute
-- Focus only on core abstractions
+✅ **Simplified Scope**
+- Remove only ObjectStack-specific components (runtime, protocols)
+- Keep all ObjectQL components together
+- Easier to maintain and understand
 
-✅ **Clearer Scope**
-- Kernel = Metadata + Query AST + Validation + Driver Interface
-- No distractions from protocol plugins or tools
+✅ **Clearer Architecture**
+- ObjectQL = Complete framework with drivers, tools, examples
+- ObjectStack = Separate ecosystem for runtime and protocol plugins
+- Clear boundary between the two
 
-✅ **Easier Optimization**
-- Profile only kernel code paths
-- No noise from driver-specific performance issues
+✅ **Faster Development (Modest)**
+- Build time: 5 minutes → 4 minutes (20% improvement)
+- Test suite: 10 minutes → 8 minutes (20% improvement)
+- Less external dependencies to manage
 
-### 8.2 For Ecosystem Developers
+### 8.2 For ObjectStack Ecosystem
 
-✅ **Independent Release Cycles**
-- Update GraphQL plugin without waiting for kernel release
-- Ship new drivers on demand
+✅ **Independent Evolution**
+- ObjectStack runtime and protocols can evolve independently
+- No need to wait for ObjectQL releases
+- Different release cycles and versioning
 
-✅ **Lower Barrier to Entry**
-- Clone only the repository you need
-- Smaller codebases = easier to understand
-
-✅ **Better Testing**
-- Driver-specific compliance tests in driver repo
-- Protocol-specific integration tests in protocol repo
+✅ **Focused Development**
+- Runtime server developers work in objectstack-runtime repo
+- Protocol plugin developers work in objectstack-protocols repo
+- Clear ownership and responsibilities
 
 ### 8.3 For End Users
 
-✅ **Smaller Install Size**
-- Install only what you need: `npm install @objectql/core @objectql/driver-sql`
-- No GraphQL dependencies if you only use REST
+✅ **Simpler for ObjectQL Users**
+- Single repository for all ObjectQL needs
+- Install `@objectql/core` and get everything
+- No confusion about which package is where
 
-✅ **Faster Updates**
-- Security patches to drivers don't require kernel rebuild
-- New protocol plugins available independently
+✅ **Optional ObjectStack Integration**
+- Only install ObjectStack packages if needed
+- `npm install @objectstack/runtime` when ready for production
+- `npm install @objectstack/protocol-graphql` for GraphQL support
 
-✅ **Clearer Documentation**
-- Kernel docs focus on core concepts
-- Protocol docs focus on usage examples
+✅ **Easier Migration**
+- Most code stays in same repository
+- Only runtime and protocol imports change
+- Smaller migration effort
 
 ---
 
-## 9. Risks & Mitigation
+## 9. Risks & Mitigation (Revised)
 
-### Risk 1: Breaking Changes for Existing Users
+### Risk 1: Breaking Changes for Runtime/Protocol Users
 
 **Mitigation:**
 - Maintain `@objectql/all` meta-package for backward compatibility:
@@ -828,18 +813,20 @@ objectql-tools/
       "@objectql/core": "^5.0.0",
       "@objectql/driver-sql": "^5.0.0",
       "@objectql/driver-mongo": "^5.0.0",
-      "@objectstack/runtime": "^1.0.0"
+      "@objectstack/runtime": "^1.0.0",
+      "@objectstack/protocol-graphql": "^1.0.0"
     }
   }
   ```
 - Provide migration guide with code examples
 
-### Risk 2: Increased Maintenance Burden
+### Risk 2: Coordination Between ObjectQL and ObjectStack
 
 **Mitigation:**
-- Use GitHub Actions shared workflows (DRY)
-- Automate releases with changesets
-- Use Renovate bot for dependency updates across all repos
+- Define clear interfaces in `@objectql/types` (the contract)
+- Use semantic versioning strictly
+- Create RFC process for breaking changes in interfaces
+- Regular sync meetings between teams
 
 ### Risk 3: Coordination Overhead Between Repos
 
@@ -907,18 +894,17 @@ Based on the analysis, here are **specific improvement requirements** for the Ob
    - Option B: Move to `@objectstack/plugin-security`
    - **Recommendation:** Keep, make it AST-level enforcement
 
-3. ✅ **Create new repositories:**
+3. ✅ **Create new repositories (ObjectStack ecosystem only):**
    ```bash
    gh repo create objectstack-ai/objectstack-runtime
    gh repo create objectstack-ai/objectstack-protocols
-   gh repo create objectstack-ai/objectql-drivers
-   gh repo create objectstack-ai/objectql-tools
-   gh repo create objectstack-ai/objectql-examples
    ```
 
 ### Short-term Actions (Next 2 Weeks)
 
-4. ✅ **Migrate packages** using the strategy in Section 6
+4. ✅ **Migrate ObjectStack packages** using the strategy in Section 6
+   - Move packages/runtime/server to objectstack-runtime
+   - Move packages/protocols/* to objectstack-protocols
 
 5. ✅ **Implement Optimization #1:** Indexed Metadata Registry
    - File: `packages/foundation/core/src/metadata-registry.ts`
@@ -940,21 +926,21 @@ Based on the analysis, here are **specific improvement requirements** for the Ob
    ```
 
 9. ✅ **Update documentation:**
-   - Kernel API reference
-   - Driver interface specification
+   - ObjectQL full stack documentation
+   - ObjectStack integration guide
    - Migration guide from v4.x to v5.x
 
-10. ✅ **Publish ObjectQL 5.0.0** (kernel-only release)
+10. ✅ **Publish ObjectQL 5.0.0** (full-stack release)
 
 ---
 
-## 12. Conclusion
+## 12. Conclusion (Revised)
 
-This refactoring will transform ObjectQL from a **monolithic framework** into a **focused kernel** with a **thriving ecosystem**.
+This refactoring will cleanly separate ObjectQL from the ObjectStack ecosystem while keeping all ObjectQL components together.
 
 **Summary:**
-- ✅ **Kernel (ObjectQL repo):** Types + Core + Validation + Abstractions
-- 📦 **Ecosystem (Separate repos):** Drivers + Runtime + Protocols + Tools
+- ✅ **ObjectQL repo:** Types + Core + All Drivers + Tools + Examples (complete framework)
+- 📦 **ObjectStack repos:** Runtime + Protocols (separate ecosystem)
 - 🚀 **Performance:** 10x improvements through targeted optimizations
 - 📋 **Migration:** Phased approach with backward compatibility
 
@@ -964,17 +950,20 @@ This refactoring will transform ObjectQL from a **monolithic framework** into a 
 3. Create the new repositories
 4. Start Phase 1 of the migration (Week 1-2)
 
-**Expected Timeline:**
-- Week 1-2: Repository setup
-- Week 3-4: Package migration
-- Week 5: Kernel cleanup
-- Week 6-12: Kernel optimizations
-- Week 13-16: Ecosystem alignment
-- **Total:** 16 weeks to ObjectQL 5.0 release
+**Expected Timeline (Revised):**
+- Week 1-2: Create 2 ObjectStack repositories and setup
+- Week 3: Package migration (runtime + protocols only)
+- Week 4-10: Kernel optimizations
+- Week 11-12: Ecosystem alignment and testing
+- **Total:** 12 weeks to ObjectQL 5.0 release
 
 ---
 
-**Document Status:** ✅ Ready for Review  
+**Document Status:** ✅ Ready for Review (Revised based on user feedback)  
 **Approver:** @hotlong (Repository Owner)  
 **Contact:** ObjectStack AI Architecture Team
+
+**Revision History:**
+- v1.0 (2026-01-30): Initial comprehensive plan with 5 new repositories
+- v1.1 (2026-01-30): Revised based on user feedback - only 2 ObjectStack repositories, keep all ObjectQL components together
 
