@@ -77,15 +77,6 @@ export class CompiledHookManager {
         // Expand event patterns
         const events = this.expandPattern(event);
         
-        // Pre-group hooks by concrete event names
-        for (const concreteEvent of events) {
-            const key = `${concreteEvent}:${objectName}`;
-            if (!this.pipelines.has(key)) {
-                this.pipelines.set(key, []);
-            }
-            this.pipelines.get(key)!.push(hook);
-        }
-
         // Handle wildcard object names
         if (objectName === '*') {
             for (const concreteEvent of events) {
@@ -96,6 +87,15 @@ export class CompiledHookManager {
                     this.pipelines.set(wildcardKey, []);
                 }
                 this.pipelines.get(wildcardKey)!.push(hook);
+            }
+        } else {
+            // Pre-group hooks by concrete event names (only for non-wildcard objects)
+            for (const concreteEvent of events) {
+                const key = `${concreteEvent}:${objectName}`;
+                if (!this.pipelines.has(key)) {
+                    this.pipelines.set(key, []);
+                }
+                this.pipelines.get(key)!.push(hook);
             }
         }
     }

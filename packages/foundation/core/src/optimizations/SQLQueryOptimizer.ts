@@ -118,6 +118,12 @@ export class SQLQueryOptimizer {
 
     /**
      * Optimize join type based on query characteristics
+     * 
+     * Note: This method expects filter fields in one of two formats:
+     * 1. Table-prefixed: "tableName.fieldName" (e.g., "accounts.type")
+     * 2. Simple field name: "fieldName" (checked against joined table schema)
+     * 
+     * Multi-level qualification (e.g., "schema.table.field") is not currently supported.
      */
     private optimizeJoinType(
         join: { type: 'left' | 'inner'; table: string; on: any },
@@ -126,16 +132,32 @@ export class SQLQueryOptimizer {
         // If we're filtering on the joined table, we can use INNER JOIN
         if (ast.filters) {
             const filterFields = this.extractFilterFields(ast.filters);
-            const schema = this.schemas.get(join.table);
             
-            if (schema) {
-                const hasFilterOnJoinTable = filterFields.some(field => 
-                    schema.fields[field] !== undefined
-                );
-                
-                if (hasFilterOnJoinTable) {
-                    return 'inner'; // Convert LEFT to INNER for better performance
+            // Check if any filter field references the joined table
+            const hasFilterOnJoinTable = filterFields.some(field => {
+                // Handle table-prefixed fields like "accounts.type"
+                if (field.includes('.')) {
+                    const parts = field.split('.');
+                    // Only consider the first part as table name for simplicity
+                    // This assumes format: "table.field" not "schema.table.field"
+                    if (parts.length === 2 && parts[0] === join.table) {
+                        return true;
+                    }
+                    // If more than 2 parts or table doesn't match, skip this field
+                    return false;
                 }
+                
+                // Also check if the field exists in the joined table schema (non-prefixed)
+                const schema = this.schemas.get(join.table);
+                if (schema) {
+                    return schema.fields[field] !== undefined;
+                }
+                
+                return false;
+            });
+            
+            if (hasFilterOnJoinTable) {
+                return 'inner'; // Convert LEFT to INNER for better performance
             }
         }
 

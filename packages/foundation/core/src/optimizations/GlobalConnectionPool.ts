@@ -97,8 +97,15 @@ export class GlobalConnectionPool {
     private canAllocate(driverName: string): boolean {
         const totalConns = this.totalConnections();
         const driverConns = this.getDriverConnections(driverName);
-
-        return totalConns < this.limits.total && driverConns < this.limits.perDriver;
+        
+        // Check if there's an idle connection available
+        const driverConnections = this.connections.get(driverName) || [];
+        const hasIdleConnection = driverConnections.some(c => !c.inUse);
+        
+        // Can allocate if:
+        // 1. There's an idle connection (reuse), OR
+        // 2. We're under the total and per-driver limits (create new)
+        return hasIdleConnection || (totalConns < this.limits.total && driverConns < this.limits.perDriver);
     }
 
     /**
@@ -113,6 +120,13 @@ export class GlobalConnectionPool {
             idleConnection.inUse = true;
             idleConnection.lastUsedAt = Date.now();
             return idleConnection;
+        }
+
+        // Verify we can create a new connection (double-check to prevent race conditions)
+        const totalConns = this.totalConnections();
+        const driverConns = this.getDriverConnections(driverName);
+        if (totalConns >= this.limits.total || driverConns >= this.limits.perDriver) {
+            throw new Error(`Connection pool limit reached for driver: ${driverName}`);
         }
 
         // Create new connection
