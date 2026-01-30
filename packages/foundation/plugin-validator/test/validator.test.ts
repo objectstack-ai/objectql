@@ -762,16 +762,17 @@ describe('Validator', () => {
                     name: 'status_transition',
                     type: 'state_machine',
                     field: 'status',
-                    transitions: [
-                        { from: 'draft', to: ['pending', 'cancelled'] },
-                        { from: 'pending', to: ['approved', 'rejected'] },
-                    ],
+                    transitions: {
+                        draft: ['pending', 'cancelled'],
+                        pending: ['approved', 'rejected'],
+                    },
+                    message: 'Invalid state transition',
                 };
 
                 const context: ValidationContext = {
                     record: { status: 'approved' },
                     operation: 'update',
-                    previousValues: { status: 'pending' },
+                    previousRecord: { status: 'pending' },
                 };
 
                 const result = await validator.validate([rule], context);
@@ -784,16 +785,17 @@ describe('Validator', () => {
                     name: 'status_transition',
                     type: 'state_machine',
                     field: 'status',
-                    transitions: [
-                        { from: 'draft', to: ['pending'] },
-                        { from: 'pending', to: ['approved'] },
-                    ],
+                    transitions: {
+                        draft: ['pending'],
+                        pending: ['approved'],
+                    },
+                    message: 'Invalid state transition',
                 };
 
                 const context: ValidationContext = {
                     record: { status: 'approved' },
                     operation: 'update',
-                    previousValues: { status: 'draft' }, // Can't go directly to approved
+                    previousRecord: { status: 'draft' }, // Can't go directly to approved
                 };
 
                 const result = await validator.validate([rule], context);
@@ -806,15 +808,16 @@ describe('Validator', () => {
                     name: 'status_transition',
                     type: 'state_machine',
                     field: 'status',
-                    transitions: [
-                        { from: 'draft', to: ['pending'] },
-                    ],
+                    transitions: {
+                        draft: ['pending'],
+                    },
+                    message: 'Invalid state transition',
                 };
 
                 const context: ValidationContext = {
                     record: { status: 'draft' },
                     operation: 'update',
-                    previousValues: { status: 'draft' }, // Same state
+                    previousRecord: { status: 'draft' }, // Same state
                 };
 
                 const result = await validator.validate([rule], context);
@@ -831,7 +834,7 @@ describe('Validator', () => {
                     field: 'field1',
                     compare_to: 'field2',
                     operator: 'eq',
-                    triggers: ['update'],
+                    trigger: ['update'],
                 };
 
                 const createContext: ValidationContext = {
@@ -858,7 +861,7 @@ describe('Validator', () => {
                     field: 'price',
                     value: 0,
                     operator: 'gt',
-                    changedFields: ['price'],
+                    fields: ['price'],
                 };
 
                 const context: ValidationContext = {
