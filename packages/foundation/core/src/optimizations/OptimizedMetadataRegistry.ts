@@ -7,22 +7,20 @@
  */
 
 /**
- * Metadata reference for secondary index
+ * Optimized Metadata Registry with O(k) package uninstall complexity
+ * 
+ * Improvement: Uses secondary indexes to achieve O(k) complexity for
+ * unregisterPackage operation (where k is the number of items in the package)
+ * instead of O(n*m) (where n is types and m is items per type).
  */
+
 interface MetadataRef {
     type: string;
     name: string;
 }
 
-/**
- * Optimized Metadata Registry with O(k) package uninstall complexity
- * 
- * Uses secondary indexes to achieve O(k) complexity for unregisterPackage
- * operation (where k is the number of items in the package) instead of
- * O(n*m) (where n is types and m is items per type).
- */
-export class MetadataRegistry {
-    private items: any = {};
+export class OptimizedMetadataRegistry {
+    private items: Record<string, Record<string, any>> = {};
     
     // Secondary index: package name -> list of metadata references
     private packageIndex = new Map<string, Set<MetadataRef>>();
@@ -131,17 +129,4 @@ export class MetadataRegistry {
             this.packageIndex.delete(packageName);
         }
     }
-}
-export type MetadataItem = any;
-
-/**
- * Legacy Metadata interface - kept for backward compatibility
- * @deprecated Use MetadataItem from @objectstack/runtime instead
- */
-export interface Metadata {
-    type: string;
-    id: string;
-    path?: string;
-    package?: string;
-    content: unknown;
 }

@@ -14,6 +14,7 @@ type SortNode = Data.SortNode;
 import { Validator } from '@objectql/plugin-validator';
 import { FormulaEngine } from '@objectql/plugin-formula';
 import { QueryBuilder } from './query';
+import { QueryCompiler } from './optimizations/QueryCompiler';
 
 /**
  * Extended ObjectStack Kernel with optional ObjectQL plugin capabilities.
@@ -31,6 +32,8 @@ interface ExtendedKernel extends ObjectKernel {
 
 export class ObjectRepository {
     private queryBuilder: QueryBuilder;
+    // Shared query compiler for caching compiled queries
+    private static queryCompiler = new QueryCompiler(1000);
 
     constructor(
         private objectName: string,
@@ -85,9 +88,13 @@ export class ObjectRepository {
 
     /**
      * Translates ObjectQL UnifiedQuery to ObjectStack QueryAST format
+     * Uses query compiler for caching and optimization
      */
     private buildQueryAST(query: UnifiedQuery): QueryAST {
-        return this.queryBuilder.build(this.objectName, query);
+        const ast = this.queryBuilder.build(this.objectName, query);
+        // Use query compiler to cache and optimize the AST
+        const compiled = ObjectRepository.queryCompiler.compile(this.objectName, ast);
+        return compiled.ast;
     }
 
     getSchema(): ObjectConfig {

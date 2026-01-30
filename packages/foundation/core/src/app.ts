@@ -27,6 +27,7 @@ import { ObjectQL as RuntimeObjectQL, SchemaRegistry } from '@objectstack/object
 import { ObjectRepository } from './repository';
 import { ObjectQLPlugin } from './plugin';
 import { convertIntrospectedSchemaToObjects } from './util';
+import { CompiledHookManager } from './optimizations/CompiledHookManager';
 
 /**
  * ObjectQL
@@ -48,9 +49,9 @@ export class ObjectQL implements IObjectQL {
     private ql: any;
     private kernelPlugins: any[] = [];
     
-    // Local Action and Hook Registry (shim for missing/inaccessible Kernel functionality)
+    // Optimized managers
+    private hookManager = new CompiledHookManager();
     private localActions = new Map<string, any>();
-    private localHooks = new Map<string, any[]>();
     
     // Store config for lazy loading in init()
     private config: ObjectQLConfig;
@@ -141,31 +142,13 @@ export class ObjectQL implements IObjectQL {
         const kernelHooks = (this.kernel as any).hooks || {};
         Object.assign(kernelHooks, {
             register: (event: string, objectName: string, handler: any, packageName?: string) => {
-                const key = `${event}:${objectName}`;
-                if (!this.localHooks.has(key)) {
-                    this.localHooks.set(key, []);
-                }
-                const handlers = this.localHooks.get(key)!;
-                // Store wrapper to track package
-                (handler as any)._package = packageName;
-                handlers.push(handler);
+                this.hookManager.registerHook(event, objectName, handler, packageName);
             },
             removePackage: (packageName: string) => {
-                for (const handlers of this.localHooks.values()) {
-                    // Remove handlers belonging to package
-                    for (let i = handlers.length - 1; i >= 0; i--) {
-                        if ((handlers[i] as any)._package === packageName) {
-                            handlers.splice(i, 1);
-                        }
-                    }
-                }
+                this.hookManager.removePackage(packageName);
             },
             trigger: async (event: string, objectName: string, ctx: any) => {
-                const key = `${event}:${objectName}`;
-                const handlers = this.localHooks.get(key) || [];
-                for (const handler of handlers) {
-                    await handler(ctx);
-                }
+                await this.hookManager.runHooks(event, objectName, ctx);
             }
         });
         if (!(this.kernel as any).hooks) {
