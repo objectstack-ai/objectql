@@ -3,6 +3,8 @@
 Generic HTTP Server Adapter for ObjectQL.
 Allows running ObjectQL on Node.js, Express, Next.js, etc.
 
+> **Note**: As of v4.0.2, this package has been subdivided into focused adapter packages following the micro-kernel architecture. See [Subdivision](#subdivision) below for details.
+
 ## Installation
 
 ```bash
@@ -56,6 +58,46 @@ export const config = {
 
 export default createNodeHandler(app);
 ```
+
+## Subdivision
+
+As of version 4.0.2, this package has been subdivided into focused adapter packages to improve modularity and enable better tree-shaking:
+
+- **`@objectql/server`** - Core types and utilities (re-exports all adapters)
+- **`@objectql/server-rest`** - REST API and Node.js adapters
+- **`@objectql/server-graphql`** - GraphQL adapter
+- **`@objectql/server-metadata`** - Metadata API adapter
+- **`@objectql/server-storage`** - File storage adapters
+
+### Backward Compatibility
+
+The main `@objectql/server` package re-exports all subdivided packages, so existing code continues to work without changes:
+
+```typescript
+// Both import styles work:
+import { createRESTHandler } from '@objectql/server';          // ✅ Works (backward compatible)
+import { createRESTHandler } from '@objectql/server-rest';    // ✅ Also works (direct import)
+```
+
+### Selective Imports
+
+For better tree-shaking, you can import directly from specific packages:
+
+```typescript
+// Only need REST API
+import { createRESTHandler, createNodeHandler } from '@objectql/server-rest';
+
+// Only need GraphQL
+import { createGraphQLHandler } from '@objectql/server-graphql';
+
+// Only need metadata
+import { createMetadataHandler } from '@objectql/server-metadata';
+
+// Only need file storage
+import { LocalFileStorage } from '@objectql/server-storage';
+```
+
+For more details, see [RUNTIME_SERVER_SUBDIVISION.md](../../RUNTIME_SERVER_SUBDIVISION.md).
 
 ## API Response Format
 

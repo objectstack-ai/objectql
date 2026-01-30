@@ -234,8 +234,27 @@ This implementation represents a significant architectural improvement that alig
 
 ## Next Steps
 
-1. Update pnpm workspace to recognize new packages
-2. Build all packages
-3. Run existing tests to verify compatibility
-4. Update documentation to reference new package structure
-5. Consider creating plugin versions of adapters for kernel runtime integration
+1. **Update pnpm workspace** to recognize new packages ✅ (Already done - workspace includes `packages/runtime/*`)
+2. **Build all packages** ✅ (Completed successfully)
+3. **Run existing tests** ⚠️ (Tests need to be updated - see below)
+4. **Update examples** to demonstrate new package usage
+5. **Create migration guide** for users
+
+### Test Migration Required
+
+The tests in `packages/runtime/server/test/` need to be migrated to the subdivided packages:
+
+- `graphql.test.ts` → Move to `packages/runtime/server-graphql/test/`
+- `rest.test.ts`, `rest-advanced.test.ts`, `node.test.ts`, `custom-routes.test.ts`, `openapi.test.ts` → Move to `packages/runtime/server-rest/test/`
+- `metadata.test.ts` → Move to `packages/runtime/server-metadata/test/`
+- `storage.test.ts`, `file-validation.test.ts` → Move to `packages/runtime/server-storage/test/`
+
+Test imports also need to be updated to use package imports instead of relative paths:
+
+```typescript
+// Old:
+import { MemoryFileStorage } from '../src/storage';
+
+// New:
+import { MemoryFileStorage } from '@objectql/server-storage';
+```
