@@ -509,9 +509,6 @@ importers:
       js-yaml:
         specifier: ^4.1.0
         version: 4.1.1
-      openai:
-        specifier: ^4.28.0
-        version: 4.104.0(encoding@0.1.13)(ws@8.19.0)(zod@3.25.76)
     devDependencies:
       '@types/js-yaml':
         specifier: ^4.0.5
@@ -538,6 +535,28 @@ importers:
         specifier: ^4.1.1
         version: 4.1.1
     devDependencies:
+      typescript:
+        specifier: ^5.3.0
+        version: 5.9.3
+
+  packages/foundation/plugin-ai-agent:
+    dependencies:
+      '@objectql/plugin-validator':
+        specifier: workspace:*
+        version: link:../plugin-validator
+      '@objectql/types':
+        specifier: workspace:*
+        version: link:../types
+      js-yaml:
+        specifier: ^4.1.0
+        version: 4.1.1
+      openai:
+        specifier: ^4.28.0
+        version: 4.104.0(encoding@0.1.13)(ws@8.19.0)(zod@3.25.76)
+    devDependencies:
+      '@types/js-yaml':
+        specifier: ^4.0.5
+        version: 4.0.9
       typescript:
         specifier: ^5.3.0
         version: 5.9.3
@@ -708,6 +727,9 @@ importers:
       '@objectql/platform-node':
         specifier: workspace:*
         version: link:../../foundation/platform-node
+      '@objectql/plugin-ai-agent':
+        specifier: workspace:*
+        version: link:../../foundation/plugin-ai-agent
       '@objectql/plugin-validator':
         specifier: workspace:*
         version: link:../../foundation/plugin-validator

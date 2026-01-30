@@ -47,8 +47,9 @@ The formula engine and validator have been successfully refactored from the mono
 - **Changes**:
   - Added dependencies on new plugin packages (for internal use)
   - **Does NOT re-export components** - clean separation enforced
-  - Updated imports in repository.ts, ai-agent.ts, plugin.ts
+  - Updated imports in repository.ts, plugin.ts
   - Removed 1,317 lines of code (moved to plugins)
+  - AI Agent moved to separate plugin package
 - **Tests**: 121 tests across 7 suites (all passing)
 - **Migration**: Breaking change - users must update imports
 
@@ -72,10 +73,12 @@ The formula engine and validator have been successfully refactored from the mono
 @objectql/plugin-validator (focused, modular)
 └── Validation functionality only
 
+@objectql/plugin-ai-agent (focused, modular)
+└── AI agent functionality only
+
 @objectql/core (lean, focused)
 ├── Core repository logic
-├── Query builder
-└── AI agent
+└── Query builder
 ```
 
 ## Key Advantages

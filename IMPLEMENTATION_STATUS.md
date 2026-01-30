@@ -101,7 +101,7 @@ The complete runtime engine with all core features:
 - Validation integration
 - Hook triggering
 
-**AI Agent** (`src/ai-agent.ts`) - ✅ 100%
+**AI Agent** (`@objectql/plugin-ai-agent`) - ✅ 100%
 - `generateApp()` - Generate complete apps from natural language
 - `generateConversational()` - Step-by-step generation with user feedback
 - `validateMetadata()` - AI-powered schema validation

@@ -12,7 +12,7 @@ import * as yaml from 'js-yaml';
 import * as readline from 'readline';
 import chalk from 'chalk';
 import OpenAI from 'openai';
-import { ObjectQLAgent } from '@objectql/core';
+import { ObjectQLAgent } from '@objectql/plugin-ai-agent';
 import { Validator } from '@objectql/plugin-validator';
 import { glob } from 'fast-glob';
 
