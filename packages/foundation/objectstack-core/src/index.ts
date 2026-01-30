@@ -11,6 +11,7 @@ export {
     ObjectKernel, 
     ObjectStackKernel,
     type Plugin,
+    type RuntimeContext as PluginContext,
     type RuntimeContext,
     type RuntimeAppConfig,
     type RuntimeDriver,
