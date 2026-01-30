@@ -78,7 +78,9 @@ interface MethodSignature {
  * - object.count(objectName, filters) - Count records
  * - metadata.list() - List all objects
  * - metadata.get(objectName) - Get object metadata
+ * - metadata.getAll(metaType) - Get all metadata of a specific type
  * - action.execute(actionName, params) - Execute custom action
+ * - action.list() - List all registered actions
  * - system.listMethods() - List available methods (if introspection enabled)
  * - system.describe(method) - Describe method signature (if introspection enabled)
  * 
@@ -230,19 +232,6 @@ export class JSONRPCPlugin implements RuntimePlugin {
         }
         
         return [];
-    }
-    
-    /**
-     * Helper: Get UI view
-     */
-    private getUiView(objectName: string, viewType: 'list' | 'form'): any {
-        if (!this.engine) return null;
-        
-        if (typeof this.engine.getView === 'function') {
-            return this.engine.getView(objectName, viewType);
-        }
-        
-        return null;
     }
     
     /**
@@ -410,15 +399,6 @@ export class JSONRPCPlugin implements RuntimePlugin {
         this.methodSignatures.set('action.list', {
             params: [],
             description: 'List all registered actions'
-        });
-
-        // View methods
-        this.methods.set('view.get', async (objectName: string, viewType?: 'list' | 'form') => {
-            return this.getUiView(objectName, viewType || 'list');
-        });
-        this.methodSignatures.set('view.get', {
-            params: ['objectName', 'viewType'],
-            description: 'Get view configuration for an object'
         });
 
         // Introspection methods (if enabled)
