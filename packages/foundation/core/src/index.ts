@@ -29,7 +29,6 @@ export * from './query';
 
 // Export utilities
 export * from './util';
-export * from './ai-agent';
 
 // Export kernel optimizations
 export * from './optimizations';
