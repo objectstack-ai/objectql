@@ -40,9 +40,8 @@ updateData(objectName, id, data): Promise<any>        // 更新记录
 deleteData(objectName, id): Promise<boolean>          // 删除记录
 ```
 
-#### 视图和动作方法 (View & Action Methods)
+#### 动作方法 (Action Methods)
 ```typescript
-getViewConfig(objectName, viewType?): unknown         // 获取视图配置
 executeAction(actionName, params?): Promise<any>      // 执行动作
 getActions(): string[]                                // 列出所有动作
 ```

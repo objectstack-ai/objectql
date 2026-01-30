@@ -230,8 +230,7 @@ The bridge layer provides these methods for protocol implementations:
 - `updateData(objectName, id, data): Promise<any>` - Update record
 - `deleteData(objectName, id): Promise<boolean>` - Delete record
 
-### View & Action Methods
-- `getViewConfig(objectName, viewType?): unknown` - Get view config
+### Action Methods
 - `executeAction(actionName, params?): Promise<any>` - Execute action
 - `getActions(): string[]` - List actions
 
