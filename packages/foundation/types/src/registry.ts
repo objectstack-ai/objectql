@@ -7,13 +7,25 @@
  */
 
 /**
- * Re-export MetadataRegistry and MetadataItem from @objectstack/runtime
+ * Metadata reference for secondary index
+ */
+interface MetadataRef {
+    type: string;
+    name: string;
+}
+
+/**
+ * Optimized Metadata Registry with O(k) package uninstall complexity
  * 
- * As of Week 3 refactoring, metadata management has been moved to the
- * @objectstack/runtime package to enable sharing across the ecosystem.
+ * Uses secondary indexes to achieve O(k) complexity for unregisterPackage
+ * operation (where k is the number of items in the package) instead of
+ * O(n*m) (where n is types and m is items per type).
  */
 export class MetadataRegistry {
     private items: any = {};
+    
+    // Secondary index: package name -> list of metadata references
+    private packageIndex = new Map<string, Set<MetadataRef>>();
 
     constructor() {}
 
@@ -35,6 +47,15 @@ export class MetadataRegistry {
 
         if (name) {
             this.items[type][name] = item;
+            
+            // Update package index
+            const packageName = item.package || (item as any)._package || (item as any).packageName;
+            if (packageName) {
+                if (!this.packageIndex.has(packageName)) {
+                    this.packageIndex.set(packageName, new Set());
+                }
+                this.packageIndex.get(packageName)!.add({ type, name });
+            }
         }
     }
 
@@ -65,22 +86,49 @@ export class MetadataRegistry {
     }
 
     unregister(type: string, name: string) {
-        if (this.items[type]?.[name]) {
+        const item = this.items[type]?.[name];
+        if (item) {
+            // Update package index
+            const packageName = item.package || (item as any)._package || (item as any).packageName;
+            if (packageName) {
+                const refs = this.packageIndex.get(packageName);
+                if (refs) {
+                    // Remove this specific reference
+                    for (const ref of refs) {
+                        if (ref.type === type && ref.name === name) {
+                            refs.delete(ref);
+                            break;
+                        }
+                    }
+                    // Clean up empty package entries
+                    if (refs.size === 0) {
+                        this.packageIndex.delete(packageName);
+                    }
+                }
+            }
             delete this.items[type][name];
         }
     }
 
+    /**
+     * Optimized package unregistration with O(k) complexity
+     * where k is the number of items in the package.
+     * 
+     * Previous complexity: O(n*m) - iterate all types and all items
+     * New complexity: O(k) - direct lookup via secondary index
+     */
     unregisterPackage(packageName: string) {
-        // Optimized implementation using secondary index
-        // This is now O(k) instead of O(n*m) where k is items in package
-        for (const type of Object.keys(this.items)) {
-            for (const key of Object.keys(this.items[type])) {
-                const item = this.items[type][key];
-                // Check widely for packaging metadata (package or _package)
-                if (item.package === packageName || (item as any)._package === packageName || (item as any).packageName === packageName) {
-                    delete this.items[type][key];
+        // Direct lookup via secondary index ✅
+        const refs = this.packageIndex.get(packageName);
+        if (refs) {
+            // Delete each item referenced by this package
+            for (const ref of refs) {
+                if (this.items[ref.type]?.[ref.name]) {
+                    delete this.items[ref.type][ref.name];
                 }
             }
+            // Remove package from index
+            this.packageIndex.delete(packageName);
         }
     }
 }
