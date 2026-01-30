@@ -1,0 +1,30 @@
+{
+  "name": "@objectql/server-rest",
+  "version": "4.0.2",
+  "description": "REST API adapter for ObjectQL - Express/NestJS compatible with OpenAPI support",
+  "keywords": [
+    "objectql",
+    "server",
+    "rest",
+    "api",
+    "express",
+    "nestjs",
+    "openapi",
+    "adapter"
+  ],
+  "license": "MIT",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@objectql/server": "workspace:*",
+    "@objectql/types": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.0"
+  }
+}

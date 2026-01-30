@@ -6,17 +6,14 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+// Core exports
 export * from './types';
 export * from './utils';
-export * from './openapi';
 export * from './server';
-export * from './metadata';
-export * from './storage';
-export * from './file-handler';
-// We export createNodeHandler from root for convenience, 
-// but in the future we might encourage 'import ... from @objectql/server/node'
-export * from './adapters/node';
-// Export REST adapter
-export * from './adapters/rest';
-// Export GraphQL adapter
-export * from './adapters/graphql';
+
+// Re-export from subdivided packages for backward compatibility
+// Users can import directly from @objectql/server or from the specific packages
+export * from '@objectql/server-rest';
+export * from '@objectql/server-graphql';
+export * from '@objectql/server-metadata';
+export * from '@objectql/server-storage';
