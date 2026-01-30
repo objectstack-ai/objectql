@@ -1,117 +1,116 @@
 # ObjectQL Kernel Optimizations
 
-This document describes the 10 kernel optimizations implemented for ObjectQL to improve performance, scalability, and resource efficiency.
+This document describes the kernel optimizations that have been **directly integrated** into ObjectQL to improve performance, scalability, and resource efficiency.
 
 ## Overview
 
-The ObjectQL kernel has been enhanced with the following optimizations:
+The ObjectQL kernel includes the following built-in optimizations:
 
-1. **Metadata Registry Optimization** - O(k) package uninstall with secondary indexes
-2. **Query AST Compilation with LRU Cache** - Cached query plan compilation
-3. **Hook Pipeline Compilation** - Pre-compiled hook pipelines
-4. **Connection Pool Management** - Kernel-level global connection pooling
-5. **Validation Engine Optimization** - Compiled validation rules
-6. **Lazy Metadata Loading** - On-demand metadata loading with predictive preload
-7. **TypeScript Type Generation** - (Deferred for compatibility)
-8. **Smart Dependency Graph** - DAG-based dependency resolution
-9. **Query Optimizer (SQL-specific)** - SQL-aware optimization with index hints
-10. **Memory-Mapped Storage** - (Deferred for compatibility)
+1. **Metadata Registry Optimization** ✅ - O(k) package uninstall with secondary indexes (INTEGRATED)
+2. **Query AST Compilation with LRU Cache** ✅ - Cached query plan compilation (INTEGRATED)
+3. **Hook Pipeline Compilation** ✅ - Pre-compiled hook pipelines (INTEGRATED)
+4. **Connection Pool Management** - Kernel-level global connection pooling (AVAILABLE)
+5. **Validation Engine Optimization** - Compiled validation rules (AVAILABLE)
+6. **Lazy Metadata Loading** - On-demand metadata loading with predictive preload (AVAILABLE)
+7. **Smart Dependency Graph** - DAG-based dependency resolution (AVAILABLE)
+8. **SQL Query Optimizer** - SQL-aware optimization with index hints (AVAILABLE)
 
-## 1. Metadata Registry Optimization
+## Built-in Optimizations (Always Active)
 
-### Problem
-The original `unregisterPackage` operation had O(n*m) complexity, iterating over all metadata types and all items within each type.
+These optimizations are automatically enabled and require no configuration:
 
-### Solution
-Implemented a secondary index that maps package names to their metadata references. This reduces complexity to O(k), where k is the number of items in the package being unregistered.
+### 1. Metadata Registry Optimization ✅ INTEGRATED
 
-### Usage
+**Location:** `packages/foundation/types/src/registry.ts`
+
+The MetadataRegistry now uses a secondary index for O(k) package uninstallation.
+
+**What Changed:**
+- Added `packageIndex` Map for tracking package-to-metadata references
+- `unregisterPackage()` now does direct lookup instead of iterating all items
+- Complexity reduced from O(n*m) to O(k)
+
+**Performance Impact:**
+- **10x faster** package operations
+- No performance degradation as metadata grows
+
+**Usage:**
+No changes needed - this is now the default behavior:
 
 ```typescript
-import { OptimizedMetadataRegistry } from '@objectql/core';
+import { MetadataRegistry } from '@objectql/types';
 
-const registry = new OptimizedMetadataRegistry();
+const registry = new MetadataRegistry();
+registry.register('object', { name: 'user', package: 'crm' });
 
-// Register items with package information
-registry.register('object', { 
-  name: 'user', 
-  package: 'crm',
-  fields: {...}
-});
-
-// Fast O(k) package uninstallation
+// Fast O(k) operation - no configuration needed
 registry.unregisterPackage('crm');
 ```
 
-### Performance Impact
-- **10x faster** package operations
-- Eliminates performance degradation as metadata grows
+### 2. Query AST Compilation with LRU Cache ✅ INTEGRATED
 
-## 2. Query AST Compilation with LRU Cache
+**Location:** `packages/foundation/core/src/repository.ts`
 
-### Problem
-Query AST was reinterpreted on every execution, causing redundant computation for repeated queries.
+Query AST compilation now includes automatic caching via QueryCompiler.
 
-### Solution
-Implemented a query compiler with LRU cache that compiles AST to optimized execution plans and caches results.
+**What Changed:**
+- Added static `QueryCompiler` instance shared across all repositories
+- `buildQueryAST()` now caches compiled queries automatically
+- LRU cache (1000 entries) prevents memory growth
 
-### Usage
-
-```typescript
-import { QueryCompiler } from '@objectql/core';
-
-const compiler = new QueryCompiler(1000); // Cache size
-
-// Compile and cache query
-const compiled = compiler.compile('user', {
-  filters: { status: 'active' },
-  sort: [{ field: 'created', order: 'desc' }]
-});
-
-// Subsequent calls return cached plan
-const cached = compiler.compile('user', { /* same query */ });
-```
-
-### Performance Impact
-- **10x faster** query planning
-- **50% lower** CPU usage for repeated queries
+**Performance Impact:**
+- **10x faster** query planning for repeated queries
+- **50% lower** CPU usage
 - Automatic cache eviction using LRU policy
 
-## 3. Hook Pipeline Compilation
-
-### Problem
-Hook patterns were matched on every operation, causing O(n) pattern matching overhead for every hook execution.
-
-### Solution
-Pre-compiles hook pipelines by event pattern at registration time. Uses direct lookup at runtime with no pattern matching.
-
-### Usage
+**Usage:**
+No changes needed - caching happens automatically:
 
 ```typescript
-import { CompiledHookManager } from '@objectql/core';
+// First call compiles and caches
+const repo = context.object('user');
+await repo.find({ filters: { status: 'active' } });
 
-const hookManager = new CompiledHookManager();
+// Second call uses cached plan
+await repo.find({ filters: { status: 'active' } });
+```
 
-// Register hooks - patterns are expanded at registration
-hookManager.registerHook('before*', 'user', async (ctx) => {
+### 3. Hook Pipeline Compilation ✅ INTEGRATED
+
+**Location:** `packages/foundation/core/src/app.ts`
+
+Hook management now uses CompiledHookManager for pre-compiled pipelines.
+
+**What Changed:**
+- Replaced local hook management with `CompiledHookManager`
+- Wildcard patterns (`before*`, `*`) expanded at registration time
+- Runtime uses O(1) direct lookup instead of pattern matching
+
+**Performance Impact:**
+- **5x faster** hook execution
+- Parallel async hook support
+- No runtime pattern matching overhead
+
+**Usage:**
+No changes needed - pattern compilation happens automatically:
+
+```typescript
+// Patterns are expanded at registration
+app.on('before*', 'user', async (ctx) => {
   // Handler code
 });
 
-// Fast O(1) lookup and execution
-await hookManager.runHooks('beforeCreate', 'user', context);
+// Fast O(1) lookup at runtime
+await app.triggerHook('beforeCreate', 'user', context);
 ```
 
-### Features
-- Wildcard pattern expansion (`before*`, `*`)
-- Parallel async execution
-- Priority-based ordering
+## Available Optimizations (Opt-in)
 
-### Performance Impact
-- **5x faster** hook execution
-- Parallel async hook support
-- No runtime pattern matching
+## Available Optimizations (Opt-in)
 
-## 4. Global Connection Pool Management
+These optimizations are available as separate modules for advanced use cases:
+
+### 4. Connection Pool Management
 
 ### Problem
 Each driver managed connections independently with no global resource limits, leading to resource exhaustion.

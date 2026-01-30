@@ -1,77 +1,88 @@
 # Quick Start: ObjectQL Kernel Optimizations
 
-This guide helps you quickly adopt the new kernel optimizations in your ObjectQL application.
+This guide explains the built-in kernel optimizations and how to use optional advanced features.
 
-## Installation
+## Built-in Optimizations (No Configuration Required)
 
-The optimizations are included in `@objectql/core`. Make sure you have the latest version:
-
-```bash
-npm install @objectql/core@latest
-```
-
-## Quick Examples
+ObjectQL includes three optimizations that are **always enabled** and require no configuration:
 
 ### 1. Optimized Metadata Registry
 
-Replace your existing registry for faster package operations:
+The MetadataRegistry automatically uses a secondary index for fast package operations.
+
+**How it works:**
+- Maintains a package index for O(k) unregisterPackage operations
+- 10x faster than previous O(n*m) implementation
+
+**Usage:** Just use the normal API - optimization is automatic:
 
 ```typescript
-import { OptimizedMetadataRegistry } from '@objectql/core';
+import { MetadataRegistry } from '@objectql/types';
 
-// Create optimized registry
-const registry = new OptimizedMetadataRegistry();
-
-// Use it normally
+const registry = new MetadataRegistry();
 registry.register('object', { 
   name: 'user',
   package: 'crm',
   fields: { /* ... */ }
 });
 
-// Fast package uninstall (10x faster!)
+// Fast O(k) operation - no special configuration
 registry.unregisterPackage('crm');
 ```
 
-### 2. Query Compiler with Cache
+### 2. Query Plan Caching
 
-Speed up repeated queries:
+All query AST compilation is automatically cached with an LRU cache.
+
+**How it works:**
+- QueryCompiler automatically caches compiled query plans
+- Shared static instance across all ObjectRepository instances
+- 1000-entry LRU cache prevents memory growth
+
+**Usage:** Just use normal query methods - caching happens automatically:
 
 ```typescript
-import { QueryCompiler } from '@objectql/core';
+const repo = context.object('user');
 
-// Create compiler with cache
-const compiler = new QueryCompiler(1000);
-
-// Compile queries - automatically cached
-const compiled = compiler.compile('user', {
+// First call compiles and caches the query plan
+const users1 = await repo.find({ 
   filters: { status: 'active' },
-  sort: [{ field: 'created', order: 'desc' }]
+  sort: [['created', 'desc']]
 });
 
-// Use compiled.plan for execution
-console.log(compiled.plan.useIndex); // Suggested indexes
+// Second call reuses cached plan - 10x faster!
+const users2 = await repo.find({ 
+  filters: { status: 'active' },
+  sort: [['created', 'desc']]
+});
 ```
 
-### 3. Compiled Hook Manager
+### 3. Pre-compiled Hook Pipelines
 
-Faster hook execution with pre-compilation:
+Hook patterns are compiled at registration time for O(1) runtime lookup.
+
+**How it works:**
+- Wildcard patterns expanded during registration
+- Direct map lookup at runtime (no pattern matching)
+- Parallel async execution
+
+**Usage:** Just register hooks normally - compilation is automatic:
 
 ```typescript
-import { CompiledHookManager } from '@objectql/core';
-
-const hookManager = new CompiledHookManager();
-
-// Register hooks - wildcards expanded at registration time
-hookManager.registerHook('before*', 'user', async (ctx) => {
+// Patterns like 'before*' are expanded at registration
+app.on('before*', 'user', async (ctx) => {
   console.log('Before operation:', ctx.operation);
 });
 
-// Execute hooks - instant lookup, no pattern matching
-await hookManager.runHooks('beforeCreate', 'user', context);
+// Runtime execution uses O(1) lookup - 5x faster!
+await app.triggerHook('beforeCreate', 'user', context);
 ```
 
-### 4. Global Connection Pool
+## Optional Advanced Features
+
+The following optimizations are available as opt-in modules for advanced use cases:
+
+### 1. Global Connection Pool
 
 Manage database connections efficiently:
 

@@ -2,41 +2,55 @@
 
 ## Overview
 
-This PR implements 8 out of 10 proposed kernel optimizations for ObjectQL to significantly improve performance, scalability, and resource efficiency.
+This PR directly integrates 3 core kernel optimizations into ObjectQL and provides 5 additional opt-in optimizations for advanced use cases.
 
-## Completed Optimizations
+## Integrated Optimizations (Always Active)
 
-### 1. Metadata Registry Optimization ✅
-**File:** `packages/foundation/core/src/optimizations/OptimizedMetadataRegistry.ts`
+### 1. Metadata Registry Optimization ✅ INTEGRATED
+**File:** `packages/foundation/types/src/registry.ts`
 
+- **DIRECTLY REPLACED** the MetadataRegistry implementation
 - Implemented secondary index mapping package names to metadata references
 - Changed complexity from O(n*m) to O(k) for package uninstallation
 - **Expected improvement:** 10x faster package operations
 
+**Integration:** No longer a separate module - this IS the MetadataRegistry now.
+
 **Key Innovation:** Maintains a `packageIndex` Map that tracks all metadata items by package name, enabling direct lookup during unregistration.
 
-### 2. Query AST Compilation with LRU Cache ✅
-**File:** `packages/foundation/core/src/optimizations/QueryCompiler.ts`
+### 2. Query AST Compilation with LRU Cache ✅ INTEGRATED
+**File:** `packages/foundation/core/src/repository.ts` + `packages/foundation/core/src/optimizations/QueryCompiler.ts`
 
-- Implemented custom LRU cache for compiled query plans
-- Caches optimized execution plans with automatic eviction
+- **INTEGRATED** into ObjectRepository as static shared instance
+- All query AST compilation automatically goes through QueryCompiler
+- LRU cache (1000 entries) with automatic eviction
 - Detects indexable fields and optimal join strategies
 - **Expected improvement:** 10x faster query planning, 50% lower CPU usage
 
+**Integration:** QueryCompiler is now used automatically by all ObjectRepository instances.
+
 **Key Innovation:** Custom LRU cache implementation using doubly-linked list for O(1) get/set operations with automatic least-recently-used eviction.
 
-### 3. Hook Pipeline Compilation ✅
-**File:** `packages/foundation/core/src/optimizations/CompiledHookManager.ts`
+### 3. Hook Pipeline Compilation ✅ INTEGRATED
+**File:** `packages/foundation/core/src/app.ts` + `packages/foundation/core/src/optimizations/CompiledHookManager.ts`
 
+- **INTEGRATED** into ObjectQL class replacing local hook management
+- All hook registration/execution goes through CompiledHookManager
 - Pre-compiles hook pipelines at registration time
 - Expands wildcard patterns (`before*`, `*`) during registration
 - Direct O(1) lookup at runtime with no pattern matching
 - Parallel async execution support
 - **Expected improvement:** 5x faster hook execution
 
+**Integration:** CompiledHookManager is now the default hook manager in ObjectQL.
+
 **Key Innovation:** Pattern expansion happens once at registration, creating direct event-to-handlers mappings for zero-cost runtime lookups.
 
-### 4. Connection Pool Management ✅
+## Available Optimizations (Opt-in)
+
+These optimizations are provided as standalone modules for advanced use cases:
+
+### 4. Connection Pool Management ✅ AVAILABLE
 **File:** `packages/foundation/core/src/optimizations/GlobalConnectionPool.ts`
 
 - Kernel-level connection pool with global and per-driver limits
@@ -47,7 +61,7 @@ This PR implements 8 out of 10 proposed kernel optimizations for ObjectQL to sig
 
 **Key Innovation:** Coordinates connection allocation across all drivers to prevent resource exhaustion while maintaining fair distribution.
 
-### 5. Validation Engine Optimization ✅
+### 5. Validation Engine Optimization ✅ AVAILABLE
 **File:** `packages/foundation/core/src/optimizations/OptimizedValidationEngine.ts`
 
 - Compiles validation schemas to optimized validator functions
@@ -57,7 +71,7 @@ This PR implements 8 out of 10 proposed kernel optimizations for ObjectQL to sig
 
 **Key Innovation:** One-time compilation of validation rules into efficient JavaScript functions that are cached and reused.
 
-### 6. Lazy Metadata Loading ✅
+### 6. Lazy Metadata Loading ✅ AVAILABLE
 **File:** `packages/foundation/core/src/optimizations/LazyMetadataLoader.ts`
 
 - On-demand metadata loading instead of eager loading
@@ -68,7 +82,7 @@ This PR implements 8 out of 10 proposed kernel optimizations for ObjectQL to sig
 
 **Key Innovation:** Analyzes object relationships (lookup, master_detail fields) to predictively preload related metadata in the background.
 
-### 7. Smart Dependency Graph ✅
+### 7. Smart Dependency Graph ✅ AVAILABLE
 **File:** `packages/foundation/core/src/optimizations/DependencyGraph.ts`
 
 - DAG-based dependency resolution
@@ -80,7 +94,7 @@ This PR implements 8 out of 10 proposed kernel optimizations for ObjectQL to sig
 
 **Key Innovation:** Automatic dependency tracking and topological sort ensure operations occur in correct order respecting data relationships.
 
-### 8. SQL Query Optimizer ✅
+### 8. SQL Query Optimizer ✅ AVAILABLE
 **File:** `packages/foundation/core/src/optimizations/SQLQueryOptimizer.ts`
 
 - Index hint generation based on filter fields
