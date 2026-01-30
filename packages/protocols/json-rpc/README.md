@@ -306,22 +306,6 @@ Get method signature and description.
 }
 ```
 
-### View Methods
-
-#### view.get
-
-Get view configuration for an object.
-
-**Request:**
-```json
-{
-  "jsonrpc": "2.0",
-  "method": "view.get",
-  "params": ["users", "list"],
-  "id": 14
-}
-```
-
 ## Advanced Features
 
 ### Batch Requests

@@ -233,19 +233,6 @@ export class JSONRPCPlugin implements RuntimePlugin {
     }
     
     /**
-     * Helper: Get UI view
-     */
-    private getUiView(objectName: string, viewType: 'list' | 'form'): any {
-        if (!this.engine) return null;
-        
-        if (typeof this.engine.getView === 'function') {
-            return this.engine.getView(objectName, viewType);
-        }
-        
-        return null;
-    }
-    
-    /**
      * Helper: Get data by ID
      */
     private async getData(objectName: string, id: string): Promise<any> {
@@ -410,15 +397,6 @@ export class JSONRPCPlugin implements RuntimePlugin {
         this.methodSignatures.set('action.list', {
             params: [],
             description: 'List all registered actions'
-        });
-
-        // View methods
-        this.methods.set('view.get', async (objectName: string, viewType?: 'list' | 'form') => {
-            return this.getUiView(objectName, viewType || 'list');
-        });
-        this.methodSignatures.set('view.get', {
-            params: ['objectName', 'viewType'],
-            description: 'Get view configuration for an object'
         });
 
         // Introspection methods (if enabled)

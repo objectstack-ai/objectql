@@ -126,9 +126,6 @@ Translation: All API protocols (GraphQL, REST, OData) must exist as RuntimePlugi
 - `system.listMethods()` - List available methods
 - `system.describe(method)` - Get method signature
 
-**View Methods** (1):
-- `view.get(objectName, viewType)` - Get view configuration
-
 ### 4. Multi-Protocol Server Example ✅
 
 **Location**: `examples/protocols/multi-protocol-server/`

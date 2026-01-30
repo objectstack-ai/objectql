@@ -123,10 +123,9 @@ metadata.list()
 metadata.get(objectName)
 metadata.getAll(metaType)
 
-// Actions & Views
+// Actions
 action.execute(actionName, params)
 action.list()
-view.get(objectName, viewType)
 
 // Introspection
 system.listMethods()
