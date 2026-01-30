@@ -25,6 +25,7 @@ export namespace Data {
         | 'text' 
         | 'textarea' 
         | 'html' 
+        | 'markdown'
         | 'number' 
         | 'currency' 
         | 'percent' 
@@ -39,6 +40,7 @@ export namespace Data {
         | 'email'
         | 'url'
         | 'phone'
+        | 'password'
         | 'image'
         | 'file'
         | 'location'
@@ -166,6 +168,18 @@ export namespace UI {
  * System namespace - System-level interfaces
  */
 export namespace System {
+    /**
+     * Plugin Definition
+     */
+    export interface PluginDefinition {
+        id?: string;
+        name: string;
+        version?: string;
+        onEnable?(context: any): void | Promise<void>;
+        onDisable?(context: any): void | Promise<void>;
+        [key: string]: any;
+    }
+
     /**
      * Driver Interface
      */
