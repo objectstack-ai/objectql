@@ -26,7 +26,8 @@
   },
   "dependencies": {
     "@objectql/types": "workspace:*",
-    "@objectstack/spec": "^0.7.1"
+    "@objectstack/spec": "^0.7.1",
+    "@objectql/driver-memory": "workspace:*"
   },
   "devDependencies": {
     "@types/jest": "^29.0.0",

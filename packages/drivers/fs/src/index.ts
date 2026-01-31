@@ -38,7 +38,8 @@ type DriverInterface = Data.DriverInterface;
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { Driver, ObjectQLError } from '@objectql/types';
+import { ObjectQLError } from '@objectql/types';
+import { MemoryDriver, MemoryDriverConfig } from '@objectql/driver-memory';
 
 /**
  * Command interface for executeCommand method
@@ -67,1037 +68,197 @@ export interface CommandResult {
 /**
  * Configuration options for the FileSystem driver.
  */
-export interface FileSystemDriverConfig {
+export interface FileSystemDriverConfig extends MemoryDriverConfig {
     /** Directory path where JSON files will be stored */
     dataDir: string;
     /** Optional: Enable pretty-print JSON for readability (default: true) */
     prettyPrint?: boolean;
     /** Optional: Enable backup files on write (default: true) */
     enableBackup?: boolean;
-    /** Optional: Enable strict mode (throw on missing objects) */
-    strictMode?: boolean;
-    /** Optional: Initial data to populate the store */
-    initialData?: Record<string, any[]>;
 }
 
 /**
  * FileSystem Driver Implementation
  * 
+ * Extends MemoryDriver with file system persistence.
+ * All query and aggregation logic is inherited from MemoryDriver.
+ * Only the persistence layer (load/save) is overridden.
+ * 
  * Stores ObjectQL documents in JSON files with format:
  * - File: `{dataDir}/{objectName}.json`
  * - Content: Array of records `[{id: "1", ...}, {id: "2", ...}]`
  */
-export class FileSystemDriver implements Driver {
-    // Driver metadata (ObjectStack-compatible)
-    public readonly name = 'FileSystemDriver';
-    public readonly version = '4.0.0';
-    public readonly supports = {
-        transactions: false,
-        joins: false,
-        fullTextSearch: false,
-        jsonFields: true,
-        arrayFields: true,
-        queryFilters: true,
-        queryAggregations: false,
-        querySorting: true,
-        queryPagination: true,
-        queryWindowFunctions: false,
-        querySubqueries: false
-    };
-
-    private config: FileSystemDriverConfig;
-    private idCounters: Map<string, number>;
+export class FileSystemDriver extends MemoryDriver {
+    private dataDir: string;
+    private prettyPrint: boolean;
+    private enableBackup: boolean;
     private cache: Map<string, any[]>;
 
     constructor(config: FileSystemDriverConfig) {
-        this.config = {
-            prettyPrint: true,
-            enableBackup: true,
-            strictMode: false,
-            ...config
-        };
-        this.idCounters = new Map<string, number>();
+        // Initialize parent with inherited config properties
+        super({
+            strictMode: config.strictMode,
+            initialData: config.initialData,
+            indexes: config.indexes
+        });
+        
+        // Override driver name and version
+        (this as any).name = 'FileSystemDriver';
+        (this as any).version = '4.0.0';
+        
+        this.dataDir = path.resolve(config.dataDir);
+        this.prettyPrint = config.prettyPrint !== false;
+        this.enableBackup = config.enableBackup !== false;
         this.cache = new Map<string, any[]>();
 
         // Ensure data directory exists
-        if (!fs.existsSync(this.config.dataDir)) {
-            fs.mkdirSync(this.config.dataDir, { recursive: true });
+        if (!fs.existsSync(this.dataDir)) {
+            fs.mkdirSync(this.dataDir, { recursive: true });
         }
 
-        // Load initial data if provided
-        if (config.initialData) {
-            this.loadInitialData(config.initialData);
-        }
+        // Load all existing data files
+        this.loadAllFromDisk();
     }
 
     /**
-     * Connect to the database (for DriverInterface compatibility)
-     * This is a no-op for filesystem driver as there's no external connection.
+     * Load all JSON files from disk into memory
      */
-    async connect(): Promise<void> {
-        // No-op: FileSystem driver doesn't need connection
-    }
-
-    /**
-     * Check database connection health
-     */
-    async checkHealth(): Promise<boolean> {
-        try {
-            // Check if data directory is accessible
-            if (!fs.existsSync(this.config.dataDir)) {
-                return false;
-            }
-            // Try to read directory
-            fs.readdirSync(this.config.dataDir);
-            return true;
-        } catch (error) {
-            return false;
+    protected loadAllFromDisk(): void {
+        if (!fs.existsSync(this.dataDir)) {
+            return;
         }
-    }
 
-    /**
-     * Load initial data into the store.
-     */
-    private loadInitialData(data: Record<string, any[]>): void {
-        for (const [objectName, records] of Object.entries(data)) {
-            // Only load if file doesn't exist yet
-            const filePath = this.getFilePath(objectName);
-            if (!fs.existsSync(filePath)) {
-                const recordsWithIds = records.map(record => ({
-                    ...record,
-                    id: record.id || record._id || this.generateId(objectName),
-                    created_at: record.created_at || new Date().toISOString(),
-                    updated_at: record.updated_at || new Date().toISOString()
-                }));
-                this.saveRecords(objectName, recordsWithIds);
+        const files = fs.readdirSync(this.dataDir);
+        for (const file of files) {
+            if (file.endsWith('.json') && !file.endsWith('.backup.json')) {
+                const objectName = file.replace('.json', '');
+                const records = this.loadRecordsFromDisk(objectName);
+                
+                // Load into parent's store
+                for (const record of records) {
+                    const id = record.id || record._id;
+                    const key = `${objectName}:${id}`;
+                    this.store.set(key, record);
+                }
             }
         }
     }
 
     /**
-     * Get the file path for an object type.
+     * Load records for an object type from disk
      */
-    private getFilePath(objectName: string): string {
-        return path.join(this.config.dataDir, `${objectName}.json`);
-    }
-
-    /**
-     * Load records from file into memory cache.
-     */
-    private loadRecords(objectName: string): any[] {
-        // Check cache first
-        if (this.cache.has(objectName)) {
-            return this.cache.get(objectName)!;
-        }
-
+    protected loadRecordsFromDisk(objectName: string): any[] {
         const filePath = this.getFilePath(objectName);
         
         if (!fs.existsSync(filePath)) {
-            // File doesn't exist yet, return empty array
-            this.cache.set(objectName, []);
             return [];
         }
 
         try {
             const content = fs.readFileSync(filePath, 'utf8');
-            
-            // Handle empty file
-            if (!content || content.trim() === '') {
-                this.cache.set(objectName, []);
+            if (!content.trim()) {
                 return [];
             }
-            
-            let records;
-            try {
-                records = JSON.parse(content);
-            } catch (parseError) {
-                throw new ObjectQLError({
-                    code: 'INVALID_JSON_FORMAT',
-                    message: `File ${filePath} contains invalid JSON: ${(parseError as Error).message}`,
-                    details: { objectName, filePath, parseError }
-                });
-            }
-            
-            if (!Array.isArray(records)) {
-                throw new ObjectQLError({
-                    code: 'INVALID_DATA_FORMAT',
-                    message: `File ${filePath} does not contain a valid array`,
-                    details: { objectName, filePath }
-                });
-            }
-            
-            this.cache.set(objectName, records);
-            return records;
+            return JSON.parse(content);
         } catch (error) {
-            // If it's already an ObjectQLError, rethrow it
-            if ((error as any).code && (error as any).code.startsWith('INVALID_')) {
-                throw error;
-            }
-            
-            if ((error as any).code === 'ENOENT') {
-                this.cache.set(objectName, []);
-                return [];
-            }
-            
-            throw new ObjectQLError({
-                code: 'FILE_READ_ERROR',
-                message: `Failed to read file for object '${objectName}': ${(error as Error).message}`,
-                details: { objectName, filePath, error }
-            });
+            console.warn(`[FileSystemDriver] Failed to parse ${filePath}:`, error);
+            return [];
         }
     }
 
     /**
-     * Save records to file with atomic write strategy.
+     * Save records for an object type to disk
      */
-    private saveRecords(objectName: string, records: any[]): void {
+    protected saveRecordsToDisk(objectName: string, records: any[]): void {
         const filePath = this.getFilePath(objectName);
+        
+        // Create backup if enabled
+        if (this.enableBackup && fs.existsSync(filePath)) {
+            const backupPath = `${filePath}.backup.json`;
+            fs.copyFileSync(filePath, backupPath);
+        }
+
+        // Ensure directory exists
+        const dir = path.dirname(filePath);
+        if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true });
+        }
+
+        // Write to temp file first (atomic write)
         const tempPath = `${filePath}.tmp`;
-        const backupPath = `${filePath}.bak`;
-
-        try {
-            // Create backup if file exists and backup is enabled
-            if (this.config.enableBackup && fs.existsSync(filePath)) {
-                fs.copyFileSync(filePath, backupPath);
-            }
-
-            // Write to temporary file
-            const content = this.config.prettyPrint 
-                ? JSON.stringify(records, null, 2)
-                : JSON.stringify(records);
-            
-            fs.writeFileSync(tempPath, content, 'utf8');
-
-            // Atomic rename (replaces original file)
-            fs.renameSync(tempPath, filePath);
-
-            // Update cache
-            this.cache.set(objectName, records);
-        } catch (error) {
-            // Clean up temp file if it exists
-            if (fs.existsSync(tempPath)) {
-                fs.unlinkSync(tempPath);
-            }
-
-            throw new ObjectQLError({
-                code: 'FILE_WRITE_ERROR',
-                message: `Failed to write file for object '${objectName}': ${(error as Error).message}`,
-                details: { objectName, filePath, error }
-            });
-        }
+        const content = this.prettyPrint 
+            ? JSON.stringify(records, null, 2)
+            : JSON.stringify(records);
+        
+        fs.writeFileSync(tempPath, content, 'utf8');
+        fs.renameSync(tempPath, filePath);
+        
+        // Update cache
+        this.cache.set(objectName, records);
     }
 
     /**
-     * Find multiple records matching the query criteria.
+     * Get file path for an object type
      */
-    async find(objectName: string, query: any = {}, options?: any): Promise<any[]> {
-        // Normalize query to support both legacy and QueryAST formats
-        const normalizedQuery = this.normalizeQuery(query);
-        let results = this.loadRecords(objectName);
-
-        // Apply filters
-        if (normalizedQuery.filters) {
-            results = this.applyFilters(results, normalizedQuery.filters);
-        }
-
-        // Apply sorting
-        if (normalizedQuery.sort && Array.isArray(normalizedQuery.sort)) {
-            results = this.applySort(results, normalizedQuery.sort);
-        }
-
-        // Apply pagination
-        if (normalizedQuery.skip) {
-            results = results.slice(normalizedQuery.skip);
-        }
-        if (normalizedQuery.limit) {
-            results = results.slice(0, normalizedQuery.limit);
-        }
-
-        // Apply field projection
-        if (normalizedQuery.fields && Array.isArray(normalizedQuery.fields)) {
-            results = results.map(doc => this.projectFields(doc, normalizedQuery.fields));
-        }
-
-        // Return deep copies to prevent external modifications
-        return results.map(r => ({ ...r }));
+    protected getFilePath(objectName: string): string {
+        return path.join(this.dataDir, `${objectName}.json`);
     }
 
     /**
-     * Find a single record by ID or query.
-     */
-    async findOne(objectName: string, id: string | number, query?: any, options?: any): Promise<any> {
-        const records = this.loadRecords(objectName);
-
-        // If ID is provided, fetch directly
-        if (id) {
-            const record = records.find(r => r.id === id || r._id === id);
-            return record ? { ...record } : null;
-        }
-
-        // If query is provided, use find and return first result
-        if (query) {
-            const results = await this.find(objectName, { ...query, limit: 1 }, options);
-            return results[0] || null;
-        }
-
-        return null;
-    }
-
-    /**
-     * Create a new record.
+     * Override create to persist to disk
      */
     async create(objectName: string, data: any, options?: any): Promise<any> {
-        // Validate object name
-        if (!objectName || objectName.trim() === '') {
-            throw new ObjectQLError({
-                code: 'INVALID_OBJECT_NAME',
-                message: 'Object name cannot be empty',
-                details: { objectName }
-            });
-        }
-
-        const records = this.loadRecords(objectName);
-
-        // Generate ID if not provided
-        const id = data.id || data._id || this.generateId(objectName);
-        
-        // Check if record already exists
-        const existing = records.find(r => r.id === id || r._id === id);
-        if (existing) {
-            throw new ObjectQLError({
-                code: 'DUPLICATE_RECORD',
-                message: `Record with id '${id}' already exists in '${objectName}'`,
-                details: { objectName, id }
-            });
-        }
-
-        const now = new Date().toISOString();
-        const doc = {
-            ...data,
-            id,
-            created_at: data.created_at || now,
-            updated_at: data.updated_at || now
-        };
-
-        records.push(doc);
-        this.saveRecords(objectName, records);
-
-        return { ...doc };
+        const result = await super.create(objectName, data, options);
+        this.syncObjectToDisk(objectName);
+        return result;
     }
 
     /**
-     * Update an existing record.
+     * Override update to persist to disk
      */
     async update(objectName: string, id: string | number, data: any, options?: any): Promise<any> {
-        const records = this.loadRecords(objectName);
-        const index = records.findIndex(r => r.id === id || r._id === id);
-
-        if (index === -1) {
-            if (this.config.strictMode) {
-                throw new ObjectQLError({
-                    code: 'RECORD_NOT_FOUND',
-                    message: `Record with id '${id}' not found in '${objectName}'`,
-                    details: { objectName, id }
-                });
-            }
-            return null;
+        const result = await super.update(objectName, id, data, options);
+        if (result) {
+            this.syncObjectToDisk(objectName);
         }
-
-        const existing = records[index];
-        const doc = {
-            ...existing,
-            ...data,
-            id: existing.id || existing._id, // Preserve ID
-            created_at: existing.created_at, // Preserve created_at
-            updated_at: new Date().toISOString()
-        };
-
-        records[index] = doc;
-        this.saveRecords(objectName, records);
-
-        return { ...doc };
+        return result;
     }
 
     /**
-     * Delete a record.
+     * Override delete to persist to disk
      */
     async delete(objectName: string, id: string | number, options?: any): Promise<any> {
-        const records = this.loadRecords(objectName);
-        const index = records.findIndex(r => r.id === id || r._id === id);
-
-        if (index === -1) {
-            if (this.config.strictMode) {
-                throw new ObjectQLError({
-                    code: 'RECORD_NOT_FOUND',
-                    message: `Record with id '${id}' not found in '${objectName}'`,
-                    details: { objectName, id }
-                });
-            }
-            return false;
-        }
-
-        records.splice(index, 1);
-        this.saveRecords(objectName, records);
-
-        return true;
-    }
-
-    /**
-     * Count records matching filters.
-     */
-    async count(objectName: string, filters: any, options?: any): Promise<number> {
-        const records = this.loadRecords(objectName);
-
-        // Handle query object with 'where' property
-        let actualFilters = filters;
-        
-        // If filters is a query object with 'where' property, extract and convert it
-        if (filters && typeof filters === 'object' && !Array.isArray(filters) && 'where' in filters) {
-            actualFilters = this.convertFilterConditionToArray(filters.where);
-        }
-        // If filters is a query object with 'filters' property, extract it
-        else if (filters && !Array.isArray(filters) && 'filters' in filters) {
-            actualFilters = filters.filters;
-        }
-        // If filters is a FilterCondition object (MongoDB-like), convert it
-        else if (filters && !Array.isArray(filters) && typeof filters === 'object' && 
-                 !('where' in filters) && !('filters' in filters)) {
-            actualFilters = this.convertFilterConditionToArray(filters);
-        }
-
-        // If no filters or empty object/array, return total count
-        if (!actualFilters || 
-            (Array.isArray(actualFilters) && actualFilters.length === 0) ||
-            (typeof actualFilters === 'object' && !Array.isArray(actualFilters) && Object.keys(actualFilters).length === 0)) {
-            return records.length;
-        }
-
-        // Count only records matching filters
-        return records.filter(record => this.matchesFilters(record, actualFilters)).length;
-    }
-
-    /**
-     * Get distinct values for a field.
-     */
-    async distinct(objectName: string, field: string, filters?: any, options?: any): Promise<any[]> {
-        const records = this.loadRecords(objectName);
-        
-        // Convert FilterCondition format (MongoDB-like) to array format if needed
-        let actualFilters = filters;
-        if (filters && !Array.isArray(filters) && typeof filters === 'object') {
-            actualFilters = this.convertFilterConditionToArray(filters);
-        }
-        
-        const values = new Set<any>();
-
-        for (const record of records) {
-            if (!actualFilters || this.matchesFilters(record, actualFilters)) {
-                const value = record[field];
-                if (value !== undefined && value !== null) {
-                    values.add(value);
-                }
-            }
-        }
-
-        return Array.from(values);
-    }
-
-    /**
-     * Create multiple records at once.
-     */
-    async createMany(objectName: string, data: any[], options?: any): Promise<any> {
-        const results = [];
-        for (const item of data) {
-            const result = await this.create(objectName, item, options);
-            results.push(result);
-        }
-        return results;
-    }
-
-    /**
-     * Update multiple records matching filters.
-     */
-    async updateMany(objectName: string, filters: any, data: any, options?: any): Promise<any> {
-        const records = this.loadRecords(objectName);
-        
-        // Convert FilterCondition format (MongoDB-like) to array format if needed
-        let actualFilters = filters;
-        if (filters && !Array.isArray(filters) && typeof filters === 'object') {
-            actualFilters = this.convertFilterConditionToArray(filters);
-        }
-        
-        let count = 0;
-
-        for (let i = 0; i < records.length; i++) {
-            if (this.matchesFilters(records[i], actualFilters)) {
-                const updated = {
-                    ...records[i],
-                    ...data,
-                    id: records[i].id || records[i]._id, // Preserve ID
-                    created_at: records[i].created_at, // Preserve created_at
-                    updated_at: new Date().toISOString()
-                };
-                records[i] = updated;
-                count++;
-            }
-        }
-
-        if (count > 0) {
-            this.saveRecords(objectName, records);
-        }
-
-        return { modifiedCount: count };
-    }
-
-    /**
-     * Delete multiple records matching filters.
-     */
-    async deleteMany(objectName: string, filters: any, options?: any): Promise<any> {
-        const records = this.loadRecords(objectName);
-        
-        // Convert FilterCondition format (MongoDB-like) to array format if needed
-        let actualFilters = filters;
-        if (filters && !Array.isArray(filters) && typeof filters === 'object') {
-            actualFilters = this.convertFilterConditionToArray(filters);
-        }
-        
-        const initialCount = records.length;
-
-        const remaining = records.filter(record => !this.matchesFilters(record, actualFilters));
-        const deletedCount = initialCount - remaining.length;
-
-        if (deletedCount > 0) {
-            this.saveRecords(objectName, remaining);
-        }
-
-        return { deletedCount };
-    }
-
-    /**
-     * Disconnect (flush cache).
-     */
-    async disconnect(): Promise<void> {
-        this.cache.clear();
-    }
-
-    /**
-     * Clear all data from a specific object.
-     * Useful for testing or data reset scenarios.
-     */
-    async clear(objectName: string): Promise<void> {
-        const filePath = this.getFilePath(objectName);
-        
-        // Remove file if exists
-        if (fs.existsSync(filePath)) {
-            fs.unlinkSync(filePath);
-        }
-        
-        // Remove backup if exists
-        const backupPath = `${filePath}.bak`;
-        if (fs.existsSync(backupPath)) {
-            fs.unlinkSync(backupPath);
-        }
-        
-        // Clear cache
-        this.cache.delete(objectName);
-        this.idCounters.delete(objectName);
-    }
-
-    /**
-     * Clear all data from all objects.
-     * Removes all JSON files in the data directory.
-     */
-    async clearAll(): Promise<void> {
-        const files = fs.readdirSync(this.config.dataDir);
-        
-        for (const file of files) {
-            if (file.endsWith('.json') || file.endsWith('.json.bak') || file.endsWith('.json.tmp')) {
-                const filePath = path.join(this.config.dataDir, file);
-                fs.unlinkSync(filePath);
-            }
-        }
-        
-        this.cache.clear();
-        this.idCounters.clear();
-    }
-
-    /**
-     * Invalidate cache for a specific object.
-     * Forces reload from file on next access.
-     */
-    invalidateCache(objectName: string): void {
-        this.cache.delete(objectName);
-    }
-
-    /**
-     * Get the size of the cache (number of objects cached).
-     */
-    getCacheSize(): number {
-        return this.cache.size;
-    }
-
-    /**
-     * Execute a query using QueryAST (DriverInterface v4.0 method)
-     * 
-     * This method handles all query operations using the standard QueryAST format
-     * from @objectstack/spec. It converts the AST to the legacy query format
-     * and delegates to the existing find() method.
-     * 
-     * @param ast - The query AST to execute
-     * @param options - Optional execution options
-     * @returns Query results with value array and count
-     */
-    async executeQuery(ast: QueryAST, options?: any): Promise<{ value: any[]; count?: number }> {
-        const objectName = ast.object || '';
-        
-        // Convert QueryAST to legacy query format
-        // Note: Convert FilterCondition (MongoDB-like) to array format for fs driver
-        const legacyQuery: any = {
-            fields: ast.fields,
-            filters: this.convertFilterConditionToArray(ast.where),
-            sort: ast.orderBy?.map((s: SortNode) => [s.field, s.order]),
-            limit: ast.limit,
-            skip: ast.offset,
-        };
-        
-        // Use existing find method
-        const results = await this.find(objectName, legacyQuery, options);
-        
-        return {
-            value: results,
-            count: results.length
-        };
-    }
-
-    /**
-     * Execute a command (DriverInterface v4.0 method)
-     * 
-     * This method handles all mutation operations (create, update, delete)
-     * using a unified command interface.
-     * 
-     * @param command - The command to execute
-     * @param options - Optional execution options
-     * @returns Command execution result
-     */
-    async executeCommand(command: Command, options?: any): Promise<CommandResult> {
-        try {
-            const cmdOptions = { ...options, ...command.options };
-            
-            switch (command.type) {
-                case 'create':
-                    if (!command.data) {
-                        throw new Error('Create command requires data');
-                    }
-                    const created = await this.create(command.object, command.data, cmdOptions);
-                    return {
-                        success: true,
-                        data: created,
-                        affected: 1
-                    };
-                
-                case 'update':
-                    if (!command.id || !command.data) {
-                        throw new Error('Update command requires id and data');
-                    }
-                    const updated = await this.update(command.object, command.id, command.data, cmdOptions);
-                    return {
-                        success: true,
-                        data: updated,
-                        affected: 1
-                    };
-                
-                case 'delete':
-                    if (!command.id) {
-                        throw new Error('Delete command requires id');
-                    }
-                    await this.delete(command.object, command.id, cmdOptions);
-                    return {
-                        success: true,
-                        affected: 1
-                    };
-                
-                case 'bulkCreate':
-                    if (!command.records || !Array.isArray(command.records)) {
-                        throw new Error('BulkCreate command requires records array');
-                    }
-                    const bulkCreated = [];
-                    for (const record of command.records) {
-                        const created = await this.create(command.object, record, cmdOptions);
-                        bulkCreated.push(created);
-                    }
-                    return {
-                        success: true,
-                        data: bulkCreated,
-                        affected: command.records.length
-                    };
-                
-                case 'bulkUpdate':
-                    if (!command.updates || !Array.isArray(command.updates)) {
-                        throw new Error('BulkUpdate command requires updates array');
-                    }
-                    const updateResults = [];
-                    for (const update of command.updates) {
-                        const result = await this.update(command.object, update.id, update.data, cmdOptions);
-                        updateResults.push(result);
-                    }
-                    return {
-                        success: true,
-                        data: updateResults,
-                        affected: command.updates.length
-                    };
-                
-                case 'bulkDelete':
-                    if (!command.ids || !Array.isArray(command.ids)) {
-                        throw new Error('BulkDelete command requires ids array');
-                    }
-                    let deleted = 0;
-                    for (const id of command.ids) {
-                        const result = await this.delete(command.object, id, cmdOptions);
-                        if (result) deleted++;
-                    }
-                    return {
-                        success: true,
-                        affected: deleted
-                    };
-                
-                default:
-                    throw new Error(`Unsupported command type: ${(command as any).type}`);
-            }
-        } catch (error: any) {
-            return {
-                success: false,
-                affected: 0,
-                error: error.message || 'Unknown error occurred'
-            };
-        }
-    }
-
-    /**
-     * Execute raw command (for compatibility)
-     * 
-     * @param command - Command string or object
-     * @param parameters - Command parameters
-     * @param options - Execution options
-     */
-    async execute(command: any, parameters?: any[], options?: any): Promise<any> {
-        throw new Error('FileSystem driver does not support raw command execution. Use executeCommand() instead.');
-    }
-
-    // ========== Helper Methods ==========
-
-    /**
-     * Convert FilterCondition (MongoDB-like format) to legacy array format.
-     * This allows the fs driver to use its existing filter evaluation logic.
-     * 
-     * @param condition - FilterCondition object or legacy array
-     * @returns Legacy filter array format
-     */
-    private convertFilterConditionToArray(condition?: any): any[] | undefined {
-        if (!condition) return undefined;
-        
-        // If already an array, return as-is
-        if (Array.isArray(condition)) {
-            return condition;
-        }
-        
-        // If it's an object (FilterCondition), convert to array format
-        // This is a simplified conversion - a full implementation would need to handle all operators
-        const result: any[] = [];
-        
-        for (const [key, value] of Object.entries(condition)) {
-            if (key === '$and' && Array.isArray(value)) {
-                // Handle $and: [cond1, cond2, ...]
-                for (let i = 0; i < value.length; i++) {
-                    const converted = this.convertFilterConditionToArray(value[i]);
-                    if (converted && converted.length > 0) {
-                        if (result.length > 0) {
-                            result.push('and');
-                        }
-                        result.push(...converted);
-                    }
-                }
-            } else if (key === '$or' && Array.isArray(value)) {
-                // Handle $or: [cond1, cond2, ...]
-                for (let i = 0; i < value.length; i++) {
-                    const converted = this.convertFilterConditionToArray(value[i]);
-                    if (converted && converted.length > 0) {
-                        if (result.length > 0) {
-                            result.push('or');
-                        }
-                        result.push(...converted);
-                    }
-                }
-            } else if (key === '$not' && typeof value === 'object') {
-                // Handle $not: { condition }
-                // Note: NOT is complex to represent in array format, so we skip it for now
-                const converted = this.convertFilterConditionToArray(value);
-                if (converted) {
-                    result.push(...converted);
-                }
-            } else if (typeof value === 'object' && value !== null) {
-                // Handle field-level conditions like { field: { $eq: value } }
-                const field = key;
-                for (const [operator, operandValue] of Object.entries(value)) {
-                    let op: string;
-                    switch (operator) {
-                        case '$eq': op = '='; break;
-                        case '$ne': op = '!='; break;
-                        case '$gt': op = '>'; break;
-                        case '$gte': op = '>='; break;
-                        case '$lt': op = '<'; break;
-                        case '$lte': op = '<='; break;
-                        case '$in': op = 'in'; break;
-                        case '$nin': op = 'nin'; break;
-                        case '$regex': op = 'like'; break;
-                        default: op = '=';
-                    }
-                    result.push([field, op, operandValue]);
-                }
-            } else {
-                // Handle simple equality: { field: value }
-                result.push([key, '=', value]);
-            }
-        }
-        
-        return result.length > 0 ? result : undefined;
-    }
-
-    /**
-     * Normalizes query format to support both legacy UnifiedQuery and QueryAST formats.
-     * This ensures backward compatibility while supporting the new @objectstack/spec interface.
-     * 
-     * QueryAST format uses:
-     * - 'where' with MongoDB-like filters (convert to 'filters' array)
-     * - 'orderBy' with array of {field, order} (convert to 'sort' with [field, order])
-     * - 'offset' (convert to 'skip')
-     * - 'top' (convert to 'limit')
-     */
-    private normalizeQuery(query: any): any {
-        if (!query) return {};
-        
-        const normalized: any = { ...query };
-        
-        // Convert 'where' (FilterCondition) to 'filters' (array format)
-        if (normalized.where !== undefined && normalized.filters === undefined) {
-            normalized.filters = this.convertFilterConditionToArray(normalized.where);
-        }
-        
-        // Convert 'orderBy' to 'sort'
-        if (normalized.orderBy !== undefined && normalized.sort === undefined) {
-            if (Array.isArray(normalized.orderBy)) {
-                normalized.sort = normalized.orderBy.map((item: any) => {
-                    if (Array.isArray(item)) {
-                        // Already in [field, order] format
-                        return item;
-                    } else {
-                        // Convert from {field, order} format
-                        return [item.field, item.order || item.direction || item.dir || 'asc'];
-                    }
-                });
-            }
-        }
-        
-        // Convert 'offset' to 'skip'
-        if (normalized.offset !== undefined && normalized.skip === undefined) {
-            normalized.skip = normalized.offset;
-        }
-        
-        // Normalize limit/top
-        if (normalized.top !== undefined && normalized.limit === undefined) {
-            normalized.limit = normalized.top;
-        }
-        
-        // Normalize sort format (in case sort is already present)
-        if (normalized.sort && Array.isArray(normalized.sort)) {
-            // Check if it's already in the array format [field, order]
-            const firstSort = normalized.sort[0];
-            if (firstSort && typeof firstSort === 'object' && !Array.isArray(firstSort)) {
-                // Convert from QueryAST format {field, order} to internal format [field, order]
-                normalized.sort = normalized.sort.map((item: any) => [
-                    item.field,
-                    item.order || item.direction || item.dir || 'asc'
-                ]);
-            }
-        }
-        
-        return normalized;
-    }
-
-    /**
-     * Apply filters to an array of records.
-     * 
-     * Supports ObjectQL filter format with logical operators (AND/OR):
-     * [
-     *   ['field', 'operator', value],
-     *   'or',
-     *   ['field2', 'operator', value2]
-     * ]
-     */
-    private applyFilters(records: any[], filters: any[]): any[] {
-        if (!filters || filters.length === 0) {
-            return records;
-        }
-        return records.filter(record => this.matchesFilters(record, filters));
-    }
-
-    /**
-     * Check if a single record matches the filter conditions.
-     */
-    private matchesFilters(record: any, filters: any[]): boolean {
-        if (!filters || filters.length === 0) {
-            return true;
-        }
-
-        let conditions: boolean[] = [];
-        let operators: string[] = [];
-
-        for (const item of filters) {
-            if (typeof item === 'string') {
-                // Logical operator (and/or)
-                operators.push(item.toLowerCase());
-            } else if (Array.isArray(item)) {
-                const [field, operator, value] = item;
-
-                // Handle nested filter groups
-                if (typeof field !== 'string') {
-                    conditions.push(this.matchesFilters(record, item));
-                } else {
-                    const matches = this.evaluateCondition(record[field], operator, value);
-                    conditions.push(matches);
-                }
-            }
-        }
-
-        // Combine conditions with operators
-        if (conditions.length === 0) {
-            return true;
-        }
-
-        let result = conditions[0];
-        for (let i = 0; i < operators.length && i + 1 < conditions.length; i++) {
-            const op = operators[i];
-            const nextCondition = conditions[i + 1];
-
-            if (op === 'or') {
-                result = result || nextCondition;
-            } else { // 'and' or default
-                result = result && nextCondition;
-            }
-        }
-
-        return result;
-    }
-
-    /**
-     * Evaluate a single filter condition.
-     */
-    private evaluateCondition(fieldValue: any, operator: string, compareValue: any): boolean {
-        switch (operator) {
-            case '=':
-            case '==':
-                return fieldValue === compareValue;
-            case '!=':
-            case '<>':
-                return fieldValue !== compareValue;
-            case '>':
-                return fieldValue > compareValue;
-            case '>=':
-                return fieldValue >= compareValue;
-            case '<':
-                return fieldValue < compareValue;
-            case '<=':
-                return fieldValue <= compareValue;
-            case 'in':
-                return Array.isArray(compareValue) && compareValue.includes(fieldValue);
-            case 'nin':
-            case 'not in':
-                return Array.isArray(compareValue) && !compareValue.includes(fieldValue);
-            case 'contains':
-            case 'like':
-                return String(fieldValue).toLowerCase().includes(String(compareValue).toLowerCase());
-            case 'startswith':
-            case 'starts_with':
-                return String(fieldValue).toLowerCase().startsWith(String(compareValue).toLowerCase());
-            case 'endswith':
-            case 'ends_with':
-                return String(fieldValue).toLowerCase().endsWith(String(compareValue).toLowerCase());
-            case 'between':
-                return Array.isArray(compareValue) &&
-                    fieldValue >= compareValue[0] &&
-                    fieldValue <= compareValue[1];
-            default:
-                throw new ObjectQLError({
-                    code: 'UNSUPPORTED_OPERATOR',
-                    message: `[FileSystemDriver] Unsupported operator: ${operator}`,
-                });
-        }
-    }
-
-    /**
-     * Apply sorting to an array of records.
-     */
-    private applySort(records: any[], sort: any[]): any[] {
-        const sorted = [...records];
-
-        // Apply sorts in reverse order for correct precedence
-        for (let i = sort.length - 1; i >= 0; i--) {
-            const sortItem = sort[i];
-
-            let field: string;
-            let direction: string;
-
-            if (Array.isArray(sortItem)) {
-                [field, direction] = sortItem;
-            } else if (typeof sortItem === 'object') {
-                field = sortItem.field;
-                direction = sortItem.order || sortItem.direction || sortItem.dir || 'asc';
-            } else {
-                continue;
-            }
-
-            sorted.sort((a, b) => {
-                const aVal = a[field];
-                const bVal = b[field];
-
-                // Handle null/undefined
-                if (aVal == null && bVal == null) return 0;
-                if (aVal == null) return 1;
-                if (bVal == null) return -1;
-
-                // Compare values
-                if (aVal < bVal) return direction === 'asc' ? -1 : 1;
-                if (aVal > bVal) return direction === 'asc' ? 1 : -1;
-                return 0;
-            });
-        }
-
-        return sorted;
-    }
-
-    /**
-     * Project specific fields from a document.
-     */
-    private projectFields(doc: any, fields: string[]): any {
-        const result: any = {};
-        for (const field of fields) {
-            if (doc[field] !== undefined) {
-                result[field] = doc[field];
-            }
+        const result = await super.delete(objectName, id, options);
+        if (result) {
+            this.syncObjectToDisk(objectName);
         }
         return result;
     }
 
     /**
-     * Generate a unique ID for a record.
-     * Uses timestamp + counter for uniqueness.
-     * Note: For production use with high-frequency writes, consider using crypto.randomUUID().
+     * Sync an object type's data to disk
      */
-    private generateId(objectName: string): string {
-        const counter = (this.idCounters.get(objectName) || 0) + 1;
-        this.idCounters.set(objectName, counter);
+    protected syncObjectToDisk(objectName: string): void {
+        const records: any[] = [];
+        const prefix = `${objectName}:`;
+        
+        for (const [key, value] of this.store.entries()) {
+            if (key.startsWith(prefix)) {
+                records.push(value);
+            }
+        }
+        
+        this.saveRecordsToDisk(objectName, records);
+    }
 
-        // Use timestamp + counter for better uniqueness
-        const timestamp = Date.now();
-        return `${objectName}-${timestamp}-${counter}`;
+    /**
+     * Clear cache for an object
+     */
+    invalidateCache(objectName?: string): void {
+        if (objectName) {
+            this.cache.delete(objectName);
+        } else {
+            this.cache.clear();
+        }
     }
 }

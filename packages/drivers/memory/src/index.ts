@@ -118,12 +118,12 @@ export class MemoryDriver implements Driver {
         querySubqueries: false
     };
 
-    private store: Map<string, any>;
-    private config: MemoryDriverConfig;
-    private idCounters: Map<string, number>;
-    private transactions: Map<string, MemoryTransaction>;
-    private indexes: Map<string, Map<string, Set<string>>>; // objectName -> field -> Set<recordIds>
-    private persistenceTimer?: NodeJS.Timeout;
+    protected store: Map<string, any>;
+    protected config: MemoryDriverConfig;
+    protected idCounters: Map<string, number>;
+    protected transactions: Map<string, MemoryTransaction>;
+    protected indexes: Map<string, Map<string, Set<string>>>; // objectName -> field -> Set<recordIds>
+    protected persistenceTimer?: NodeJS.Timeout;
 
     constructor(config: MemoryDriverConfig = {}) {
         this.config = config;
@@ -167,7 +167,7 @@ export class MemoryDriver implements Driver {
     /**
      * Load initial data into the store.
      */
-    private loadInitialData(data: Record<string, any[]>): void {
+    protected loadInitialData(data: Record<string, any[]>): void {
         for (const [objectName, records] of Object.entries(data)) {
             for (const record of records) {
                 const id = record.id || this.generateId(objectName);
@@ -651,7 +651,7 @@ export class MemoryDriver implements Driver {
      * Set up persistence to file system
      * @private
      */
-    private setupPersistence(): void {
+    protected setupPersistence(): void {
         if (!this.config.persistence) return;
         
         const { filePath, autoSaveInterval = 5000 } = this.config.persistence;
@@ -691,7 +691,7 @@ export class MemoryDriver implements Driver {
      * Save current state to disk
      * @private
      */
-    private saveToDisk(): void {
+    protected saveToDisk(): void {
         if (!this.config.persistence) return;
         
         try {
@@ -712,7 +712,7 @@ export class MemoryDriver implements Driver {
      * Build indexes for faster queries
      * @private
      */
-    private buildIndexes(indexConfig: Record<string, string[]>): void {
+    protected buildIndexes(indexConfig: Record<string, string[]>): void {
         for (const [objectName, fields] of Object.entries(indexConfig)) {
             const objectIndexes = new Map<string, Set<string>>();
             
@@ -742,7 +742,7 @@ export class MemoryDriver implements Driver {
      * Update index when a record is created or updated
      * @private
      */
-    private updateIndex(objectName: string, recordId: string, record: any): void {
+    protected updateIndex(objectName: string, recordId: string, record: any): void {
         const objectIndexes = this.indexes.get(objectName);
         if (!objectIndexes) return;
         
@@ -760,7 +760,7 @@ export class MemoryDriver implements Driver {
      * Remove record from indexes
      * @private
      */
-    private removeFromIndex(objectName: string, recordId: string): void {
+    protected removeFromIndex(objectName: string, recordId: string): void {
         const objectIndexes = this.indexes.get(objectName);
         if (!objectIndexes) return;
         
@@ -790,7 +790,7 @@ export class MemoryDriver implements Driver {
      * Converts to MongoDB query format:
      * { $or: [{ field: { $operator: value }}, { field2: { $operator: value2 }}] }
      */
-    private convertToMongoQuery(filters?: any[] | Record<string, any>): Record<string, any> {
+    protected convertToMongoQuery(filters?: any[] | Record<string, any>): Record<string, any> {
         if (!filters) {
             return {};
         }
@@ -880,7 +880,7 @@ export class MemoryDriver implements Driver {
     /**
      * Convert a single ObjectQL condition to MongoDB operator format.
      */
-    private convertConditionToMongo(field: string, operator: string, value: any): Record<string, any> | null {
+    protected convertConditionToMongo(field: string, operator: string, value: any): Record<string, any> | null {
         switch (operator) {
             case '=':
             case '==':
@@ -941,7 +941,7 @@ export class MemoryDriver implements Driver {
      * Escape special regex characters to prevent ReDoS and ensure literal matching.
      * This is crucial for security when using user input in regex patterns.
      */
-    private escapeRegex(str: string): string {
+    protected escapeRegex(str: string): string {
         return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     }
 
@@ -949,7 +949,7 @@ export class MemoryDriver implements Driver {
      * Apply manual sorting to an array of records.
      * This is used instead of Mingo's sort to avoid CJS build issues.
      */
-    private applyManualSort(records: any[], sort: any[]): any[] {
+    protected applyManualSort(records: any[], sort: any[]): any[] {
         const sorted = [...records];
         
         // Apply sorts in reverse order for correct multi-field precedence
@@ -990,7 +990,7 @@ export class MemoryDriver implements Driver {
     /**
      * Project specific fields from a document.
      */
-    private projectFields(doc: any, fields: string[]): any {
+    protected projectFields(doc: any, fields: string[]): any {
         const result: any = {};
         for (const field of fields) {
             if (doc[field] !== undefined) {
@@ -1003,7 +1003,7 @@ export class MemoryDriver implements Driver {
     /**
      * Generate a unique ID for a record.
      */
-    private generateId(objectName: string): string {
+    protected generateId(objectName: string): string {
         const counter = (this.idCounters.get(objectName) || 0) + 1;
         this.idCounters.set(objectName, counter);
         

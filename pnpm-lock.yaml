@@ -315,6 +315,9 @@ importers:
 
   packages/drivers/excel:
     dependencies:
+      '@objectql/driver-memory':
+        specifier: workspace:*
+        version: link:../memory
       '@objectql/types':
         specifier: workspace:*
         version: link:../../foundation/types
@@ -340,6 +343,9 @@ importers:
 
   packages/drivers/fs:
     dependencies:
+      '@objectql/driver-memory':
+        specifier: workspace:*
+        version: link:../memory
       '@objectql/types':
         specifier: workspace:*
         version: link:../../foundation/types
@@ -362,6 +368,9 @@ importers:
 
   packages/drivers/localstorage:
     dependencies:
+      '@objectql/driver-memory':
+        specifier: workspace:*
+        version: link:../memory
       '@objectql/types':
         specifier: workspace:*
         version: link:../../foundation/types

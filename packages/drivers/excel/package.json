@@ -20,6 +20,7 @@
     "test": "jest"
   },
   "dependencies": {
+    "@objectql/driver-memory": "workspace:*",
     "@objectql/types": "workspace:*",
     "@objectstack/spec": "^0.7.1",
     "exceljs": "^4.4.0"
