@@ -38,7 +38,7 @@ type DriverInterface = Data.DriverInterface;
  */
 
 import { Driver, ObjectQLError } from '@objectql/types';
-import { Query } from 'mingo';
+import { Query, Aggregator } from 'mingo';
 
 /**
  * Command interface for executeCommand method
@@ -562,7 +562,6 @@ export class MemoryDriver implements Driver {
         }
         
         // Use Mingo to execute the aggregation pipeline
-        const { Aggregator } = require('mingo/aggregator');
         const aggregator = new Aggregator(pipeline);
         const results = aggregator.run(records);
         
