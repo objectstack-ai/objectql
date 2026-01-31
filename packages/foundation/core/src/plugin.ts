@@ -174,19 +174,6 @@ export class ObjectQLPlugin implements RuntimePlugin {
   }
   
   /**
-   * Legacy init method for backward compatibility
-   * Calls install() with a compatible context
-   * @deprecated Use install() instead
-   */
-  async init(ctx: any): Promise<void> {
-    // Convert legacy context to RuntimeContext
-    const runtimeContext = {
-      engine: (ctx as any).getKernel ? (ctx as any).getKernel() : (ctx as any).app
-    };
-    await this.install(runtimeContext);
-  }
-  
-  /**
    * Called when the kernel starts
    * This is the initialization phase
    */

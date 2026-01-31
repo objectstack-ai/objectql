@@ -25,7 +25,6 @@ import {
 import { ObjectKernel, type Plugin } from '@objectstack/core';
 import { ObjectQL as RuntimeObjectQL, SchemaRegistry } from '@objectstack/objectql';
 import { ObjectRepository } from './repository';
-import { ObjectQLPlugin } from './plugin';
 import { convertIntrospectedSchemaToObjects } from './util';
 import { CompiledHookManager } from './optimizations/CompiledHookManager';
 
@@ -67,11 +66,10 @@ export class ObjectQL implements IObjectQL {
         // Use the imported RuntimeObjectQL, assuming it works as intended
         this.ql = new RuntimeObjectQL(); 
 
-        // Add the ObjectQL plugin to provide enhanced features
-        this.use(new ObjectQLPlugin({
-            datasources: this.datasources
-        }, this.ql));
-
+        // Note: ObjectQLPlugin removed as it now uses RuntimePlugin interface
+        // which is incompatible with the legacy Plugin interface from @objectstack/core
+        // For new code, use the microkernel pattern with RuntimePlugin directly
+        
         // Add runtime plugins from config
         if (config.plugins) {
             for (const plugin of config.plugins) {

@@ -34,12 +34,10 @@ describe('ObjectQLPlugin Integration', () => {
         // Setup mock implementations
         (ValidatorPlugin as jest.Mock).mockImplementation(() => ({
             install: jest.fn().mockResolvedValue(undefined),
-            init: jest.fn().mockResolvedValue(undefined),
         }));
         
         (FormulaPlugin as jest.Mock).mockImplementation(() => ({
             install: jest.fn().mockResolvedValue(undefined),
-            init: jest.fn().mockResolvedValue(undefined),
         }));
     });
 
@@ -136,7 +134,8 @@ describe('ObjectQLPlugin Integration', () => {
                 validatorConfig,
             });
             
-            await plugin.init(mockContext);
+            const runtimeContext = { engine: mockContext.app };
+            await plugin.install(runtimeContext);
             
             expect(ValidatorPlugin).toHaveBeenCalledWith(validatorConfig);
         });
@@ -152,7 +151,8 @@ describe('ObjectQLPlugin Integration', () => {
                 formulaConfig,
             });
             
-            await plugin.init(mockContext);
+            const runtimeContext = { engine: mockContext.app };
+            await plugin.install(runtimeContext);
             
             expect(FormulaPlugin).toHaveBeenCalledWith(formulaConfig);
         });
@@ -163,7 +163,8 @@ describe('ObjectQLPlugin Integration', () => {
                 enableFormulas: true,
             });
             
-            await plugin.init(mockContext);
+            const runtimeContext = { engine: mockContext.app };
+            await plugin.install(runtimeContext);
             
             expect(ValidatorPlugin).toHaveBeenCalled();
             expect(FormulaPlugin).toHaveBeenCalled();
@@ -177,7 +178,8 @@ describe('ObjectQLPlugin Integration', () => {
                 enableAI: false,
             });
             
-            await plugin.init(mockContext);
+            const runtimeContext = { engine: mockContext.app };
+            await plugin.install(runtimeContext);
             
             expect(ValidatorPlugin).not.toHaveBeenCalled();
             expect(FormulaPlugin).not.toHaveBeenCalled();
@@ -189,15 +191,17 @@ describe('ObjectQLPlugin Integration', () => {
             plugin = new ObjectQLPlugin();
             expect(typeof plugin.onStart).toBe('function');
             
+            const runtimeContext = { engine: mockContext.app };
             // Should not throw when called
-            await expect(plugin.onStart(mockContext)).resolves.not.toThrow();
+            await expect(plugin.onStart(runtimeContext)).resolves.not.toThrow();
         });
     });
 
     describe('Default Configuration', () => {
         it('should enable all features by default', async () => {
             plugin = new ObjectQLPlugin();
-            await plugin.init(mockContext);
+            const runtimeContext = { engine: mockContext.app };
+            await plugin.install(runtimeContext);
             
             // Validator and Formula should be installed by default
             expect(ValidatorPlugin).toHaveBeenCalled();
@@ -209,7 +213,8 @@ describe('ObjectQLPlugin Integration', () => {
                 // Explicitly not setting enableValidator or enableFormulas
             });
             
-            await plugin.init(mockContext);
+            const runtimeContext = { engine: mockContext.app };
+            await plugin.install(runtimeContext);
             
             // Both should still be installed
             expect(ValidatorPlugin).toHaveBeenCalled();

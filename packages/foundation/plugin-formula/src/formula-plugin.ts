@@ -77,21 +77,6 @@ export class FormulaPlugin implements RuntimePlugin {
   }
   
   /**
-   * Legacy init method for backward compatibility
-   * Calls install() with a compatible context
-   * @deprecated Use install() instead
-   */
-  async init(ctx: any): Promise<void> {
-    // Convert legacy context to RuntimeContext
-    const runtimeContext = {
-      engine: (ctx as any).getKernel ? (ctx as any).getKernel() : (ctx as any).app
-    };
-    
-    // Call the standard install method
-    await this.install(runtimeContext);
-  }
-  
-  /**
    * Register the formula provider with the kernel
    * @private
    */

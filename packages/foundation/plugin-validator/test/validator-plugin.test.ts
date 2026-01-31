@@ -23,8 +23,7 @@ describe('ValidatorPlugin', () => {
             },
         };
         mockCtx = {
-            app: mockKernel,
-            hook: jest.fn(), // Keep for legacy compatibility testing
+            engine: mockKernel,
         };
         plugin = new ValidatorPlugin();
     });
@@ -62,7 +61,7 @@ describe('ValidatorPlugin', () => {
 
     describe('Installation', () => {
         it('should install successfully with mock kernel', async () => {
-            await plugin.init(mockCtx);
+            await plugin.install(mockCtx);
             
             // Verify that middleware hooks were registered via kernel
             expect(mockKernel.hooks.register).toHaveBeenCalled();
@@ -71,7 +70,7 @@ describe('ValidatorPlugin', () => {
         it('should register query validation when enabled', async () => {
             const pluginWithQuery = new ValidatorPlugin({ enableQueryValidation: true });
             
-            await pluginWithQuery.init(mockCtx);
+            await pluginWithQuery.install(mockCtx);
             
             // Check that hooks were registered (for query validation)
             expect(mockKernel.hooks.register).toHaveBeenCalledWith('beforeQuery', expect.any(Function));
@@ -80,7 +79,7 @@ describe('ValidatorPlugin', () => {
         it('should register mutation validation when enabled', async () => {
             const pluginWithMutation = new ValidatorPlugin({ enableMutationValidation: true });
             
-            await pluginWithMutation.init(mockCtx);
+            await pluginWithMutation.install(mockCtx);
             
             // Check that hooks were registered (for mutation validation)
             expect(mockKernel.hooks.register).toHaveBeenCalledWith('beforeMutation', expect.any(Function));
@@ -89,7 +88,7 @@ describe('ValidatorPlugin', () => {
         it('should not register query validation when disabled', async () => {
             const pluginNoQuery = new ValidatorPlugin({ enableQueryValidation: false });
             
-            await pluginNoQuery.init(mockCtx);
+            await pluginNoQuery.install(mockCtx);
             
             // Should not have registered beforeQuery hook
             const beforeQueryCalls = (mockKernel.hooks.register as jest.Mock).mock.calls.filter(
@@ -101,7 +100,7 @@ describe('ValidatorPlugin', () => {
         it('should not register mutation validation when disabled', async () => {
             const pluginNoMutation = new ValidatorPlugin({ enableMutationValidation: false });
             
-            await pluginNoMutation.init(mockCtx);
+            await pluginNoMutation.install(mockCtx);
             
             // Should not have registered beforeMutation hook
             const beforeMutationCalls = (mockKernel.hooks.register as jest.Mock).mock.calls.filter(
@@ -112,10 +111,10 @@ describe('ValidatorPlugin', () => {
 
         it('should handle kernel without middleware support', async () => {
             const kernelNoMiddleware = {};
-            const ctx = { app: kernelNoMiddleware, hook: undefined }; // Simulate no hook support
+            const ctx = { engine: kernelNoMiddleware };
             
             // Should not throw error
-            await expect(plugin.init(ctx)).resolves.not.toThrow();
+            await expect(plugin.install(ctx)).resolves.not.toThrow();
         });
     });
 
