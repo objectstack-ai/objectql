@@ -18,10 +18,13 @@ describe('ValidatorPlugin', () => {
         // Create a mock kernel with middleware support
         mockKernel = {
             use: jest.fn(),
+            hooks: {
+                register: jest.fn(),
+            },
         };
         mockCtx = {
             app: mockKernel,
-            hook: jest.fn(),
+            hook: jest.fn(), // Keep for legacy compatibility testing
         };
         plugin = new ValidatorPlugin();
     });
@@ -61,8 +64,8 @@ describe('ValidatorPlugin', () => {
         it('should install successfully with mock kernel', async () => {
             await plugin.init(mockCtx);
             
-            // Verify that middleware hooks were registered
-            expect(mockCtx.hook).toHaveBeenCalled();
+            // Verify that middleware hooks were registered via kernel
+            expect(mockKernel.hooks.register).toHaveBeenCalled();
         });
 
         it('should register query validation when enabled', async () => {
@@ -70,8 +73,8 @@ describe('ValidatorPlugin', () => {
             
             await pluginWithQuery.init(mockCtx);
             
-            // Check that use was called (for query validation)
-            expect(mockCtx.hook).toHaveBeenCalledWith('beforeQuery', expect.any(Function));
+            // Check that hooks were registered (for query validation)
+            expect(mockKernel.hooks.register).toHaveBeenCalledWith('beforeQuery', expect.any(Function));
         });
 
         it('should register mutation validation when enabled', async () => {
@@ -79,8 +82,8 @@ describe('ValidatorPlugin', () => {
             
             await pluginWithMutation.init(mockCtx);
             
-            // Check that use was called (for mutation validation)
-            expect(mockCtx.hook).toHaveBeenCalledWith('beforeMutation', expect.any(Function));
+            // Check that hooks were registered (for mutation validation)
+            expect(mockKernel.hooks.register).toHaveBeenCalledWith('beforeMutation', expect.any(Function));
         });
 
         it('should not register query validation when disabled', async () => {
@@ -89,7 +92,7 @@ describe('ValidatorPlugin', () => {
             await pluginNoQuery.init(mockCtx);
             
             // Should not have registered beforeQuery hook
-            const beforeQueryCalls = mockCtx.hook.mock.calls.filter(
+            const beforeQueryCalls = (mockKernel.hooks.register as jest.Mock).mock.calls.filter(
                 (call: any[]) => call[0] === 'beforeQuery'
             );
             expect(beforeQueryCalls.length).toBe(0);
@@ -101,7 +104,7 @@ describe('ValidatorPlugin', () => {
             await pluginNoMutation.init(mockCtx);
             
             // Should not have registered beforeMutation hook
-            const beforeMutationCalls = mockCtx.hook.mock.calls.filter(
+            const beforeMutationCalls = (mockKernel.hooks.register as jest.Mock).mock.calls.filter(
                 (call: any[]) => call[0] === 'beforeMutation'
             );
             expect(beforeMutationCalls.length).toBe(0);

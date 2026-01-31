@@ -87,37 +87,8 @@ export class FormulaPlugin implements RuntimePlugin {
       engine: (ctx as any).getKernel ? (ctx as any).getKernel() : (ctx as any).app
     };
     
-    const kernel = runtimeContext.engine as KernelWithFormulas;
-    
-    console.log(`[${this.name}] Installing formula plugin...`);
-    
-    // Make formula engine accessible from the kernel for direct usage
-    kernel.formulaEngine = this.engine;
-    
-    // Register formula provider if the kernel supports it
-    this.registerFormulaProvider(kernel);
-    
-    // Register formula evaluation middleware if auto-evaluation is enabled
-    if (this.config.autoEvaluateOnQuery !== false) {
-      this.registerFormulaMiddlewareLegacy(ctx);
-    }
-    
-    console.log(`[${this.name}] Formula plugin installed`);
-  }
-  
-  /**
-   * Register formula evaluation middleware (legacy context style)
-   * @private
-   */
-  private registerFormulaMiddlewareLegacy(ctx: any): void {
-    // Check if context supports hook registration
-    if (typeof (ctx as any).hook === 'function') {
-      (ctx as any).hook('afterQuery', async (context: any) => {
-        if (context.results && context.metadata?.fields) {
-          // Formula evaluation logic placeholder
-        }
-      });
-    }
+    // Call the standard install method
+    await this.install(runtimeContext);
   }
   
   /**

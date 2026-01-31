@@ -98,54 +98,8 @@ export class ValidatorPlugin implements RuntimePlugin {
       engine: (ctx as any).getKernel ? (ctx as any).getKernel() : (ctx as any).app
     };
     
-    const kernel = runtimeContext.engine as KernelWithValidator;
-    
-    console.log(`[${this.name}] Installing validator plugin...`);
-    
-    // Make validator accessible from the kernel for direct usage
-    kernel.validator = this.validator;
-    
-    // Register validation middleware for queries (if enabled)
-    if (this.config.enableQueryValidation !== false) {
-      this.registerQueryValidationLegacy(ctx);
-    }
-    
-    // Register validation middleware for mutations (if enabled)
-    if (this.config.enableMutationValidation !== false) {
-      this.registerMutationValidationLegacy(ctx);
-    }
-    
-    console.log(`[${this.name}] Validator plugin installed`);
-  }
-  
-  /**
-   * Register query validation middleware (legacy context style)
-   * @private
-   */
-  private registerQueryValidationLegacy(ctx: any): void {
-    // Check if context supports hook registration
-    if (typeof (ctx as any).hook === 'function') {
-      (ctx as any).hook('beforeQuery', async (context: any) => {
-        if (context.query && context.metadata?.validation_rules) {
-          // Validation logic placeholder
-        }
-      });
-    }
-  }
-  
-  /**
-   * Register mutation validation middleware (legacy context style)
-   * @private
-   */
-  private registerMutationValidationLegacy(ctx: any): void {
-    // Check if context supports hook registration
-    if (typeof (ctx as any).hook === 'function') {
-      (ctx as any).hook('beforeMutation', async (context: any) => {
-        if (context.data && context.metadata?.validation_rules) {
-          // Validation logic placeholder
-        }
-      });
-    }
+    // Call the standard install method
+    await this.install(runtimeContext);
   }
   
   /**
