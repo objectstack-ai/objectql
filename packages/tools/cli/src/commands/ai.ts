@@ -147,7 +147,7 @@ export async function aiConversational(options: ConversationalOptions): Promise<
                 
                 // Group files by type
                 const filesByType: Record<string, string[]> = {};
-                result.files.forEach(f => {
+                result.files.forEach((f: { filename: string; content: string; type: string }) => {
                     if (!filesByType[f.type]) filesByType[f.type] = [];
                     filesByType[f.type].push(f.filename);
                 });
@@ -159,7 +159,7 @@ export async function aiConversational(options: ConversationalOptions): Promise<
                 // Show suggestions
                 if (result.suggestions && result.suggestions.length > 0) {
                     console.log(chalk.blue('\n💡 Suggestions:'));
-                    result.suggestions.forEach(s => console.log(chalk.gray(`  • ${s}`)));
+                    result.suggestions.forEach((s: string) => console.log(chalk.gray(`  • ${s}`)));
                 }
 
                 console.log(chalk.gray('\nYou can now:'));
@@ -209,7 +209,7 @@ export async function aiGenerate(options: GenerateOptions): Promise<void> {
         if (!result.success || result.files.length === 0) {
             console.log(chalk.yellow('\n⚠️  No valid metadata files generated.'));
             if (result.errors) {
-                result.errors.forEach(err => console.error(chalk.red(`  Error: ${err}`)));
+                result.errors.forEach((err: string) => console.error(chalk.red(`  Error: ${err}`)));
             }
             if (result.rawResponse) {
                 console.log(chalk.gray('\nResponse:'));
@@ -314,7 +314,7 @@ export async function aiValidate(options: ValidateOptions): Promise<void> {
 
             // Display results
             if (result.errors.length > 0) {
-                result.errors.forEach(error => {
+                result.errors.forEach((error: { message: string; location?: string; code?: string }) => {
                     console.log(chalk.red(`  ❌ ERROR: ${error.message}`));
                     if (error.location) {
                         console.log(chalk.gray(`     Location: ${error.location}`));
@@ -324,7 +324,7 @@ export async function aiValidate(options: ValidateOptions): Promise<void> {
             }
 
             if (result.warnings.length > 0) {
-                result.warnings.forEach(warning => {
+                result.warnings.forEach((warning: { message: string; location?: string; suggestion?: string }) => {
                     console.log(chalk.yellow(`  ⚠️  WARNING: ${warning.message}`));
                     if (warning.suggestion) {
                         console.log(chalk.gray(`     Suggestion: ${warning.suggestion}`));
@@ -334,7 +334,7 @@ export async function aiValidate(options: ValidateOptions): Promise<void> {
             }
 
             if (options.verbose && result.info.length > 0) {
-                result.info.forEach(info => {
+                result.info.forEach((info: { message: string; location?: string }) => {
                     console.log(chalk.blue(`  ℹ️  INFO: ${info.message}`));
                 });
             }
