@@ -384,7 +384,7 @@ export class ObjectRepository {
         await this.validateRecord('create', finalDoc);
         
         // Execute via kernel
-        const result = await (this.getKernel() as any).create(this.objectName, finalDoc);
+        const result = await (this.getKernel() as any).create(this.objectName, finalDoc, this.getOptions());
         
         hookCtx.result = result;
         await this.app.triggerHook('afterCreate', this.objectName, hookCtx);
@@ -411,7 +411,7 @@ export class ObjectRepository {
         await this.validateRecord('update', hookCtx.data, previousData);
 
         // Execute via kernel
-        const result = await (this.getKernel() as any).update(this.objectName, String(id), hookCtx.data);
+        const result = await (this.getKernel() as any).update(this.objectName, String(id), hookCtx.data, this.getOptions());
 
         hookCtx.result = result;
         await this.app.triggerHook('afterUpdate', this.objectName, hookCtx);
@@ -433,7 +433,7 @@ export class ObjectRepository {
         await this.app.triggerHook('beforeDelete', this.objectName, hookCtx);
 
         // Execute via kernel
-        const result = await (this.getKernel() as any).delete(this.objectName, String(id));
+        const result = await (this.getKernel() as any).delete(this.objectName, String(id), this.getOptions());
 
         hookCtx.result = result;
         await this.app.triggerHook('afterDelete', this.objectName, hookCtx);
