@@ -21,6 +21,37 @@ export interface JSONRPCPluginConfig {
     enableCORS?: boolean;
     /** Enable introspection methods */
     enableIntrospection?: boolean;
+    /** Enable session management */
+    enableSessions?: boolean;
+    /** Session timeout in milliseconds (default: 30 minutes) */
+    sessionTimeout?: number;
+    /** Enable progress notifications via SSE */
+    enableProgress?: boolean;
+    /** Enable method call chaining in batch requests */
+    enableChaining?: boolean;
+}
+
+/**
+ * Session data
+ */
+interface Session {
+    id: string;
+    data: Record<string, any>;
+    lastAccess: number;
+    timeout?: NodeJS.Timeout;
+}
+
+/**
+ * Progress notification
+ */
+interface ProgressNotification {
+    method: string;
+    params: {
+        id: string;
+        progress: number;
+        total: number;
+        message?: string;
+    };
 }
 
 /**
@@ -62,9 +93,12 @@ interface MethodSignature {
  * 
  * Key Features:
  * - Full JSON-RPC 2.0 specification compliance
- * - Batch request support
+ * - Batch request support with call chaining
  * - Notification support (requests without id)
  * - Built-in introspection methods (system.listMethods, system.describe)
+ * - Session management for stateful operations
+ * - Progress notifications via Server-Sent Events (SSE)
+ * - Method call chaining with result references
  * - CRUD operations mapped to RPC methods
  * - Named and positional parameter support
  * - No direct database access - all operations through ObjectStackProtocolImplementation
@@ -79,6 +113,10 @@ interface MethodSignature {
  * - metadata.list() - List all objects
  * - metadata.get(objectName) - Get object metadata
  * - action.execute(actionName, params) - Execute custom action
+ * - session.create() - Create a new session (if sessions enabled)
+ * - session.get(key) - Get session value (if sessions enabled)
+ * - session.set(key, value) - Set session value (if sessions enabled)
+ * - session.destroy() - Destroy current session (if sessions enabled)
  * - system.listMethods() - List available methods (if introspection enabled)
  * - system.describe(method) - Describe method signature (if introspection enabled)
  * 
@@ -88,7 +126,13 @@ interface MethodSignature {
  * import { JSONRPCPlugin } from '@objectql/protocol-json-rpc';
  * 
  * const kernel = new ObjectKernel([
- *   new JSONRPCPlugin({ port: 9000, basePath: '/rpc' })
+ *   new JSONRPCPlugin({ 
+ *     port: 9000, 
+ *     basePath: '/rpc',
+ *     enableSessions: true,
+ *     enableProgress: true,
+ *     enableChaining: true
+ *   })
  * ]);
  * await kernel.start();
  * 
@@ -99,24 +143,37 @@ interface MethodSignature {
  * // Client request (named):
  * // POST /rpc
  * // {"jsonrpc":"2.0","method":"object.find","params":{"objectName":"users","query":{"where":{"active":true}}},"id":1}
+ * 
+ * // Batch request with chaining:
+ * // [{"jsonrpc":"2.0","method":"object.create","params":["users",{"name":"John"}],"id":1},
+ * //  {"jsonrpc":"2.0","method":"object.update","params":["users","$1.result.id",{"active":true}],"id":2}]
+ * 
+ * // Progress notifications (SSE):
+ * // GET /rpc/progress?session=<session-id>
  * ```
  */
 export class JSONRPCPlugin implements RuntimePlugin {
     name = '@objectql/protocol-json-rpc';
-    version = '0.1.0';
+    version = '0.2.0';
     
     private server?: Server;
     private engine?: any;
     private config: Required<JSONRPCPluginConfig>;
     private methods: Map<string, Function>;
     private methodSignatures: Map<string, MethodSignature>;
+    private sessions: Map<string, Session> = new Map();
+    private progressClients: Map<string, ServerResponse> = new Map();
 
     constructor(config: JSONRPCPluginConfig = {}) {
         this.config = {
             port: config.port || 9000,
             basePath: config.basePath || '/rpc',
             enableCORS: config.enableCORS !== false,
-            enableIntrospection: config.enableIntrospection !== false
+            enableIntrospection: config.enableIntrospection !== false,
+            enableSessions: config.enableSessions !== false,
+            sessionTimeout: config.sessionTimeout || 30 * 60 * 1000, // 30 minutes
+            enableProgress: config.enableProgress !== false,
+            enableChaining: config.enableChaining !== false
         };
         
         this.methods = new Map();
@@ -444,6 +501,55 @@ export class JSONRPCPlugin implements RuntimePlugin {
             description: 'List all registered actions'
         });
 
+        // Session methods (if enabled)
+        if (this.config.enableSessions) {
+            this.methods.set('session.create', async () => {
+                const sessionId = this.generateSessionId();
+                this.createSession(sessionId);
+                return { sessionId };
+            });
+            this.methodSignatures.set('session.create', {
+                params: [],
+                description: 'Create a new session'
+            });
+
+            this.methods.set('session.get', async (sessionId: string, key: string) => {
+                const session = this.sessions.get(sessionId);
+                if (!session) {
+                    throw new Error('Session not found or expired');
+                }
+                this.updateSessionAccess(sessionId);
+                return session.data[key];
+            });
+            this.methodSignatures.set('session.get', {
+                params: ['sessionId', 'key'],
+                description: 'Get value from session'
+            });
+
+            this.methods.set('session.set', async (sessionId: string, key: string, value: any) => {
+                const session = this.sessions.get(sessionId);
+                if (!session) {
+                    throw new Error('Session not found or expired');
+                }
+                this.updateSessionAccess(sessionId);
+                session.data[key] = value;
+                return { success: true };
+            });
+            this.methodSignatures.set('session.set', {
+                params: ['sessionId', 'key', 'value'],
+                description: 'Set value in session'
+            });
+
+            this.methods.set('session.destroy', async (sessionId: string) => {
+                this.destroySession(sessionId);
+                return { success: true };
+            });
+            this.methodSignatures.set('session.destroy', {
+                params: ['sessionId'],
+                description: 'Destroy a session'
+            });
+        }
+
         // Introspection methods (if enabled)
         if (this.config.enableIntrospection) {
             this.methods.set('system.listMethods', async () => {
@@ -539,7 +645,7 @@ export class JSONRPCPlugin implements RuntimePlugin {
         // Enable CORS if configured
         if (this.config.enableCORS) {
             res.setHeader('Access-Control-Allow-Origin', '*');
-            res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+            res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
             res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
             
             if (req.method === 'OPTIONS') {
@@ -558,7 +664,32 @@ export class JSONRPCPlugin implements RuntimePlugin {
             return;
         }
 
-        // Only accept POST requests
+        // Handle progress SSE endpoint (GET /rpc/progress?session=<id>)
+        if (this.config.enableProgress && req.method === 'GET' && url.includes('/progress')) {
+            const sessionId = new URL(url, 'http://localhost').searchParams.get('session');
+            if (sessionId) {
+                // Setup SSE
+                res.writeHead(200, {
+                    'Content-Type': 'text/event-stream',
+                    'Cache-Control': 'no-cache',
+                    'Connection': 'keep-alive'
+                });
+                
+                this.progressClients.set(sessionId, res);
+                
+                // Send initial connection message
+                res.write('data: {"type":"connected"}\n\n');
+                
+                // Cleanup on close
+                req.on('close', () => {
+                    this.progressClients.delete(sessionId);
+                });
+                
+                return;
+            }
+        }
+
+        // Only accept POST requests for RPC
         if (req.method !== 'POST') {
             this.sendError(res, null, -32600, 'Invalid Request: Method must be POST');
             return;
@@ -567,12 +698,17 @@ export class JSONRPCPlugin implements RuntimePlugin {
         try {
             const body = await this.readBody(req);
             
-            // Handle batch requests
+            // Handle batch requests with optional chaining
             if (Array.isArray(body)) {
-                const responses = await Promise.all(
-                    body.map(request => this.processRequest(request))
-                );
-                this.sendJSON(res, 200, responses);
+                if (this.config.enableChaining) {
+                    const responses = await this.processBatchWithChaining(body);
+                    this.sendJSON(res, 200, responses);
+                } else {
+                    const responses = await Promise.all(
+                        body.map(request => this.processRequest(request))
+                    );
+                    this.sendJSON(res, 200, responses);
+                }
             } else {
                 const response = await this.processRequest(body);
                 // Don't send response for notifications
@@ -660,6 +796,35 @@ export class JSONRPCPlugin implements RuntimePlugin {
     }
 
     /**
+     * Process batch requests with call chaining support
+     */
+    private async processBatchWithChaining(requests: any[]): Promise<JSONRPCResponse[]> {
+        const results = new Map<number | string, any>();
+        const responses: JSONRPCResponse[] = [];
+        
+        for (const request of requests) {
+            // Resolve parameter references
+            if (request.params) {
+                request.params = this.resolveReferences(request.params, results);
+            }
+            
+            // Process request
+            const response = await this.processRequest(request);
+            
+            // Store result for future references
+            if (response && request.id !== undefined) {
+                results.set(request.id, response);
+            }
+            
+            if (response) {
+                responses.push(response);
+            }
+        }
+        
+        return responses;
+    }
+
+    /**
      * Create JSON-RPC error response
      */
     private createErrorResponse(id: any, code: number, message: string, data?: any): JSONRPCResponse {
@@ -710,5 +875,100 @@ export class JSONRPCPlugin implements RuntimePlugin {
      */
     private sendError(res: ServerResponse, id: any, code: number, message: string): void {
         this.sendJSON(res, 200, this.createErrorResponse(id, code, message));
+    }
+
+    /**
+     * Generate a unique session ID
+     */
+    private generateSessionId(): string {
+        return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    }
+
+    /**
+     * Create a new session
+     */
+    private createSession(sessionId: string): void {
+        const session: Session = {
+            id: sessionId,
+            data: {},
+            lastAccess: Date.now(),
+            timeout: setTimeout(() => {
+                this.destroySession(sessionId);
+            }, this.config.sessionTimeout)
+        };
+        
+        this.sessions.set(sessionId, session);
+    }
+
+    /**
+     * Update session access time and reset timeout
+     */
+    private updateSessionAccess(sessionId: string): void {
+        const session = this.sessions.get(sessionId);
+        if (!session) return;
+        
+        session.lastAccess = Date.now();
+        
+        // Reset timeout
+        if (session.timeout) {
+            clearTimeout(session.timeout);
+        }
+        session.timeout = setTimeout(() => {
+            this.destroySession(sessionId);
+        }, this.config.sessionTimeout);
+    }
+
+    /**
+     * Destroy a session
+     */
+    private destroySession(sessionId: string): void {
+        const session = this.sessions.get(sessionId);
+        if (session && session.timeout) {
+            clearTimeout(session.timeout);
+        }
+        this.sessions.delete(sessionId);
+    }
+
+    /**
+     * Send progress notification to SSE clients
+     */
+    private sendProgress(sessionId: string, progress: ProgressNotification): void {
+        const client = this.progressClients.get(sessionId);
+        if (client) {
+            client.write(`data: ${JSON.stringify(progress)}\n\n`);
+        }
+    }
+
+    /**
+     * Resolve result references in batch requests (e.g., $1.result.id)
+     */
+    private resolveReferences(params: any, results: Map<number | string, any>): any {
+        if (typeof params === 'string' && params.startsWith('$')) {
+            // Parse reference: $1.result.id
+            const match = params.match(/^\$(\d+)\.(.+)$/);
+            if (match) {
+                const [, refId, path] = match;
+                const result = results.get(parseInt(refId));
+                if (result) {
+                    // Navigate path: result.id
+                    const parts = path.split('.');
+                    let value = result;
+                    for (const part of parts) {
+                        value = value?.[part];
+                    }
+                    return value;
+                }
+            }
+        } else if (Array.isArray(params)) {
+            return params.map(p => this.resolveReferences(p, results));
+        } else if (typeof params === 'object' && params !== null) {
+            const resolved: any = {};
+            for (const [key, value] of Object.entries(params)) {
+                resolved[key] = this.resolveReferences(value, results);
+            }
+            return resolved;
+        }
+        
+        return params;
     }
 }
