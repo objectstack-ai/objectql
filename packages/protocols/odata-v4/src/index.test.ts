@@ -254,4 +254,29 @@ describe('OData V4 Request Examples', () => {
     
     expect(url).toBe('/odata/');
   });
+  
+  it('should demonstrate inline count query', () => {
+    const url = '/odata/users?$count=true';
+    
+    expect(url).toContain('$count=true');
+  });
+  
+  it('should demonstrate count endpoint', () => {
+    const url = '/odata/users/$count';
+    
+    expect(url).toBe('/odata/users/$count');
+  });
+  
+  it('should demonstrate count with filter', () => {
+    const url = "/odata/users/$count?$filter=active eq true";
+    
+    expect(url).toContain('/$count');
+    expect(url).toContain('$filter');
+  });
+  
+  it('should demonstrate expand query', () => {
+    const url = '/odata/orders?$expand=customer';
+    
+    expect(url).toContain('$expand');
+  });
 });

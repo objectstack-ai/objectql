@@ -297,6 +297,52 @@ export class JSONRPCPlugin implements RuntimePlugin {
         
         return false;
     }
+    
+    /**
+     * Helper: Count data
+     */
+    private async countData(objectName: string, filters?: any): Promise<number> {
+        if (!this.engine) return 0;
+        
+        if (typeof this.engine.count === 'function') {
+            return await this.engine.count(objectName, filters);
+        }
+        
+        return 0;
+    }
+    
+    /**
+     * Helper: Execute action
+     */
+    private async executeAction(actionName: string, params?: any): Promise<any> {
+        if (!this.engine) {
+            throw new Error('Engine not initialized');
+        }
+        
+        if (typeof this.engine.executeAction === 'function') {
+            return await this.engine.executeAction(actionName, params);
+        }
+        
+        throw new Error('Action execution not supported by engine');
+    }
+    
+    /**
+     * Helper: List actions
+     */
+    private async listActions(): Promise<string[]> {
+        if (!this.engine) return [];
+        
+        if (typeof this.engine.listActions === 'function') {
+            return await this.engine.listActions();
+        }
+        
+        if (this.engine.actions && typeof this.engine.actions.list === 'function') {
+            const actions = await this.engine.actions.list();
+            return actions.map((action: any) => action.name || action.id).filter(Boolean);
+        }
+        
+        return [];
+    }
 
     /**
      * Register all available RPC methods with their signatures
@@ -344,8 +390,7 @@ export class JSONRPCPlugin implements RuntimePlugin {
         });
 
         this.methods.set('object.count', async (objectName: string, filters?: any) => {
-            // Not supported in protocol 
-            throw new Error('Method not implemented: object.count');
+            return await this.countData(objectName, filters);
         });
         this.methodSignatures.set('object.count', {
             params: ['objectName', 'filters'],
@@ -384,7 +429,7 @@ export class JSONRPCPlugin implements RuntimePlugin {
 
         // Action methods
         this.methods.set('action.execute', async (actionName: string, params?: any) => {
-            throw new Error('Method not implemented: action.execute');
+            return await this.executeAction(actionName, params);
         });
         this.methodSignatures.set('action.execute', {
             params: ['actionName', 'params'],
@@ -392,7 +437,7 @@ export class JSONRPCPlugin implements RuntimePlugin {
         });
 
         this.methods.set('action.list', async () => {
-             throw new Error('Method not implemented: action.list');
+            return await this.listActions();
         });
         this.methodSignatures.set('action.list', {
             params: [],
