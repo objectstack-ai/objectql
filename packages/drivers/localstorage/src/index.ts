@@ -82,7 +82,11 @@ export interface LocalStorageDriverConfig {
     storage?: Storage;
     /** Optional: Enable data compression (default: false) */
     enableCompression?: boolean;
-    /** Optional: Storage backend (default: 'localStorage') */
+    /** 
+     * Optional: Storage backend (default: 'localStorage')
+     * Note: IndexedDB backend is experimental and requires async/await pattern.
+     * Current implementation uses synchronous localStorage for backward compatibility.
+     */
     backend?: StorageBackend;
     /** Optional: IndexedDB database name (only used when backend is 'indexedDB') */
     indexedDBName?: string;

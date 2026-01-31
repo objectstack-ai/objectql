@@ -1424,9 +1424,9 @@ export class ExcelDriver implements Driver {
     /**
      * Acquire a lock for a file operation.
      */
-    private async acquireLock(key: string): Promise<void> {
+    private async acquireLock(key: string): Promise<() => void> {
         if (!this.config.enableLocking) {
-            return;
+            return () => {}; // No-op release function
         }
 
         // If there's already a lock, wait for it
@@ -1455,28 +1455,25 @@ export class ExcelDriver implements Driver {
             await waitPromise;
         }
 
-        // Create a new lock
+        // Create a new lock and return the release function
         let releaseLock: () => void;
         const lockPromise = new Promise<void>((resolve) => {
             releaseLock = resolve;
         });
 
         this.locks.set(key, lockPromise);
+        
+        // Return the release function
+        return () => this.doReleaseLock(key, releaseLock!);
     }
 
     /**
-     * Release a lock for a file operation.
+     * Internal method to release a lock.
      */
-    private releaseLock(key: string): void {
-        if (!this.config.enableLocking) {
-            return;
-        }
-
-        const lock = this.locks.get(key);
-        if (!lock) {
-            return;
-        }
-
+    private doReleaseLock(key: string, releaseFn: () => void): void {
+        // Call the release function to resolve the promise
+        releaseFn();
+        
         // Remove the lock
         this.locks.delete(key);
 
@@ -1492,6 +1489,19 @@ export class ExcelDriver implements Driver {
     }
 
     /**
+     * Release a lock for a file operation (deprecated - use the returned release function from acquireLock).
+     */
+    private releaseLock(key: string): void {
+        if (!this.config.enableLocking) {
+            return;
+        }
+
+        // This method is deprecated but kept for backward compatibility
+        // The lock should be released using the function returned by acquireLock
+        console.warn('releaseLock is deprecated. Use the release function returned by acquireLock instead.');
+    }
+
+    /**
      * Execute an operation with file locking.
      */
     private async withLock<T>(key: string, operation: () => Promise<T>): Promise<T> {
@@ -1499,11 +1509,11 @@ export class ExcelDriver implements Driver {
             return await operation();
         }
 
-        await this.acquireLock(key);
+        const release = await this.acquireLock(key);
         try {
             return await operation();
         } finally {
-            this.releaseLock(key);
+            release();
         }
     }
 }
