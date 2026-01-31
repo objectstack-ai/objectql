@@ -6,15 +6,17 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import type { Plugin, PluginContext, ObjectKernel } from '@objectstack/core';
+import type { RuntimePlugin, RuntimeContext } from '@objectql/types';
 import { FormulaEngine } from './formula-engine';
 import type { FormulaEngineConfig } from '@objectql/types';
 
 /**
- * Extended ObjectStack Kernel with formula engine capability
+ * Extended kernel with formula engine capability
  */
-interface KernelWithFormulas extends ObjectKernel {
+interface KernelWithFormulas {
     formulaEngine?: FormulaEngine;
+    metadata?: any;
+    hooks?: any;
 }
 
 /**
@@ -31,13 +33,12 @@ export interface FormulaPluginConfig extends FormulaEngineConfig {
 /**
  * Formula Plugin
  * 
- * Wraps the ObjectQL Formula Engine as an ObjectStack plugin.
+ * Wraps the ObjectQL Formula Engine as a microkernel plugin.
  * Registers formula evaluation capabilities into the kernel.
  */
-export class FormulaPlugin implements Plugin {
-  name = '@objectql/formulas';
-  type = 'formula' as const;
-  version = '4.0.0';
+export class FormulaPlugin implements RuntimePlugin {
+  name = '@objectql/plugin-formula';
+  version = '4.0.2';
   
   private engine: FormulaEngine;
   private config: FormulaPluginConfig;
@@ -56,8 +57,8 @@ export class FormulaPlugin implements Plugin {
    * Install the plugin into the kernel
    * Registers formula evaluation capabilities
    */
-  async init(ctx: PluginContext): Promise<void> {
-    const kernel = ((ctx as any).getKernel ? (ctx as any).getKernel() : (ctx as any).app) as KernelWithFormulas;
+  async install(ctx: RuntimeContext): Promise<void> {
+    const kernel = ctx.engine as KernelWithFormulas;
     
     console.log(`[${this.name}] Installing formula plugin...`);
     
@@ -69,7 +70,7 @@ export class FormulaPlugin implements Plugin {
     
     // Register formula evaluation middleware if auto-evaluation is enabled
     if (this.config.autoEvaluateOnQuery !== false) {
-      this.registerFormulaMiddleware(ctx);
+      this.registerFormulaMiddleware(kernel);
     }
     
     console.log(`[${this.name}] Formula plugin installed`);
@@ -109,11 +110,11 @@ export class FormulaPlugin implements Plugin {
    * Register formula evaluation middleware
    * @private
    */
-  private registerFormulaMiddleware(ctx: PluginContext): void {
-    // Check if context supports hook registration
-    if (typeof (ctx as any).hook === 'function') {
+  private registerFormulaMiddleware(kernel: KernelWithFormulas): void {
+    // Check if kernel supports hook registration
+    if (kernel.hooks && typeof kernel.hooks.register === 'function') {
       // Register middleware to evaluate formulas after queries
-      (ctx as any).hook('afterQuery', async (context: any) => {
+      kernel.hooks.register('afterQuery', async (context: any) => {
         // Formula evaluation logic would go here
         // This would automatically compute formula fields after data is retrieved
         if (context.results && context.metadata?.fields) {

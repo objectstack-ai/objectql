@@ -557,9 +557,6 @@ importers:
       '@objectql/types':
         specifier: workspace:*
         version: link:../types
-      '@objectstack/core':
-        specifier: ^0.7.1
-        version: 0.7.1
     devDependencies:
       typescript:
         specifier: ^5.3.0
@@ -592,9 +589,6 @@ importers:
       '@objectql/types':
         specifier: workspace:*
         version: link:../types
-      '@objectstack/core':
-        specifier: ^0.7.1
-        version: 0.7.1
     devDependencies:
       typescript:
         specifier: ^5.3.0

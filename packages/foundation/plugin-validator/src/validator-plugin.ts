@@ -6,14 +6,16 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import type { Plugin, PluginContext, ObjectKernel } from '@objectstack/core';
+import type { RuntimePlugin, RuntimeContext } from '@objectql/types';
 import { Validator, ValidatorOptions } from './validator';
 
 /**
- * Extended ObjectStack Kernel with validator capability
+ * Extended kernel with validator capability
  */
-interface KernelWithValidator extends ObjectKernel {
+interface KernelWithValidator {
     validator?: Validator;
+    metadata?: any;
+    hooks?: any;
 }
 
 /**
@@ -36,13 +38,12 @@ export interface ValidatorPluginConfig extends ValidatorOptions {
 /**
  * Validator Plugin
  * 
- * Wraps the ObjectQL Validator engine as an ObjectStack plugin.
+ * Wraps the ObjectQL Validator engine as a microkernel plugin.
  * Registers validation middleware hooks into the kernel lifecycle.
  */
-export class ValidatorPlugin implements Plugin {
-  name = '@objectql/validator';
-  type = 'validator' as const;
-  version = '4.0.0';
+export class ValidatorPlugin implements RuntimePlugin {
+  name = '@objectql/plugin-validator';
+  version = '4.0.2';
   
   private validator: Validator;
   private config: ValidatorPluginConfig;
@@ -65,8 +66,8 @@ export class ValidatorPlugin implements Plugin {
    * Install the plugin into the kernel
    * Registers validation middleware for queries and mutations
    */
-  async init(ctx: PluginContext): Promise<void> {
-    const kernel = ((ctx as any).getKernel ? (ctx as any).getKernel() : (ctx as any).app) as KernelWithValidator;
+  async install(ctx: RuntimeContext): Promise<void> {
+    const kernel = ctx.engine as KernelWithValidator;
     
     console.log(`[${this.name}] Installing validator plugin...`);
     
@@ -75,12 +76,12 @@ export class ValidatorPlugin implements Plugin {
     
     // Register validation middleware for queries (if enabled)
     if (this.config.enableQueryValidation !== false) {
-      this.registerQueryValidation(ctx);
+      this.registerQueryValidation(kernel);
     }
     
     // Register validation middleware for mutations (if enabled)
     if (this.config.enableMutationValidation !== false) {
-      this.registerMutationValidation(ctx);
+      this.registerMutationValidation(kernel);
     }
     
     console.log(`[${this.name}] Validator plugin installed`);
@@ -90,10 +91,10 @@ export class ValidatorPlugin implements Plugin {
    * Register query validation middleware
    * @private
    */
-  private registerQueryValidation(ctx: PluginContext): void {
-    // Check if context supports hook registration
-    if (typeof (ctx as any).hook === 'function') {
-      (ctx as any).hook('beforeQuery', async (context: any) => {
+  private registerQueryValidation(kernel: KernelWithValidator): void {
+    // Check if kernel supports hook registration
+    if (kernel.hooks && typeof kernel.hooks.register === 'function') {
+      kernel.hooks.register('beforeQuery', async (context: any) => {
         // Query validation logic
         // In a real implementation, this would validate query parameters
         // For now, this is a placeholder that demonstrates the integration pattern
@@ -112,10 +113,10 @@ export class ValidatorPlugin implements Plugin {
    * Register mutation validation middleware
    * @private
    */
-  private registerMutationValidation(ctx: PluginContext): void {
-    // Check if context supports hook registration
-    if (typeof (ctx as any).hook === 'function') {
-      (ctx as any).hook('beforeMutation', async (context: any) => {
+  private registerMutationValidation(kernel: KernelWithValidator): void {
+    // Check if kernel supports hook registration
+    if (kernel.hooks && typeof kernel.hooks.register === 'function') {
+      kernel.hooks.register('beforeMutation', async (context: any) => {
         // Mutation validation logic
         // This would validate data before create/update operations
         if (context.data && context.metadata?.validation_rules) {
