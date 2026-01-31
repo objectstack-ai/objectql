@@ -744,4 +744,59 @@ describe('ExcelDriver', () => {
             });
         });
     });
+    
+    describe('Aggregation Operations', () => {
+        beforeEach(async () => {
+            // Create sample data for aggregation tests
+            await driver.create('orders', { id: '1', customer: 'Alice', product: 'Phone', amount: 500, quantity: 2, status: 'completed' });
+            await driver.create('orders', { id: '2', customer: 'Bob', product: 'Tablet', amount: 300, quantity: 1, status: 'pending' });
+            await driver.create('orders', { id: '3', customer: 'Alice', product: 'Laptop', amount: 700, quantity: 1, status: 'completed' });
+            await driver.create('orders', { id: '4', customer: 'Charlie', product: 'Monitor', amount: 250, quantity: 2, status: 'completed' });
+            await driver.create('orders', { id: '5', customer: 'Bob', product: 'Keyboard', amount: 100, quantity: 1, status: 'cancelled' });
+        });
+
+        test('should aggregate with $match stage', async () => {
+            const results = await driver.aggregate('orders', [
+                { $match: { status: 'completed' } }
+            ]);
+
+            expect(results).toBeDefined();
+            expect(results.length).toBe(3);
+            expect(results.every((r: any) => r.status === 'completed')).toBe(true);
+        });
+
+        test('should aggregate with $group and $sum', async () => {
+            const results = await driver.aggregate('orders', [
+                { $match: { status: 'completed' } },
+                { 
+                    $group: { 
+                        _id: '$customer', 
+                        totalAmount: { $sum: '$amount' } 
+                    } 
+                }
+            ]);
+
+            expect(results).toBeDefined();
+            expect(results.length).toBeGreaterThan(0);
+            
+            const alice = results.find((r: any) => r._id === 'Alice');
+            expect(alice).toBeDefined();
+            expect(alice.totalAmount).toBe(1200);
+        });
+
+        test('should aggregate with $group and $avg', async () => {
+            const results = await driver.aggregate('orders', [
+                { 
+                    $group: { 
+                        _id: null, 
+                        avgAmount: { $avg: '$amount' } 
+                    } 
+                }
+            ]);
+
+            expect(results).toBeDefined();
+            expect(results.length).toBe(1);
+            expect(results[0].avgAmount).toBeCloseTo(370, 0);
+        });
+    });
 });

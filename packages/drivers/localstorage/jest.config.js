@@ -13,5 +13,8 @@ module.exports = {
   collectCoverageFrom: ['src/**/*.ts'],
   moduleNameMapper: {
     '^@objectql/types$': '<rootDir>/../../foundation/types/src',
-  }
+  },
+  transformIgnorePatterns: [
+    'node_modules/(?!(mingo)/)'
+  ]
 };
