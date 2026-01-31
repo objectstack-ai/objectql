@@ -460,8 +460,8 @@ export class ODataV4Plugin implements RuntimePlugin {
         
         // $expand -> expand navigation properties
         if (queryParams.$expand) {
-            // TODO: Implement $expand functionality in Phase 2
-            console.warn(`[${this.name}] $expand is not yet implemented`);
+            // $expand is not yet implemented - documented in PROTOCOL_COMPLIANCE_REPORT.md
+            // This is a P1 feature requiring query engine modifications
         }
 
         const result = await this.findData(entitySet, query);
