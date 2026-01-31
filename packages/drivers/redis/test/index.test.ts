@@ -612,4 +612,274 @@ describe('RedisDriver', () => {
             expect(result.affected).toBe(0);
         });
     });
+
+    describe('Distinct Operations', () => {
+        beforeEach(async () => {
+            if (!driver) return;
+
+            // Create test data with various roles and departments
+            await driver.create(TEST_OBJECT, { name: 'Alice', role: 'admin', department: 'IT', age: 30 });
+            await driver.create(TEST_OBJECT, { name: 'Bob', role: 'user', department: 'HR', age: 25 });
+            await driver.create(TEST_OBJECT, { name: 'Charlie', role: 'admin', department: 'IT', age: 35 });
+            await driver.create(TEST_OBJECT, { name: 'David', role: 'user', department: 'Sales', age: 28 });
+            await driver.create(TEST_OBJECT, { name: 'Eve', role: 'user', department: 'IT', age: 32 });
+        });
+
+        it('should get distinct values for a field', async () => {
+            if (!driver) return;
+
+            const roles = await driver.distinct(TEST_OBJECT, 'role');
+
+            expect(roles).toHaveLength(2);
+            expect(roles).toContain('admin');
+            expect(roles).toContain('user');
+        });
+
+        it('should get distinct values with filters', async () => {
+            if (!driver) return;
+
+            const departments = await driver.distinct(TEST_OBJECT, 'department', {
+                type: 'comparison',
+                field: 'role',
+                operator: '=',
+                value: 'user'
+            });
+
+            expect(departments).toHaveLength(2);
+            expect(departments).toContain('HR');
+            expect(departments).toContain('Sales');
+            expect(departments).not.toContain('IT'); // Admins are in IT, not users
+        });
+
+        it('should handle distinct on numeric fields', async () => {
+            if (!driver) return;
+
+            const ages = await driver.distinct(TEST_OBJECT, 'age');
+
+            expect(ages).toHaveLength(5);
+            expect(ages).toContain(25);
+            expect(ages).toContain(28);
+            expect(ages).toContain(30);
+            expect(ages).toContain(32);
+            expect(ages).toContain(35);
+        });
+
+        it('should ignore null and undefined values', async () => {
+            if (!driver) return;
+
+            await driver.create(TEST_OBJECT, { name: 'Frank', role: 'guest' }); // No department
+            await driver.create(TEST_OBJECT, { name: 'Grace', role: null as any, department: 'Finance' }); // Null role
+
+            const departments = await driver.distinct(TEST_OBJECT, 'department');
+
+            // Should only include defined values
+            expect(departments).not.toContain(null);
+            expect(departments).not.toContain(undefined);
+        });
+
+        it('should handle empty results', async () => {
+            if (!driver) return;
+
+            // Clear all records
+            const allRecords = await driver.find(TEST_OBJECT, {});
+            for (const record of allRecords) {
+                await driver.delete(TEST_OBJECT, record.id);
+            }
+
+            const roles = await driver.distinct(TEST_OBJECT, 'role');
+
+            expect(roles).toHaveLength(0);
+        });
+    });
+
+    describe('Aggregation Operations', () => {
+        beforeEach(async () => {
+            if (!driver) return;
+
+            // Create test data for aggregations
+            await driver.create(TEST_OBJECT, { name: 'Alice', department: 'IT', salary: 80000, age: 30 });
+            await driver.create(TEST_OBJECT, { name: 'Bob', department: 'HR', salary: 60000, age: 25 });
+            await driver.create(TEST_OBJECT, { name: 'Charlie', department: 'IT', salary: 90000, age: 35 });
+            await driver.create(TEST_OBJECT, { name: 'David', department: 'Sales', salary: 70000, age: 28 });
+            await driver.create(TEST_OBJECT, { name: 'Eve', department: 'IT', salary: 75000, age: 32 });
+        });
+
+        it('should count records by group', async () => {
+            if (!driver) return;
+
+            const results = await driver.aggregate(TEST_OBJECT, [
+                { $group: { _id: '$department', count: { $sum: 1 } } },
+                { $sort: { count: -1 } }
+            ]);
+
+            expect(results).toHaveLength(3);
+            expect(results[0]._id).toBe('IT');
+            expect(results[0].count).toBe(3);
+            expect(results[1].count).toBe(1); // HR or Sales
+        });
+
+        it('should calculate average by group', async () => {
+            if (!driver) return;
+
+            const results = await driver.aggregate(TEST_OBJECT, [
+                { $group: { _id: '$department', avgSalary: { $avg: '$salary' } } },
+                { $sort: { avgSalary: -1 } }
+            ]);
+
+            expect(results).toHaveLength(3);
+            
+            const itResult = results.find(r => r._id === 'IT');
+            expect(itResult).toBeDefined();
+            expect(itResult?.avgSalary).toBeCloseTo(81666.67, 0); // (80000 + 90000 + 75000) / 3
+        });
+
+        it('should calculate min and max', async () => {
+            if (!driver) return;
+
+            const results = await driver.aggregate(TEST_OBJECT, [
+                { $group: { 
+                    _id: null, 
+                    minSalary: { $min: '$salary' },
+                    maxSalary: { $max: '$salary' }
+                }}
+            ]);
+
+            expect(results).toHaveLength(1);
+            expect(results[0].minSalary).toBe(60000);
+            expect(results[0].maxSalary).toBe(90000);
+        });
+
+        it('should support $match stage', async () => {
+            if (!driver) return;
+
+            const results = await driver.aggregate(TEST_OBJECT, [
+                { $match: { department: 'IT' } },
+                { $group: { _id: null, avgAge: { $avg: '$age' } } }
+            ]);
+
+            expect(results).toHaveLength(1);
+            expect(results[0].avgAge).toBeCloseTo(32.33, 1); // (30 + 35 + 32) / 3
+        });
+
+        it('should support $project stage', async () => {
+            if (!driver) return;
+
+            const results = await driver.aggregate(TEST_OBJECT, [
+                { $match: { department: 'IT' } },
+                { $project: { name: 1, salary: 1 } },
+                { $limit: 2 }
+            ]);
+
+            expect(results).toHaveLength(2);
+            expect(results[0]).toHaveProperty('name');
+            expect(results[0]).toHaveProperty('salary');
+            expect(results[0]).not.toHaveProperty('department');
+        });
+
+        it('should support $limit and $skip stages', async () => {
+            if (!driver) return;
+
+            const results = await driver.aggregate(TEST_OBJECT, [
+                { $sort: { salary: 1 } },
+                { $skip: 1 },
+                { $limit: 2 }
+            ]);
+
+            expect(results).toHaveLength(2);
+            // Should skip Bob (60000) and return David (70000) and Eve (75000)
+            expect(results[0].salary).toBeGreaterThan(60000);
+        });
+
+        it('should support $first and $last accumulators', async () => {
+            if (!driver) return;
+
+            const results = await driver.aggregate(TEST_OBJECT, [
+                { $sort: { salary: 1 } },
+                { $group: { 
+                    _id: '$department',
+                    lowestPaid: { $first: '$name' },
+                    highestPaid: { $last: '$name' }
+                }}
+            ]);
+
+            const itResult = results.find(r => r._id === 'IT');
+            expect(itResult).toBeDefined();
+            expect(itResult?.lowestPaid).toBeDefined();
+            expect(itResult?.highestPaid).toBeDefined();
+        });
+
+        it('should support $push accumulator', async () => {
+            if (!driver) return;
+
+            const results = await driver.aggregate(TEST_OBJECT, [
+                { $group: { 
+                    _id: '$department',
+                    employees: { $push: '$name' }
+                }}
+            ]);
+
+            const itResult = results.find(r => r._id === 'IT');
+            expect(itResult).toBeDefined();
+            expect(Array.isArray(itResult?.employees)).toBe(true);
+            expect(itResult?.employees).toHaveLength(3);
+            expect(itResult?.employees).toContain('Alice');
+            expect(itResult?.employees).toContain('Charlie');
+            expect(itResult?.employees).toContain('Eve');
+        });
+
+        it('should support $addToSet accumulator', async () => {
+            if (!driver) return;
+
+            // Add duplicate departments
+            await driver.create(TEST_OBJECT, { name: 'Frank', department: 'IT', salary: 85000, age: 29 });
+
+            const results = await driver.aggregate(TEST_OBJECT, [
+                { $group: { 
+                    _id: null,
+                    uniqueDepts: { $addToSet: '$department' }
+                }}
+            ]);
+
+            expect(results).toHaveLength(1);
+            expect(results[0].uniqueDepts).toHaveLength(3); // IT, HR, Sales
+            expect(results[0].uniqueDepts).toContain('IT');
+            expect(results[0].uniqueDepts).toContain('HR');
+            expect(results[0].uniqueDepts).toContain('Sales');
+        });
+
+        it('should handle complex aggregation pipelines', async () => {
+            if (!driver) return;
+
+            const results = await driver.aggregate(TEST_OBJECT, [
+                { $match: { salary: { $gte: 70000 } } },
+                { $group: { 
+                    _id: '$department',
+                    avgSalary: { $avg: '$salary' },
+                    count: { $sum: 1 }
+                }},
+                { $match: { count: { $gt: 1 } } },
+                { $sort: { avgSalary: -1 } },
+                { $project: { 
+                    department: '$_id',
+                    avgSalary: 1,
+                    count: 1
+                }}
+            ]);
+
+            // Should only include IT (has 3 people with salary >= 70000)
+            expect(results.length).toBeGreaterThan(0);
+            const result = results.find(r => r.department === 'IT' || r._id === 'IT');
+            expect(result).toBeDefined();
+        });
+
+        it('should handle empty aggregation results', async () => {
+            if (!driver) return;
+
+            const results = await driver.aggregate(TEST_OBJECT, [
+                { $match: { salary: { $gt: 1000000 } } } // No one earns this much
+            ]);
+
+            expect(results).toHaveLength(0);
+        });
+    });
 });
