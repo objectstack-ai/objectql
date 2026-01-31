@@ -202,25 +202,10 @@ importers:
       '@objectql/driver-sql':
         specifier: workspace:*
         version: link:../../../packages/drivers/sql
-      '@objectql/platform-node':
-        specifier: workspace:*
-        version: link:../../../packages/foundation/platform-node
-      '@objectql/server':
-        specifier: workspace:*
-        version: link:../../../packages/runtime/server
-      '@objectql/types':
-        specifier: workspace:*
-        version: link:../../../packages/foundation/types
-      express:
-        specifier: ^4.18.2
-        version: 4.22.1
       sqlite3:
         specifier: ^5.1.7
         version: 5.1.7
     devDependencies:
-      '@types/express':
-        specifier: ^4.17.21
-        version: 4.17.25
       '@types/jest':
         specifier: ^30.0.0
         version: 30.0.0
