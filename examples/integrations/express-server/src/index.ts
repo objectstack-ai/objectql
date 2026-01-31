@@ -180,8 +180,8 @@ async function main() {
   console.log('📦 Application Configuration:');
   console.log(`  Name: ${expressServerApp.name}`);
   console.log(`  Objects Defined: ${Object.keys(expressServerApp.objects).length}`);
-  console.log(`    - User (4 fields)`);
-  console.log(`    - Task (7 fields)\n`);
+  console.log(`    - User (${Object.keys(expressServerApp.objects.User.fields).length} fields)`);
+  console.log(`    - Task (${Object.keys(expressServerApp.objects.Task.fields).length} fields)\n`);
   
   console.log('📝 Next Steps (when @objectstack/runtime@0.7.1 is fixed):');
   console.log('  1. Uncomment ObjectKernel initialization');
