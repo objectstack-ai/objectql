@@ -49,7 +49,10 @@ export interface LocalStorageDriverConfig extends MemoryDriverConfig {
     namespace?: string;
     /** Optional: Custom localStorage implementation (for testing) */
     storage?: Storage;
-    /** Optional: Enable compression for stored data (default: false) */
+    /** 
+     * Optional: Enable compression for stored data (default: false)
+     * NOTE: Compression is not yet implemented. Setting this to true will log a warning.
+     */
     enableCompression?: boolean;
 }
 
@@ -84,6 +87,11 @@ export class LocalStorageDriver extends MemoryDriver {
         
         this.namespace = config.namespace || 'objectql';
         this.enableCompression = config.enableCompression || false;
+        
+        // Warn if compression is enabled but not yet implemented
+        if (this.enableCompression) {
+            console.warn('[LocalStorageDriver] Compression is not yet implemented. Data will be stored as plain JSON.');
+        }
         
         // Use provided storage or browser localStorage
         if (config.storage) {
@@ -182,20 +190,20 @@ export class LocalStorageDriver extends MemoryDriver {
 
     /**
      * Serialize data for storage (with optional compression)
+     * NOTE: Compression is not yet implemented
      */
     protected serialize(data: any): string {
         const json = JSON.stringify(data);
-        // TODO: Implement compression if enableCompression is true
-        // For now, just return JSON string
+        // Compression support planned for future release
         return json;
     }
 
     /**
      * Deserialize data from storage (with optional decompression)
+     * NOTE: Decompression is not yet implemented
      */
     protected deserialize(value: string): any {
-        // TODO: Implement decompression if enableCompression is true
-        // For now, just parse JSON
+        // Decompression support planned for future release
         return JSON.parse(value);
     }
 
