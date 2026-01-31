@@ -130,7 +130,7 @@ export interface FieldOption {
  * All other protocol properties (description, defaultValue, maxLength, minLength, precision, scale, min, max,
  * reference, referenceFilters, writeRequiresMasterRead, expression, summaryOperations) are inherited as-is.
  */
-export interface FieldConfig extends Omit<Field, 'name' | 'label' | 'type' | 'options' | 'required' | 'multiple' | 'unique' | 'deleteBehavior' | 'hidden' | 'readonly' | 'encryption' | 'index' | 'externalId' | 'searchable'> {
+export interface FieldConfig extends Omit<Field, 'name' | 'label' | 'type' | 'options' | 'required' | 'multiple' | 'unique' | 'deleteBehavior' | 'hidden' | 'readonly' | 'encryption' | 'index' | 'externalId' | 'searchable' | 'auditTrail'> {
     /** Field name (inferred from Record key when used in ObjectConfig.fields) */
     name?: string;
     
