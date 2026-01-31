@@ -315,6 +315,9 @@ importers:
 
   packages/drivers/excel:
     dependencies:
+      '@objectql/driver-memory':
+        specifier: workspace:*
+        version: link:../memory
       '@objectql/types':
         specifier: workspace:*
         version: link:../../foundation/types
@@ -324,9 +327,6 @@ importers:
       exceljs:
         specifier: ^4.4.0
         version: 4.4.0
-      mingo:
-        specifier: ^7.1.1
-        version: 7.2.0
     devDependencies:
       '@types/jest':
         specifier: ^29.0.0
