@@ -1,6 +1,6 @@
 {
   "name": "@objectql/driver-redis",
-  "version": "4.1.0",
+  "version": "4.0.2",
   "description": "Production-ready Redis driver for ObjectQL with full CRUD, distinct(), aggregate(), and batch operations support",
   "keywords": [
     "objectql",
