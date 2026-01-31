@@ -716,4 +716,245 @@ describe('MongoDriver Integration Tests', () => {
             expect(results.length).toBe(2);
         });
     });
+
+    describe('Distinct Method', () => {
+        beforeEach(async () => {
+            if (skipIfMongoUnavailable()) return;
+            // Create test data
+            await driver.create('products', { name: 'Laptop', category: 'Electronics', price: 1200 });
+            await driver.create('products', { name: 'Mouse', category: 'Electronics', price: 25 });
+            await driver.create('products', { name: 'Desk', category: 'Furniture', price: 500 });
+            await driver.create('products', { name: 'Chair', category: 'Furniture', price: 300 });
+            await driver.create('products', { name: 'Monitor', category: 'Electronics', price: 400 });
+        });
+
+        test('should get distinct values for a field', async () => {
+            if (skipIfMongoUnavailable()) return;
+            
+            const categories = await driver.distinct('products', 'category');
+            
+            expect(categories).toBeDefined();
+            expect(Array.isArray(categories)).toBe(true);
+            expect(categories.sort()).toEqual(['Electronics', 'Furniture'].sort());
+        });
+
+        test('should get distinct values with filters', async () => {
+            if (skipIfMongoUnavailable()) return;
+            
+            const names = await driver.distinct('products', 'name', {
+                category: 'Electronics'
+            });
+            
+            expect(names).toBeDefined();
+            expect(names.length).toBe(3);
+            expect(names).toContain('Laptop');
+            expect(names).toContain('Mouse');
+            expect(names).toContain('Monitor');
+        });
+
+        test('should return empty array for non-matching filters', async () => {
+            if (skipIfMongoUnavailable()) return;
+            
+            const values = await driver.distinct('products', 'name', {
+                category: 'NonExistent'
+            });
+            
+            expect(values).toEqual([]);
+        });
+    });
+
+    describe('FindOneAndUpdate Method', () => {
+        beforeEach(async () => {
+            if (skipIfMongoUnavailable()) return;
+            // Create test data
+            await driver.create('users', { name: 'Alice', email: 'alice@example.com', status: 'active', points: 100 });
+            await driver.create('users', { name: 'Bob', email: 'bob@example.com', status: 'inactive', points: 50 });
+        });
+
+        test('should find and update a document', async () => {
+            if (skipIfMongoUnavailable()) return;
+            
+            const result = await driver.findOneAndUpdate(
+                'users',
+                { email: 'alice@example.com' },
+                { $set: { status: 'premium' } },
+                { returnDocument: 'after' }
+            );
+            
+            expect(result).toBeDefined();
+            expect(result.email).toBe('alice@example.com');
+            expect(result.status).toBe('premium');
+        });
+
+        test('should return document before update', async () => {
+            if (skipIfMongoUnavailable()) return;
+            
+            const result = await driver.findOneAndUpdate(
+                'users',
+                { email: 'bob@example.com' },
+                { $set: { status: 'active' } },
+                { returnDocument: 'before' }
+            );
+            
+            expect(result).toBeDefined();
+            expect(result.status).toBe('inactive'); // Should be the old value
+        });
+
+        test('should increment a field atomically', async () => {
+            if (skipIfMongoUnavailable()) return;
+            
+            const result = await driver.findOneAndUpdate(
+                'users',
+                { email: 'alice@example.com' },
+                { $inc: { points: 50 } },
+                { returnDocument: 'after' }
+            );
+            
+            expect(result).toBeDefined();
+            expect(result.points).toBe(150);
+        });
+
+        test('should upsert if document does not exist', async () => {
+            if (skipIfMongoUnavailable()) return;
+            
+            const result = await driver.findOneAndUpdate(
+                'users',
+                { email: 'charlie@example.com' },
+                { $set: { name: 'Charlie', email: 'charlie@example.com', status: 'active' } },
+                { returnDocument: 'after', upsert: true }
+            );
+            
+            expect(result).toBeDefined();
+            expect(result.email).toBe('charlie@example.com');
+            expect(result.name).toBe('Charlie');
+        });
+
+        test('should return null if no document matches', async () => {
+            if (skipIfMongoUnavailable()) return;
+            
+            const result = await driver.findOneAndUpdate(
+                'users',
+                { email: 'nonexistent@example.com' },
+                { $set: { status: 'active' } },
+                { returnDocument: 'after' }
+            );
+            
+            expect(result).toBeNull();
+        });
+    });
+
+    describe('Change Streams (Watch)', () => {
+        test('should watch for insert operations', async () => {
+            if (skipIfMongoUnavailable()) return;
+            
+            const changes: any[] = [];
+            
+            // Start watching
+            const streamId = await driver.watch('users', async (change) => {
+                changes.push(change);
+            }, {
+                operationTypes: ['insert']
+            });
+            
+            expect(streamId).toBeDefined();
+            
+            // Give the change stream time to initialize
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            // Insert a document
+            await driver.create('users', { name: 'ChangeTest', email: 'test@example.com' });
+            
+            // Wait for change to be detected
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            // Stop watching
+            await driver.unwatchChangeStream(streamId);
+            
+            expect(changes.length).toBeGreaterThan(0);
+            expect(changes[0].operationType).toBe('insert');
+        });
+
+        test('should watch for update operations', async () => {
+            if (skipIfMongoUnavailable()) return;
+            
+            // Create initial document
+            const doc = await driver.create('users', { name: 'UpdateTest', email: 'update@example.com' });
+            
+            const changes: any[] = [];
+            
+            // Start watching
+            const streamId = await driver.watch('users', async (change) => {
+                changes.push(change);
+            }, {
+                operationTypes: ['update'],
+                fullDocument: 'updateLookup'
+            });
+            
+            expect(streamId).toBeDefined();
+            
+            // Give the change stream time to initialize
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            // Update the document
+            await driver.update('users', doc.id, { name: 'UpdatedName' });
+            
+            // Wait for change to be detected
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            // Stop watching
+            await driver.unwatchChangeStream(streamId);
+            
+            expect(changes.length).toBeGreaterThan(0);
+            expect(changes[0].operationType).toBe('update');
+        });
+
+        test('should return list of active change streams', async () => {
+            if (skipIfMongoUnavailable()) return;
+            
+            const streamId1 = await driver.watch('users', async () => {});
+            const streamId2 = await driver.watch('products', async () => {});
+            
+            const activeStreams = driver.getActiveChangeStreams();
+            
+            expect(activeStreams).toContain(streamId1);
+            expect(activeStreams).toContain(streamId2);
+            expect(activeStreams.length).toBe(2);
+            
+            // Cleanup
+            await driver.unwatchChangeStream(streamId1);
+            await driver.unwatchChangeStream(streamId2);
+        });
+
+        test('should allow multiple watchers on same collection', async () => {
+            if (skipIfMongoUnavailable()) return;
+            
+            const changes1: any[] = [];
+            const changes2: any[] = [];
+            
+            const streamId1 = await driver.watch('users', async (change) => {
+                changes1.push(change);
+            });
+            
+            const streamId2 = await driver.watch('users', async (change) => {
+                changes2.push(change);
+            });
+            
+            // Give streams time to initialize
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            // Create a document
+            await driver.create('users', { name: 'MultiWatch', email: 'multi@example.com' });
+            
+            // Wait for changes to be detected
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            // Both watchers should have received the change
+            expect(changes1.length).toBeGreaterThan(0);
+            expect(changes2.length).toBeGreaterThan(0);
+            
+            // Cleanup
+            await driver.unwatchChangeStream(streamId1);
+            await driver.unwatchChangeStream(streamId2);
+        });
+    });
 });

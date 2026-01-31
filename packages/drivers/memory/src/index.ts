@@ -38,7 +38,7 @@ type DriverInterface = Data.DriverInterface;
  */
 
 import { Driver, ObjectQLError } from '@objectql/types';
-import { Query } from 'mingo';
+import { Query, Aggregator } from 'mingo';
 
 /**
  * Command interface for executeCommand method
@@ -72,6 +72,24 @@ export interface MemoryDriverConfig {
     initialData?: Record<string, any[]>;
     /** Optional: Enable strict mode (throw on missing objects) */
     strictMode?: boolean;
+    /** Optional: Enable persistence to file system */
+    persistence?: {
+        /** File path to persist data */
+        filePath: string;
+        /** Auto-save interval in milliseconds (default: 5000) */
+        autoSaveInterval?: number;
+    };
+    /** Optional: Fields to index for faster queries */
+    indexes?: Record<string, string[]>; // objectName -> field names
+}
+
+/**
+ * In-memory transaction
+ */
+interface MemoryTransaction {
+    id: string;
+    snapshot: Map<string, any>;
+    operations: Array<{ type: 'set' | 'delete'; key: string; value?: any }>;
 }
 
 /**
@@ -87,13 +105,13 @@ export class MemoryDriver implements Driver {
     public readonly name = 'MemoryDriver';
     public readonly version = '4.0.0';
     public readonly supports = {
-        transactions: false,
+        transactions: true,
         joins: false,
         fullTextSearch: false,
         jsonFields: true,
         arrayFields: true,
         queryFilters: true,
-        queryAggregations: false,
+        queryAggregations: true,
         querySorting: true,
         queryPagination: true,
         queryWindowFunctions: false,
@@ -103,15 +121,30 @@ export class MemoryDriver implements Driver {
     private store: Map<string, any>;
     private config: MemoryDriverConfig;
     private idCounters: Map<string, number>;
+    private transactions: Map<string, MemoryTransaction>;
+    private indexes: Map<string, Map<string, Set<string>>>; // objectName -> field -> Set<recordIds>
+    private persistenceTimer?: NodeJS.Timeout;
 
     constructor(config: MemoryDriverConfig = {}) {
         this.config = config;
         this.store = new Map<string, any>();
         this.idCounters = new Map<string, number>();
+        this.transactions = new Map();
+        this.indexes = new Map();
         
         // Load initial data if provided
         if (config.initialData) {
             this.loadInitialData(config.initialData);
+        }
+        
+        // Set up persistence if configured
+        if (config.persistence) {
+            this.setupPersistence();
+        }
+        
+        // Build indexes if configured
+        if (config.indexes) {
+            this.buildIndexes(config.indexes);
         }
     }
 
@@ -235,6 +268,10 @@ export class MemoryDriver implements Driver {
         };
         
         this.store.set(key, doc);
+        
+        // Update indexes
+        this.updateIndex(objectName, id, doc);
+        
         return { ...doc };
     }
 
@@ -265,6 +302,10 @@ export class MemoryDriver implements Driver {
         };
         
         this.store.set(key, doc);
+        
+        // Update indexes
+        this.updateIndex(objectName, id.toString(), doc);
+        
         return { ...doc };
     }
 
@@ -274,6 +315,11 @@ export class MemoryDriver implements Driver {
     async delete(objectName: string, id: string | number, options?: any): Promise<any> {
         const key = `${objectName}:${id}`;
         const deleted = this.store.delete(key);
+        
+        // Remove from indexes
+        if (deleted) {
+            this.removeFromIndex(objectName, id.toString());
+        }
         
         if (!deleted && this.config.strictMode) {
             throw new ObjectQLError({
@@ -468,10 +514,259 @@ export class MemoryDriver implements Driver {
     }
 
     /**
-     * Disconnect (no-op for memory driver).
+     * Disconnect and cleanup resources.
      */
     async disconnect(): Promise<void> {
-        // No-op: Memory driver doesn't need cleanup
+        // Save data to disk if persistence is enabled
+        if (this.config.persistence) {
+            this.saveToDisk();
+            
+            // Clear the auto-save timer
+            if (this.persistenceTimer) {
+                clearInterval(this.persistenceTimer);
+                this.persistenceTimer = undefined;
+            }
+        }
+    }
+
+    /**
+     * Perform aggregation operations using Mingo
+     * @param objectName - The object type to aggregate
+     * @param pipeline - MongoDB-style aggregation pipeline
+     * @param options - Optional query options
+     * @returns Aggregation results
+     * 
+     * @example
+     * // Group by status and count
+     * const results = await driver.aggregate('orders', [
+     *   { $match: { status: 'completed' } },
+     *   { $group: { _id: '$customer', totalAmount: { $sum: '$amount' } } }
+     * ]);
+     * 
+     * @example
+     * // Calculate average with filter
+     * const results = await driver.aggregate('products', [
+     *   { $match: { category: 'electronics' } },
+     *   { $group: { _id: null, avgPrice: { $avg: '$price' } } }
+     * ]);
+     */
+    async aggregate(objectName: string, pipeline: any[], options?: any): Promise<any[]> {
+        const pattern = `${objectName}:`;
+        
+        // Get all records for this object type
+        let records: any[] = [];
+        for (const [key, value] of this.store.entries()) {
+            if (key.startsWith(pattern)) {
+                records.push({ ...value });
+            }
+        }
+        
+        // Use Mingo to execute the aggregation pipeline
+        const aggregator = new Aggregator(pipeline);
+        const results = aggregator.run(records);
+        
+        return results;
+    }
+
+    /**
+     * Begin a new transaction
+     * @returns Transaction object that can be passed to other methods
+     */
+    async beginTransaction(): Promise<any> {
+        const txId = `tx_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+        
+        // Create a deep snapshot of the current store to ensure complete transaction isolation
+        // This prevents issues with nested objects and arrays being modified during the transaction
+        const snapshot = new Map<string, any>();
+        for (const [key, value] of this.store.entries()) {
+            snapshot.set(key, JSON.parse(JSON.stringify(value)));
+        }
+        
+        const transaction: MemoryTransaction = {
+            id: txId,
+            snapshot,
+            operations: []
+        };
+        
+        this.transactions.set(txId, transaction);
+        
+        return { id: txId };
+    }
+
+    /**
+     * Commit a transaction
+     * @param transaction - Transaction object returned by beginTransaction()
+     */
+    async commitTransaction(transaction: any): Promise<void> {
+        const txId = transaction?.id;
+        if (!txId) {
+            throw new ObjectQLError({
+                code: 'INVALID_TRANSACTION',
+                message: 'Invalid transaction object'
+            });
+        }
+        
+        const tx = this.transactions.get(txId);
+        if (!tx) {
+            throw new ObjectQLError({
+                code: 'TRANSACTION_NOT_FOUND',
+                message: `Transaction ${txId} not found`
+            });
+        }
+        
+        // Operations are already applied to the store during the transaction
+        // Just clean up the transaction record
+        this.transactions.delete(txId);
+    }
+
+    /**
+     * Rollback a transaction
+     * @param transaction - Transaction object returned by beginTransaction()
+     */
+    async rollbackTransaction(transaction: any): Promise<void> {
+        const txId = transaction?.id;
+        if (!txId) {
+            throw new ObjectQLError({
+                code: 'INVALID_TRANSACTION',
+                message: 'Invalid transaction object'
+            });
+        }
+        
+        const tx = this.transactions.get(txId);
+        if (!tx) {
+            throw new ObjectQLError({
+                code: 'TRANSACTION_NOT_FOUND',
+                message: `Transaction ${txId} not found`
+            });
+        }
+        
+        // Restore the snapshot
+        this.store = new Map(tx.snapshot);
+        
+        // Clean up the transaction
+        this.transactions.delete(txId);
+    }
+
+    /**
+     * Set up persistence to file system
+     * @private
+     */
+    private setupPersistence(): void {
+        if (!this.config.persistence) return;
+        
+        const { filePath, autoSaveInterval = 5000 } = this.config.persistence;
+        
+        // Try to load existing data from file
+        try {
+            const fs = require('fs');
+            if (fs.existsSync(filePath)) {
+                const fileData = fs.readFileSync(filePath, 'utf8');
+                const data = JSON.parse(fileData);
+                
+                // Load data into store
+                for (const [key, value] of Object.entries(data.store || {})) {
+                    this.store.set(key, value);
+                }
+                
+                // Load ID counters
+                if (data.idCounters) {
+                    for (const [key, value] of Object.entries(data.idCounters)) {
+                        this.idCounters.set(key, value as number);
+                    }
+                }
+            }
+        } catch (error) {
+            console.warn('[MemoryDriver] Failed to load persisted data:', error);
+        }
+        
+        // Set up auto-save timer
+        // Use unref() to allow Node.js process to exit gracefully when idle
+        this.persistenceTimer = setInterval(() => {
+            this.saveToDisk();
+        }, autoSaveInterval);
+        this.persistenceTimer.unref();
+    }
+
+    /**
+     * Save current state to disk
+     * @private
+     */
+    private saveToDisk(): void {
+        if (!this.config.persistence) return;
+        
+        try {
+            const fs = require('fs');
+            const data = {
+                store: Object.fromEntries(this.store),
+                idCounters: Object.fromEntries(this.idCounters),
+                timestamp: new Date().toISOString()
+            };
+            
+            fs.writeFileSync(this.config.persistence.filePath, JSON.stringify(data, null, 2), 'utf8');
+        } catch (error) {
+            console.error('[MemoryDriver] Failed to save data to disk:', error);
+        }
+    }
+
+    /**
+     * Build indexes for faster queries
+     * @private
+     */
+    private buildIndexes(indexConfig: Record<string, string[]>): void {
+        for (const [objectName, fields] of Object.entries(indexConfig)) {
+            const objectIndexes = new Map<string, Set<string>>();
+            
+            for (const field of fields) {
+                const fieldIndex = new Set<string>();
+                
+                // Scan all records of this object type
+                const pattern = `${objectName}:`;
+                for (const [key, record] of this.store.entries()) {
+                    if (key.startsWith(pattern)) {
+                        const fieldValue = record[field];
+                        if (fieldValue !== undefined && fieldValue !== null) {
+                            // Store the record ID in the index
+                            fieldIndex.add(record.id);
+                        }
+                    }
+                }
+                
+                objectIndexes.set(field, fieldIndex);
+            }
+            
+            this.indexes.set(objectName, objectIndexes);
+        }
+    }
+
+    /**
+     * Update index when a record is created or updated
+     * @private
+     */
+    private updateIndex(objectName: string, recordId: string, record: any): void {
+        const objectIndexes = this.indexes.get(objectName);
+        if (!objectIndexes) return;
+        
+        for (const [field, indexSet] of objectIndexes.entries()) {
+            const fieldValue = record[field];
+            if (fieldValue !== undefined && fieldValue !== null) {
+                indexSet.add(recordId);
+            } else {
+                indexSet.delete(recordId);
+            }
+        }
+    }
+
+    /**
+     * Remove record from indexes
+     * @private
+     */
+    private removeFromIndex(objectName: string, recordId: string): void {
+        const objectIndexes = this.indexes.get(objectName);
+        if (!objectIndexes) return;
+        
+        for (const indexSet of objectIndexes.values()) {
+            indexSet.delete(recordId);
+        }
     }
 
     // ========== Helper Methods ==========

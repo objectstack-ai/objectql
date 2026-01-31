@@ -410,4 +410,148 @@ describe('SqlDriver Advanced Operations (SQLite)', () => {
             expect(count).toBe(2); // Laptop and Monitor orders
         });
     });
+
+    describe('Distinct Method', () => {
+        it('should get distinct values for a field', async () => {
+            const statuses = await driver.distinct('orders', 'status');
+            
+            expect(statuses).toBeDefined();
+            expect(Array.isArray(statuses)).toBe(true);
+            expect(statuses).toHaveLength(3);
+            expect(statuses).toEqual(expect.arrayContaining(['cancelled', 'completed', 'pending']));
+        });
+
+        it('should get distinct values with filters', async () => {
+            const products = await driver.distinct('orders', 'product', {
+                status: 'completed'
+            });
+            
+            expect(products).toBeDefined();
+            expect(products.length).toBe(3); // Laptop, Mouse, Monitor
+            expect(products).toContain('Laptop');
+            expect(products).toContain('Mouse');
+            expect(products).toContain('Monitor');
+        });
+
+        it('should return empty array for non-existent values', async () => {
+            const values = await driver.distinct('orders', 'product', {
+                status: 'nonexistent'
+            });
+            
+            expect(values).toEqual([]);
+        });
+    });
+
+    describe('Window Functions', () => {
+        it('should execute ROW_NUMBER window function', async () => {
+            const results = await driver.findWithWindowFunctions('orders', {
+                windowFunctions: [
+                    {
+                        function: 'ROW_NUMBER',
+                        alias: 'row_num',
+                        orderBy: [{ field: 'amount', order: 'desc' }]
+                    }
+                ],
+                orderBy: [{ field: 'amount', order: 'desc' }]
+            });
+
+            expect(results).toBeDefined();
+            expect(results.length).toBe(5);
+            expect(results[0].row_num).toBe(1);
+            expect(results[0].amount).toBe(1200.00);
+        });
+
+        it('should execute RANK window function', async () => {
+            const results = await driver.findWithWindowFunctions('orders', {
+                windowFunctions: [
+                    {
+                        function: 'RANK',
+                        alias: 'rank',
+                        orderBy: [{ field: 'amount', order: 'desc' }]
+                    }
+                ],
+                orderBy: [{ field: 'amount', order: 'desc' }]
+            });
+
+            expect(results).toBeDefined();
+            expect(results.length).toBe(5);
+            // First two records should have rank 1 (both $1200)
+            expect(results[0].rank).toBe(1);
+        });
+
+        it('should partition window function by field', async () => {
+            const results = await driver.findWithWindowFunctions('orders', {
+                windowFunctions: [
+                    {
+                        function: 'ROW_NUMBER',
+                        alias: 'customer_row',
+                        partitionBy: ['customer'],
+                        orderBy: [{ field: 'amount', order: 'desc' }]
+                    }
+                ],
+                orderBy: [{ field: 'customer', order: 'asc' }, { field: 'amount', order: 'desc' }]
+            });
+
+            expect(results).toBeDefined();
+            
+            // Alice should have row numbers 1 and 2 for her orders
+            const aliceOrders = results.filter(r => r.customer === 'Alice');
+            expect(aliceOrders.length).toBe(2);
+        });
+
+        it('should apply filters with window functions', async () => {
+            const results = await driver.findWithWindowFunctions('orders', {
+                where: { status: 'completed' },
+                windowFunctions: [
+                    {
+                        function: 'ROW_NUMBER',
+                        alias: 'row_num',
+                        orderBy: [{ field: 'amount', order: 'desc' }]
+                    }
+                ]
+            });
+
+            expect(results).toBeDefined();
+            expect(results.length).toBe(3); // Only completed orders
+            expect(results.every(r => r.status === 'completed')).toBe(true);
+        });
+    });
+
+    describe('Query Plan Analysis', () => {
+        it('should analyze a simple query', async () => {
+            const analysis = await driver.analyzeQuery('orders', {
+                where: { status: 'completed' }
+            });
+
+            expect(analysis).toBeDefined();
+            expect(analysis.sql).toBeDefined();
+            expect(analysis.client).toBe('sqlite3');
+        });
+
+        it('should analyze a complex query with joins and filters', async () => {
+            const analysis = await driver.analyzeQuery('orders', {
+                where: {
+                    $and: [
+                        { status: 'completed' },
+                        { amount: { $gt: 100 } }
+                    ]
+                },
+                orderBy: [{ field: 'amount', order: 'desc' }],
+                limit: 10
+            });
+
+            expect(analysis).toBeDefined();
+            expect(analysis.sql).toBeDefined();
+            expect(analysis.bindings).toBeDefined();
+        });
+
+        it('should include EXPLAIN output for SQLite', async () => {
+            const analysis = await driver.analyzeQuery('orders', {
+                where: { customer: 'Alice' }
+            });
+
+            expect(analysis).toBeDefined();
+            expect(analysis.plan).toBeDefined();
+        });
+    });
 });

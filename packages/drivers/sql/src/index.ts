@@ -455,6 +455,103 @@ export class SqlDriver implements Driver {
             default: throw new Error(`Unsupported aggregate function: ${func}`);
         }
     }
+
+    /**
+     * Execute a query with window functions
+     * @param objectName - The table/object name
+     * @param query - Query with window function specifications
+     * @param options - Optional query options (e.g., transaction)
+     * @returns Query results with window function calculations
+     * 
+     * @example
+     * await driver.findWithWindowFunctions('orders', {
+     *   where: { status: 'completed' },
+     *   windowFunctions: [
+     *     {
+     *       function: 'ROW_NUMBER',
+     *       alias: 'row_num',
+     *       partitionBy: ['customer'],
+     *       orderBy: [{ field: 'amount', order: 'desc' }]
+     *     },
+     *     {
+     *       function: 'RANK',
+     *       alias: 'rank',
+     *       orderBy: [{ field: 'amount', order: 'desc' }]
+     *     }
+     *   ]
+     * });
+     */
+    async findWithWindowFunctions(objectName: string, query: any, options?: any): Promise<any[]> {
+        const builder = this.getBuilder(objectName, options);
+        
+        // Select all fields by default
+        builder.select('*');
+        
+        // Apply filters if provided
+        if (query.where) {
+            this.applyFilters(builder, query.where);
+        }
+        
+        // Add window functions
+        if (query.windowFunctions && Array.isArray(query.windowFunctions)) {
+            for (const wf of query.windowFunctions) {
+                const windowFunc = this.buildWindowFunction(wf);
+                builder.select(this.knex.raw(`${windowFunc} as ??`, [wf.alias]));
+            }
+        }
+        
+        // Apply sorting if provided
+        if (query.orderBy && Array.isArray(query.orderBy)) {
+            for (const sort of query.orderBy) {
+                const field = this.mapSortField(sort.field);
+                builder.orderBy(field, sort.order || 'asc');
+            }
+        }
+        
+        // Apply pagination
+        if (query.limit) {
+            builder.limit(query.limit);
+        }
+        if (query.offset) {
+            builder.offset(query.offset);
+        }
+        
+        return await builder;
+    }
+
+    /**
+     * Build a window function SQL string
+     * @private
+     */
+    private buildWindowFunction(spec: any): string {
+        const func = spec.function.toUpperCase();
+        let sql = `${func}()`;
+        
+        // Build OVER clause
+        const overParts: string[] = [];
+        
+        if (spec.partitionBy && Array.isArray(spec.partitionBy) && spec.partitionBy.length > 0) {
+            const partitionFields = spec.partitionBy.map((f: string) => this.mapSortField(f)).join(', ');
+            overParts.push(`PARTITION BY ${partitionFields}`);
+        }
+        
+        if (spec.orderBy && Array.isArray(spec.orderBy) && spec.orderBy.length > 0) {
+            const orderFields = spec.orderBy.map((s: any) => {
+                const field = this.mapSortField(s.field);
+                const order = (s.order || 'asc').toUpperCase();
+                return `${field} ${order}`;
+            }).join(', ');
+            overParts.push(`ORDER BY ${orderFields}`);
+        }
+        
+        if (overParts.length > 0) {
+            sql += ` OVER (${overParts.join(' ')})`;
+        } else {
+            sql += ` OVER ()`;
+        }
+        
+        return sql;
+    }
     
     // Bulk Operations
     async createMany(objectName: string, data: any[], options?: any): Promise<any> {
@@ -472,6 +569,120 @@ export class SqlDriver implements Driver {
         const builder = this.getBuilder(objectName, options);
         if(filters) this.applyFilters(builder, filters);
         return await builder.delete();
+    }
+
+    /**
+     * Get distinct values for a field
+     * @param objectName - The table/object name
+     * @param field - The field to get distinct values from
+     * @param filters - Optional filters to apply
+     * @param options - Optional query options (e.g., transaction)
+     * @returns Array of distinct values
+     */
+    async distinct(objectName: string, field: string, filters?: any, options?: any): Promise<any[]> {
+        const builder = this.getBuilder(objectName, options);
+        
+        // Apply filters if provided
+        if (filters) {
+            this.applyFilters(builder, filters);
+        }
+        
+        // Select distinct values for the field
+        builder.distinct(field);
+        
+        const results = await builder;
+        
+        // Extract the values from the result objects
+        return results.map(row => row[field]);
+    }
+
+    /**
+     * Analyze query execution plan
+     * @param objectName - The table/object name
+     * @param query - The query to analyze
+     * @param options - Optional query options
+     * @returns Query plan analysis results
+     * 
+     * @example
+     * const plan = await driver.analyzeQuery('orders', {
+     *   where: { status: 'completed' },
+     *   orderBy: [{ field: 'amount', order: 'desc' }]
+     * });
+     * console.log('Query plan:', plan);
+     */
+    async analyzeQuery(objectName: string, query: any, options?: any): Promise<any> {
+        const builder = this.getBuilder(objectName, options);
+        
+        // Apply the same logic as find() to build the query
+        if (query.fields) {
+            builder.select(query.fields);
+        } else {
+            builder.select('*');
+        }
+        
+        if (query.where) {
+            this.applyFilters(builder, query.where);
+        }
+        
+        if (query.orderBy && Array.isArray(query.orderBy)) {
+            for (const sort of query.orderBy) {
+                const field = this.mapSortField(sort.field);
+                builder.orderBy(field, sort.order || 'asc');
+            }
+        }
+        
+        if (query.limit) {
+            builder.limit(query.limit);
+        }
+        if (query.offset) {
+            builder.offset(query.offset);
+        }
+        
+        // Get the SQL string
+        const sql = builder.toSQL();
+        
+        // Execute EXPLAIN based on the database client
+        const client = this.config.client;
+        let explainResults: any;
+        
+        try {
+            if (client === 'pg' || client === 'postgresql') {
+                // PostgreSQL: EXPLAIN (FORMAT JSON, ANALYZE)
+                const explainQuery = `EXPLAIN (FORMAT JSON, ANALYZE) ${sql.sql}`;
+                explainResults = await this.knex.raw(explainQuery, sql.bindings);
+            } else if (client === 'mysql' || client === 'mysql2') {
+                // MySQL: EXPLAIN FORMAT=JSON
+                const explainQuery = `EXPLAIN FORMAT=JSON ${sql.sql}`;
+                explainResults = await this.knex.raw(explainQuery, sql.bindings);
+            } else if (client === 'sqlite3') {
+                // SQLite: EXPLAIN QUERY PLAN
+                const explainQuery = `EXPLAIN QUERY PLAN ${sql.sql}`;
+                explainResults = await this.knex.raw(explainQuery, sql.bindings);
+            } else {
+                // Fallback: just return the query
+                return {
+                    sql: sql.sql,
+                    bindings: sql.bindings,
+                    client: client,
+                    note: 'EXPLAIN not supported for this database client'
+                };
+            }
+            
+            return {
+                sql: sql.sql,
+                bindings: sql.bindings,
+                client: client,
+                plan: explainResults
+            };
+        } catch (error: any) {
+            return {
+                sql: sql.sql,
+                bindings: sql.bindings,
+                client: client,
+                error: error.message,
+                note: 'Failed to execute EXPLAIN. Query is valid but EXPLAIN is not supported or failed.'
+            };
+        }
     }
 
     async init(objects: any[]): Promise<void> {

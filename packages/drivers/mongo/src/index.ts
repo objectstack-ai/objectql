@@ -11,7 +11,24 @@ type DriverInterface = Data.DriverInterface;
  */
 
 import { Driver } from '@objectql/types';
-import { MongoClient, Db, Filter, ObjectId, FindOptions } from 'mongodb';
+import { MongoClient, Db, Filter, ObjectId, FindOptions, ChangeStream, ChangeStreamDocument } from 'mongodb';
+
+/**
+ * Change stream event handler callback
+ */
+export type ChangeStreamHandler = (change: ChangeStreamDocument) => void | Promise<void>;
+
+/**
+ * Change stream options
+ */
+export interface ChangeStreamOptions {
+    /** Filter for specific operation types (insert, update, delete, replace) */
+    operationTypes?: ('insert' | 'update' | 'delete' | 'replace')[];
+    /** Full document lookup for update operations */
+    fullDocument?: 'updateLookup' | 'whenAvailable' | 'required';
+    /** Pipeline to filter change events */
+    pipeline?: any[];
+}
 
 /**
  * Command interface for executeCommand method
@@ -68,11 +85,13 @@ export class MongoDriver implements Driver {
     private db?: Db;
     private config: any;
     private connected: Promise<void>;
+    private changeStreams: Map<string, ChangeStream>;
 
     constructor(config: { url: string, dbName?: string }) {
         this.config = config;
         this.client = new MongoClient(config.url);
         this.connected = this.internalConnect();
+        this.changeStreams = new Map();
     }
 
     /**
@@ -474,10 +493,162 @@ export class MongoDriver implements Driver {
         return this.mapFromMongoArray(results);
     }
 
+    /**
+     * Get distinct values for a field
+     * @param objectName - The collection name
+     * @param field - The field to get distinct values from
+     * @param filters - Optional filters to apply
+     * @param options - Optional query options
+     * @returns Array of distinct values
+     */
+    async distinct(objectName: string, field: string, filters?: any, options?: any): Promise<any[]> {
+        const collection = await this.getCollection(objectName);
+        
+        // Convert ObjectQL filters to MongoDB query format
+        const filter = filters ? this.mapFilters(filters) : {};
+        
+        // Use MongoDB's native distinct method
+        const results = await collection.distinct(field, filter);
+        
+        return results;
+    }
+
+    /**
+     * Find one document and update it atomically
+     * @param objectName - The collection name
+     * @param filters - Query filters to find the document
+     * @param update - Update operations to apply
+     * @param options - Optional query options (e.g., returnDocument, upsert)
+     * @returns The updated document
+     * 
+     * @example
+     * // Find and update with returnDocument: 'after' to get the updated doc
+     * const updated = await driver.findOneAndUpdate('users', 
+     *   { email: 'user@example.com' }, 
+     *   { $set: { status: 'active' } },
+     *   { returnDocument: 'after' }
+     * );
+     */
+    async findOneAndUpdate(objectName: string, filters: any, update: any, options?: any): Promise<any> {
+        const collection = await this.getCollection(objectName);
+        
+        // Convert ObjectQL filters to MongoDB query format
+        const filter = this.mapFilters(filters);
+        
+        // MongoDB findOneAndUpdate options
+        const mongoOptions: any = {
+            returnDocument: options?.returnDocument || 'after', // 'before' or 'after'
+            upsert: options?.upsert || false
+        };
+        
+        // Execute the atomic find and update
+        const result = await collection.findOneAndUpdate(filter, update, mongoOptions);
+        
+        // Map MongoDB document to API format (convert _id to id)
+        // MongoDB driver v5+ returns { value: document, ok: number }
+        // Older versions (v4) return the document directly
+        // We handle both for backward compatibility
+        const doc = result?.value !== undefined ? result.value : result;
+        return doc ? this.mapFromMongo(doc) : null;
+    }
+
     async disconnect() {
+        // Close all active change streams
+        for (const [streamId, stream] of this.changeStreams.entries()) {
+            await stream.close();
+        }
+        this.changeStreams.clear();
+        
+        // Close the MongoDB client
         if (this.client) {
             await this.client.close();
         }
+    }
+
+    /**
+     * Watch for changes in a collection using MongoDB Change Streams
+     * @param objectName - The collection name to watch
+     * @param handler - Callback function to handle change events
+     * @param options - Optional change stream configuration
+     * @returns Stream ID that can be used to close the stream later
+     * 
+     * @example
+     * const streamId = await driver.watch('users', async (change) => {
+     *   console.log('Change detected:', change.operationType);
+     *   if (change.operationType === 'insert') {
+     *     console.log('New document:', change.fullDocument);
+     *   }
+     * }, {
+     *   operationTypes: ['insert', 'update'],
+     *   fullDocument: 'updateLookup'
+     * });
+     * 
+     * // Later, to stop watching:
+     * await driver.unwatchChangeStream(streamId);
+     */
+    async watch(objectName: string, handler: ChangeStreamHandler, options?: ChangeStreamOptions): Promise<string> {
+        const collection = await this.getCollection(objectName);
+        
+        // Build change stream pipeline
+        const pipeline: any[] = options?.pipeline || [];
+        
+        // Add operation type filter if specified
+        if (options?.operationTypes && options.operationTypes.length > 0) {
+            pipeline.unshift({
+                $match: {
+                    operationType: { $in: options.operationTypes }
+                }
+            });
+        }
+        
+        // Configure change stream options
+        const streamOptions: any = {};
+        if (options?.fullDocument) {
+            streamOptions.fullDocument = options.fullDocument;
+        }
+        
+        // Create the change stream
+        const changeStream = collection.watch(pipeline, streamOptions);
+        
+        // Generate unique stream ID
+        const streamId = `${objectName}_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+        
+        // Store the stream
+        this.changeStreams.set(streamId, changeStream);
+        
+        // Handle change events
+        changeStream.on('change', async (change) => {
+            try {
+                await handler(change);
+            } catch (error) {
+                console.error(`[MongoDriver] Error in change stream handler for ${objectName}:`, error);
+            }
+        });
+        
+        changeStream.on('error', (error) => {
+            console.error(`[MongoDriver] Change stream error for ${objectName}:`, error);
+        });
+        
+        return streamId;
+    }
+
+    /**
+     * Stop watching a change stream
+     * @param streamId - The stream ID returned by watch()
+     */
+    async unwatchChangeStream(streamId: string): Promise<void> {
+        const stream = this.changeStreams.get(streamId);
+        if (stream) {
+            await stream.close();
+            this.changeStreams.delete(streamId);
+        }
+    }
+
+    /**
+     * Get all active change stream IDs
+     */
+    getActiveChangeStreams(): string[] {
+        return Array.from(this.changeStreams.keys());
     }
 
     /**
