@@ -192,6 +192,17 @@ curl "http://localhost:8080/odata/orders?\$expand=items(\$filter=status eq 'acti
 curl "http://localhost:8080/odata/orders?\$expand=customer(\$select=name,email)"
 ```
 
+**Supported expand options:**
+- `$filter` - Filter expanded entities
+- `$select` - Select specific fields from expanded entities
+- `$orderby` - Sort expanded entities
+- `$top` - Limit number of expanded entities
+
+**Current Limitations:**
+- ⚠️ Nested expand (e.g., `$expand=owner($expand=department)`) is not yet supported
+- Only single-level relationship expansion is available
+- See [Phase 2 Roadmap](../../../PROTOCOL_DEVELOPMENT_PLAN_ZH.md) for planned nested expand support
+
 Response includes expanded entities:
 ```json
 {

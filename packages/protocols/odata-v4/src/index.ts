@@ -567,11 +567,18 @@ export class ODataV4Plugin implements RuntimePlugin {
      * Expand navigation properties for OData $expand
      * 
      * Implements OData V4 $expand feature to include related entities in the response.
-     * Supports:
-     * - Single property expand: $expand=owner
-     * - Multiple properties: $expand=owner,department
-     * - Nested expand: $expand=owner($expand=department)
-     * - Expand with options: $expand=orders($filter=status eq 'active')
+     * 
+     * **Current Support**:
+     * - ✅ Single property expand: $expand=owner
+     * - ✅ Multiple properties: $expand=owner,department
+     * - ✅ Expand with options: $expand=orders($filter=status eq 'active')
+     * - ✅ Supported options: $filter, $select, $orderby, $top
+     * 
+     * **Limitations** (Phase 2 roadmap):
+     * - ⚠️ Nested expand not yet supported: $expand=owner($expand=department)
+     * - ⚠️ Only single-level relationship expansion
+     * 
+     * See PROTOCOL_DEVELOPMENT_PLAN_ZH.md Phase 2 for nested expand implementation.
      * 
      * @param entitySet - The main entity set name
      * @param entities - Array of entities to expand properties for
@@ -589,16 +596,19 @@ export class ODataV4Plugin implements RuntimePlugin {
         }
 
         // Parse the expand parameter (simple implementation - handles comma-separated properties)
-        // TODO: In future, support nested expands with parentheses: owner($expand=department)
+        // Note: Nested expands (e.g., owner($expand=department)) are not yet supported
+        // and will be rejected by the regex pattern below
         const expandProperties = expandParam.split(',').map(p => p.trim());
 
         // For each expand property, fetch related data
         for (const propertyName of expandProperties) {
             // Parse property name and options (basic implementation)
             // Format: propertyName or propertyName($filter=...$select=...)
+            // Nested expands with multiple levels are NOT supported in this version
             const propMatch = propertyName.match(/^(\w+)(?:\(([^)]+)\))?$/);
             if (!propMatch) {
-                continue; // Skip invalid property syntax
+                // Invalid syntax or nested expand detected - skip
+                continue;
             }
 
             const [, fieldName, options] = propMatch;
