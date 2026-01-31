@@ -645,10 +645,11 @@ describe('RedisDriver', () => {
                 value: 'user'
             });
 
-            expect(departments).toHaveLength(2);
+            // Eve (user, IT), Bob (user, HR), David (user, Sales)
+            expect(departments).toHaveLength(3);
             expect(departments).toContain('HR');
             expect(departments).toContain('Sales');
-            expect(departments).not.toContain('IT'); // Admins are in IT, not users
+            expect(departments).toContain('IT'); // Eve is a user in IT
         });
 
         it('should handle distinct on numeric fields', async () => {

@@ -115,14 +115,18 @@ describe('OData V4 Protocol Integration Tests', () => {
     });
     
     describe('OData V4 Standard Endpoints', () => {
-        it('should support service document endpoint', () => {
+        it('should initialize plugin successfully', () => {
             expect(plugin).toBeDefined();
+            // Note: Actual HTTP endpoint testing would require supertest
+            // For now, we verify the plugin initialized correctly
         });
         
-        it('should support metadata endpoint', () => {
+        it('should provide metadata access', () => {
             const objects = kernel.metadata.list('object');
             expect(objects).toBeDefined();
             expect(objects.length).toBeGreaterThan(0);
+            // Verifies metadata is accessible - actual $metadata endpoint
+            // would require HTTP testing with supertest
         });
     });
     

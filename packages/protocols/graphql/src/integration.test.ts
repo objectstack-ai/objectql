@@ -144,11 +144,14 @@ describe('GraphQL Protocol Integration Tests', () => {
     describe('Apollo Server Startup', () => {
         it('should start Apollo Server successfully', () => {
             expect(plugin).toBeDefined();
+            // Note: Full HTTP endpoint testing would require supertest
+            // For now, we verify the plugin initialized successfully
         });
         
-        it('should expose GraphQL endpoint', async () => {
-            // Note: This is a basic check - full HTTP testing would require supertest
+        it('should be accessible at configured port', () => {
+            // Verify base URL is configured correctly
             expect(baseUrl).toBe('http://localhost:14000');
+            // Note: Actual HTTP request verification would require supertest
         });
     });
     
