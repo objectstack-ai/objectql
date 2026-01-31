@@ -417,7 +417,8 @@ describe('SqlDriver Advanced Operations (SQLite)', () => {
             
             expect(statuses).toBeDefined();
             expect(Array.isArray(statuses)).toBe(true);
-            expect(statuses.sort()).toEqual(['cancelled', 'completed', 'pending'].sort());
+            expect(statuses).toHaveLength(3);
+            expect(statuses).toEqual(expect.arrayContaining(['cancelled', 'completed', 'pending']));
         });
 
         it('should get distinct values with filters', async () => {
