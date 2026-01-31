@@ -556,9 +556,12 @@ export class ExcelDriver extends MemoryDriver {
      */
     async save(): Promise<void> {
         if (this.fileStorageMode === 'single-file') {
-            // Sync all objects to single file
+            // Sync all objects to single file (collect unique object names first)
+            const objectNames = new Set<string>();
             for (const [key] of this.store.entries()) {
-                const objectName = key.split(':')[0];
+                objectNames.add(key.split(':')[0]);
+            }
+            for (const objectName of objectNames) {
                 await this.syncToSingleFileWorkbook(objectName);
             }
             await this.saveWorkbook();
