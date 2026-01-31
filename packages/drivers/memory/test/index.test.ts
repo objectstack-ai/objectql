@@ -279,4 +279,275 @@ describe('MemoryDriver', () => {
             expect(result.deletedCount).toBe(2);
         });
     });
+
+    describe('Aggregate Method', () => {
+        beforeEach(async () => {
+            // Create test data for aggregation
+            await driver.create('orders', { id: '1', customer: 'Alice', product: 'Laptop', amount: 1200, quantity: 1, status: 'completed' });
+            await driver.create('orders', { id: '2', customer: 'Bob', product: 'Mouse', amount: 25, quantity: 2, status: 'completed' });
+            await driver.create('orders', { id: '3', customer: 'Alice', product: 'Keyboard', amount: 75, quantity: 1, status: 'pending' });
+            await driver.create('orders', { id: '4', customer: 'Charlie', product: 'Monitor', amount: 350, quantity: 1, status: 'completed' });
+            await driver.create('orders', { id: '5', customer: 'Bob', product: 'Laptop', amount: 1200, quantity: 1, status: 'cancelled' });
+        });
+
+        it('should aggregate with $match stage', async () => {
+            const results = await driver.aggregate('orders', [
+                { $match: { status: 'completed' } }
+            ]);
+
+            expect(results).toBeDefined();
+            expect(results.length).toBe(3);
+            expect(results.every((r: any) => r.status === 'completed')).toBe(true);
+        });
+
+        it('should aggregate with $group and $sum', async () => {
+            const results = await driver.aggregate('orders', [
+                { $match: { status: 'completed' } },
+                { 
+                    $group: { 
+                        _id: '$customer', 
+                        totalAmount: { $sum: '$amount' } 
+                    } 
+                }
+            ]);
+
+            expect(results).toBeDefined();
+            expect(results.length).toBeGreaterThan(0);
+            
+            const alice = results.find((r: any) => r._id === 'Alice');
+            expect(alice).toBeDefined();
+            expect(alice.totalAmount).toBe(1200);
+        });
+
+        it('should aggregate with $group and $avg', async () => {
+            const results = await driver.aggregate('orders', [
+                { 
+                    $group: { 
+                        _id: null, 
+                        avgAmount: { $avg: '$amount' } 
+                    } 
+                }
+            ]);
+
+            expect(results).toBeDefined();
+            expect(results.length).toBe(1);
+            expect(results[0].avgAmount).toBeCloseTo(570, 0);
+        });
+
+        it('should aggregate with $project stage', async () => {
+            const results = await driver.aggregate('orders', [
+                { $match: { status: 'completed' } },
+                { 
+                    $project: { 
+                        customer: 1, 
+                        product: 1, 
+                        total: { $multiply: ['$amount', '$quantity'] }
+                    } 
+                }
+            ]);
+
+            expect(results).toBeDefined();
+            expect(results.length).toBe(3);
+            expect(results[0]).toHaveProperty('total');
+        });
+
+        it('should aggregate with $sort stage', async () => {
+            const results = await driver.aggregate('orders', [
+                { $match: { status: 'completed' } },
+                { $sort: { amount: -1 } }
+            ]);
+
+            expect(results).toBeDefined();
+            expect(results.length).toBe(3);
+            expect(results[0].amount).toBe(1200);
+            expect(results[2].amount).toBe(25);
+        });
+    });
+
+    describe('Transaction Support', () => {
+        it('should begin and commit a transaction', async () => {
+            const tx = await driver.beginTransaction();
+            expect(tx).toBeDefined();
+            expect(tx.id).toBeDefined();
+
+            await driver.create(TEST_OBJECT, { id: '1', name: 'Alice' });
+            await driver.commitTransaction(tx);
+
+            const result = await driver.findOne(TEST_OBJECT, '1');
+            expect(result).toBeDefined();
+            expect(result.name).toBe('Alice');
+        });
+
+        it('should rollback a transaction', async () => {
+            await driver.create(TEST_OBJECT, { id: '1', name: 'Alice' });
+            
+            const tx = await driver.beginTransaction();
+            
+            await driver.update(TEST_OBJECT, '1', { name: 'Bob' });
+            await driver.create(TEST_OBJECT, { id: '2', name: 'Charlie' });
+            
+            await driver.rollbackTransaction(tx);
+            
+            const result1 = await driver.findOne(TEST_OBJECT, '1');
+            expect(result1.name).toBe('Alice'); // Should be reverted
+            
+            const result2 = await driver.findOne(TEST_OBJECT, '2');
+            expect(result2).toBeNull(); // Should not exist
+        });
+
+        it('should handle multiple transactions', async () => {
+            const tx1 = await driver.beginTransaction();
+            const tx2 = await driver.beginTransaction();
+            
+            expect(tx1.id).not.toBe(tx2.id);
+            
+            await driver.commitTransaction(tx1);
+            await driver.commitTransaction(tx2);
+        });
+
+        it('should throw error for invalid transaction', async () => {
+            await expect(
+                driver.commitTransaction({ id: 'invalid-tx-id' })
+            ).rejects.toThrow();
+        });
+    });
+
+    describe('Indexing', () => {
+        it('should build indexes on initialization', () => {
+            const indexedDriver = new MemoryDriver({
+                initialData: {
+                    users: [
+                        { id: '1', name: 'Alice', email: 'alice@example.com', role: 'admin' },
+                        { id: '2', name: 'Bob', email: 'bob@example.com', role: 'user' },
+                        { id: '3', name: 'Charlie', email: 'charlie@example.com', role: 'user' }
+                    ]
+                },
+                indexes: {
+                    users: ['email', 'role']
+                }
+            });
+
+            expect(indexedDriver).toBeDefined();
+            expect(indexedDriver.getSize()).toBe(3);
+        });
+
+        it('should update indexes when creating records', async () => {
+            const indexedDriver = new MemoryDriver({
+                indexes: {
+                    users: ['email']
+                }
+            });
+
+            await indexedDriver.create('users', { id: '1', name: 'Alice', email: 'alice@example.com' });
+            await indexedDriver.create('users', { id: '2', name: 'Bob', email: 'bob@example.com' });
+
+            const results = await indexedDriver.find('users', {});
+            expect(results.length).toBe(2);
+        });
+
+        it('should update indexes when updating records', async () => {
+            const indexedDriver = new MemoryDriver({
+                indexes: {
+                    users: ['email']
+                }
+            });
+
+            await indexedDriver.create('users', { id: '1', name: 'Alice', email: 'alice@example.com' });
+            await indexedDriver.update('users', '1', { email: 'alice.new@example.com' });
+
+            const result = await indexedDriver.findOne('users', '1');
+            expect(result.email).toBe('alice.new@example.com');
+        });
+
+        it('should remove from indexes when deleting records', async () => {
+            const indexedDriver = new MemoryDriver({
+                indexes: {
+                    users: ['email']
+                }
+            });
+
+            await indexedDriver.create('users', { id: '1', name: 'Alice', email: 'alice@example.com' });
+            await indexedDriver.delete('users', '1');
+
+            const result = await indexedDriver.findOne('users', '1');
+            expect(result).toBeNull();
+        });
+    });
+
+    describe('Persistence', () => {
+        const testFilePath = '/tmp/objectql-memory-test.json';
+
+        afterEach(() => {
+            // Clean up test file
+            try {
+                const fs = require('fs');
+                if (fs.existsSync(testFilePath)) {
+                    fs.unlinkSync(testFilePath);
+                }
+            } catch (e) {
+                // Ignore errors
+            }
+        });
+
+        it('should save data to disk on disconnect', async () => {
+            const persistentDriver = new MemoryDriver({
+                persistence: {
+                    filePath: testFilePath,
+                    autoSaveInterval: 10000 // Long interval, we'll manually trigger
+                }
+            });
+
+            await persistentDriver.create('users', { id: '1', name: 'Alice' });
+            await persistentDriver.disconnect();
+
+            const fs = require('fs');
+            expect(fs.existsSync(testFilePath)).toBe(true);
+
+            const fileData = JSON.parse(fs.readFileSync(testFilePath, 'utf8'));
+            expect(fileData.store).toBeDefined();
+            expect(fileData.store['users:1']).toBeDefined();
+            expect(fileData.store['users:1'].name).toBe('Alice');
+        });
+
+        it('should load data from disk on initialization', async () => {
+            // First, create a driver and save data
+            const driver1 = new MemoryDriver({
+                persistence: {
+                    filePath: testFilePath,
+                    autoSaveInterval: 10000
+                }
+            });
+
+            await driver1.create('users', { id: '1', name: 'Alice' });
+            await driver1.create('users', { id: '2', name: 'Bob' });
+            await driver1.disconnect();
+
+            // Now create a new driver that should load the data
+            const driver2 = new MemoryDriver({
+                persistence: {
+                    filePath: testFilePath,
+                    autoSaveInterval: 10000
+                }
+            });
+
+            const users = await driver2.find('users', {});
+            expect(users.length).toBe(2);
+            expect(users.some(u => u.name === 'Alice')).toBe(true);
+            expect(users.some(u => u.name === 'Bob')).toBe(true);
+
+            await driver2.disconnect();
+        });
+
+        it('should handle missing persistence file gracefully', () => {
+            const driver = new MemoryDriver({
+                persistence: {
+                    filePath: '/tmp/nonexistent-file.json',
+                    autoSaveInterval: 10000
+                }
+            });
+
+            expect(driver).toBeDefined();
+            expect(driver.getSize()).toBe(0);
+        });
+    });
 });
