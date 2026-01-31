@@ -89,10 +89,6 @@ export interface FileSystemDriverConfig extends MemoryDriverConfig {
  * - Content: Array of records `[{id: "1", ...}, {id: "2", ...}]`
  */
 export class FileSystemDriver extends MemoryDriver {
-    // Driver metadata (ObjectStack-compatible)
-    public readonly name = 'FileSystemDriver';
-    public readonly version = '4.0.0';
-    
     private dataDir: string;
     private prettyPrint: boolean;
     private enableBackup: boolean;
@@ -105,6 +101,10 @@ export class FileSystemDriver extends MemoryDriver {
             initialData: config.initialData,
             indexes: config.indexes
         });
+        
+        // Override driver name and version
+        (this as any).name = 'FileSystemDriver';
+        (this as any).version = '4.0.0';
         
         this.dataDir = path.resolve(config.dataDir);
         this.prettyPrint = config.prettyPrint !== false;
