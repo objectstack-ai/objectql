@@ -151,7 +151,7 @@ export class GraphQLPlugin implements RuntimePlugin {
                         dataLoaders: this.getDataLoaders()
                     })
                 },
-                this.wsServer
+                this.wsServer as any
             );
         }
 

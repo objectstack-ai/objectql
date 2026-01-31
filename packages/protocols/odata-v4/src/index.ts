@@ -837,35 +837,6 @@ export class ODataV4Plugin implements RuntimePlugin {
         
         return result;
     }
-                if (expandOptions.$orderby) {
-                    relatedQuery.orderBy = this.parseODataOrderBy(expandOptions.$orderby);
-                }
-
-                // Apply $top if present
-                if (expandOptions.$top) {
-                    relatedQuery.limit = parseInt(expandOptions.$top);
-                }
-            }
-
-            // Fetch related entities
-            const relatedEntities = await this.findData(referenceObject, relatedQuery);
-
-            // Create a map of related entities by ID for quick lookup
-            const relatedMap = new Map();
-            for (const relatedEntity of relatedEntities) {
-                relatedMap.set(relatedEntity._id, relatedEntity);
-            }
-
-            // Add related entities to the main entities
-            for (const entity of entities) {
-                const lookupId = entity[fieldName];
-                if (lookupId && relatedMap.has(lookupId)) {
-                    // Create the expanded property
-                    entity[fieldName + '@expanded'] = relatedMap.get(lookupId);
-                }
-            }
-        }
-    }
 
     /**
      * Parse OData $filter expression to ObjectQL where clause
@@ -1184,7 +1155,7 @@ export class ODataV4Plugin implements RuntimePlugin {
             const responses: string[] = [];
 
             for (const part of parts) {
-                if (part.type === 'changeset') {
+                if (part.type === 'changeset' && part.requests) {
                     // Process changeset (transactional)
                     const changesetResponses = await this.processChangeset(part.requests);
                     responses.push(...changesetResponses);
