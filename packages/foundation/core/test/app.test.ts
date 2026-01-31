@@ -269,7 +269,7 @@ describe('ObjectQL App', () => {
             const entry: Metadata = {
                 type: 'object',
                 id: 'todo',
-                // @ts-ignore
+                // @ts-expect-error - SchemaRegistry typing limitation
                 name: 'todo', // Ensure SchemaRegistry keys it correctly
                 package: 'test-package',
                 content: obj

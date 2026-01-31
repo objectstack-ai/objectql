@@ -209,7 +209,7 @@ export class FormulaEngine {
       const wrappedExpression = this.wrapExpression(expression);
 
       // Create and execute function
-      // eslint-disable-next-line @typescript-eslint/no-implied-eval
+       
       const func = new Function(...paramNames, wrappedExpression);
       
       // Execute with timeout protection
