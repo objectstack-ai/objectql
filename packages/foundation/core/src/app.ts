@@ -414,7 +414,7 @@ export class ObjectQL implements IObjectQL {
              (this.kernel as any).delete = (object: string, id: any, options: any) => defaultDriver.delete(object, id, options);
              (this.kernel as any).find = async (object: string, query: any, options: any) => {
                  const res = await defaultDriver.find(object, query, options);
-                 return { value: res || [] };
+                 return { value: res || [], count: (res || []).length };
              };
              (this.kernel as any).findOne = (object: string, id: any, options: any) => defaultDriver.findOne(object, id, options);
              (this.kernel as any).get = (object: string, id: any) => defaultDriver.findOne(object, id); 
