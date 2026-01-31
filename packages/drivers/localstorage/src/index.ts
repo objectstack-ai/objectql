@@ -36,6 +36,8 @@ type DriverInterface = Data.DriverInterface;
  */
 
 import { Driver, ObjectQLError } from '@objectql/types';
+import { Query, Aggregator } from 'mingo';
+import * as LZString from 'lz-string';
 
 /**
  * Command interface for executeCommand method
@@ -62,6 +64,11 @@ export interface CommandResult {
 }
 
 /**
+ * Storage backend type
+ */
+export type StorageBackend = 'localStorage' | 'indexedDB';
+
+/**
  * Configuration options for the LocalStorage driver.
  */
 export interface LocalStorageDriverConfig {
@@ -73,6 +80,12 @@ export interface LocalStorageDriverConfig {
     strictMode?: boolean;
     /** Optional: Custom localStorage implementation (for testing) */
     storage?: Storage;
+    /** Optional: Enable data compression (default: false) */
+    enableCompression?: boolean;
+    /** Optional: Storage backend (default: 'localStorage') */
+    backend?: StorageBackend;
+    /** Optional: IndexedDB database name (only used when backend is 'indexedDB') */
+    indexedDBName?: string;
 }
 
 /**
@@ -94,7 +107,7 @@ export class LocalStorageDriver implements Driver {
         jsonFields: true,
         arrayFields: true,
         queryFilters: true,
-        queryAggregations: false,
+        queryAggregations: true,
         querySorting: true,
         queryPagination: true,
         queryWindowFunctions: false,
@@ -105,10 +118,16 @@ export class LocalStorageDriver implements Driver {
     private storage: Storage;
     private namespace: string;
     private idCounters: Map<string, number>;
+    private db: IDBDatabase | null = null;
 
     constructor(config: LocalStorageDriverConfig = {}) {
-        this.config = config;
-        this.namespace = config.namespace || 'objectql';
+        this.config = {
+            enableCompression: false,
+            backend: 'localStorage',
+            indexedDBName: 'objectql-db',
+            ...config
+        };
+        this.namespace = this.config.namespace || 'objectql';
         this.idCounters = new Map<string, number>();
         
         // Use provided storage or browser localStorage
@@ -132,10 +151,12 @@ export class LocalStorageDriver implements Driver {
 
     /**
      * Connect to the database (for DriverInterface compatibility)
-     * This is a no-op for localStorage driver as there's no external connection.
+     * Initialize IndexedDB if configured.
      */
     async connect(): Promise<void> {
-        // No-op: LocalStorage driver doesn't need connection
+        if (this.config.backend === 'indexedDB') {
+            await this.initIndexedDB();
+        }
     }
 
     /**
@@ -166,7 +187,8 @@ export class LocalStorageDriver implements Driver {
             for (const record of records) {
                 const id = record.id || this.generateId(objectName);
                 const key = this.makeKey(objectName, id);
-                this.storage.setItem(key, JSON.stringify({ ...record, id }));
+                const serialized = this.serializeData({ ...record, id });
+                this.storage.setItem(key, serialized);
             }
         }
     }
@@ -275,7 +297,7 @@ export class LocalStorageDriver implements Driver {
             }
             
             try {
-                return JSON.parse(data);
+                return this.deserializeData(data);
             } catch (error) {
                 console.warn(`[LocalStorageDriver] Failed to parse document at key ${key}:`, error);
                 return null;
@@ -317,7 +339,8 @@ export class LocalStorageDriver implements Driver {
         };
         
         try {
-            this.storage.setItem(key, JSON.stringify(doc));
+            const serialized = this.serializeData(doc);
+            this.storage.setItem(key, serialized);
         } catch (error) {
             // Handle quota exceeded error
             if (error instanceof Error && error.name === 'QuotaExceededError') {
@@ -351,7 +374,7 @@ export class LocalStorageDriver implements Driver {
             return null;
         }
         
-        const existingDoc = JSON.parse(existing);
+        const existingDoc = this.deserializeData(existing);
         const doc = {
             ...existingDoc,
             ...data,
@@ -361,7 +384,8 @@ export class LocalStorageDriver implements Driver {
         };
         
         try {
-            this.storage.setItem(key, JSON.stringify(doc));
+            const serialized = this.serializeData(doc);
+            this.storage.setItem(key, serialized);
         } catch (error) {
             if (error instanceof Error && error.name === 'QuotaExceededError') {
                 throw new ObjectQLError({
@@ -462,6 +486,43 @@ export class LocalStorageDriver implements Driver {
         }
         
         return Array.from(values);
+    }
+
+    /**
+     * Perform aggregation operations using Mingo
+     * @param objectName - The object type to aggregate
+     * @param pipeline - MongoDB-style aggregation pipeline
+     * @param options - Optional query options
+     * @returns Aggregation results
+     * 
+     * @example
+     * // Group by status and count
+     * const results = await driver.aggregate('orders', [
+     *   { $match: { status: 'completed' } },
+     *   { $group: { _id: '$customer', totalAmount: { $sum: '$amount' } } }
+     * ]);
+     */
+    async aggregate(objectName: string, pipeline: any[], options?: any): Promise<any[]> {
+        const records: any[] = [];
+        const keys = this.getObjectKeys(objectName);
+        
+        for (const key of keys) {
+            const data = this.storage.getItem(key);
+            if (data) {
+                try {
+                    const record = this.deserializeData(data);
+                    records.push(record);
+                } catch (error) {
+                    console.warn(`[LocalStorageDriver] Failed to parse document at key ${key}:`, error);
+                }
+            }
+        }
+        
+        // Use Mingo to execute the aggregation pipeline
+        const aggregator = new Aggregator(pipeline);
+        const results = aggregator.run(records);
+        
+        return results;
     }
 
     /**
@@ -947,5 +1008,189 @@ export class LocalStorageDriver implements Driver {
         this.idCounters.set(objectName, counter);
         const timestamp = Date.now();
         return `${objectName}-${timestamp}-${counter}`;
+    }
+
+    /**
+     * Serialize data with optional compression
+     */
+    private serializeData(data: any): string {
+        const json = JSON.stringify(data);
+        if (this.config.enableCompression) {
+            return LZString.compress(json);
+        }
+        return json;
+    }
+
+    /**
+     * Deserialize data with optional decompression
+     */
+    private deserializeData(data: string): any {
+        if (this.config.enableCompression) {
+            const decompressed = LZString.decompress(data);
+            return JSON.parse(decompressed || '{}');
+        }
+        return JSON.parse(data);
+    }
+
+    /**
+     * Unified storage setter (handles both localStorage and IndexedDB)
+     */
+    private async storageSet(key: string, value: string): Promise<void> {
+        if (this.config.backend === 'indexedDB') {
+            await this.setIndexedDBItem(key, value);
+        } else {
+            this.storage.setItem(key, value);
+        }
+    }
+
+    /**
+     * Unified storage getter (handles both localStorage and IndexedDB)
+     */
+    private async storageGet(key: string): Promise<string | null> {
+        if (this.config.backend === 'indexedDB') {
+            return await this.getIndexedDBItem(key);
+        } else {
+            return this.storage.getItem(key);
+        }
+    }
+
+    /**
+     * Unified storage remover (handles both localStorage and IndexedDB)
+     */
+    private async storageRemove(key: string): Promise<void> {
+        if (this.config.backend === 'indexedDB') {
+            await this.deleteIndexedDBItem(key);
+        } else {
+            this.storage.removeItem(key);
+        }
+    }
+
+    /**
+     * Unified storage key getter (handles both localStorage and IndexedDB)
+     */
+    private async storageKeys(objectName: string): Promise<string[]> {
+        if (this.config.backend === 'indexedDB') {
+            return await this.getIndexedDBKeys(objectName);
+        } else {
+            return this.getObjectKeys(objectName);
+        }
+    }
+
+    /**
+     * Initialize IndexedDB connection
+     */
+    private async initIndexedDB(): Promise<void> {
+        if (this.config.backend !== 'indexedDB') {
+            return;
+        }
+
+        if (typeof indexedDB === 'undefined') {
+            throw new ObjectQLError({
+                code: 'ENVIRONMENT_ERROR',
+                message: 'IndexedDB is not available in this environment'
+            });
+        }
+
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open(this.config.indexedDBName!, 1);
+
+            request.onerror = () => {
+                reject(new ObjectQLError({
+                    code: 'INDEXEDDB_ERROR',
+                    message: 'Failed to open IndexedDB',
+                    details: { error: request.error }
+                }));
+            };
+
+            request.onsuccess = () => {
+                this.db = request.result;
+                resolve();
+            };
+
+            request.onupgradeneeded = (event: any) => {
+                const db = event.target.result;
+                
+                // Create object store for each potential object type
+                if (!db.objectStoreNames.contains('objectql-store')) {
+                    db.createObjectStore('objectql-store', { keyPath: 'key' });
+                }
+            };
+        });
+    }
+
+    /**
+     * Store data in IndexedDB
+     */
+    private async setIndexedDBItem(key: string, value: string): Promise<void> {
+        if (!this.db) {
+            await this.initIndexedDB();
+        }
+
+        return new Promise((resolve, reject) => {
+            const transaction = this.db!.transaction(['objectql-store'], 'readwrite');
+            const store = transaction.objectStore('objectql-store');
+            const request = store.put({ key, value });
+
+            request.onerror = () => reject(request.error);
+            request.onsuccess = () => resolve();
+        });
+    }
+
+    /**
+     * Retrieve data from IndexedDB
+     */
+    private async getIndexedDBItem(key: string): Promise<string | null> {
+        if (!this.db) {
+            await this.initIndexedDB();
+        }
+
+        return new Promise((resolve, reject) => {
+            const transaction = this.db!.transaction(['objectql-store'], 'readonly');
+            const store = transaction.objectStore('objectql-store');
+            const request = store.get(key);
+
+            request.onerror = () => reject(request.error);
+            request.onsuccess = () => resolve(request.result?.value || null);
+        });
+    }
+
+    /**
+     * Delete data from IndexedDB
+     */
+    private async deleteIndexedDBItem(key: string): Promise<void> {
+        if (!this.db) {
+            await this.initIndexedDB();
+        }
+
+        return new Promise((resolve, reject) => {
+            const transaction = this.db!.transaction(['objectql-store'], 'readwrite');
+            const store = transaction.objectStore('objectql-store');
+            const request = store.delete(key);
+
+            request.onerror = () => reject(request.error);
+            request.onsuccess = () => resolve();
+        });
+    }
+
+    /**
+     * Get all keys from IndexedDB for an object type
+     */
+    private async getIndexedDBKeys(objectName: string): Promise<string[]> {
+        if (!this.db) {
+            await this.initIndexedDB();
+        }
+
+        return new Promise((resolve, reject) => {
+            const transaction = this.db!.transaction(['objectql-store'], 'readonly');
+            const store = transaction.objectStore('objectql-store');
+            const request = store.getAllKeys();
+
+            request.onerror = () => reject(request.error);
+            request.onsuccess = () => {
+                const prefix = `${this.namespace}:${objectName}:`;
+                const keys = (request.result as string[]).filter(k => k.startsWith(prefix));
+                resolve(keys);
+            };
+        });
     }
 }

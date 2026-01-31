@@ -21,7 +21,9 @@
   },
   "dependencies": {
     "@objectql/types": "workspace:*",
-    "@objectstack/spec": "^0.7.1"
+    "@objectstack/spec": "^0.7.1",
+    "mingo": "^7.1.1",
+    "lz-string": "^1.5.0"
   },
   "devDependencies": {
     "@types/jest": "^29.0.0",
