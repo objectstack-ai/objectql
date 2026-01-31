@@ -37,6 +37,7 @@ import { Driver, ObjectQLError } from '@objectql/types';
 import * as ExcelJS from 'exceljs';
 import * as fs from 'fs';
 import * as path from 'path';
+import { Query, Aggregator } from 'mingo';
 
 /**
  * Command interface for executeCommand method
@@ -91,6 +92,10 @@ export interface ExcelDriverConfig {
     createIfMissing?: boolean;
     /** Optional: Enable strict mode (throw on missing objects) */
     strictMode?: boolean;
+    /** Optional: Enable file locking for concurrent access (default: true) */
+    enableLocking?: boolean;
+    /** Optional: Lock timeout in milliseconds (default: 5000) */
+    lockTimeout?: number;
 }
 
 /**
@@ -116,7 +121,7 @@ export class ExcelDriver implements Driver {
         jsonFields: true,
         arrayFields: true,
         queryFilters: true,
-        queryAggregations: false,
+        queryAggregations: true,
         querySorting: true,
         queryPagination: true,
         queryWindowFunctions: false,
@@ -130,6 +135,8 @@ export class ExcelDriver implements Driver {
     private idCounters: Map<string, number>;
     private filePath: string;
     private fileStorageMode: FileStorageMode;
+    private locks: Map<string, Promise<void>>; // File locks for concurrent access
+    private lockQueue: Map<string, Array<() => void>>; // Queue of waiting operations
 
     constructor(config: ExcelDriverConfig) {
         this.config = {
@@ -137,6 +144,8 @@ export class ExcelDriver implements Driver {
             createIfMissing: true,
             strictMode: false,
             fileStorageMode: 'single-file',
+            enableLocking: true,
+            lockTimeout: 5000,
             ...config
         };
         
@@ -145,6 +154,8 @@ export class ExcelDriver implements Driver {
         this.data = new Map<string, any[]>();
         this.idCounters = new Map<string, number>();
         this.workbooks = new Map<string, ExcelJS.Workbook>();
+        this.locks = new Map<string, Promise<void>>();
+        this.lockQueue = new Map<string, Array<() => void>>();
         
         // Initialize workbook for single-file mode
         if (this.fileStorageMode === 'single-file') {
@@ -448,47 +459,51 @@ export class ExcelDriver implements Driver {
      * Save workbook in single-file mode.
      */
     private async saveSingleFileWorkbook(): Promise<void> {
-        try {
-            // Ensure directory exists
-            const dir = path.dirname(this.filePath);
-            if (!fs.existsSync(dir)) {
-                fs.mkdirSync(dir, { recursive: true });
+        return await this.withLock('workbook', async () => {
+            try {
+                // Ensure directory exists
+                const dir = path.dirname(this.filePath);
+                if (!fs.existsSync(dir)) {
+                    fs.mkdirSync(dir, { recursive: true });
+                }
+                
+                // Write workbook to file
+                await this.workbook.xlsx.writeFile(this.filePath);
+            } catch (error) {
+                throw new ObjectQLError({
+                    code: 'FILE_WRITE_ERROR',
+                    message: `Failed to write Excel file: ${this.filePath}`,
+                    details: { error: (error as Error).message }
+                });
             }
-            
-            // Write workbook to file
-            await this.workbook.xlsx.writeFile(this.filePath);
-        } catch (error) {
-            throw new ObjectQLError({
-                code: 'FILE_WRITE_ERROR',
-                message: `Failed to write Excel file: ${this.filePath}`,
-                details: { error: (error as Error).message }
-            });
-        }
+        });
     }
 
     /**
      * Save workbook in file-per-object mode.
      */
     private async saveFilePerObjectWorkbook(objectName: string): Promise<void> {
-        const workbook = this.workbooks.get(objectName);
-        if (!workbook) {
-            throw new ObjectQLError({
-                code: 'WORKBOOK_NOT_FOUND',
-                message: `Workbook not found for object: ${objectName}`,
-                details: { objectName }
-            });
-        }
+        return await this.withLock(objectName, async () => {
+            const workbook = this.workbooks.get(objectName);
+            if (!workbook) {
+                throw new ObjectQLError({
+                    code: 'WORKBOOK_NOT_FOUND',
+                    message: `Workbook not found for object: ${objectName}`,
+                    details: { objectName }
+                });
+            }
 
-        try {
-            const filePath = path.join(this.filePath, `${objectName}.xlsx`);
-            await workbook.xlsx.writeFile(filePath);
-        } catch (error) {
-            throw new ObjectQLError({
-                code: 'FILE_WRITE_ERROR',
-                message: `Failed to write Excel file for object: ${objectName}`,
-                details: { objectName, error: (error as Error).message }
-            });
-        }
+            try {
+                const filePath = path.join(this.filePath, `${objectName}.xlsx`);
+                await workbook.xlsx.writeFile(filePath);
+            } catch (error) {
+                throw new ObjectQLError({
+                    code: 'FILE_WRITE_ERROR',
+                    message: `Failed to write Excel file for object: ${objectName}`,
+                    details: { objectName, error: (error as Error).message }
+                });
+            }
+        });
     }
 
     /**
@@ -825,19 +840,71 @@ export class ExcelDriver implements Driver {
     }
 
     /**
-     * Create multiple records at once.
+     * Perform aggregation operations using Mingo
+     * @param objectName - The object type to aggregate
+     * @param pipeline - MongoDB-style aggregation pipeline
+     * @param options - Optional query options
+     * @returns Aggregation results
+     * 
+     * @example
+     * // Group by status and count
+     * const results = await driver.aggregate('orders', [
+     *   { $match: { status: 'completed' } },
+     *   { $group: { _id: '$customer', totalAmount: { $sum: '$amount' } } }
+     * ]);
      */
-    async createMany(objectName: string, data: any[], options?: any): Promise<any> {
-        const results = [];
-        for (const item of data) {
-            const result = await this.create(objectName, item, options);
-            results.push(result);
-        }
+    async aggregate(objectName: string, pipeline: any[], options?: any): Promise<any[]> {
+        const records = this.data.get(objectName) || [];
+        
+        // Use Mingo to execute the aggregation pipeline
+        const aggregator = new Aggregator(pipeline);
+        const results = aggregator.run(records);
+        
         return results;
     }
 
     /**
-     * Update multiple records matching filters.
+     * Create multiple records at once (optimized batch operation).
+     */
+    async createMany(objectName: string, data: any[], options?: any): Promise<any> {
+        const records = this.data.get(objectName) || [];
+        const results = [];
+        
+        for (const item of data) {
+            const id = item.id || item._id || this.generateId(objectName);
+            
+            // Check if record already exists
+            const existing = records.find(r => r.id === id || r._id === id);
+            if (existing) {
+                throw new ObjectQLError({
+                    code: 'DUPLICATE_RECORD',
+                    message: `Record with id '${id}' already exists in '${objectName}'`,
+                    details: { objectName, id }
+                });
+            }
+            
+            const now = new Date().toISOString();
+            const doc = {
+                ...item,
+                id,
+                created_at: item.created_at || now,
+                updated_at: item.updated_at || now
+            };
+            
+            records.push(doc);
+            results.push({ ...doc });
+        }
+        
+        this.data.set(objectName, records);
+        
+        // Sync to workbook once for all records (batch optimization)
+        await this.syncToWorkbook(objectName);
+        
+        return results;
+    }
+
+    /**
+     * Update multiple records matching filters (optimized).
      */
     async updateMany(objectName: string, filters: any, data: any, options?: any): Promise<any> {
         const records = this.data.get(objectName) || [];
@@ -1352,5 +1419,91 @@ export class ExcelDriver implements Driver {
         // Use timestamp + counter for better uniqueness
         const timestamp = Date.now();
         return `${objectName}-${timestamp}-${counter}`;
+    }
+
+    /**
+     * Acquire a lock for a file operation.
+     */
+    private async acquireLock(key: string): Promise<void> {
+        if (!this.config.enableLocking) {
+            return;
+        }
+
+        // If there's already a lock, wait for it
+        if (this.locks.has(key)) {
+            const currentLock = this.locks.get(key)!;
+            
+            // Create a promise to wait in the queue
+            const waitPromise = new Promise<void>((resolve, reject) => {
+                const timeout = setTimeout(() => {
+                    reject(new ObjectQLError({
+                        code: 'LOCK_TIMEOUT',
+                        message: `Failed to acquire lock for ${key} within timeout`,
+                        details: { key, timeout: this.config.lockTimeout }
+                    }));
+                }, this.config.lockTimeout);
+
+                const queue = this.lockQueue.get(key) || [];
+                queue.push(() => {
+                    clearTimeout(timeout);
+                    resolve();
+                });
+                this.lockQueue.set(key, queue);
+            });
+
+            await currentLock;
+            await waitPromise;
+        }
+
+        // Create a new lock
+        let releaseLock: () => void;
+        const lockPromise = new Promise<void>((resolve) => {
+            releaseLock = resolve;
+        });
+
+        this.locks.set(key, lockPromise);
+    }
+
+    /**
+     * Release a lock for a file operation.
+     */
+    private releaseLock(key: string): void {
+        if (!this.config.enableLocking) {
+            return;
+        }
+
+        const lock = this.locks.get(key);
+        if (!lock) {
+            return;
+        }
+
+        // Remove the lock
+        this.locks.delete(key);
+
+        // Process next in queue
+        const queue = this.lockQueue.get(key) || [];
+        const next = queue.shift();
+        if (next) {
+            this.lockQueue.set(key, queue);
+            next();
+        } else {
+            this.lockQueue.delete(key);
+        }
+    }
+
+    /**
+     * Execute an operation with file locking.
+     */
+    private async withLock<T>(key: string, operation: () => Promise<T>): Promise<T> {
+        if (!this.config.enableLocking) {
+            return await operation();
+        }
+
+        await this.acquireLock(key);
+        try {
+            return await operation();
+        } finally {
+            this.releaseLock(key);
+        }
     }
 }
