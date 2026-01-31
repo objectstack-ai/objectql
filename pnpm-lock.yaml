@@ -346,6 +346,9 @@ importers:
       '@objectstack/spec':
         specifier: ^0.7.1
         version: 0.7.1
+      mingo:
+        specifier: ^7.1.1
+        version: 7.2.0
     devDependencies:
       '@types/jest':
         specifier: ^29.0.0

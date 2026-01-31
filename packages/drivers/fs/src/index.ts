@@ -39,6 +39,7 @@ type DriverInterface = Data.DriverInterface;
 import * as fs from 'fs';
 import * as path from 'path';
 import { Driver, ObjectQLError } from '@objectql/types';
+import { Query, Aggregator } from 'mingo';
 
 /**
  * Command interface for executeCommand method
@@ -78,6 +79,10 @@ export interface FileSystemDriverConfig {
     strictMode?: boolean;
     /** Optional: Initial data to populate the store */
     initialData?: Record<string, any[]>;
+    /** Optional: Enable index files for faster queries (default: false) */
+    enableIndexes?: boolean;
+    /** Optional: Fields to index per object type */
+    indexes?: Record<string, string[]>; // objectName -> field names
 }
 
 /**
@@ -98,7 +103,7 @@ export class FileSystemDriver implements Driver {
         jsonFields: true,
         arrayFields: true,
         queryFilters: true,
-        queryAggregations: false,
+        queryAggregations: true,
         querySorting: true,
         queryPagination: true,
         queryWindowFunctions: false,
@@ -108,16 +113,19 @@ export class FileSystemDriver implements Driver {
     private config: FileSystemDriverConfig;
     private idCounters: Map<string, number>;
     private cache: Map<string, any[]>;
+    private indexes: Map<string, Map<string, Map<any, Set<string | number>>>>; // objectName -> fieldName -> value -> Set of ids
 
     constructor(config: FileSystemDriverConfig) {
         this.config = {
             prettyPrint: true,
             enableBackup: true,
             strictMode: false,
+            enableIndexes: false,
             ...config
         };
         this.idCounters = new Map<string, number>();
         this.cache = new Map<string, any[]>();
+        this.indexes = new Map();
 
         // Ensure data directory exists
         if (!fs.existsSync(this.config.dataDir)) {
@@ -127,6 +135,11 @@ export class FileSystemDriver implements Driver {
         // Load initial data if provided
         if (config.initialData) {
             this.loadInitialData(config.initialData);
+        }
+
+        // Load indexes if enabled
+        if (this.config.enableIndexes) {
+            this.loadIndexes();
         }
     }
 
@@ -382,6 +395,9 @@ export class FileSystemDriver implements Driver {
         records.push(doc);
         this.saveRecords(objectName, records);
 
+        // Update indexes
+        this.updateIndexesForRecord(objectName, doc);
+
         return { ...doc };
     }
 
@@ -415,6 +431,9 @@ export class FileSystemDriver implements Driver {
         records[index] = doc;
         this.saveRecords(objectName, records);
 
+        // Update indexes
+        this.updateIndexesForRecord(objectName, doc, existing);
+
         return { ...doc };
     }
 
@@ -436,6 +455,11 @@ export class FileSystemDriver implements Driver {
             return false;
         }
 
+        const deletedRecord = records[index];
+        
+        // Remove from indexes before deleting
+        this.removeFromIndexes(objectName, deletedRecord);
+        
         records.splice(index, 1);
         this.saveRecords(objectName, records);
 
@@ -500,6 +524,37 @@ export class FileSystemDriver implements Driver {
         }
 
         return Array.from(values);
+    }
+
+    /**
+     * Perform aggregation operations using Mingo
+     * @param objectName - The object type to aggregate
+     * @param pipeline - MongoDB-style aggregation pipeline
+     * @param options - Optional query options
+     * @returns Aggregation results
+     * 
+     * @example
+     * // Group by status and count
+     * const results = await driver.aggregate('orders', [
+     *   { $match: { status: 'completed' } },
+     *   { $group: { _id: '$customer', totalAmount: { $sum: '$amount' } } }
+     * ]);
+     * 
+     * @example
+     * // Calculate average with filter
+     * const results = await driver.aggregate('products', [
+     *   { $match: { category: 'electronics' } },
+     *   { $group: { _id: null, avgPrice: { $avg: '$price' } } }
+     * ]);
+     */
+    async aggregate(objectName: string, pipeline: any[], options?: any): Promise<any[]> {
+        const records = this.loadRecords(objectName);
+        
+        // Use Mingo to execute the aggregation pipeline
+        const aggregator = new Aggregator(pipeline);
+        const results = aggregator.run(records);
+        
+        return results;
     }
 
     /**
@@ -1099,5 +1154,187 @@ export class FileSystemDriver implements Driver {
         // Use timestamp + counter for better uniqueness
         const timestamp = Date.now();
         return `${objectName}-${timestamp}-${counter}`;
+    }
+
+    /**
+     * Get the path to the index file for a specific object and field.
+     */
+    private getIndexFilePath(objectName: string, field: string): string {
+        return path.join(this.config.dataDir, `${objectName}.${field}.idx`);
+    }
+
+    /**
+     * Load all indexes from disk.
+     */
+    private loadIndexes(): void {
+        if (!this.config.indexes) {
+            return;
+        }
+
+        for (const [objectName, fields] of Object.entries(this.config.indexes)) {
+            for (const field of fields) {
+                this.loadIndex(objectName, field);
+            }
+        }
+    }
+
+    /**
+     * Load a specific index from disk.
+     */
+    private loadIndex(objectName: string, field: string): void {
+        const indexPath = this.getIndexFilePath(objectName, field);
+        
+        if (!fs.existsSync(indexPath)) {
+            // Build index from data if it doesn't exist
+            this.buildIndex(objectName, field);
+            return;
+        }
+
+        try {
+            const content = fs.readFileSync(indexPath, 'utf8');
+            const indexData = JSON.parse(content);
+            
+            // Convert the serialized index back to Map structure
+            if (!this.indexes.has(objectName)) {
+                this.indexes.set(objectName, new Map());
+            }
+            const objectIndexes = this.indexes.get(objectName)!;
+            const fieldIndex = new Map<any, Set<string | number>>();
+            
+            for (const [value, ids] of Object.entries(indexData)) {
+                fieldIndex.set(value, new Set(ids as (string | number)[]));
+            }
+            
+            objectIndexes.set(field, fieldIndex);
+        } catch (error) {
+            // If index is corrupted, rebuild it
+            this.buildIndex(objectName, field);
+        }
+    }
+
+    /**
+     * Build an index for a specific field.
+     */
+    private buildIndex(objectName: string, field: string): void {
+        const records = this.loadRecords(objectName);
+        
+        if (!this.indexes.has(objectName)) {
+            this.indexes.set(objectName, new Map());
+        }
+        const objectIndexes = this.indexes.get(objectName)!;
+        const fieldIndex = new Map<any, Set<string | number>>();
+        
+        for (const record of records) {
+            const value = record[field];
+            const id = record.id || record._id;
+            
+            if (!fieldIndex.has(value)) {
+                fieldIndex.set(value, new Set());
+            }
+            fieldIndex.get(value)!.add(id);
+        }
+        
+        objectIndexes.set(field, fieldIndex);
+        this.saveIndex(objectName, field);
+    }
+
+    /**
+     * Save an index to disk.
+     */
+    private saveIndex(objectName: string, field: string): void {
+        const objectIndexes = this.indexes.get(objectName);
+        if (!objectIndexes) {
+            return;
+        }
+        
+        const fieldIndex = objectIndexes.get(field);
+        if (!fieldIndex) {
+            return;
+        }
+
+        // Convert Map to serializable object
+        const indexData: Record<string, (string | number)[]> = {};
+        for (const [value, ids] of fieldIndex.entries()) {
+            indexData[String(value)] = Array.from(ids);
+        }
+
+        const indexPath = this.getIndexFilePath(objectName, field);
+        const content = this.config.prettyPrint
+            ? JSON.stringify(indexData, null, 2)
+            : JSON.stringify(indexData);
+        
+        fs.writeFileSync(indexPath, content, 'utf8');
+    }
+
+    /**
+     * Update indexes when a record is created or updated.
+     */
+    private updateIndexesForRecord(objectName: string, record: any, oldRecord?: any): void {
+        if (!this.config.enableIndexes || !this.config.indexes || !this.config.indexes[objectName]) {
+            return;
+        }
+
+        const fields = this.config.indexes[objectName];
+        const id = record.id || record._id;
+
+        for (const field of fields) {
+            const objectIndexes = this.indexes.get(objectName);
+            if (!objectIndexes || !objectIndexes.has(field)) {
+                continue;
+            }
+
+            const fieldIndex = objectIndexes.get(field)!;
+            
+            // Remove old value from index if updating
+            if (oldRecord) {
+                const oldValue = oldRecord[field];
+                if (fieldIndex.has(oldValue)) {
+                    fieldIndex.get(oldValue)!.delete(id);
+                    if (fieldIndex.get(oldValue)!.size === 0) {
+                        fieldIndex.delete(oldValue);
+                    }
+                }
+            }
+
+            // Add new value to index
+            const newValue = record[field];
+            if (!fieldIndex.has(newValue)) {
+                fieldIndex.set(newValue, new Set());
+            }
+            fieldIndex.get(newValue)!.add(id);
+            
+            this.saveIndex(objectName, field);
+        }
+    }
+
+    /**
+     * Remove a record from indexes.
+     */
+    private removeFromIndexes(objectName: string, record: any): void {
+        if (!this.config.enableIndexes || !this.config.indexes || !this.config.indexes[objectName]) {
+            return;
+        }
+
+        const fields = this.config.indexes[objectName];
+        const id = record.id || record._id;
+
+        for (const field of fields) {
+            const objectIndexes = this.indexes.get(objectName);
+            if (!objectIndexes || !objectIndexes.has(field)) {
+                continue;
+            }
+
+            const fieldIndex = objectIndexes.get(field)!;
+            const value = record[field];
+            
+            if (fieldIndex.has(value)) {
+                fieldIndex.get(value)!.delete(id);
+                if (fieldIndex.get(value)!.size === 0) {
+                    fieldIndex.delete(value);
+                }
+            }
+            
+            this.saveIndex(objectName, field);
+        }
     }
 }
