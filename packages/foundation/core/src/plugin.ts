@@ -227,6 +227,11 @@ export class ObjectQLPlugin implements RuntimePlugin {
       return await driver.findOne(objectName, id);
     };
 
+    kernel.count = async (objectName: string, filters?: any): Promise<number> => {
+      const driver = getDriver(objectName);
+      return await driver.count(objectName, filters || {}, {});
+    };
+
     console.log(`[${this.name}] Repository pattern registered`);
   }
   
