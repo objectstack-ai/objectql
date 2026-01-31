@@ -6,8 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { type PluginContext } from '@objectstack/core';
-import type { ObjectKernel } from '@objectstack/runtime';
+import type { RuntimePlugin, RuntimeContext } from '@objectql/types';
 import { ValidatorPlugin, ValidatorPluginConfig } from '@objectql/plugin-validator';
 import { FormulaPlugin, FormulaPluginConfig } from '@objectql/plugin-formula';
 import { QueryService } from './query/query-service';
@@ -15,11 +14,12 @@ import { QueryAnalyzer } from './query/query-analyzer';
 import type { Driver } from '@objectql/types';
 
 /**
- * Extended ObjectStack Kernel with ObjectQL services
+ * Extended kernel with ObjectQL services
  */
-interface ExtendedKernel extends ObjectKernel {
+interface ExtendedKernel {
     metadata?: any;
     actions?: any;
+    hooks?: any;
     getAllDrivers?: () => Driver[];
     create?: (objectName: string, data: any) => Promise<any>;
     update?: (objectName: string, id: string, data: any) => Promise<any>;
@@ -86,13 +86,12 @@ export interface ObjectQLPluginConfig {
 /**
  * ObjectQL Plugin
  * 
- * Implements the RuntimePlugin interface from @objectstack/runtime
- * to provide ObjectQL's enhanced features (Repository, Validator, Formula, AI)
- * on top of the ObjectStack kernel.
+ * Implements the RuntimePlugin interface to provide ObjectQL's enhanced features
+ * (Repository, Validator, Formula, AI) on top of the microkernel.
  */
-export class ObjectQLPlugin {
+export class ObjectQLPlugin implements RuntimePlugin {
   name = '@objectql/core';
-  version = '4.0.0';
+  version = '4.0.2';
   
   constructor(private config: ObjectQLPluginConfig = {}, ql?: any) {
     // Set defaults
@@ -110,11 +109,10 @@ export class ObjectQLPlugin {
    * Install the plugin into the kernel
    * This is called during kernel initialization
    */
-  async init(ctx: PluginContext): Promise<void> {
+  async install(ctx: RuntimeContext): Promise<void> {
     console.log(`[${this.name}] Installing plugin...`);
     
-    // Support both new kernel context (getKernel) and legacy app property
-    const kernel = ((ctx as any).getKernel ? (ctx as any).getKernel() : (ctx as any).app) as ExtendedKernel;
+    const kernel = ctx.engine as ExtendedKernel;
     
     // Get datasources - either from config or from kernel drivers
     let datasources = this.config.datasources;
@@ -159,13 +157,13 @@ export class ObjectQLPlugin {
     // Install validator plugin if enabled
     if (this.config.enableValidator !== false) {
       const validatorPlugin = new ValidatorPlugin(this.config.validatorConfig || {});
-      validatorPlugin.init(ctx);
+      await validatorPlugin.install?.(ctx);
     }
     
     // Install formula plugin if enabled
     if (this.config.enableFormulas !== false) {
       const formulaPlugin = new FormulaPlugin(this.config.formulaConfig || {});
-      formulaPlugin.init(ctx);
+      await formulaPlugin.install?.(ctx);
     }
     
     if (this.config.enableAI !== false) {
@@ -176,10 +174,23 @@ export class ObjectQLPlugin {
   }
   
   /**
+   * Legacy init method for backward compatibility
+   * Calls install() with a compatible context
+   * @deprecated Use install() instead
+   */
+  async init(ctx: any): Promise<void> {
+    // Convert legacy context to RuntimeContext
+    const runtimeContext = {
+      engine: (ctx as any).getKernel ? (ctx as any).getKernel() : (ctx as any).app
+    };
+    await this.install(runtimeContext);
+  }
+  
+  /**
    * Called when the kernel starts
    * This is the initialization phase
    */
-  async onStart(ctx: any): Promise<void> {
+  async onStart(ctx: RuntimeContext): Promise<void> {
     console.log(`[${this.name}] Starting plugin...`);
     // Additional startup logic can be added here
   }
