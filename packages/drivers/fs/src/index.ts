@@ -1,7 +1,7 @@
 import { Data, System as SystemSpec } from '@objectstack/spec';
 type QueryAST = Data.QueryAST;
 type SortNode = Data.SortNode;
-type DriverInterface = SystemSpec.DriverInterface;
+type DriverInterface = Data.DriverInterface;
 /**
  * ObjectQL
  * Copyright (c) 2026-present ObjectStack Inc.

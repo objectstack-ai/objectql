@@ -16,8 +16,8 @@ export type { ObjectStackProtocolImplementation } from '@objectstack/objectql';
 // Export ObjectStack spec types for driver development
 import { Data, System } from '@objectstack/spec';
 export type QueryAST = Data.QueryAST;
-export type DriverInterface = System.DriverInterface;
-export type DriverOptions = System.DriverOptions;
+export type DriverInterface = Data.DriverInterface;
+export type DriverOptions = Data.DriverOptions;
 
 // Export our enhanced runtime components (actual implementations)
 export * from './repository';
