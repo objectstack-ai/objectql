@@ -219,7 +219,10 @@ export class ObjectQLPlugin implements RuntimePlugin {
       const driver = getDriver(objectName);
       const value = await driver.find(objectName, query);
       const count = value.length;
-      return { value, count };
+      console.log('[kernel.find] objectName:', objectName, 'value.length:', value.length, 'count:', count);
+      const result = { value, count };
+      console.log('[kernel.find] returning:', result);
+      return result;
     };
 
     kernel.get = async (objectName: string, id: string): Promise<any> => {

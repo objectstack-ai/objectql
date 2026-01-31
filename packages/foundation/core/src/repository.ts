@@ -357,6 +357,9 @@ export class ObjectRepository {
         // Build QueryAST and execute via kernel to get count
         const ast = this.buildQueryAST(hookCtx.query || {});
         const kernelResult = await (this.getKernel() as any).find(this.objectName, ast);
+        console.log('[Repository.count] kernelResult:', kernelResult);
+        console.log('[Repository.count] kernelResult type:', typeof kernelResult);
+        console.log('[Repository.count] kernelResult.count:', kernelResult?.count);
         const result = kernelResult.count;
 
         hookCtx.result = result;
