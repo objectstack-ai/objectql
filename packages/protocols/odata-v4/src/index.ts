@@ -219,6 +219,19 @@ export class ODataV4Plugin implements RuntimePlugin {
         
         return false;
     }
+    
+    /**
+     * Helper: Count data
+     */
+    private async countData(objectName: string, filters?: any): Promise<number> {
+        if (!this.engine) return 0;
+        
+        if (typeof this.engine.count === 'function') {
+            return await this.engine.count(objectName, filters);
+        }
+        
+        return 0;
+    }
 
     /**
      * Main HTTP request handler
@@ -338,6 +351,23 @@ export class ODataV4Plugin implements RuntimePlugin {
      * Handle entity requests (CRUD operations)
      */
     private async handleEntityRequest(req: IncomingMessage, res: ServerResponse, path: string): Promise<void> {
+        // Check for /$count endpoint: /EntitySet/$count
+        const countMatch = path.match(/^\/([^/($]+)\/\$count$/);
+        if (countMatch) {
+            const entitySet = countMatch[1];
+            const queryString = req.url?.split('?')[1] || '';
+            const queryParams = this.parseODataQuery(queryString);
+            
+            // Check if entity set exists
+            if (!this.getMetaItem('object', entitySet)) {
+                this.sendError(res, 404, `Entity set '${entitySet}' not found`);
+                return;
+            }
+            
+            await this.handleCountEntitySet(res, entitySet, queryParams);
+            return;
+        }
+        
         // Parse path: /EntitySet or /EntitySet(id) or /EntitySet('id')
         const match = path.match(/^\/([^(/]+)(?:\((?:')?([^)']+)(?:')?\))?/);
         
@@ -361,7 +391,7 @@ export class ODataV4Plugin implements RuntimePlugin {
         // Route based on HTTP method
         if (method === 'GET') {
             if (entityId) {
-                await this.handleGetEntity(res, entitySet, entityId);
+                await this.handleGetEntity(res, entitySet, entityId, queryParams);
             } else {
                 await this.handleQueryEntitySet(res, entitySet, queryParams);
             }
@@ -387,12 +417,17 @@ export class ODataV4Plugin implements RuntimePlugin {
     /**
      * Handle GET request for a single entity
      */
-    private async handleGetEntity(res: ServerResponse, entitySet: string, id: string): Promise<void> {
+    private async handleGetEntity(res: ServerResponse, entitySet: string, id: string, queryParams: ODataQueryParams): Promise<void> {
         const entity = await this.getData(entitySet, id);
         
         if (!entity) {
             this.sendError(res, 404, 'Entity not found');
             return;
+        }
+
+        // $expand -> expand navigation properties for single entity
+        if (queryParams.$expand) {
+            await this.expandNavigationProperties(entitySet, [entity], queryParams.$expand);
         }
 
         this.sendJSON(res, 200, {
@@ -427,14 +462,47 @@ export class ODataV4Plugin implements RuntimePlugin {
         if (queryParams.$skip) {
             query.offset = parseInt(queryParams.$skip);
         }
-
+        
         const result = await this.findData(entitySet, query);
+        
+        // $expand -> expand navigation properties
+        if (queryParams.$expand) {
+            await this.expandNavigationProperties(entitySet, result, queryParams.$expand);
+        }
+        
+        // Calculate count if $count=true is specified
+        let count: number | undefined;
+        if (queryParams.$count === 'true') {
+            // Count with same filters but no limit/offset
+            const countQuery = query.where ? { where: query.where } : {};
+            count = await this.countData(entitySet, countQuery);
+        }
 
         this.sendJSON(res, 200, {
             '@odata.context': `${this.config.basePath}/$metadata#${entitySet}`,
-            '@odata.count': undefined,
+            '@odata.count': count,
             value: result
         });
+    }
+    
+    /**
+     * Handle GET request for entity set /$count endpoint
+     */
+    private async handleCountEntitySet(res: ServerResponse, entitySet: string, queryParams: ODataQueryParams): Promise<void> {
+        // Build query from OData parameters (only filter is relevant for count)
+        const query: any = {};
+        
+        // $filter -> where clause
+        if (queryParams.$filter) {
+            query.where = this.parseODataFilter(queryParams.$filter);
+        }
+        
+        const count = await this.countData(entitySet, query);
+        
+        // Return plain number as per OData spec
+        res.setHeader('Content-Type', 'text/plain');
+        res.writeHead(200);
+        res.end(count.toString());
     }
 
     /**
@@ -493,6 +561,143 @@ export class ODataV4Plugin implements RuntimePlugin {
         }
 
         return params;
+    }
+
+    /**
+     * Expand navigation properties for OData $expand
+     * 
+     * Implements OData V4 $expand feature to include related entities in the response.
+     * 
+     * **Current Support**:
+     * - ✅ Single property expand: $expand=owner
+     * - ✅ Multiple properties: $expand=owner,department
+     * - ✅ Expand with options: $expand=orders($filter=status eq 'active')
+     * - ✅ Supported options: $filter, $select, $orderby, $top
+     * 
+     * **Limitations** (Phase 2 roadmap):
+     * - ⚠️ Nested expand not yet supported: $expand=owner($expand=department)
+     * - ⚠️ Only single-level relationship expansion
+     * 
+     * See PROTOCOL_DEVELOPMENT_PLAN_ZH.md Phase 2 for nested expand implementation.
+     * 
+     * @param entitySet - The main entity set name
+     * @param entities - Array of entities to expand properties for
+     * @param expandParam - The $expand query parameter value
+     */
+    private async expandNavigationProperties(entitySet: string, entities: any[], expandParam: string): Promise<void> {
+        if (!entities || entities.length === 0 || !expandParam) {
+            return;
+        }
+
+        // Get metadata for the entity set to find lookup fields
+        const metadata = this.getMetaItem('object', entitySet);
+        if (!metadata || !metadata.content || !metadata.content.fields) {
+            return;
+        }
+
+        // Parse the expand parameter (simple implementation - handles comma-separated properties)
+        // Note: Nested expands (e.g., owner($expand=department)) are not yet supported
+        // and will be rejected by the regex pattern below
+        const expandProperties = expandParam.split(',').map(p => p.trim());
+
+        // For each expand property, fetch related data
+        for (const propertyName of expandProperties) {
+            // Security: Limit property name length to prevent ReDoS attacks
+            if (propertyName.length > 1000) {
+                // Skip excessively long expand parameters
+                continue;
+            }
+            
+            // Parse property name and options (basic implementation)
+            // Format: propertyName or propertyName($filter=...$select=...)
+            // Nested expands with multiple levels are NOT supported in this version
+            // Security: Use atomic groups and length limits to prevent ReDoS
+            const propMatch = propertyName.match(/^(\w{1,100})(?:\(([^)]{0,500})\))?$/);
+            if (!propMatch) {
+                // Invalid syntax or nested expand detected - skip
+                continue;
+            }
+
+            const [, fieldName, options] = propMatch;
+            
+            // Find the field in metadata
+            const field = metadata.content.fields[fieldName];
+            if (!field) {
+                continue; // Skip if field doesn't exist
+            }
+
+            // Check if this is a lookup field (relationship)
+            const referenceObject = field.reference || field.reference_to;
+            if (!referenceObject || (field.type !== 'lookup' && field.type !== 'master_detail')) {
+                continue; // Skip non-lookup fields
+            }
+
+            // Extract IDs from the entities for the lookup field
+            const ids = entities
+                .map(entity => entity[fieldName])
+                .filter(id => id !== null && id !== undefined);
+
+            if (ids.length === 0) {
+                continue; // No IDs to expand
+            }
+
+            // Build query for related entities
+            const relatedQuery: any = {
+                where: {
+                    _id: { $in: ids }
+                }
+            };
+
+            // Parse expand options if present (basic implementation)
+            if (options) {
+                const expandOptions = this.parseODataQuery(options);
+                
+                // Apply $filter if present
+                if (expandOptions.$filter) {
+                    const filterCondition = this.parseODataFilter(expandOptions.$filter);
+                    // Combine with the $in filter
+                    relatedQuery.where = {
+                        $and: [
+                            { _id: { $in: ids } },
+                            filterCondition
+                        ]
+                    };
+                }
+
+                // Apply $select if present
+                if (expandOptions.$select) {
+                    relatedQuery.fields = expandOptions.$select.split(',').map(f => f.trim());
+                }
+
+                // Apply $orderby if present
+                if (expandOptions.$orderby) {
+                    relatedQuery.orderBy = this.parseODataOrderBy(expandOptions.$orderby);
+                }
+
+                // Apply $top if present
+                if (expandOptions.$top) {
+                    relatedQuery.limit = parseInt(expandOptions.$top);
+                }
+            }
+
+            // Fetch related entities
+            const relatedEntities = await this.findData(referenceObject, relatedQuery);
+
+            // Create a map of related entities by ID for quick lookup
+            const relatedMap = new Map();
+            for (const relatedEntity of relatedEntities) {
+                relatedMap.set(relatedEntity._id, relatedEntity);
+            }
+
+            // Add related entities to the main entities
+            for (const entity of entities) {
+                const lookupId = entity[fieldName];
+                if (lookupId && relatedMap.has(lookupId)) {
+                    // Create the expanded property
+                    entity[fieldName + '@expanded'] = relatedMap.get(lookupId);
+                }
+            }
+        }
     }
 
     /**

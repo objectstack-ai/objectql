@@ -236,4 +236,41 @@ describe('JSON-RPC Request Examples', () => {
     expect(notification).not.toHaveProperty('id');
     expect(notification.method).toBe('log.info');
   });
+
+  it('should demonstrate count request format', () => {
+    const request = {
+      jsonrpc: '2.0',
+      method: 'object.count',
+      params: ['users', { active: true }],
+      id: 3
+    };
+
+    expect(request.method).toBe('object.count');
+    expect(request.params).toHaveLength(2);
+    expect(request.params[0]).toBe('users');
+  });
+
+  it('should demonstrate action.execute request format', () => {
+    const request = {
+      jsonrpc: '2.0',
+      method: 'action.execute',
+      params: ['sendEmail', { to: 'user@example.com', subject: 'Hello' }],
+      id: 4
+    };
+
+    expect(request.method).toBe('action.execute');
+    expect(request.params).toHaveLength(2);
+    expect(request.params[0]).toBe('sendEmail');
+  });
+
+  it('should demonstrate action.list request format', () => {
+    const request = {
+      jsonrpc: '2.0',
+      method: 'action.list',
+      id: 5
+    };
+
+    expect(request.method).toBe('action.list');
+    expect(request).not.toHaveProperty('params');
+  });
 });

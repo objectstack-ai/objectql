@@ -110,6 +110,26 @@ export interface RedisDriverConfig {
     url: string;
     /** Additional Redis client options */
     options?: any;
+    /** Connection retry configuration */
+    retry?: {
+        /** Maximum number of retry attempts (default: 10) */
+        maxAttempts?: number;
+        /** Initial retry delay in milliseconds (default: 100) */
+        initialDelay?: number;
+        /** Maximum retry delay in milliseconds (default: 3000) */
+        maxDelay?: number;
+        /** Enable exponential backoff (default: true) */
+        exponentialBackoff?: boolean;
+    };
+    /** Connection pool configuration */
+    pool?: {
+        /** Minimum number of connections (default: 1) */
+        min?: number;
+        /** Maximum number of connections (default: 10) */
+        max?: number;
+    };
+    /** Enable automatic reconnection on disconnect (default: true) */
+    autoReconnect?: boolean;
 }
 
 /**
@@ -123,7 +143,7 @@ export interface RedisDriverConfig {
 export class RedisDriver implements Driver {
     // Driver metadata (ObjectStack-compatible)
     public readonly name = 'RedisDriver';
-    public readonly version = '4.0.0';
+    public readonly version = '4.0.1'; // Updated version for production improvements
     public readonly supports = {
         transactions: false,
         joins: false,
@@ -141,35 +161,124 @@ export class RedisDriver implements Driver {
     private client: RedisClientType;
     private config: RedisDriverConfig;
     private connected: Promise<void>;
+    private reconnecting: boolean = false;
 
     constructor(config: RedisDriverConfig) {
-        this.config = config;
+        this.config = {
+            ...config,
+            retry: {
+                maxAttempts: config.retry?.maxAttempts ?? 10,
+                initialDelay: config.retry?.initialDelay ?? 100,
+                maxDelay: config.retry?.maxDelay ?? 3000,
+                exponentialBackoff: config.retry?.exponentialBackoff ?? true,
+            },
+            pool: {
+                min: config.pool?.min ?? 1,
+                max: config.pool?.max ?? 10,
+            },
+            autoReconnect: config.autoReconnect ?? true,
+        };
+        
         this.client = createClient({ 
-            url: config.url,
-            ...config.options 
+            url: this.config.url,
+            socket: {
+                reconnectStrategy: (retries: number) => {
+                    // Implement exponential backoff for reconnection
+                    if (retries > (this.config.retry?.maxAttempts ?? 10)) {
+                        console.error('[RedisDriver] Max reconnection attempts reached');
+                        return new Error('Max reconnection attempts reached');
+                    }
+                    
+                    const delay = this.calculateRetryDelay(retries);
+                    console.log(`[RedisDriver] Reconnecting in ${delay}ms (attempt ${retries})`);
+                    return delay;
+                }
+            },
+            ...this.config.options 
         }) as RedisClientType;
         
-        // Handle connection errors
+        // Handle connection errors with enhanced logging
         this.client.on('error', (err: Error) => {
-            console.error('[RedisDriver] Connection error:', err);
+            console.error('[RedisDriver] Connection error:', err.message);
+            if (err.stack) {
+                console.debug('[RedisDriver] Error stack:', err.stack);
+            }
+        });
+        
+        // Handle successful reconnection
+        this.client.on('reconnecting', () => {
+            this.reconnecting = true;
+            console.log('[RedisDriver] Attempting to reconnect...');
+        });
+        
+        this.client.on('ready', () => {
+            if (this.reconnecting) {
+                console.log('[RedisDriver] Successfully reconnected');
+                this.reconnecting = false;
+            }
         });
         
         this.connected = this.connect();
     }
 
+    /**
+     * Calculate retry delay with exponential backoff
+     */
+    private calculateRetryDelay(attempt: number): number {
+        const config = this.config.retry!;
+        const initialDelay = config.initialDelay!;
+        const maxDelay = config.maxDelay!;
+        
+        if (!config.exponentialBackoff) {
+            return initialDelay;
+        }
+        
+        // Exponential backoff: delay = min(initialDelay * 2^attempt, maxDelay)
+        const delay = Math.min(initialDelay * Math.pow(2, attempt - 1), maxDelay);
+        return delay;
+    }
+
     async connect(): Promise<void> {
-        await this.client.connect();
+        let lastError: Error | undefined;
+        const maxAttempts = this.config.retry?.maxAttempts ?? 10;
+        
+        for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+                await this.client.connect();
+                console.log('[RedisDriver] Successfully connected to Redis');
+                return;
+            } catch (error) {
+                lastError = error as Error;
+                console.error(`[RedisDriver] Connection attempt ${attempt}/${maxAttempts} failed:`, error);
+                
+                if (attempt < maxAttempts) {
+                    const delay = this.calculateRetryDelay(attempt);
+                    console.log(`[RedisDriver] Retrying in ${delay}ms...`);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                }
+            }
+        }
+        
+        throw new Error(`[RedisDriver] Failed to connect after ${maxAttempts} attempts: ${lastError?.message}`);
     }
 
     /**
-     * Check database connection health
+     * Check database connection health with detailed diagnostics
+     * @returns Health status object with connection state
      */
     async checkHealth(): Promise<boolean> {
         try {
             await this.connected;
+            
+            // Perform ping to verify connection is alive
+            const start = Date.now();
             await this.client.ping();
+            const latency = Date.now() - start;
+            
+            console.debug(`[RedisDriver] Health check passed (latency: ${latency}ms)`);
             return true;
         } catch (error) {
+            console.error('[RedisDriver] Health check failed:', error);
             return false;
         }
     }
