@@ -202,12 +202,6 @@ importers:
       '@objectql/driver-sql':
         specifier: workspace:*
         version: link:../../../packages/drivers/sql
-      '@objectql/protocol-graphql':
-        specifier: workspace:*
-        version: link:../../../packages/protocols/graphql
-      '@objectql/protocol-json-rpc':
-        specifier: workspace:*
-        version: link:../../../packages/protocols/json-rpc
       sqlite3:
         specifier: ^5.1.7
         version: 5.1.7

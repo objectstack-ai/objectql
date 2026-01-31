@@ -28,8 +28,6 @@
   "dependencies": {
     "@objectql/core": "workspace:*",
     "@objectql/driver-sql": "workspace:*",
-    "@objectql/protocol-json-rpc": "workspace:*",
-    "@objectql/protocol-graphql": "workspace:*",
     "sqlite3": "^5.1.7"
   },
   "devDependencies": {
