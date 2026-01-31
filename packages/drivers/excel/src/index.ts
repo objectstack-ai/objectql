@@ -1162,7 +1162,7 @@ export class ExcelDriver implements Driver {
             if (firstSort && typeof firstSort === 'object' && !Array.isArray(firstSort) && firstSort.field) {
                 // It's in QueryAST format {field, order}, keep as-is
                 // The find() method will handle it
-                normalized.orderBy = normalized.orderBy;
+                // Already in correct format, no transformation needed
             }
         }
         

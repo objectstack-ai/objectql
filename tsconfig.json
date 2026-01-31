@@ -1,18 +1,39 @@
 {
   "files": [],
   "references": [
+    // Foundation Layer
     { "path": "./packages/foundation/types" },
     { "path": "./packages/foundation/plugin-validator" },
     { "path": "./packages/foundation/plugin-formula" },
     { "path": "./packages/foundation/plugin-ai-agent" },
+    { "path": "./packages/foundation/plugin-security" },
     { "path": "./packages/foundation/core" },
+    { "path": "./packages/foundation/platform-node" },
+    
+    // Drivers Layer
+    { "path": "./packages/drivers/memory" },
     { "path": "./packages/drivers/mongo" },
     { "path": "./packages/drivers/sql" },
     { "path": "./packages/drivers/sdk" },
-    { "path": "./packages/foundation/platform-node" },
+    { "path": "./packages/drivers/fs" },
+    { "path": "./packages/drivers/redis" },
+    { "path": "./packages/drivers/excel" },
+    { "path": "./packages/drivers/localstorage" },
+    
+    // Protocols Layer
+    { "path": "./packages/protocols/graphql" },
+    { "path": "./packages/protocols/json-rpc" },
+    { "path": "./packages/protocols/odata-v4" },
+    
+    // Runtime Layer
     { "path": "./packages/runtime/server" },
+    
+    // Tools Layer
     { "path": "./packages/tools/cli" },
+    { "path": "./packages/tools/create" },
     { "path": "./packages/tools/vscode-objectql" },
+    
+    // Examples
     { "path": "./examples/integrations/express-server" },
     { "path": "./examples/showcase/project-tracker" },
     { "path": "./examples/showcase/enterprise-erp" }

@@ -253,7 +253,7 @@ export class ObjectRepository {
                     record[fieldName] = null;
                     // Formula evaluation should not throw here, but we need observability
                     // This logging is intentionally minimal and side-effect free
-                    // eslint-disable-next-line no-console
+                     
                     console.error(
                         '[ObjectQL][FormulaEngine] Formula evaluation failed',
                         {

@@ -49,7 +49,7 @@ export function createDriverFromConnection(connection: string): Driver {
     }
 
     try {
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
+         
         const pkg = require(driverPackage);
         const DriverClass = pkg[driverClass];
         if (!DriverClass) {

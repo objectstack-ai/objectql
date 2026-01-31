@@ -51,14 +51,6 @@ jobs:
       run: pnpm install --frozen-lockfile
       timeout-minutes: 2
       
-    - name: Setup MongoDB Memory Server
-      run: |
-        # Pre-download MongoDB binary for mongodb-memory-server
-        cd packages/drivers/mongo
-        npx mongodb-memory-server preinstall || echo "MongoDB binary download failed, tests will skip gracefully"
-      timeout-minutes: 1
-      continue-on-error: true
-      
     - name: Build packages
       run: pnpm run build
       timeout-minutes: 3

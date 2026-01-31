@@ -15,6 +15,13 @@
       "@objectql/driver-redis",
       "@objectql/driver-sql",
       "@objectql/platform-node",
+      "@objectql/plugin-ai-agent",
+      "@objectql/plugin-formula",
+      "@objectql/plugin-security",
+      "@objectql/plugin-validator",
+      "@objectql/protocol-graphql",
+      "@objectql/protocol-json-rpc",
+      "@objectql/protocol-odata-v4",
       "@objectql/sdk",
       "@objectql/server",
       "@objectql/types"
