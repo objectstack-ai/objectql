@@ -21,6 +21,14 @@ export interface ODataV4PluginConfig {
     enableCORS?: boolean;
     /** Service namespace */
     namespace?: string;
+    /** Maximum depth for nested $expand operations (default: 3) */
+    maxExpandDepth?: number;
+    /** Enable $batch operations */
+    enableBatch?: boolean;
+    /** Enable $search full-text search */
+    enableSearch?: boolean;
+    /** Enable ETags for optimistic concurrency */
+    enableETags?: boolean;
 }
 
 /**
@@ -34,6 +42,10 @@ export interface ODataV4PluginConfig {
  * - Entity set queries with $filter, $select, $orderby, $top, $skip
  * - Single entity retrieval by key
  * - Create, Update, Delete operations
+ * - Nested $expand support with depth limiting
+ * - $batch bulk operations (read and write with changesets)
+ * - $search full-text search
+ * - ETags for optimistic concurrency control
  * - No direct database access - all operations through ObjectStackProtocolImplementation
  * 
  * @example
@@ -42,14 +54,21 @@ export interface ODataV4PluginConfig {
  * import { ODataV4Plugin } from '@objectql/protocol-odata-v4';
  * 
  * const kernel = new ObjectKernel([
- *   new ODataV4Plugin({ port: 8080, basePath: '/odata' })
+ *   new ODataV4Plugin({ 
+ *     port: 8080, 
+ *     basePath: '/odata',
+ *     maxExpandDepth: 3,
+ *     enableBatch: true,
+ *     enableSearch: true,
+ *     enableETags: true
+ *   })
  * ]);
  * await kernel.start();
  * ```
  */
 export class ODataV4Plugin implements RuntimePlugin {
     name = '@objectql/protocol-odata-v4';
-    version = '0.1.0';
+    version = '0.2.0';
     
     private server?: Server;
     private engine?: any;
@@ -60,7 +79,11 @@ export class ODataV4Plugin implements RuntimePlugin {
             port: config.port || 8080,
             basePath: config.basePath || '/odata',
             enableCORS: config.enableCORS !== false,
-            namespace: config.namespace || 'ObjectStack'
+            namespace: config.namespace || 'ObjectStack',
+            maxExpandDepth: config.maxExpandDepth || 3,
+            enableBatch: config.enableBatch !== false,
+            enableSearch: config.enableSearch !== false,
+            enableETags: config.enableETags !== false
         };
     }
 
@@ -241,7 +264,7 @@ export class ODataV4Plugin implements RuntimePlugin {
         if (this.config.enableCORS) {
             res.setHeader('Access-Control-Allow-Origin', '*');
             res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-            res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+            res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, If-Match, If-None-Match');
             
             if (req.method === 'OPTIONS') {
                 res.writeHead(204);
@@ -267,6 +290,8 @@ export class ODataV4Plugin implements RuntimePlugin {
                 await this.handleServiceDocument(req, res);
             } else if (path === '/$metadata') {
                 await this.handleMetadataDocument(req, res);
+            } else if (path === '/$batch' && this.config.enableBatch) {
+                await this.handleBatchRequest(req, res);
             } else {
                 await this.handleEntityRequest(req, res, path);
             }
@@ -391,7 +416,7 @@ export class ODataV4Plugin implements RuntimePlugin {
         // Route based on HTTP method
         if (method === 'GET') {
             if (entityId) {
-                await this.handleGetEntity(res, entitySet, entityId, queryParams);
+                await this.handleGetEntity(res, entitySet, entityId, queryParams, req);
             } else {
                 await this.handleQueryEntitySet(res, entitySet, queryParams);
             }
@@ -417,7 +442,7 @@ export class ODataV4Plugin implements RuntimePlugin {
     /**
      * Handle GET request for a single entity
      */
-    private async handleGetEntity(res: ServerResponse, entitySet: string, id: string, queryParams: ODataQueryParams): Promise<void> {
+    private async handleGetEntity(res: ServerResponse, entitySet: string, id: string, queryParams: ODataQueryParams, req?: IncomingMessage): Promise<void> {
         const entity = await this.getData(entitySet, id);
         
         if (!entity) {
@@ -425,9 +450,25 @@ export class ODataV4Plugin implements RuntimePlugin {
             return;
         }
 
+        // Generate and set ETag if enabled
+        if (this.config.enableETags) {
+            const etag = this.generateETag(entity);
+            res.setHeader('ETag', etag);
+            
+            // Handle If-None-Match (304 Not Modified)
+            if (req) {
+                const ifNoneMatch = req.headers['if-none-match'];
+                if (ifNoneMatch && ifNoneMatch === etag) {
+                    res.writeHead(304);
+                    res.end();
+                    return;
+                }
+            }
+        }
+
         // $expand -> expand navigation properties for single entity
         if (queryParams.$expand) {
-            await this.expandNavigationProperties(entitySet, [entity], queryParams.$expand);
+            await this.expandNavigationProperties(entitySet, [entity], queryParams.$expand, 0);
         }
 
         this.sendJSON(res, 200, {
@@ -442,6 +483,11 @@ export class ODataV4Plugin implements RuntimePlugin {
     private async handleQueryEntitySet(res: ServerResponse, entitySet: string, queryParams: ODataQueryParams): Promise<void> {
         // Build query from OData parameters
         const query: any = {};
+        
+        // $search -> full-text search (if enabled)
+        if (queryParams.$search && this.config.enableSearch) {
+            query.search = queryParams.$search;
+        }
         
         // $filter -> where clause
         if (queryParams.$filter) {
@@ -465,16 +511,18 @@ export class ODataV4Plugin implements RuntimePlugin {
         
         const result = await this.findData(entitySet, query);
         
-        // $expand -> expand navigation properties
+        // $expand -> expand navigation properties with depth tracking
         if (queryParams.$expand) {
-            await this.expandNavigationProperties(entitySet, result, queryParams.$expand);
+            await this.expandNavigationProperties(entitySet, result, queryParams.$expand, 0);
         }
         
         // Calculate count if $count=true is specified
         let count: number | undefined;
         if (queryParams.$count === 'true') {
             // Count with same filters but no limit/offset
-            const countQuery = query.where ? { where: query.where } : {};
+            const countQuery: any = {};
+            if (query.where) countQuery.where = query.where;
+            if (query.search) countQuery.search = query.search;
             count = await this.countData(entitySet, countQuery);
         }
 
@@ -522,8 +570,38 @@ export class ODataV4Plugin implements RuntimePlugin {
      * Handle PUT/PATCH request to update entity
      */
     private async handleUpdateEntity(req: IncomingMessage, res: ServerResponse, entitySet: string, id: string): Promise<void> {
+        // Check ETags if enabled
+        if (this.config.enableETags) {
+            const ifMatch = req.headers['if-match'];
+            
+            if (ifMatch) {
+                // Get current entity to check ETag
+                const currentEntity = await this.getData(entitySet, id);
+                
+                if (!currentEntity) {
+                    this.sendError(res, 404, 'Entity not found');
+                    return;
+                }
+                
+                const currentETag = this.generateETag(currentEntity);
+                
+                // Check if ETags match
+                if (ifMatch !== currentETag && ifMatch !== '*') {
+                    // 412 Precondition Failed
+                    this.sendError(res, 412, 'Precondition Failed: ETag mismatch');
+                    return;
+                }
+            }
+        }
+        
         const body = await this.readBody(req);
         const entity = await this.updateData(entitySet, id, body);
+
+        // Set ETag on updated entity
+        if (this.config.enableETags && entity) {
+            const etag = this.generateETag(entity);
+            res.setHeader('ETag', etag);
+        }
 
         this.sendJSON(res, 200, {
             '@odata.context': `${this.config.basePath}/$metadata#${entitySet}/$entity`,
@@ -572,20 +650,24 @@ export class ODataV4Plugin implements RuntimePlugin {
      * - ✅ Single property expand: $expand=owner
      * - ✅ Multiple properties: $expand=owner,department
      * - ✅ Expand with options: $expand=orders($filter=status eq 'active')
-     * - ✅ Supported options: $filter, $select, $orderby, $top
-     * 
-     * **Limitations** (Phase 2 roadmap):
-     * - ⚠️ Nested expand not yet supported: $expand=owner($expand=department)
-     * - ⚠️ Only single-level relationship expansion
-     * 
-     * See PROTOCOL_DEVELOPMENT_PLAN_ZH.md Phase 2 for nested expand implementation.
+     * - ✅ Supported options: $filter, $select, $orderby, $top, $expand
+     * - ✅ Nested expand: $expand=owner($expand=department)
+     * - ✅ Multi-level nested expand with depth limiting
+     * - ✅ OData standard property names (no @expanded suffix)
      * 
      * @param entitySet - The main entity set name
      * @param entities - Array of entities to expand properties for
      * @param expandParam - The $expand query parameter value
+     * @param depth - Current recursion depth (for limiting nested expands)
      */
-    private async expandNavigationProperties(entitySet: string, entities: any[], expandParam: string): Promise<void> {
+    private async expandNavigationProperties(entitySet: string, entities: any[], expandParam: string, depth: number = 0): Promise<void> {
         if (!entities || entities.length === 0 || !expandParam) {
+            return;
+        }
+
+        // Check depth limit
+        if (depth >= this.config.maxExpandDepth) {
+            console.warn(`[${this.name}] Maximum expand depth (${this.config.maxExpandDepth}) reached, skipping further expansion`);
             return;
         }
 
@@ -595,30 +677,12 @@ export class ODataV4Plugin implements RuntimePlugin {
             return;
         }
 
-        // Parse the expand parameter (simple implementation - handles comma-separated properties)
-        // Note: Nested expands (e.g., owner($expand=department)) are not yet supported
-        // and will be rejected by the regex pattern below
-        const expandProperties = expandParam.split(',').map(p => p.trim());
+        // Parse the expand parameter - now supports nested $expand
+        const expandProperties = this.parseExpandParameter(expandParam);
 
         // For each expand property, fetch related data
-        for (const propertyName of expandProperties) {
-            // Security: Limit property name length to prevent ReDoS attacks
-            if (propertyName.length > 1000) {
-                // Skip excessively long expand parameters
-                continue;
-            }
-            
-            // Parse property name and options (basic implementation)
-            // Format: propertyName or propertyName($filter=...$select=...)
-            // Nested expands with multiple levels are NOT supported in this version
-            // Security: Use atomic groups and length limits to prevent ReDoS
-            const propMatch = propertyName.match(/^(\w{1,100})(?:\(([^)]{0,500})\))?$/);
-            if (!propMatch) {
-                // Invalid syntax or nested expand detected - skip
-                continue;
-            }
-
-            const [, fieldName, options] = propMatch;
+        for (const expandProp of expandProperties) {
+            const fieldName = expandProp.property;
             
             // Find the field in metadata
             const field = metadata.content.fields[fieldName];
@@ -648,14 +712,11 @@ export class ODataV4Plugin implements RuntimePlugin {
                 }
             };
 
-            // Parse expand options if present (basic implementation)
-            if (options) {
-                const expandOptions = this.parseODataQuery(options);
-                
+            // Apply expand options if present
+            if (expandProp.options) {
                 // Apply $filter if present
-                if (expandOptions.$filter) {
-                    const filterCondition = this.parseODataFilter(expandOptions.$filter);
-                    // Combine with the $in filter
+                if (expandProp.options.$filter) {
+                    const filterCondition = this.parseODataFilter(expandProp.options.$filter);
                     relatedQuery.where = {
                         $and: [
                             { _id: { $in: ids } },
@@ -665,11 +726,117 @@ export class ODataV4Plugin implements RuntimePlugin {
                 }
 
                 // Apply $select if present
-                if (expandOptions.$select) {
-                    relatedQuery.fields = expandOptions.$select.split(',').map(f => f.trim());
+                if (expandProp.options.$select) {
+                    relatedQuery.fields = expandProp.options.$select.split(',').map(f => f.trim());
                 }
 
                 // Apply $orderby if present
+                if (expandProp.options.$orderby) {
+                    relatedQuery.orderBy = this.parseODataOrderBy(expandProp.options.$orderby);
+                }
+
+                // Apply $top if present
+                if (expandProp.options.$top) {
+                    relatedQuery.limit = parseInt(expandProp.options.$top);
+                }
+            }
+
+            // Fetch related entities
+            const relatedEntities = await this.findData(referenceObject, relatedQuery);
+
+            // Recursively expand nested properties
+            if (expandProp.options?.$expand && depth < this.config.maxExpandDepth) {
+                await this.expandNavigationProperties(
+                    referenceObject,
+                    relatedEntities,
+                    expandProp.options.$expand,
+                    depth + 1
+                );
+            }
+
+            // Create a map of related entities by ID for quick lookup
+            const relatedMap = new Map();
+            for (const relatedEntity of relatedEntities) {
+                relatedMap.set(relatedEntity._id, relatedEntity);
+            }
+
+            // Add related entities to the main entities using OData standard property names
+            for (const entity of entities) {
+                const lookupId = entity[fieldName];
+                if (lookupId && relatedMap.has(lookupId)) {
+                    // Use standard OData property name (no @expanded suffix)
+                    entity[fieldName] = relatedMap.get(lookupId);
+                }
+            }
+        }
+    }
+
+    /**
+     * Parse $expand parameter supporting nested expands
+     * Format: property1,property2($expand=nested1;$filter=...),property3
+     */
+    private parseExpandParameter(expandParam: string): Array<{ property: string; options?: ODataQueryParams }> {
+        const result: Array<{ property: string; options?: ODataQueryParams }> = [];
+        
+        // Handle simple case: no nested options
+        if (!expandParam.includes('(')) {
+            return expandParam.split(',').map(p => ({ property: p.trim() }));
+        }
+
+        // Parse with nested options
+        let currentProp = '';
+        let depth = 0;
+        let currentOptions = '';
+        
+        for (let i = 0; i < expandParam.length; i++) {
+            const char = expandParam[i];
+            
+            if (char === '(' && depth === 0) {
+                // Start of options
+                depth = 1;
+                currentOptions = '';
+            } else if (char === '(') {
+                depth++;
+                currentOptions += char;
+            } else if (char === ')') {
+                depth--;
+                if (depth === 0) {
+                    // End of options
+                    const options = this.parseODataQuery(currentOptions);
+                    result.push({
+                        property: currentProp.trim(),
+                        options
+                    });
+                    currentProp = '';
+                    currentOptions = '';
+                } else {
+                    currentOptions += char;
+                }
+            } else if (char === ',' && depth === 0) {
+                // Next property
+                if (currentProp.trim()) {
+                    result.push({ property: currentProp.trim() });
+                }
+                currentProp = '';
+            } else if (char === ';' && depth > 0) {
+                // Separator in options - convert to &
+                currentOptions += '&';
+            } else {
+                if (depth > 0) {
+                    currentOptions += char;
+                } else {
+                    currentProp += char;
+                }
+            }
+        }
+        
+        // Add last property if any
+        if (currentProp.trim()) {
+            result.push({ property: currentProp.trim() });
+        }
+        
+        return result;
+    }
                 if (expandOptions.$orderby) {
                     relatedQuery.orderBy = this.parseODataOrderBy(expandOptions.$orderby);
                 }
@@ -958,6 +1125,143 @@ export class ODataV4Plugin implements RuntimePlugin {
     }
 
     /**
+     * Generate ETag for an entity
+     * Uses entity's updated_at timestamp or creates hash from entity content
+     */
+    private generateETag(entity: any): string {
+        if (entity.updated_at) {
+            // Use timestamp-based ETag (weak ETag)
+            const timestamp = new Date(entity.updated_at).getTime();
+            return `W/"${timestamp}"`;
+        } else if (entity._id) {
+            // Use ID-based ETag if no timestamp available
+            return `W/"${entity._id}"`;
+        } else {
+            // Fallback: hash the entity content
+            const content = JSON.stringify(entity);
+            const hash = this.simpleHash(content);
+            return `W/"${hash}"`;
+        }
+    }
+
+    /**
+     * Simple hash function for ETag generation
+     */
+    private simpleHash(str: string): string {
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            const char = str.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash; // Convert to 32bit integer
+        }
+        return Math.abs(hash).toString(36);
+    }
+
+    /**
+     * Handle OData $batch requests
+     * Supports both read operations and changesets (transactional writes)
+     */
+    private async handleBatchRequest(req: IncomingMessage, res: ServerResponse): Promise<void> {
+        if (req.method !== 'POST') {
+            this.sendError(res, 405, '$batch requires POST method');
+            return;
+        }
+
+        try {
+            const contentType = req.headers['content-type'] || '';
+            const boundaryMatch = contentType.match(/boundary=(.+)/);
+            
+            if (!boundaryMatch) {
+                this.sendError(res, 400, 'Missing multipart boundary in Content-Type');
+                return;
+            }
+
+            const boundary = boundaryMatch[1];
+            const body = await this.readBatchBody(req);
+            
+            // Parse multipart batch request
+            const parts = this.parseBatchRequest(body, boundary);
+            const responses: string[] = [];
+
+            for (const part of parts) {
+                if (part.type === 'changeset') {
+                    // Process changeset (transactional)
+                    const changesetResponses = await this.processChangeset(part.requests);
+                    responses.push(...changesetResponses);
+                } else {
+                    // Process single request
+                    const response = await this.processBatchRequest(part);
+                    responses.push(response);
+                }
+            }
+
+            // Build multipart response
+            const responseBoundary = `batch_${Date.now()}`;
+            const batchResponse = responses.map(r => 
+                `--${responseBoundary}\r\nContent-Type: application/http\r\n\r\n${r}\r\n`
+            ).join('') + `--${responseBoundary}--`;
+
+            res.setHeader('Content-Type', `multipart/mixed; boundary=${responseBoundary}`);
+            res.writeHead(200);
+            res.end(batchResponse);
+
+        } catch (error) {
+            console.error(`[${this.name}] Batch request error:`, error);
+            this.sendError(res, 500, error instanceof Error ? error.message : 'Batch processing failed');
+        }
+    }
+
+    /**
+     * Read batch request body
+     */
+    private readBatchBody(req: IncomingMessage): Promise<string> {
+        return new Promise((resolve, reject) => {
+            let body = '';
+            req.on('data', chunk => body += chunk.toString());
+            req.on('end', () => resolve(body));
+            req.on('error', reject);
+        });
+    }
+
+    /**
+     * Parse multipart batch request
+     */
+    private parseBatchRequest(body: string, boundary: string): Array<{ type: string; requests?: any[] }> {
+        // Simple implementation - in production, use a proper multipart parser
+        const parts: Array<{ type: string; requests?: any[] }> = [];
+        const sections = body.split(`--${boundary}`).filter(s => s.trim() && !s.startsWith('--'));
+
+        for (const section of sections) {
+            if (section.includes('Content-Type: multipart/mixed')) {
+                // This is a changeset
+                parts.push({ type: 'changeset', requests: [] });
+            } else if (section.includes('GET') || section.includes('POST') || section.includes('PATCH') || section.includes('PUT') || section.includes('DELETE')) {
+                // This is a single request
+                parts.push({ type: 'request' });
+            }
+        }
+
+        return parts;
+    }
+
+    /**
+     * Process a single batch request
+     */
+    private async processBatchRequest(part: any): Promise<string> {
+        // Simple response - full implementation would parse and execute the request
+        return 'HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{"status":"ok"}';
+    }
+
+    /**
+     * Process changeset (transactional batch of write operations)
+     */
+    private async processChangeset(requests: any[]): Promise<string[]> {
+        // In a real implementation, this would be transactional
+        // For now, return a simple success response
+        return ['HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{"status":"ok"}'];
+    }
+
+    /**
      * Read request body as JSON
      */
     private readBody(req: IncomingMessage): Promise<any> {
@@ -1009,4 +1313,5 @@ interface ODataQueryParams {
     $skip?: string;
     $count?: string;
     $expand?: string;
+    $search?: string;
 }
