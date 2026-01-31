@@ -1,0 +1,33 @@
+{
+  "name": "@objectql/driver-tck",
+  "version": "4.0.0",
+  "description": "Technology Compatibility Kit for ObjectQL drivers - Unified test suite",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "keywords": [
+    "objectql",
+    "driver",
+    "tck",
+    "test",
+    "compatibility"
+  ],
+  "license": "MIT",
+  "peerDependencies": {
+    "jest": "^30.0.0",
+    "vitest": "^1.0.0"
+  },
+  "peerDependenciesMeta": {
+    "jest": {
+      "optional": true
+    },
+    "vitest": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0"
+  }
+}
