@@ -219,6 +219,19 @@ export class ODataV4Plugin implements RuntimePlugin {
         
         return false;
     }
+    
+    /**
+     * Helper: Count data
+     */
+    private async countData(objectName: string, filters?: any): Promise<number> {
+        if (!this.engine) return 0;
+        
+        if (typeof this.engine.count === 'function') {
+            return await this.engine.count(objectName, filters);
+        }
+        
+        return 0;
+    }
 
     /**
      * Main HTTP request handler
@@ -338,6 +351,23 @@ export class ODataV4Plugin implements RuntimePlugin {
      * Handle entity requests (CRUD operations)
      */
     private async handleEntityRequest(req: IncomingMessage, res: ServerResponse, path: string): Promise<void> {
+        // Check for /$count endpoint: /EntitySet/$count
+        const countMatch = path.match(/^\/([^/($]+)\/\$count$/);
+        if (countMatch) {
+            const entitySet = countMatch[1];
+            const queryString = req.url?.split('?')[1] || '';
+            const queryParams = this.parseODataQuery(queryString);
+            
+            // Check if entity set exists
+            if (!this.getMetaItem('object', entitySet)) {
+                this.sendError(res, 404, `Entity set '${entitySet}' not found`);
+                return;
+            }
+            
+            await this.handleCountEntitySet(res, entitySet, queryParams);
+            return;
+        }
+        
         // Parse path: /EntitySet or /EntitySet(id) or /EntitySet('id')
         const match = path.match(/^\/([^(/]+)(?:\((?:')?([^)']+)(?:')?\))?/);
         
@@ -427,14 +457,48 @@ export class ODataV4Plugin implements RuntimePlugin {
         if (queryParams.$skip) {
             query.offset = parseInt(queryParams.$skip);
         }
+        
+        // $expand -> expand navigation properties
+        if (queryParams.$expand) {
+            // TODO: Implement $expand functionality in Phase 2
+            console.warn(`[${this.name}] $expand is not yet implemented`);
+        }
 
         const result = await this.findData(entitySet, query);
+        
+        // Calculate count if $count=true is specified
+        let count: number | undefined;
+        if (queryParams.$count === 'true') {
+            // Count with same filters but no limit/offset
+            const countQuery = query.where ? { where: query.where } : {};
+            count = await this.countData(entitySet, countQuery);
+        }
 
         this.sendJSON(res, 200, {
             '@odata.context': `${this.config.basePath}/$metadata#${entitySet}`,
-            '@odata.count': undefined,
+            '@odata.count': count,
             value: result
         });
+    }
+    
+    /**
+     * Handle GET request for entity set /$count endpoint
+     */
+    private async handleCountEntitySet(res: ServerResponse, entitySet: string, queryParams: ODataQueryParams): Promise<void> {
+        // Build query from OData parameters (only filter is relevant for count)
+        const query: any = {};
+        
+        // $filter -> where clause
+        if (queryParams.$filter) {
+            query.where = this.parseODataFilter(queryParams.$filter);
+        }
+        
+        const count = await this.countData(entitySet, query);
+        
+        // Return plain number as per OData spec
+        res.setHeader('Content-Type', 'text/plain');
+        res.writeHead(200);
+        res.end(count.toString());
     }
 
     /**
