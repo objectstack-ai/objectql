@@ -279,4 +279,25 @@ describe('OData V4 Request Examples', () => {
     
     expect(url).toContain('$expand');
   });
+
+  it('should demonstrate expand with multiple properties', () => {
+    const url = '/odata/orders?$expand=customer,shipper';
+    
+    expect(url).toContain('$expand');
+    expect(url).toContain('customer,shipper');
+  });
+
+  it('should demonstrate expand with filter option', () => {
+    const url = "/odata/orders?$expand=items($filter=status eq 'active')";
+    
+    expect(url).toContain('$expand');
+    expect(url).toContain('$filter');
+  });
+
+  it('should demonstrate expand for single entity', () => {
+    const url = "/odata/orders('12345')?$expand=customer";
+    
+    expect(url).toContain("orders('12345')");
+    expect(url).toContain('$expand=customer');
+  });
 });

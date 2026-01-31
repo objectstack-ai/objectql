@@ -11,7 +11,7 @@ This plugin provides full OData V4 protocol support for ObjectStack applications
 - ✅ **Service Document** (`/`) - Discover available entity sets
 - ✅ **Metadata Document** (`/$metadata`) - EDMX schema generation
 - ✅ **Entity Queries** - Query entity sets with OData query options
-- ✅ **Query Options** - Support for `$filter`, `$select`, `$orderby`, `$top`, `$skip`, `$count`
+- ✅ **Query Options** - Support for `$filter`, `$select`, `$orderby`, `$top`, `$skip`, `$count`, `$expand`
 - ✅ **CRUD Operations** - Full Create, Read, Update, Delete support
 - ✅ **CORS Support** - Configurable Cross-Origin Resource Sharing
 - ✅ **Type Mapping** - Automatic ObjectQL to EDM type conversion
@@ -149,6 +149,66 @@ Include count in response.
 
 ```bash
 curl "http://localhost:8080/odata/users?\$count=true"
+```
+
+Response includes `@odata.count` field:
+```json
+{
+  "@odata.context": "http://localhost:8080/odata/$metadata#users",
+  "@odata.count": 42,
+  "value": [...]
+}
+```
+
+You can also get just the count:
+
+```bash
+curl "http://localhost:8080/odata/users/\$count"
+```
+
+Response: `42` (plain text)
+
+#### $expand
+
+Expand related entities (navigation properties).
+
+**Single property:**
+```bash
+curl "http://localhost:8080/odata/orders?\$expand=customer"
+```
+
+**Multiple properties:**
+```bash
+curl "http://localhost:8080/odata/orders?\$expand=customer,shipper"
+```
+
+**With filter:**
+```bash
+curl "http://localhost:8080/odata/orders?\$expand=items(\$filter=status eq 'active')"
+```
+
+**With select:**
+```bash
+curl "http://localhost:8080/odata/orders?\$expand=customer(\$select=name,email)"
+```
+
+Response includes expanded entities:
+```json
+{
+  "@odata.context": "http://localhost:8080/odata/$metadata#orders",
+  "value": [
+    {
+      "_id": "order1",
+      "total": 100,
+      "customer": "user123",
+      "customer@expanded": {
+        "_id": "user123",
+        "name": "Alice",
+        "email": "alice@example.com"
+      }
+    }
+  ]
+}
 ```
 
 ### Get Single Entity
