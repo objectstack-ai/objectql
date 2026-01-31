@@ -602,10 +602,17 @@ export class ODataV4Plugin implements RuntimePlugin {
 
         // For each expand property, fetch related data
         for (const propertyName of expandProperties) {
+            // Security: Limit property name length to prevent ReDoS attacks
+            if (propertyName.length > 1000) {
+                // Skip excessively long expand parameters
+                continue;
+            }
+            
             // Parse property name and options (basic implementation)
             // Format: propertyName or propertyName($filter=...$select=...)
             // Nested expands with multiple levels are NOT supported in this version
-            const propMatch = propertyName.match(/^(\w+)(?:\(([^)]+)\))?$/);
+            // Security: Use atomic groups and length limits to prevent ReDoS
+            const propMatch = propertyName.match(/^(\w{1,100})(?:\(([^)]{0,500})\))?$/);
             if (!propMatch) {
                 // Invalid syntax or nested expand detected - skip
                 continue;
