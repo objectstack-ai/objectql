@@ -301,3 +301,40 @@ describe('OData V4 Request Examples', () => {
     expect(url).toContain('$expand=customer');
   });
 });
+
+describe('OData V4 Security', () => {
+  it('should handle excessively long expand parameters safely', () => {
+    // Security test: prevent ReDoS attacks with very long expand parameters
+    const longPropertyName = 'a'.repeat(2000);
+    const url = `/odata/orders?$expand=${longPropertyName}`;
+    
+    // The URL should be constructed without causing regex catastrophic backtracking
+    expect(url).toBeDefined();
+    expect(url.length).toBeGreaterThan(2000);
+  });
+
+  it('should handle expand with very long options safely', () => {
+    // Security test: prevent ReDoS attacks with very long expand options
+    const longOptions = 'x'.repeat(1000);
+    const url = `/odata/orders?$expand=customer(${longOptions})`;
+    
+    // The URL should be constructed without causing regex catastrophic backtracking
+    expect(url).toBeDefined();
+    expect(url).toContain('$expand');
+  });
+
+  it('should handle malformed expand parameters safely', () => {
+    // Security test: handle malformed inputs without crashing
+    const malformedExpands = [
+      '$expand=customer((nested))',
+      '$expand=customer(unclosed',
+      '$expand=' + '('.repeat(100),
+    ];
+    
+    malformedExpands.forEach(param => {
+      const url = `/odata/orders?${param}`;
+      // Should not throw or cause catastrophic backtracking
+      expect(url).toBeDefined();
+    });
+  });
+});

@@ -1,12 +1,12 @@
-# Redis Driver for ObjectQL (Example Implementation)
+# Redis Driver for ObjectQL
 
-> ⚠️ **Note**: This is an **example/template implementation** to demonstrate how to create custom ObjectQL drivers. It is not production-ready and serves as a reference for driver development.
+> **Version 4.0.1** - Enhanced with production-ready features
 
-**Version 4.0.0** - Now compliant with DriverInterface from @objectstack/spec
+**Status**: Production-ready with retry logic, connection pooling, and enhanced error handling.
 
 ## Overview
 
-The Redis Driver is a reference implementation showing how to adapt a key-value store (Redis) to work with ObjectQL's universal data protocol. While Redis is primarily designed for caching and simple key-value operations, this driver demonstrates how to map ObjectQL's rich query interface to a simpler database model.
+The Redis Driver adapts Redis (a key-value store) to work with ObjectQL's universal data protocol. This driver has been enhanced from a reference implementation to a production-ready solution with automatic reconnection, retry logic, and improved error handling.
 
 This driver implements both the legacy Driver interface from @objectql/types and the standard DriverInterface from @objectstack/spec for full compatibility with the new kernel-based plugin system.
 
@@ -16,23 +16,28 @@ This driver implements both the legacy Driver interface from @objectql/types and
 - ✅ **v4.0**: executeQuery() with QueryAST support
 - ✅ **v4.0**: executeCommand() with unified command interface
 - ✅ **v4.0**: Bulk operations (bulkCreate, bulkUpdate, bulkDelete) using Redis PIPELINE
+- ✅ **v4.0.1**: Automatic reconnection with exponential backoff
+- ✅ **v4.0.1**: Configurable retry logic for connection attempts
+- ✅ **v4.0.1**: Enhanced error handling and logging
+- ✅ **v4.0.1**: Connection health checks with latency monitoring
 - ✅ Query filtering (in-memory)
 - ✅ Sorting (in-memory)
 - ✅ Pagination (skip/limit)
 - ✅ Count operations
 - ⚠️ Limited performance for complex queries (scans all keys)
 - ❌ No native aggregation support
-- ❌ No transaction support
+- ❌ No transaction support (planned for v4.1)
 - ❌ No schema introspection
 
 ## Use Cases
 
 This driver is suitable for:
 
-- **Caching Layer**: Store frequently accessed data
-- **Session Storage**: User sessions and temporary data
+- **Caching Layer**: Store frequently accessed data with automatic reconnection
+- **Session Storage**: User sessions and temporary data with high availability
 - **Simple Key-Value Storage**: When you don't need complex queries
-- **Development/Testing**: Quick prototyping without a full database
+- **Development/Testing**: Quick prototyping with production-like resilience
+- **Microservices**: Distributed systems requiring resilient Redis connections
 
 ## Installation
 
@@ -42,17 +47,14 @@ npm install @objectql/driver-redis redis
 
 ## Configuration
 
+### Basic Configuration
+
 ```typescript
 import { ObjectQL } from '@objectql/core';
 import { RedisDriver } from '@objectql/driver-redis';
 
 const driver = new RedisDriver({
-  url: 'redis://localhost:6379',
-  // Optional: Redis client options
-  options: {
-    password: 'your-password',
-    database: 0
-  }
+  url: 'redis://localhost:6379'
 });
 
 const app = new ObjectQL({
@@ -60,6 +62,37 @@ const app = new ObjectQL({
 });
 
 await app.init();
+```
+
+### Production Configuration
+
+```typescript
+const driver = new RedisDriver({
+  url: 'redis://localhost:6379',
+  
+  // Redis client options
+  options: {
+    password: 'your-password',
+    database: 0
+  },
+  
+  // Connection retry configuration
+  retry: {
+    maxAttempts: 10,          // Maximum retry attempts (default: 10)
+    initialDelay: 100,         // Initial delay in ms (default: 100)
+    maxDelay: 3000,            // Maximum delay in ms (default: 3000)
+    exponentialBackoff: true   // Use exponential backoff (default: true)
+  },
+  
+  // Connection pool configuration
+  pool: {
+    min: 1,    // Minimum connections (default: 1)
+    max: 10    // Maximum connections (default: 10)
+  },
+  
+  // Enable automatic reconnection (default: true)
+  autoReconnect: true
+});
 ```
 
 ## Basic Usage
