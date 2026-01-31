@@ -545,8 +545,10 @@ export class MongoDriver implements Driver {
         const result = await collection.findOneAndUpdate(filter, update, mongoOptions);
         
         // Map MongoDB document to API format (convert _id to id)
-        // MongoDB's findOneAndUpdate returns { value: document } in newer versions
-        const doc = result?.value || result;
+        // MongoDB driver v5+ returns { value: document, ok: number }
+        // Older versions (v4) return the document directly
+        // We handle both for backward compatibility
+        const doc = result?.value !== undefined ? result.value : result;
         return doc ? this.mapFromMongo(doc) : null;
     }
 

@@ -575,8 +575,12 @@ export class MemoryDriver implements Driver {
     async beginTransaction(): Promise<any> {
         const txId = `tx_${Date.now()}_${Math.random().toString(36).substring(7)}`;
         
-        // Create a snapshot of the current store
-        const snapshot = new Map(this.store);
+        // Create a deep snapshot of the current store to ensure complete transaction isolation
+        // This prevents issues with nested objects and arrays being modified during the transaction
+        const snapshot = new Map<string, any>();
+        for (const [key, value] of this.store.entries()) {
+            snapshot.set(key, JSON.parse(JSON.stringify(value)));
+        }
         
         const transaction: MemoryTransaction = {
             id: txId,
@@ -676,9 +680,11 @@ export class MemoryDriver implements Driver {
         }
         
         // Set up auto-save timer
+        // Use unref() to allow Node.js process to exit gracefully when idle
         this.persistenceTimer = setInterval(() => {
             this.saveToDisk();
         }, autoSaveInterval);
+        this.persistenceTimer.unref();
     }
 
     /**
