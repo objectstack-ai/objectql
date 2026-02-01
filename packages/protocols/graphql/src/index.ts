@@ -263,7 +263,7 @@ export class GraphQLPlugin implements RuntimePlugin {
         app.use('/graphql', async (c: any) => {
             const httpGraphQLRequest = {
                 body: await c.req.json().catch(() => ({})),
-                headers: new HeaderMap(c.req.header()),
+                headers: new HeaderMap(Object.entries(c.req.header())),
                 method: c.req.method,
                 search: new URL(c.req.url).search,
             };
