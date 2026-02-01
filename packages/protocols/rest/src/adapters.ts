@@ -14,10 +14,20 @@ import { ErrorCode } from './types';
 /**
  * Read and parse request body as JSON
  */
-function readBody(req: IncomingMessage): Promise<any> {
+function readBody(req: IncomingMessage, maxSize = 1024 * 1024): Promise<any> {
     return new Promise((resolve, reject) => {
         let body = '';
-        req.on('data', chunk => body += chunk.toString());
+        let size = 0;
+        
+        req.on('data', chunk => {
+            size += chunk.length;
+            if (size > maxSize) {
+                reject(new Error('Request body too large'));
+                return;
+            }
+            body += chunk.toString();
+        });
+        
         req.on('end', () => {
             if (!body) return resolve({});
             try {
@@ -36,6 +46,10 @@ function readBody(req: IncomingMessage): Promise<any> {
 export interface NodeHandlerOptions {
     /** Custom API route configuration */
     routes?: ApiRouteConfig;
+    /** Maximum request body size in bytes (default: 1MB) */
+    maxBodySize?: number;
+    /** CORS allowed origins (default: '*' for development, should be restricted in production) */
+    corsOrigins?: string | string[];
 }
 
 /**
@@ -49,10 +63,13 @@ export interface NodeHandlerOptions {
 export function createNodeHandler(app: IObjectQL, options?: NodeHandlerOptions) {
     const server = new ObjectQLServer(app);
     const routes = resolveApiRoutes(options?.routes);
+    const maxBodySize = options?.maxBodySize || 1024 * 1024; // Default 1MB
+    const corsOrigins = options?.corsOrigins || '*';
     
     return async (req: IncomingMessage, res: ServerResponse) => {
-        // CORS headers for development
-        res.setHeader('Access-Control-Allow-Origin', '*');
+        // CORS headers
+        const allowedOrigin = Array.isArray(corsOrigins) ? corsOrigins.join(', ') : corsOrigins;
+        res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
         res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
         res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
         
@@ -76,7 +93,7 @@ export function createNodeHandler(app: IObjectQL, options?: NodeHandlerOptions) 
                 return;
             }
             
-            const body = await readBody(req);
+            const body = await readBody(req, maxBodySize);
             const response = await server.handle(body);
             
             res.statusCode = 200;
@@ -84,7 +101,7 @@ export function createNodeHandler(app: IObjectQL, options?: NodeHandlerOptions) 
             res.end(JSON.stringify(response));
         } catch (error: any) {
             console.error('[createNodeHandler] Error:', error);
-            res.statusCode = 500;
+            res.statusCode = error.message === 'Request body too large' ? 413 : 500;
             res.setHeader('Content-Type', 'application/json');
             res.end(JSON.stringify({
                 error: {
@@ -102,6 +119,10 @@ export function createNodeHandler(app: IObjectQL, options?: NodeHandlerOptions) 
 export interface RESTHandlerOptions {
     /** Custom API route configuration */
     routes?: ApiRouteConfig;
+    /** Maximum request body size in bytes (default: 1MB) */
+    maxBodySize?: number;
+    /** CORS allowed origins (default: '*' for development, should be restricted in production) */
+    corsOrigins?: string | string[];
 }
 
 /**
@@ -123,10 +144,13 @@ export function createRESTHandler(app: IObjectQL, options?: RESTHandlerOptions) 
     const server = new ObjectQLServer(app);
     const routes = resolveApiRoutes(options?.routes);
     const dataPath = routes.data;
+    const maxBodySize = options?.maxBodySize || 1024 * 1024; // Default 1MB
+    const corsOrigins = options?.corsOrigins || '*';
     
     return async (req: IncomingMessage, res: ServerResponse) => {
-        // CORS headers for development
-        res.setHeader('Access-Control-Allow-Origin', '*');
+        // CORS headers
+        const allowedOrigin = Array.isArray(corsOrigins) ? corsOrigins.join(', ') : corsOrigins;
+        res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
         res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
         res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
         
@@ -170,6 +194,16 @@ export function createRESTHandler(app: IObjectQL, options?: RESTHandlerOptions) 
             const queryString = url.split('?')[1] || '';
             const searchParams = new URLSearchParams(queryString);
             
+            // Helper to safely parse and validate integer parameters
+            const parseIntParam = (value: string | null, max = 10000): number | undefined => {
+                if (!value) return undefined;
+                const parsed = parseInt(value, 10);
+                if (isNaN(parsed) || parsed < 0 || parsed > max) {
+                    throw new Error(`Invalid pagination parameter: ${value}`);
+                }
+                return parsed;
+            };
+            
             let objectQLRequest: any = {
                 object: objectName,
                 op: '',
@@ -187,21 +221,19 @@ export function createRESTHandler(app: IObjectQL, options?: RESTHandlerOptions) 
                     objectQLRequest.op = 'find';
                     objectQLRequest.args = {};
                     
-                    // Parse pagination and filter params
-                    if (searchParams.has('limit')) {
-                        objectQLRequest.args.limit = parseInt(searchParams.get('limit')!);
-                    }
-                    if (searchParams.has('skip')) {
-                        objectQLRequest.args.skip = parseInt(searchParams.get('skip')!);
-                    }
-                    if (searchParams.has('offset')) {
-                        objectQLRequest.args.offset = parseInt(searchParams.get('offset')!);
-                    }
+                    // Parse pagination and filter params with validation
+                    const limit = parseIntParam(searchParams.get('limit'));
+                    const skip = parseIntParam(searchParams.get('skip'));
+                    const offset = parseIntParam(searchParams.get('offset'));
+                    
+                    if (limit !== undefined) objectQLRequest.args.limit = limit;
+                    if (skip !== undefined) objectQLRequest.args.skip = skip;
+                    if (offset !== undefined) objectQLRequest.args.offset = offset;
                 }
             } else if (method === 'POST') {
                 // POST /api/data/:object - create
                 objectQLRequest.op = 'create';
-                const body = await readBody(req);
+                const body = await readBody(req, maxBodySize);
                 objectQLRequest.args = body;
             } else if (method === 'PUT') {
                 if (!recordId) {
@@ -210,7 +242,7 @@ export function createRESTHandler(app: IObjectQL, options?: RESTHandlerOptions) 
                 }
                 // PUT /api/data/:object/:id - update
                 objectQLRequest.op = 'update';
-                const body = await readBody(req);
+                const body = await readBody(req, maxBodySize);
                 objectQLRequest.args = {
                     id: recordId,
                     data: body
@@ -250,11 +282,23 @@ export function createRESTHandler(app: IObjectQL, options?: RESTHandlerOptions) 
             sendJson(response, statusCode);
         } catch (error: any) {
             console.error('[createRESTHandler] Error:', error);
-            res.statusCode = 500;
+            
+            // Determine appropriate status code based on error
+            let statusCode = 500;
+            let errorCode = ErrorCode.INTERNAL_ERROR;
+            
+            if (error.message === 'Request body too large') {
+                statusCode = 413; // Payload Too Large
+            } else if (error.message?.includes('Invalid pagination parameter')) {
+                statusCode = 400; // Bad Request
+                errorCode = ErrorCode.INVALID_REQUEST;
+            }
+            
+            res.statusCode = statusCode;
             res.setHeader('Content-Type', 'application/json');
             res.end(JSON.stringify({
                 error: {
-                    code: ErrorCode.INTERNAL_ERROR,
+                    code: errorCode,
                     message: error.message || 'Internal Server Error'
                 }
             }));
