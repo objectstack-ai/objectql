@@ -11,6 +11,7 @@ import { ValidatorPlugin, ValidatorPluginConfig } from '@objectql/plugin-validat
 import { FormulaPlugin, FormulaPluginConfig } from '@objectql/plugin-formula';
 import { QueryService } from './query/query-service';
 import { QueryAnalyzer } from './query/query-analyzer';
+import { ObjectStackProtocolImplementation } from './protocol';
 import type { Driver } from '@objectql/types';
 
 /**
@@ -190,6 +191,15 @@ export class ObjectQLPlugin implements RuntimePlugin {
           engine: kernel,
           getKernel: () => kernel
       };
+
+      // Register Protocol Service
+      // If kernel supports service registration (PluginContext or ExtendedKernel with custom registry)
+      if (kernel && typeof kernel.registerService === 'function') {
+          console.log(`[${this.name}] Registering protocol service...`);
+          const protocolShim = new ObjectStackProtocolImplementation(kernel as any);
+          kernel.registerService('protocol', protocolShim);
+      }
+
       return this.install(ctx);
   }
 
