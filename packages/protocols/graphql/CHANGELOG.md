@@ -1,4 +1,4 @@
-# @objectql/plugin-security
+# @objectql/protocol-graphql
 
 ## 4.0.3
 
@@ -15,10 +15,3 @@
 
 - Updated dependencies
   - @objectql/types@4.0.3
-
-## 4.0.2
-
-### Patch Changes
-
-- Updated dependencies
-  - @objectql/types@4.0.2
