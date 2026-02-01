@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "@objectql/types": "workspace:*",
-    "@objectstack/spec": "^0.7.1",
+    "@objectstack/spec": "^0.8.0",
     "@apollo/server": "^4.10.0",
     "graphql": "^16.8.1",
     "graphql-ws": "^5.14.0",
@@ -31,7 +31,7 @@
   },
   "devDependencies": {
     "@objectql/driver-memory": "workspace:*",
-    "@objectstack/core": "^0.7.1",
+    "@objectstack/core": "^0.8.0",
     "@types/ws": "^8.5.10",
     "@types/express": "^4.17.21",
     "@types/cors": "^2.8.17",
