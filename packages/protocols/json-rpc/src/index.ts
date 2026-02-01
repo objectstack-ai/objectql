@@ -7,17 +7,16 @@
  */
 
 import type { RuntimePlugin, RuntimeContext } from '@objectql/types';
-import { IncomingMessage, ServerResponse, createServer, Server } from 'http';
 
 /**
  * Configuration for the JSON-RPC Plugin
  */
 export interface JSONRPCPluginConfig {
-    /** Port to listen on */
+    /** Port to listen on (deprecated in favor of shared Hono server) */
     port?: number;
     /** Base path for JSON-RPC endpoint */
     basePath?: string;
-    /** Enable CORS */
+    /** Enable CORS (handled by Hono usually, kept for config compatibility) */
     enableCORS?: boolean;
     /** Enable introspection methods */
     enableIntrospection?: boolean;
@@ -97,11 +96,9 @@ interface MethodSignature {
  * - Notification support (requests without id)
  * - Built-in introspection methods (system.listMethods, system.describe)
  * - Session management for stateful operations
- * - Progress notifications via Server-Sent Events (SSE)
+ * - Progress notifications via Server-Sent Events (SSE) (Partial support in Hono adapter)
  * - Method call chaining with result references
  * - CRUD operations mapped to RPC methods
- * - Named and positional parameter support
- * - No direct database access - all operations through ObjectStackProtocolImplementation
  * 
  * Available RPC Methods:
  * - object.find(objectName, query) - Find multiple records
@@ -113,56 +110,31 @@ interface MethodSignature {
  * - metadata.list() - List all objects
  * - metadata.get(objectName) - Get object metadata
  * - action.execute(actionName, params) - Execute custom action
- * - session.create() - Create a new session (if sessions enabled)
- * - session.get(key) - Get session value (if sessions enabled)
- * - session.set(key, value) - Set session value (if sessions enabled)
- * - session.destroy() - Destroy current session (if sessions enabled)
- * - system.listMethods() - List available methods (if introspection enabled)
- * - system.describe(method) - Describe method signature (if introspection enabled)
  * 
  * @example
  * ```typescript
- * import { ObjectKernel } from '@objectstack/core';
+ * import { ObjectStackKernel } from '@objectstack/core';
  * import { JSONRPCPlugin } from '@objectql/protocol-json-rpc';
  * 
- * const kernel = new ObjectKernel([
+ * const kernel = new ObjectStackKernel([
  *   new JSONRPCPlugin({ 
- *     port: 9000, 
  *     basePath: '/rpc',
- *     enableSessions: true,
- *     enableProgress: true,
- *     enableChaining: true
+ *     enableSessions: true
  *   })
  * ]);
  * await kernel.start();
- * 
- * // Client request (positional):
- * // POST /rpc
- * // {"jsonrpc":"2.0","method":"object.find","params":["users",{"where":{"active":true}}],"id":1}
- * 
- * // Client request (named):
- * // POST /rpc
- * // {"jsonrpc":"2.0","method":"object.find","params":{"objectName":"users","query":{"where":{"active":true}}},"id":1}
- * 
- * // Batch request with chaining:
- * // [{"jsonrpc":"2.0","method":"object.create","params":["users",{"name":"John"}],"id":1},
- * //  {"jsonrpc":"2.0","method":"object.update","params":["users","$1.result.id",{"active":true}],"id":2}]
- * 
- * // Progress notifications (SSE):
- * // GET /rpc/progress?session=<session-id>
  * ```
  */
 export class JSONRPCPlugin implements RuntimePlugin {
     name = '@objectql/protocol-json-rpc';
     version = '0.2.0';
     
-    private server?: Server;
     private engine?: any;
     private config: Required<JSONRPCPluginConfig>;
     private methods: Map<string, Function>;
     private methodSignatures: Map<string, MethodSignature>;
     private sessions: Map<string, Session> = new Map();
-    private progressClients: Map<string, ServerResponse> = new Map();
+    // private progressClients: Map<string, any> = new Map(); // TODO: SSE implementation for Hono
 
     constructor(config: JSONRPCPluginConfig = {}) {
         this.config = {
@@ -202,19 +174,7 @@ export class JSONRPCPlugin implements RuntimePlugin {
         if (!this.engine) {
             throw new Error('Protocol not initialized. Install hook must be called first.');
         }
-
-        console.log(`[${this.name}] Starting JSON-RPC 2.0 server...`);
-
-        // Create HTTP server
-        this.server = createServer((req, res) => this.handleRequest(req, res));
-
-        // Start listening
-        await new Promise<void>((resolve) => {
-            this.server!.listen(this.config.port, () => {
-                console.log(`[${this.name}] JSON-RPC 2.0 server listening on http://localhost:${this.config.port}${this.config.basePath}`);
-                resolve();
-            });
-        });
+        console.log(`[${this.name}] JSON-RPC protocol ready. Mount at ${this.config.basePath}`);
     }
 
     // --- Adapter for @objectstack/core compatibility ---
@@ -225,22 +185,54 @@ export class JSONRPCPlugin implements RuntimePlugin {
     async start(ctx: any): Promise<void> {
         return this.onStart(ctx);
     }
-    // ---------------------------------------------------
 
     /**
      * Stop hook - called when kernel stops
      */
     async onStop(ctx: RuntimeContext): Promise<void> {
-        if (this.server) {
-            console.log(`[${this.name}] Stopping JSON-RPC 2.0 server...`);
-            await new Promise<void>((resolve, reject) => {
-                this.server!.close((err) => {
-                    if (err) reject(err);
-                    else resolve();
-                });
-            });
-            this.server = undefined;
-        }
+       // Cleanup logic if needed
+    }
+
+    /**
+     * Attach to Hono server
+     */
+    attachToHono(app: any) {
+        const basePath = this.config.basePath;
+        console.log(`[${this.name}] Attaching JSON-RPC to Hono at ${basePath}`);
+
+        // Post handler for RPC requests
+        app.post(basePath, async (c: any) => {
+            try {
+                const body = await c.req.json();
+                
+                // Handle batch requests with optional chaining
+                if (Array.isArray(body)) {
+                    if (this.config.enableChaining) {
+                        const responses = await this.processBatchWithChaining(body);
+                        return c.json(responses);
+                    } else {
+                        const responses = await Promise.all(
+                            body.map((request: any) => this.processRequest(request))
+                        );
+                        return c.json(responses);
+                    }
+                } else {
+                    const response = await this.processRequest(body);
+                    // Don't send response for notifications
+                    if (response) {
+                        return c.json(response);
+                    } else {
+                        return c.body(null, 204);
+                    }
+                }
+            } catch (error) {
+                console.error(`[${this.name}] Request error:`, error);
+                const errorResponse = this.createErrorResponse(null, -32700, 'Parse error');
+                return c.json(errorResponse);
+            }
+        });
+
+        // TODO: Implement GET /rpc/progress if needed using Hono streaming
     }
 
     /**
@@ -649,93 +641,6 @@ export class JSONRPCPlugin implements RuntimePlugin {
     }
 
     /**
-     * Main HTTP request handler
-     */
-    private async handleRequest(req: IncomingMessage, res: ServerResponse): Promise<void> {
-        // Enable CORS if configured
-        if (this.config.enableCORS) {
-            res.setHeader('Access-Control-Allow-Origin', '*');
-            res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-            res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-            
-            if (req.method === 'OPTIONS') {
-                res.writeHead(204);
-                res.end();
-                return;
-            }
-        }
-
-        const url = req.url || '/';
-        const basePath = this.config.basePath;
-
-        // Check if request is for RPC endpoint
-        if (!url.startsWith(basePath)) {
-            this.sendError(res, null, -32600, 'Invalid Request: Wrong endpoint');
-            return;
-        }
-
-        // Handle progress SSE endpoint (GET /rpc/progress?session=<id>)
-        if (this.config.enableProgress && req.method === 'GET' && url.includes('/progress')) {
-            const sessionId = new URL(url, 'http://localhost').searchParams.get('session');
-            if (sessionId) {
-                // Setup SSE
-                res.writeHead(200, {
-                    'Content-Type': 'text/event-stream',
-                    'Cache-Control': 'no-cache',
-                    'Connection': 'keep-alive'
-                });
-                
-                this.progressClients.set(sessionId, res);
-                
-                // Send initial connection message
-                res.write('data: {"type":"connected"}\n\n');
-                
-                // Cleanup on close
-                req.on('close', () => {
-                    this.progressClients.delete(sessionId);
-                });
-                
-                return;
-            }
-        }
-
-        // Only accept POST requests for RPC
-        if (req.method !== 'POST') {
-            this.sendError(res, null, -32600, 'Invalid Request: Method must be POST');
-            return;
-        }
-
-        try {
-            const body = await this.readBody(req);
-            
-            // Handle batch requests with optional chaining
-            if (Array.isArray(body)) {
-                if (this.config.enableChaining) {
-                    const responses = await this.processBatchWithChaining(body);
-                    this.sendJSON(res, 200, responses);
-                } else {
-                    const responses = await Promise.all(
-                        body.map(request => this.processRequest(request))
-                    );
-                    this.sendJSON(res, 200, responses);
-                }
-            } else {
-                const response = await this.processRequest(body);
-                // Don't send response for notifications
-                if (response) {
-                    this.sendJSON(res, 200, response);
-                } else {
-                    res.writeHead(204);
-                    res.end();
-                }
-            }
-        } catch (error) {
-            console.error(`[${this.name}] Request error:`, error);
-            this.sendError(res, null, -32700, 'Parse error');
-        }
-    }
-
-    /**
      * Process a single JSON-RPC request
      */
     private async processRequest(request: any): Promise<JSONRPCResponse | null> {
@@ -795,6 +700,7 @@ export class JSONRPCPlugin implements RuntimePlugin {
                 id: request.id
             };
         } catch (error) {
+            console.error(error);
             if (isNotification) return null;
             
             return this.createErrorResponse(
@@ -847,44 +753,6 @@ export class JSONRPCPlugin implements RuntimePlugin {
             },
             id: id ?? null
         };
-    }
-
-    /**
-     * Read request body as JSON
-     */
-    private readBody(req: IncomingMessage): Promise<any> {
-        return new Promise((resolve, reject) => {
-            let body = '';
-            req.on('data', chunk => body += chunk.toString());
-            req.on('end', () => {
-                if (!body) {
-                    reject(new Error('Empty body'));
-                    return;
-                }
-                try {
-                    resolve(JSON.parse(body));
-                } catch (e) {
-                    reject(new Error('Invalid JSON'));
-                }
-            });
-            req.on('error', reject);
-        });
-    }
-
-    /**
-     * Send JSON response
-     */
-    private sendJSON(res: ServerResponse, statusCode: number, data: any): void {
-        res.setHeader('Content-Type', 'application/json');
-        res.writeHead(statusCode);
-        res.end(JSON.stringify(data, null, 2));
-    }
-
-    /**
-     * Send error response
-     */
-    private sendError(res: ServerResponse, id: any, code: number, message: string): void {
-        this.sendJSON(res, 200, this.createErrorResponse(id, code, message));
     }
 
     /**
@@ -942,12 +810,9 @@ export class JSONRPCPlugin implements RuntimePlugin {
     /**
      * Send progress notification to SSE clients
      */
-    private sendProgress(sessionId: string, progress: ProgressNotification): void {
-        const client = this.progressClients.get(sessionId);
-        if (client) {
-            client.write(`data: ${JSON.stringify(progress)}\n\n`);
-        }
-    }
+    // private sendProgress(sessionId: string, progress: ProgressNotification): void {
+    //     // TODO: Implement for Hono
+    // }
 
     /**
      * Resolve result references in batch requests (e.g., $1.result.id)

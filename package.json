@@ -30,6 +30,7 @@
     "@objectql/plugin-security": "workspace:*",
     "@objectql/plugin-validator": "workspace:*",
     "@objectql/protocol-graphql": "workspace:*",
+    "@objectql/protocol-json-rpc": "workspace:*",
     "@objectql/protocol-odata-v4": "workspace:*",
     "@objectstack/cli": "0.8.1",
     "@objectstack/core": "0.8.1",
@@ -55,6 +56,7 @@
   },
   "version": "4.0.0",
   "dependencies": {
+    "@objectql/protocol-json-rpc": "workspace:*",
     "build": "^0.1.4"
   }
 }
