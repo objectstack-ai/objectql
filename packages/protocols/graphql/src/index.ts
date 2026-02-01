@@ -286,7 +286,7 @@ export class GraphQLPlugin implements RuntimePlugin {
         if (typeof this.engine.metadata.list === 'function') {
             try {
                 const objects = this.engine.metadata.list('object');
-                return objects.map((obj: any) => obj.content?.name || obj.name || obj.id).filter(Boolean);
+                return objects.map((obj: any) => obj.content?.name ?? obj.name ?? obj.id).filter(Boolean);
             } catch (e) {
                 return [];
             }
@@ -304,7 +304,7 @@ export class GraphQLPlugin implements RuntimePlugin {
         if (typeof this.engine.metadata.get === 'function') {
             const result = this.engine.metadata.get(type, name);
             // Handle both wrapped (with .content) and direct metadata structures
-            return result?.content || result;
+            return result?.content ?? result;
         }
         
         return null;
