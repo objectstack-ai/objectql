@@ -37,6 +37,17 @@ export interface GraphQLPluginConfig {
     maxDepth?: number;
     /** PubSub instance for subscriptions (default: in-memory) */
     pubsub?: PubSub;
+    /**
+     * Mount path for the GraphQL endpoint
+     * @default "/graphql"
+     */
+    path?: string;
+
+    /**
+     * Alias for path, used for consistency with other plugins
+     * @default "/graphql"
+     */
+    basePath?: string;
 }
 
 /**
@@ -94,8 +105,15 @@ export class GraphQLPlugin implements RuntimePlugin {
             typeDefs: config.typeDefs || '',
             enableSubscriptions: config.enableSubscriptions !== false,
             maxDepth: config.maxDepth || 10,
-            pubsub: config.pubsub || new PubSub()
-        };
+            pubsub: config.pubsub || new PubSub(),
+            path: config.path,
+            basePath: config.basePath
+        } as any;
+        
+        // Ensure defaults
+        if (!this.config.path && !this.config.basePath) {
+             this.config.path = '/graphql';
+        }
     }
 
     /**
@@ -260,7 +278,9 @@ export class GraphQLPlugin implements RuntimePlugin {
 
         // Mount on Hono
         // Based on common Hono-Apollo adapter patterns
-        app.use('/graphql', async (c: any) => {
+        const path = this.config.path || this.config.basePath || '/graphql';
+        // console.log(`[${this.name}] Mounting GraphQL endpoint at: ${path}`);
+        app.use(path, async (c: any) => {
             const httpGraphQLRequest = {
                 body: await c.req.json().catch(() => ({})),
                 headers: new HeaderMap(Object.entries(c.req.header())),

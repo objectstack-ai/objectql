@@ -61,6 +61,7 @@ export default {
         }),
         new ValidatorPlugin(),
         new GraphQLPlugin({
+            basePath: '/graphql',
             introspection: true,
             enableSubscriptions: true
         }),
