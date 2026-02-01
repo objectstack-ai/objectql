@@ -8,7 +8,7 @@
 
 import { MongoDriver } from '../src';
 import { MongoClient } from 'mongodb';
-import { MongoMemoryServer } from 'mongodb-memory-server';
+import { MongoMemoryReplSet } from 'mongodb-memory-server';
 
 /**
  * Integration tests for MongoDriver with real MongoDB operations.
@@ -32,18 +32,22 @@ const skipIfMongoUnavailable = () => {
 describe('MongoDriver Integration Tests', () => {
     let driver: MongoDriver;
     let client: MongoClient;
-    let mongod: MongoMemoryServer;
+    let mongod: MongoMemoryReplSet;
     let mongoUrl: string;
     let dbName: string;
 
     beforeAll(async () => {
         try {
-            // Use existing MONGO_URL if provided (e.g. implementation in CI services)
-            // Otherwise start an in-memory instance
+            // Use existing MONGO_URL if provided (e.g. in CI services)
+            // Otherwise start an in-memory replica set
             if (process.env.MONGO_URL) {
                 mongoUrl = process.env.MONGO_URL;
             } else {
-                mongod = await MongoMemoryServer.create();
+                // Create MongoDB Memory Replica Set
+                // This is required for change streams to work
+                mongod = await MongoMemoryReplSet.create({
+                    replSet: { count: 1, storageEngine: 'wiredTiger' }
+                });
                 mongoUrl = mongod.getUri();
             }
             
