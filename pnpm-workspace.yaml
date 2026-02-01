@@ -8,6 +8,7 @@ packages:
   - examples/integrations/*
   - examples/showcase/*
   - examples/drivers/*
+  - examples/protocols/*
   - apps/*
 
 onlyBuiltDependencies:

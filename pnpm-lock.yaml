@@ -249,6 +249,34 @@ importers:
         specifier: ^5.0.0
         version: 5.9.3
 
+  examples/protocols/multi-protocol-server:
+    dependencies:
+      '@objectql/core':
+        specifier: workspace:*
+        version: link:../../../packages/foundation/core
+      '@objectql/driver-memory':
+        specifier: workspace:*
+        version: link:../../../packages/drivers/memory
+      '@objectql/protocol-graphql':
+        specifier: workspace:*
+        version: link:../../../packages/protocols/graphql
+      '@objectql/protocol-json-rpc':
+        specifier: workspace:*
+        version: link:../../../packages/protocols/json-rpc
+      '@objectql/protocol-odata-v4':
+        specifier: workspace:*
+        version: link:../../../packages/protocols/odata-v4
+      '@objectql/types':
+        specifier: workspace:*
+        version: link:../../../packages/foundation/types
+    devDependencies:
+      tsx:
+        specifier: ^4.21.0
+        version: 4.21.0
+      typescript:
+        specifier: ^5.3.3
+        version: 5.9.3
+
   examples/quickstart/hello-world:
     dependencies:
       '@objectql/core':
