@@ -60,7 +60,7 @@ describe('JSONRPCPlugin', () => {
   describe('Plugin Lifecycle', () => {
     it('should have correct name and version', () => {
       expect(plugin.name).toBe('@objectql/protocol-json-rpc');
-      expect(plugin.version).toBe('0.1.0');
+      expect(plugin.version).toBe('0.2.0');
     });
 
     it('should install successfully', async () => {
