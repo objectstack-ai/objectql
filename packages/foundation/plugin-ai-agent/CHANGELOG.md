@@ -1,4 +1,4 @@
-# @objectql/plugin-security
+# @objectql/plugin-ai-agent
 
 ## 4.0.3
 
@@ -14,11 +14,5 @@
   - Bug fixes and stability improvements
 
 - Updated dependencies
+  - @objectql/plugin-validator@4.0.3
   - @objectql/types@4.0.3
-
-## 4.0.2
-
-### Patch Changes
-
-- Updated dependencies
-  - @objectql/types@4.0.2

@@ -1,4 +1,4 @@
-# @objectql/plugin-security
+# @objectql/example-multi-protocol-server
 
 ## 4.0.3
 
@@ -13,12 +13,8 @@
   - Improved documentation and developer tools
   - Bug fixes and stability improvements
 
-- Updated dependencies
-  - @objectql/types@4.0.3
+## 0.1.0
 
-## 4.0.2
+### Minor Changes
 
-### Patch Changes
-
-- Updated dependencies
-  - @objectql/types@4.0.2
+- Initial release of multi-protocol server example

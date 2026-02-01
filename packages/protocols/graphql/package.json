@@ -1,6 +1,6 @@
 {
   "name": "@objectql/protocol-graphql",
-  "version": "4.0.2",
+  "version": "4.0.3",
   "description": "GraphQL Protocol Plugin for ObjectStack",
   "type": "module",
   "main": "./dist/index.js",

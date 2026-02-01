@@ -14,6 +14,8 @@
       "@objectql/driver-mongo",
       "@objectql/driver-redis",
       "@objectql/driver-sql",
+      "@objectql/driver-tck",
+      "@objectql/example-multi-protocol-server",
       "@objectql/platform-node",
       "@objectql/plugin-ai-agent",
       "@objectql/plugin-formula",

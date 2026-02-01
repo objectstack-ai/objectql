@@ -1,4 +1,4 @@
-# @objectql/plugin-security
+# @objectql/driver-tck
 
 ## 4.0.3
 
@@ -13,12 +13,8 @@
   - Improved documentation and developer tools
   - Bug fixes and stability improvements
 
-- Updated dependencies
-  - @objectql/types@4.0.3
+## 4.0.0
 
-## 4.0.2
+### Major Changes
 
-### Patch Changes
-
-- Updated dependencies
-  - @objectql/types@4.0.2
+- Initial release of Technology Compatibility Kit for ObjectQL drivers

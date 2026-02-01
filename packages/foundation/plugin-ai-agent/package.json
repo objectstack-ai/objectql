@@ -1,6 +1,6 @@
 {
   "name": "@objectql/plugin-ai-agent",
-  "version": "4.0.2",
+  "version": "4.0.3",
   "description": "AI Agent plugin for ObjectQL - AI-powered application generation and validation",
   "keywords": [
     "objectql",
