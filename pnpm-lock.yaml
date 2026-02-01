@@ -43,11 +43,11 @@ importers:
         specifier: latest
         version: 0.8.0(esbuild@0.27.2)
       '@objectstack/core':
-        specifier: ^0.8.0
-        version: 0.8.0
+        specifier: ^0.8.1
+        version: 0.8.1
       '@objectstack/plugin-hono-server':
-        specifier: ^0.8.0
-        version: 0.8.0
+        specifier: ^0.8.1
+        version: 0.8.1
       '@types/jest':
         specifier: ^30.0.0
         version: 30.0.0
@@ -2303,11 +2303,17 @@ packages:
   '@objectstack/core@0.8.0':
     resolution: {integrity: sha512-V1mnVnBemTBrTykYGLxYZiCqQ9qBB7BiukZld++m6RKjmVivf4ipyoXQdOuLx5j/fQXo+FziprlMmG5z1sDm9A==}
 
+  '@objectstack/core@0.8.1':
+    resolution: {integrity: sha512-EWwNeHt2uiQ7KIUeYRVBJPIm98osHq23nEYmTQnzG3wcsnbMIM1rvIuZ1V+KQV4Blo3fneCf/UJoGMlfkyR+kA==}
+
   '@objectstack/objectql@0.8.0':
     resolution: {integrity: sha512-Kr1IXnWZKTxrdDNx+5ny9OHxkdb9IpEtjr/ZRQMh/TrgkRf7pFils9/k+FzJ3PJdZJkAWddAsTUbuhiKDHFVMw==}
 
   '@objectstack/plugin-hono-server@0.8.0':
     resolution: {integrity: sha512-wRo1ZTtmlWTYObp578W0cjuKagp61ho152HwBuVyOau207fGllZqa2oBbHR097h0KEisl7WsMrcYGVkBweO+kA==}
+
+  '@objectstack/plugin-hono-server@0.8.1':
+    resolution: {integrity: sha512-UMAjz+Xht/s0W52xNus8la1y7wM5KVnnWSqwSnqyItf88Pg7UgGy9jXo3ZPv6mXY9PrFOYmftbQEVqk8jG6k5w==}
 
   '@objectstack/runtime@0.8.0':
     resolution: {integrity: sha512-GZeTN8qR2qdqUl6+qhxPfH0Sqgq0Jsp8leU4sKs9qcMC/WuSpVEHDGQAES2vMZALqrnDIDdpQ1vMY9ZrkwZY3g==}
@@ -2316,8 +2322,15 @@ packages:
     resolution: {integrity: sha512-OvEceJrWoFE1Ou+j+VavXFy5xWK5L5XptaMsguMKF25J0gudt6Sn/EP/r2zigNMBWIHXmW54EgUC6wniJfaJTg==}
     engines: {node: '>=18.0.0'}
 
+  '@objectstack/spec@0.8.1':
+    resolution: {integrity: sha512-GsNWprjYGtO7TM7fLlqp8xtFHLT/6q0Jh3ILPEijxPsIli7aV42qZBgHIjWKsMxH6sGQRqUijfOdgDraZ9IHBA==}
+    engines: {node: '>=18.0.0'}
+
   '@objectstack/types@0.8.0':
     resolution: {integrity: sha512-ZuY9h2/ow8eOmFrW5jwXfZ1YCc6vWnp7DZdPRW9e5g65zZwxig8tXGcyN5c1uYtIU9C3q2AlSAvNuwLeOkgdBQ==}
+
+  '@objectstack/types@0.8.1':
+    resolution: {integrity: sha512-FgqDbDwmNuSNBvLqoN/IFT5JfSvWTRepYl/pVV8e5Cv3JxpG1FJrgNbyFVIE1VKs9mmxakBDZS/F68qWlLLNYg==}
 
   '@orama/orama@3.1.18':
     resolution: {integrity: sha512-a61ljmRVVyG5MC/698C8/FfFDw5a8LOIvyOLW5fztgUXqUpc1jOfQzOitSCbge657OgXXThmY3Tk8fpiDb4UcA==}
@@ -10454,6 +10467,13 @@ snapshots:
       pino-pretty: 10.3.1
       zod: 4.3.6
 
+  '@objectstack/core@0.8.1':
+    dependencies:
+      '@objectstack/spec': 0.8.1
+      pino: 8.21.0
+      pino-pretty: 10.3.1
+      zod: 4.3.6
+
   '@objectstack/objectql@0.8.0':
     dependencies:
       '@objectstack/core': 0.8.0
@@ -10468,6 +10488,14 @@ snapshots:
       '@objectstack/types': 0.8.0
       hono: 4.11.7
 
+  '@objectstack/plugin-hono-server@0.8.1':
+    dependencies:
+      '@hono/node-server': 1.19.9(hono@4.11.7)
+      '@objectstack/core': 0.8.1
+      '@objectstack/spec': 0.8.1
+      '@objectstack/types': 0.8.1
+      hono: 4.11.7
+
   '@objectstack/runtime@0.8.0':
     dependencies:
       '@objectstack/core': 0.8.0
@@ -10478,9 +10506,17 @@ snapshots:
     dependencies:
       zod: 4.3.6
 
+  '@objectstack/spec@0.8.1':
+    dependencies:
+      zod: 4.3.6
+
   '@objectstack/types@0.8.0':
     dependencies:
       '@objectstack/spec': 0.8.0
+
+  '@objectstack/types@0.8.1':
+    dependencies:
+      '@objectstack/spec': 0.8.1
 
   '@orama/orama@3.1.18': {}
 

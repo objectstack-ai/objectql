@@ -4,6 +4,7 @@ import config from '../objectql.config';
 async function main() {
     console.log('🚀 Starting ObjectStack Custom Dev Server...');
     
+    // @ts-ignore
     const kernel = new ObjectKernel({});
 
     if (config.plugins) {

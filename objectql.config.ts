@@ -15,26 +15,6 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as yaml from 'js-yaml';
 
-// --- Patch for @objectstack/cli @0.8.0 compatibility ---
-// Removed to prevent circular dependency error with @objectstack/core ESM
-/*
-import { ObjectKernel } from '@objectstack/core';
-try {
-    const proto = ObjectKernel.prototype;
-    if (!(proto as any).registerPlugin && (proto as any).use) {
-        (proto as any).registerPlugin = (proto as any).use;
-        console.log('Patched ObjectKernel.registerPlugin');
-    }
-    if (!(proto as any).boot && (proto as any).bootstrap) {
-        (proto as any).boot = (proto as any).bootstrap;
-        console.log('Patched ObjectKernel.boot');
-    }
-} catch (e) {
-    console.warn('Failed to patch ObjectKernel compatibility:', e);
-}
-*/
-// -------------------------------------------------------
-
 function loadObjects(dir: string) {
     const objects: Record<string, any> = {};
     if (!fs.existsSync(dir)) return objects;
