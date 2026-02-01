@@ -45,6 +45,9 @@ importers:
       '@objectstack/core':
         specifier: ^0.8.0
         version: 0.8.0
+      '@objectstack/plugin-hono-server':
+        specifier: ^0.8.0
+        version: 0.8.0
       '@types/jest':
         specifier: ^30.0.0
         version: 30.0.0

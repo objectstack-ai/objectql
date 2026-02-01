@@ -9,7 +9,7 @@
  */
 
 import type { RuntimePlugin, RuntimeContext } from '@objectql/types';
-import { ApolloServer } from '@apollo/server';
+import { ApolloServer, HeaderMap } from '@apollo/server';
 import { expressMiddleware } from '@apollo/server/express4';
 import { ApolloServerPluginDrainHttpServer } from '@apollo/server/plugin/drainHttpServer';
 import { createServer } from 'http';
@@ -85,6 +85,7 @@ export class GraphQLPlugin implements RuntimePlugin {
     private wsServer?: WebSocketServer;
     private expressApp?: any;
     private dataLoaders: Map<string, DataLoader<string, any>> = new Map();
+    private ctx?: any;
 
     constructor(config: GraphQLPluginConfig = {}) {
         this.config = {
@@ -102,6 +103,7 @@ export class GraphQLPlugin implements RuntimePlugin {
      */
     async install(ctx: RuntimeContext): Promise<void> {
         console.log(`[${this.name}] Installing GraphQL protocol plugin...`);
+        this.ctx = ctx;
         
         // Store reference to the engine for later use
         this.engine = ctx.engine || (ctx as any).getKernel?.();
@@ -118,7 +120,15 @@ export class GraphQLPlugin implements RuntimePlugin {
             throw new Error('Protocol not initialized. Install hook must be called first.');
         }
 
-        console.log(`[${this.name}] Starting GraphQL server with subscriptions...`);
+        // Check for Hono server service
+        const httpServer = (this.ctx as any).getService?.('http-server');
+        if (httpServer && httpServer.app) {
+            console.log(`[${this.name}] Attaching to existing Hono server...`);
+            await this.attachToHono(httpServer.app);
+            return;
+        }
+
+        console.log(`[${this.name}] Starting GraphQL server with subscriptions (Standalone)...`);
 
         // Generate schema from metadata
         const typeDefs = this.generateSchema();
@@ -225,6 +235,72 @@ export class GraphQLPlugin implements RuntimePlugin {
         return this.onStart(ctx);
     }
     // ---------------------------------------------------
+
+    private async attachToHono(app: any) {
+        // Generate schema
+        const typeDefs = this.generateSchema();
+        const resolvers = this.generateResolvers();
+        const schema = makeExecutableSchema({ typeDefs, resolvers });
+
+        // Initialize Apollo Server (without express middleware yet)
+        this.server = new ApolloServer({
+            schema,
+            introspection: this.config.introspection,
+            plugins: [
+                {
+                    async serverWillStart() {
+                        return { async drainServer() {} };
+                    }
+                }
+            ],
+            includeStacktraceInErrorResponses: process.env.NODE_ENV !== 'production',
+        });
+
+        await this.server.start();
+
+        // Mount on Hono
+        // Based on common Hono-Apollo adapter patterns
+        app.use('/graphql', async (c: any) => {
+            const httpGraphQLRequest = {
+                body: await c.req.json().catch(() => ({})),
+                headers: new HeaderMap(c.req.header()),
+                method: c.req.method,
+                search: new URL(c.req.url).search,
+            };
+
+            const httpGraphQLResponse = await this.server!.executeHTTPGraphQLRequest({
+                httpGraphQLRequest,
+                context: async () => ({
+                    engine: this.engine,
+                    pubsub: this.config.pubsub,
+                    dataLoaders: this.getDataLoaders()
+                }),
+            });
+
+            // Set headers
+            for (const [key, value] of httpGraphQLResponse.headers) {
+                c.header(key, value);
+            }
+            c.status(httpGraphQLResponse.status || 200);
+
+            if (httpGraphQLResponse.body.kind === 'complete') {
+                return c.body(httpGraphQLResponse.body.string);
+            } else {
+                // Determine if we are allowed to stream
+                 // For now, simpler to text
+                 let text = '';
+                 for await (const chunk of httpGraphQLResponse.body.asyncIterator) {
+                     text += chunk;
+                 }
+                 return c.body(text);
+            }
+        });
+        
+        console.log(`[${this.name}] 🚀 GraphQL mounted at /graphql`);
+        if (this.config.introspection) {
+            console.log(`[${this.name}] 📊 Apollo Sandbox available at /graphql`);
+        }
+    }
 
     /**
      * Stop hook - called when kernel stops

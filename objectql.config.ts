@@ -10,6 +10,7 @@ import { ObjectQLSecurityPlugin } from '@objectql/plugin-security';
 import { ValidatorPlugin } from '@objectql/plugin-validator';
 import { GraphQLPlugin } from '@objectql/protocol-graphql';
 import { ODataV4Plugin } from '@objectql/protocol-odata-v4';
+import { HonoServerPlugin } from '@objectstack/plugin-hono-server';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as yaml from 'js-yaml';
@@ -63,17 +64,18 @@ export default {
     objects: loadObjects(projectTrackerDir),
     // Runtime plugins (instances only)
     plugins: [
+        new HonoServerPlugin({
+            port: 3000
+        }),
         new ObjectQLSecurityPlugin({
             enableAudit: false
         }),
         new ValidatorPlugin(),
         new GraphQLPlugin({
-            port: 4000,
             introspection: true,
             enableSubscriptions: true
         }),
         new ODataV4Plugin({
-            port: 8080,
             basePath: '/odata',
             enableBatch: true,
             enableSearch: true,

@@ -108,7 +108,15 @@ export class ODataV4Plugin implements RuntimePlugin {
             throw new Error('Protocol not initialized. Install hook must be called first.');
         }
 
-        console.log(`[${this.name}] Starting OData V4 server...`);
+        // Check if Hono server is available via service injection
+        const httpServer = (ctx as any).getService?.('http-server');
+        if (httpServer && httpServer.app) {
+             console.log(`[${this.name}] 🔗 Attaching to shared Hono server...`);
+             await this.attachToHono(httpServer.app);
+             return;
+        }
+
+        console.log(`[${this.name}] Starting OData V4 server (standalone)...`);
 
         // Create HTTP server with request handler
         this.server = createServer((req, res) => this.handleRequest(req, res));
@@ -122,6 +130,72 @@ export class ODataV4Plugin implements RuntimePlugin {
                 resolve();
             });
         });
+    }
+
+    private async attachToHono(app: any) {
+        const basePath = this.config.basePath || '/odata';
+        
+        // Register wildcard route for this base path
+        app.all(`${basePath}/*`, async (c: any) => {
+             // Pre-read body to ensure we have it all and can emit it via the shim
+             const bodyText = await c.req.text().catch(() => '');
+
+             let responseBody: any = null;
+             let statusCode = 200;
+             const headers: Record<string, string> = {};
+
+             const reqShim: any = {
+                 url: c.req.url.replace(new URL(c.req.url).origin, ''), // /odata/foo
+                 method: c.req.method,
+                 headers: c.req.header(),
+                 on: (event: string, callback: any) => {
+                     if (event === 'data') {
+                         if (bodyText) {
+                             // Emit as buffer so toString() works as expected in readBody
+                             callback(Buffer.from(bodyText));
+                         }
+                     }
+                     if (event === 'end') {
+                         callback(); 
+                     }
+                     return reqShim;
+                 }
+             };
+
+             const resShim: any = {
+                 setHeader: (key: string, value: string) => {
+                     headers[key] = value;
+                 },
+                 writeHead: (code: number, headersArgs?: any) => {
+                     statusCode = code;
+                     if (headersArgs) {
+                         Object.assign(headers, headersArgs);
+                     }
+                 },
+                 write: (chunk: any) => {
+                     if (responseBody === null) responseBody = chunk;
+                     else {
+                         if (typeof responseBody === 'string') responseBody += chunk;
+                         else if (Buffer.isBuffer(responseBody)) responseBody = Buffer.concat([responseBody, chunk]);
+                         else responseBody = [responseBody, chunk]; 
+                     }
+                 },
+                 end: (chunk: any) => {
+                     if (chunk) resShim.write(chunk);
+                 }
+             };
+             
+             await this.handleRequest(reqShim, resShim);
+
+             // Construct Hono response
+             for (const [k, v] of Object.entries(headers)) {
+                 c.header(k, v);
+             }
+             c.status(statusCode);
+             return c.body(responseBody);
+        });
+
+        console.log(`[${this.name}] 🚀 OData mounted at ${basePath}`);
     }
 
     // --- Adapter for @objectstack/core compatibility ---
