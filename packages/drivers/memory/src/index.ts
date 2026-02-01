@@ -795,8 +795,28 @@ export class MemoryDriver implements Driver {
             return {};
         }
         
-        // If filters is already an object (FilterCondition format), return it directly
-        if (!Array.isArray(filters)) {
+        // Handle AST node format (ObjectQL QueryAST)
+        if (!Array.isArray(filters) && typeof filters === 'object') {
+            // Check if it's an AST node
+            if (filters.type === 'comparison') {
+                // Convert comparison node to MongoDB query
+                const mongoCondition = this.convertConditionToMongo(filters.field, filters.operator, filters.value);
+                return mongoCondition || {};
+            } else if (filters.type === 'logical') {
+                // Convert logical node to MongoDB query
+                const conditions = filters.conditions?.map((cond: any) => this.convertToMongoQuery(cond)) || [];
+                if (conditions.length === 0) {
+                    return {};
+                }
+                if (conditions.length === 1) {
+                    return conditions[0];
+                }
+                const operator = filters.operator === 'or' ? '$or' : '$and';
+                return { [operator]: conditions };
+            }
+            
+            // If it's already in MongoDB format (has $ operators or simple field:value pairs), return as-is
+            // This handles cases where filters is already a proper MongoDB query
             return filters;
         }
         
