@@ -286,7 +286,7 @@ export class GraphQLPlugin implements RuntimePlugin {
         if (typeof this.engine.metadata.list === 'function') {
             try {
                 const objects = this.engine.metadata.list('object');
-                return objects.map((obj: any) => obj.name || obj.id).filter(Boolean);
+                return objects.map((obj: any) => obj.content?.name || obj.name || obj.id).filter(Boolean);
             } catch (e) {
                 return [];
             }
@@ -302,7 +302,9 @@ export class GraphQLPlugin implements RuntimePlugin {
         if (!this.engine?.metadata) return null;
         
         if (typeof this.engine.metadata.get === 'function') {
-            return this.engine.metadata.get(type, name);
+            const result = this.engine.metadata.get(type, name);
+            // Handle both wrapped (with .content) and direct metadata structures
+            return result?.content || result;
         }
         
         return null;
@@ -505,6 +507,9 @@ export class GraphQLPlugin implements RuntimePlugin {
             
             if (metadata?.fields) {
                 for (const [fieldName, field] of Object.entries(metadata.fields as Record<string, any>)) {
+                    // Skip id field as it's already added above
+                    if (fieldName === 'id') continue;
+                    
                     const graphqlType = this.mapFieldTypeToGraphQL(field.type);
                     const required = field.required ? '!' : '';
                     typeDefs += `    ${fieldName}: ${graphqlType}${required}\n`;
@@ -562,6 +567,9 @@ export class GraphQLPlugin implements RuntimePlugin {
             
             if (metadata?.fields) {
                 for (const [fieldName, field] of Object.entries(metadata.fields as Record<string, any>)) {
+                    // Skip id field as it's already added above
+                    if (fieldName === 'id') continue;
+                    
                     const fieldType = field.type;
                     if (fieldType === 'text' || fieldType === 'textarea' || fieldType === 'email' || fieldType === 'url') {
                         typeDefs += `    ${fieldName}: StringFilter\n`;
