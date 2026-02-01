@@ -13,6 +13,7 @@ module.exports = {
   collectCoverageFrom: ['src/**/*.ts'],
   moduleNameMapper: {
     '^@objectql/types$': '<rootDir>/../../foundation/types/src',
+    '^@objectql/driver-memory$': '<rootDir>/../memory/src',
   },
   transform: {
     '^.+\\.ts$': ['ts-jest', {

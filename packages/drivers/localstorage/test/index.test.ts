@@ -591,9 +591,8 @@ describe('LocalStorageDriver', () => {
     
     describe('Aggregation Operations', () => {
         beforeEach(async () => {
-            // Clear localStorage
-            const keys = Object.keys(localStorage).filter(k => k.startsWith('objectql:'));
-            keys.forEach(k => localStorage.removeItem(k));
+            // Clear storage using the mock
+            storage.clear();
             
             // Create sample data for aggregation tests
             await driver.create('orders', { id: '1', customer: 'Alice', product: 'Phone', amount: 500, quantity: 2, status: 'completed' });

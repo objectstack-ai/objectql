@@ -8,11 +8,21 @@
 
 module.exports = {
   preset: 'ts-jest',
-  testEnvironment: 'jsdom',
+  testEnvironment: 'node',
   testMatch: ['**/test/**/*.test.ts'],
   collectCoverageFrom: ['src/**/*.ts'],
   moduleNameMapper: {
     '^@objectql/types$': '<rootDir>/../../foundation/types/src',
+    '^@objectql/driver-memory$': '<rootDir>/../memory/src',
+  },
+  transform: {
+    '^.+\\.ts$': ['ts-jest', {
+      isolatedModules: true,
+      tsconfig: {
+        esModuleInterop: true,
+        allowSyntheticDefaultImports: true,
+      }
+    }],
   },
   transformIgnorePatterns: [
     'node_modules/(?!(mingo)/)'
