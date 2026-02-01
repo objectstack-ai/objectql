@@ -9,7 +9,7 @@
 import { ObjectQL } from '@objectql/core';
 import { SqlDriver } from '@objectql/driver-sql';
 import { ObjectLoader, loadModules } from '@objectql/platform-node';
-import { createNodeHandler, createGraphQLHandler } from '@objectql/server';
+// import { createNodeHandler, createGraphQLHandler } from '@objectql/server';
 import { createServer } from 'http';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -129,10 +129,12 @@ export async function serve(options: {
     }
 
     // 3. Create Handler
-    const internalHandler = createNodeHandler(app);
-    const graphqlHandler = createGraphQLHandler(app);
+    // const internalHandler = createNodeHandler(app);
+    // const graphqlHandler = createGraphQLHandler(app);
+    throw new Error('This command is deprecated. Please use "objectstack serve" instead.');
 
     // 4. Start Server
+    /*
     const server = createServer(async (req, res) => {
         // Serve API Docs at Root (Default)
         if (req.method === 'GET' && (req.url === '/' || req.url === '/docs' || req.url === '/docs/')) {
@@ -191,4 +193,5 @@ export async function serve(options: {
     };
 
     tryListen(startPort);
+    */
 }

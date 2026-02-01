@@ -9,7 +9,7 @@
 import { ObjectQL } from '@objectql/core';
 import { SqlDriver } from '@objectql/driver-sql';
 import { ObjectLoader, loadModules } from '@objectql/platform-node';
-import { createNodeHandler } from '@objectql/server';
+// import { createNodeHandler } from '@objectql/server';
 import { createServer } from 'http';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -103,8 +103,10 @@ export async function start(options: StartOptions) {
     }
 
     // Create Handler
-    const handler = createNodeHandler(app);
+    // const handler = createNodeHandler(app);
+    throw new Error('This command is deprecated. Please use "objectstack serve" instead.');
 
+    /*
     // Start Server
     const server = createServer(async (req, res) => {
         await handler(req, res);
@@ -124,4 +126,5 @@ export async function start(options: StartOptions) {
             });
         });
     });
+    */
 }

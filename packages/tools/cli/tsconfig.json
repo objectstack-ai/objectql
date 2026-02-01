@@ -9,7 +9,7 @@
     { "path": "../../foundation/types" },
     { "path": "../../foundation/plugin-validator" },
     { "path": "../../foundation/core" },
-    { "path": "../../runtime/server" },
+    { "path": "../../protocols/rest" },
     { "path": "../../foundation/platform-node" },
     { "path": "../../drivers/sql" }
   ]
