@@ -3,7 +3,6 @@
   "private": true,
   "packageManager": "pnpm@10.28.2",
   "scripts": {
-    "dev": "pnpm objectql:tracker",
     "build": "turbo run build",
     "build:legacy": "tsc -b && pnpm -r run build",
     "clean": "rm -rf dist packages/*/dist packages/*/node_modules node_modules",
@@ -12,9 +11,6 @@
     "lint": "turbo run lint",
     "format": "prettier --write \"packages/**/*.{ts,tsx,json,md}\"",
     "cli:dev": "ts-node packages/tools/cli/src/index.ts",
-    "objectql": "tsx packages/tools/cli/src/index.ts",
-    "objectql:tracker": "pnpm objectql dev -d examples/showcase/project-tracker/src",
-    "objectql:erp": "pnpm objectql dev -d examples/showcase/enterprise-erp/src",
     "check-versions": "node scripts/check-versions.js",
     "analyze-deps": "node scripts/analyze-dependencies.js",
     "audit-coverage": "node scripts/audit-test-coverage.js",
