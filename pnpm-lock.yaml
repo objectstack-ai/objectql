@@ -655,6 +655,9 @@ importers:
         specifier: ^8.14.0
         version: 8.19.0
     devDependencies:
+      '@objectql/driver-memory':
+        specifier: workspace:*
+        version: link:../../drivers/memory
       '@objectstack/core':
         specifier: ^0.7.1
         version: 0.7.1
@@ -683,6 +686,9 @@ importers:
         specifier: ^0.7.1
         version: 0.7.1
     devDependencies:
+      '@objectql/driver-memory':
+        specifier: workspace:*
+        version: link:../../drivers/memory
       '@objectstack/core':
         specifier: ^0.7.1
         version: 0.7.1
