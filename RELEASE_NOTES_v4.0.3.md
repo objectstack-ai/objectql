@@ -58,6 +58,7 @@ All ObjectQL packages have been updated to version 4.0.3:
 - `@objectql/server@4.0.3`
 - `@objectql/cli@4.0.3`
 - `@objectql/create@4.0.3`
+- `@objectql/driver-tck@4.0.3`
 
 ### Examples
 - `@objectql/example-hello-world@4.0.3`
@@ -66,6 +67,7 @@ All ObjectQL packages have been updated to version 4.0.3:
 - `@objectql/example-excel-demo@4.0.3`
 - `@objectql/example-express-server@4.0.3`
 - `@objectql/example-browser@4.0.3`
+- `@objectql/example-multi-protocol-server@4.0.3`
 
 ## Installation
 
