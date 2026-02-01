@@ -181,6 +181,26 @@ export class ObjectQLPlugin implements RuntimePlugin {
     console.log(`[${this.name}] Starting plugin...`);
     // Additional startup logic can be added here
   }
+
+  // --- Adapter for @objectstack/core compatibility ---
+  async init(kernel: any): Promise<void> {
+      // The new core passes the kernel instance directly
+      // We wrap it to match the old RuntimeContext interface
+      const ctx = {
+          engine: kernel,
+          getKernel: () => kernel
+      };
+      return this.install(ctx);
+  }
+
+  async start(kernel: any): Promise<void> {
+      const ctx = {
+          engine: kernel,
+          getKernel: () => kernel
+      };
+      return this.onStart(ctx);
+  }
+  // ---------------------------------------------------
   
   /**
    * Register the Repository pattern

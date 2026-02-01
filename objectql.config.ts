@@ -11,6 +11,7 @@ import { ValidatorPlugin } from '@objectql/plugin-validator';
 import { GraphQLPlugin } from '@objectql/protocol-graphql';
 import { ODataV4Plugin } from '@objectql/protocol-odata-v4';
 import { HonoServerPlugin } from '@objectstack/plugin-hono-server';
+import { ObjectQLPlugin } from '@objectql/core';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as yaml from 'js-yaml';
@@ -48,6 +49,10 @@ export default {
     // Runtime plugins (instances only)
     plugins: [
         new HonoServerPlugin({
+        }),
+        new ObjectQLPlugin({
+            enableRepository: true,
+            enableQueryService: true
         }),
         new ObjectQLSecurityPlugin({
             enableAudit: false

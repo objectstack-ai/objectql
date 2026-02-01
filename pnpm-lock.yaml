@@ -21,6 +21,9 @@ importers:
       '@objectql/cli':
         specifier: workspace:*
         version: link:packages/tools/cli
+      '@objectql/core':
+        specifier: ^4.0.3
+        version: 4.0.3
       '@objectql/example-enterprise-erp':
         specifier: workspace:*
         version: link:examples/showcase/enterprise-erp
@@ -2295,6 +2298,18 @@ packages:
     resolution: {integrity: sha512-1SUf/Cg2GzGDyaf15aR9St9TWlb+XvbZXWpDx8YKs7MLzMH/BCeopv+y9vzrzgkfykCGuWOlSu3mZhj2+FQcrg==}
     engines: {node: '>=10'}
     deprecated: This functionality has been moved to @npmcli/fs
+
+  '@objectql/core@4.0.3':
+    resolution: {integrity: sha512-f8QHrjmEvQ8pOLIkg6bGLA+j1qfZ4r8l0qZ3ksHa9RPaJyHvQAQw9hxDLh+lbmxz/KVIT5pEtKWmgHP6hJgeJQ==}
+
+  '@objectql/plugin-formula@4.0.3':
+    resolution: {integrity: sha512-epwFfRMFXlaAZIDyY0czlJd1p7M/bJPI0f1e4TLFh6Jw4pqPcElImB7e4dQYAk+af/2dPWNMlwwx5Law2UE8/g==}
+
+  '@objectql/plugin-validator@4.0.3':
+    resolution: {integrity: sha512-evhd29vLGzRPRhJFzrmIXQYUwIUxP9pJ+uJuS4ZTkchfVLlYcFplCWHNd79+cY19+ZqaGfT2WqShYXPB5kSNhw==}
+
+  '@objectql/types@4.0.3':
+    resolution: {integrity: sha512-Z9mBxaCe6UD6sq3rDrzdrnqkceW8+lTa24InhDd4zMu9kBrsvHnqrNMXRLbt0kqp8kq3uVZ//vH/ye5pTGOoOw==}
 
   '@objectstack/cli@0.8.1':
     resolution: {integrity: sha512-cx1eZO0vKyf/GXvnCNNBCTrU8Uau7pIACUSz/n5KI9iprinHQn+mFG4HuaBnHvF0GGVKmOBG5y3Hf39xhDAfNg==}
@@ -10445,6 +10460,30 @@ snapshots:
       mkdirp: 1.0.4
       rimraf: 3.0.2
     optional: true
+
+  '@objectql/core@4.0.3':
+    dependencies:
+      '@objectql/plugin-formula': 4.0.3
+      '@objectql/plugin-validator': 4.0.3
+      '@objectql/types': 4.0.3
+      '@objectstack/core': 0.8.1
+      '@objectstack/objectql': 0.8.0
+      '@objectstack/runtime': 0.8.0
+      '@objectstack/spec': 0.8.1
+      js-yaml: 4.1.1
+
+  '@objectql/plugin-formula@4.0.3':
+    dependencies:
+      '@objectql/types': 4.0.3
+
+  '@objectql/plugin-validator@4.0.3':
+    dependencies:
+      '@objectql/types': 4.0.3
+
+  '@objectql/types@4.0.3':
+    dependencies:
+      '@objectstack/objectql': 0.8.0
+      '@objectstack/spec': 0.8.1
 
   '@objectstack/cli@0.8.1(@objectstack/core@0.8.1)(esbuild@0.27.2)':
     dependencies:
