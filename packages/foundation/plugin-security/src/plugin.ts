@@ -78,8 +78,8 @@ export class ObjectQLSecurityPlugin implements RuntimePlugin {
    * Install the plugin into the kernel
    * This is called during kernel initialization
    */
-  async install(ctx: RuntimeContext): Promise<void> {
-    const kernel = (ctx.engine || ctx.getKernel?.()) as KernelWithSecurity;
+  async install(ctx: any): Promise<void> {
+    const kernel = (ctx.engine || (ctx.getKernel && ctx.getKernel())) as KernelWithSecurity;
     
     console.log(`[${this.name}] Installing security plugin...`);
     
@@ -114,7 +114,7 @@ export class ObjectQLSecurityPlugin implements RuntimePlugin {
     };
     
     // Register security hooks
-    this.registerSecurityHooks(kernel);
+    this.registerSecurityHooks(kernel, ctx);
     
     console.log(`[${this.name}] Security plugin installed successfully`);
   }
@@ -125,31 +125,49 @@ export class ObjectQLSecurityPlugin implements RuntimePlugin {
   async onStart(ctx: RuntimeContext): Promise<void> {
     console.log(`[${this.name}] Security plugin started`);
   }
+
+  // --- Adapter for @objectstack/core compatibility ---
+  async init(ctx: any): Promise<void> {
+    return this.install(ctx);
+  }
+
+  async start(ctx: any): Promise<void> {
+    return this.onStart(ctx);
+  }
+  // ---------------------------------------------------
   
   /**
    * Register security hooks with the kernel
    * @private
    */
-  private registerSecurityHooks(kernel: KernelWithSecurity): void {
+  private registerSecurityHooks(kernel: KernelWithSecurity, ctx: any): void {
+    const registerHook = (name: string, handler: any) => {
+        if (typeof ctx.hook === 'function') {
+            ctx.hook(name, handler);
+        } else if (typeof (kernel as any).use === 'function') {
+            (kernel as any).use(name, handler);
+        } else if (typeof (kernel as any).hooks?.register === 'function') {
+           (kernel as any).hooks.register(name, handler);
+        }
+    };
+
     // Register beforeQuery hook for row-level security
-    if (this.config.enableRowLevelSecurity && typeof (kernel as any).use === 'function') {
-      (kernel as any).use('beforeQuery', async (context: any) => {
+    if (this.config.enableRowLevelSecurity) {
+      registerHook('beforeQuery', async (context: any) => {
         await this.handleBeforeQuery(context);
       });
       console.log(`[${this.name}] beforeQuery hook registered`);
     }
     
     // Register beforeMutation hook for permission checks
-    if (typeof (kernel as any).use === 'function') {
-      (kernel as any).use('beforeMutation', async (context: any) => {
+    registerHook('beforeMutation', async (context: any) => {
         await this.handleBeforeMutation(context);
-      });
-      console.log(`[${this.name}] beforeMutation hook registered`);
-    }
+    });
+    console.log(`[${this.name}] beforeMutation hook registered`);
     
     // Register afterQuery hook for field-level security
-    if (this.config.enableFieldLevelSecurity && typeof (kernel as any).use === 'function') {
-      (kernel as any).use('afterQuery', async (context: any) => {
+    if (this.config.enableFieldLevelSecurity) {
+      registerHook('afterQuery', async (context: any) => {
         await this.handleAfterQuery(context);
       });
       console.log(`[${this.name}] afterQuery hook registered`);

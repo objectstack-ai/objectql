@@ -66,8 +66,8 @@ export class ValidatorPlugin implements RuntimePlugin {
    * Install the plugin into the kernel
    * Registers validation middleware for queries and mutations
    */
-  async install(ctx: RuntimeContext): Promise<void> {
-    const kernel = ctx.engine as KernelWithValidator;
+  async install(ctx: RuntimeContext | any): Promise<void> {
+    const kernel = (ctx.engine || (ctx.getKernel && ctx.getKernel())) as KernelWithValidator;
     
     console.log(`[${this.name}] Installing validator plugin...`);
     
@@ -76,25 +76,42 @@ export class ValidatorPlugin implements RuntimePlugin {
     
     // Register validation middleware for queries (if enabled)
     if (this.config.enableQueryValidation !== false) {
-      this.registerQueryValidation(kernel);
+      this.registerQueryValidation(kernel, ctx);
     }
     
     // Register validation middleware for mutations (if enabled)
     if (this.config.enableMutationValidation !== false) {
-      this.registerMutationValidation(kernel);
+      this.registerMutationValidation(kernel, ctx);
     }
     
     console.log(`[${this.name}] Validator plugin installed`);
   }
+
+  // --- Adapter for @objectstack/core compatibility ---
+  async init(ctx: any): Promise<void> {
+    return this.install(ctx);
+  }
+
+  async start(ctx: any): Promise<void> {
+    // Validator plugin doesn't have onStart logic in legacy
+    return Promise.resolve();
+  }
+  // ---------------------------------------------------
   
   /**
    * Register query validation middleware
    * @private
    */
-  private registerQueryValidation(kernel: KernelWithValidator): void {
-    // Check if kernel supports hook registration
-    if (kernel.hooks && typeof kernel.hooks.register === 'function') {
-      kernel.hooks.register('beforeQuery', async (context: any) => {
+  private registerQueryValidation(kernel: KernelWithValidator, ctx: any): void {
+      const registerHook = (name: string, handler: any) => {
+        if (typeof ctx.hook === 'function') {
+            ctx.hook(name, handler);
+        } else if (kernel.hooks && typeof kernel.hooks.register === 'function') {
+            kernel.hooks.register(name, handler);
+        }
+      };
+
+    registerHook('beforeQuery', async (context: any) => {
         // Query validation logic
         // In a real implementation, this would validate query parameters
         // For now, this is a placeholder that demonstrates the integration pattern
@@ -106,17 +123,22 @@ export class ValidatorPlugin implements RuntimePlugin {
           // );
         }
       });
-    }
   }
   
   /**
    * Register mutation validation middleware
    * @private
    */
-  private registerMutationValidation(kernel: KernelWithValidator): void {
-    // Check if kernel supports hook registration
-    if (kernel.hooks && typeof kernel.hooks.register === 'function') {
-      kernel.hooks.register('beforeMutation', async (context: any) => {
+  private registerMutationValidation(kernel: KernelWithValidator, ctx: any): void {
+      const registerHook = (name: string, handler: any) => {
+        if (typeof ctx.hook === 'function') {
+            ctx.hook(name, handler);
+        } else if (kernel.hooks && typeof kernel.hooks.register === 'function') {
+            kernel.hooks.register(name, handler);
+        }
+      };
+
+    registerHook('beforeMutation', async (context: any) => {
         // Mutation validation logic
         // This would validate data before create/update operations
         if (context.data && context.metadata?.validation_rules) {
@@ -130,7 +152,6 @@ export class ValidatorPlugin implements RuntimePlugin {
           // }
         }
       });
-    }
   }
   
   /**
