@@ -235,8 +235,12 @@ export class GraphQLPlugin implements RuntimePlugin {
         if (this.httpServer) {
             await new Promise<void>((resolve, reject) => {
                 this.httpServer.close((err: any) => {
-                    if (err) reject(err);
-                    else resolve();
+                    // Ignore ERR_SERVER_NOT_RUNNING as it means the server is already stopped
+                    if (err && err.code !== 'ERR_SERVER_NOT_RUNNING') {
+                        reject(err);
+                    } else {
+                        resolve();
+                    }
                 });
             });
             this.httpServer = undefined;
