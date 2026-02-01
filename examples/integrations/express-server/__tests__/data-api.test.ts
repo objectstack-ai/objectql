@@ -18,7 +18,7 @@ import express from 'express';
 import { ObjectQL } from '@objectql/core';
 import { SqlDriver } from '@objectql/driver-sql';
 import { ObjectLoader } from '@objectql/platform-node';
-import { createNodeHandler, createRESTHandler } from '@objectql/server';
+import { createNodeHandler, createRESTHandler } from '@objectql/protocol-rest';
 import * as path from 'path';
 
 describe('Data API', () => {
