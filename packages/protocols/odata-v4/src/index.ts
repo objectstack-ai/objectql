@@ -116,11 +116,23 @@ export class ODataV4Plugin implements RuntimePlugin {
         // Start listening
         await new Promise<void>((resolve) => {
             this.server!.listen(this.config.port, () => {
-                console.log(`[${this.name}] OData V4 server listening on http://localhost:${this.config.port}${this.config.basePath}`);
+                console.log(`[${this.name}] 🚀 OData V4 server listening on http://localhost:${this.config.port}${this.config.basePath}`);
+                console.log(`[${this.name}] 📄 Service Document: http://localhost:${this.config.port}${this.config.basePath}`);
+                console.log(`[${this.name}] 📝 Metadata Document: http://localhost:${this.config.port}${this.config.basePath}/$metadata`);
                 resolve();
             });
         });
     }
+
+    // --- Adapter for @objectstack/core compatibility ---
+    async init(ctx: any): Promise<void> {
+        return this.install(ctx);
+    }
+
+    async start(ctx: any): Promise<void> {
+        return this.onStart(ctx);
+    }
+    // ---------------------------------------------------
 
     /**
      * Stop hook - called when kernel stops

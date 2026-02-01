@@ -36,6 +36,9 @@ importers:
       '@objectql/protocol-graphql':
         specifier: workspace:*
         version: link:packages/protocols/graphql
+      '@objectql/protocol-odata-v4':
+        specifier: workspace:*
+        version: link:packages/protocols/odata-v4
       '@objectstack/cli':
         specifier: latest
         version: 0.8.0(esbuild@0.27.2)

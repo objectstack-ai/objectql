@@ -9,6 +9,7 @@
 import { ObjectQLSecurityPlugin } from '@objectql/plugin-security';
 import { ValidatorPlugin } from '@objectql/plugin-validator';
 import { GraphQLPlugin } from '@objectql/protocol-graphql';
+import { ODataV4Plugin } from '@objectql/protocol-odata-v4';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as yaml from 'js-yaml';
@@ -70,6 +71,13 @@ export default {
             port: 4000,
             introspection: true,
             enableSubscriptions: true
+        }),
+        new ODataV4Plugin({
+            port: 8080,
+            basePath: '/odata',
+            enableBatch: true,
+            enableSearch: true,
+            enableETags: true
         })
     ]
 };

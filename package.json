@@ -32,6 +32,7 @@
     "@objectql/plugin-security": "workspace:*",
     "@objectql/plugin-validator": "workspace:*",
     "@objectql/protocol-graphql": "workspace:*",
+    "@objectql/protocol-odata-v4": "workspace:*",
     "@objectstack/cli": "latest",
     "@objectstack/core": "^0.8.0",
     "@types/jest": "^30.0.0",
