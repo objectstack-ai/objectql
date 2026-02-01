@@ -344,10 +344,15 @@ These features have type definitions but require implementation in your applicat
 - **[🌐 Protocol Compliance Summary](./PROTOCOL_COMPLIANCE_SUMMARY.md)** - Quick reference (CN/EN)
 - **[📊 Protocol Compliance Report](./PROTOCOL_COMPLIANCE_REPORT.md)** - Comprehensive audit (60 pages)
 - **[🗺️ Protocol Development Plan (中文)](./PROTOCOL_DEVELOPMENT_PLAN_ZH.md)** - Detailed roadmap (100 pages)
+- **[🏗️ Microkernel Development Plan](./MICROKERNEL_DEVELOPMENT_PLAN.md)** - Plugin architecture and ecosystem plan (EN)
+- **[🏗️ 微内核开发计划](./MICROKERNEL_DEVELOPMENT_PLAN_ZH.md)** - 插件架构与生态系统计划 (中文)
+- **[📦 Package Scan Summary](./PACKAGE_SCAN_SUMMARY.md)** - Executive summary of all 33 packages
 - **[Roadmap](./docs/roadmap.md)** - Long-term vision and milestones *(if exists)*
 - **[Contributing Guide](./docs/contributing.md)** - How to contribute *(if exists)*
 
 > **💡 See [IMPLEMENTATION_STATUS.md](./IMPLEMENTATION_STATUS.md) for a comprehensive breakdown of what's implemented vs. planned.**
+> 
+> **🏗️ See [MICROKERNEL_DEVELOPMENT_PLAN.md](./MICROKERNEL_DEVELOPMENT_PLAN.md) for the complete microkernel and plugin architecture development plan.**
 
 ---
 
