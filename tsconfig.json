@@ -24,13 +24,12 @@
     { "path": "./packages/protocols/graphql" },
     { "path": "./packages/protocols/json-rpc" },
     { "path": "./packages/protocols/odata-v4" },
-    
-    // Runtime Layer
-    { "path": "./packages/runtime/server" },
+    { "path": "./packages/protocols/rest" },
     
     // Tools Layer
     { "path": "./packages/tools/cli" },
     { "path": "./packages/tools/create" },
+    { "path": "./packages/tools/driver-tck" },
     { "path": "./packages/tools/vscode-objectql" },
     
     // Examples

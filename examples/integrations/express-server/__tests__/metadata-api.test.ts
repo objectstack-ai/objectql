@@ -18,7 +18,7 @@ import express from 'express';
 import { ObjectQL } from '@objectql/core';
 import { SqlDriver } from '@objectql/driver-sql';
 import { ObjectLoader } from '@objectql/platform-node';
-import { createMetadataHandler } from '@objectql/server';
+import { createMetadataHandler } from '@objectql/protocol-rest';
 import * as path from 'path';
 
 describe('Metadata API', () => {

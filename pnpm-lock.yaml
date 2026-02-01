@@ -235,6 +235,12 @@ importers:
       '@objectql/driver-sql':
         specifier: workspace:*
         version: link:../../../packages/drivers/sql
+      '@objectql/platform-node':
+        specifier: workspace:*
+        version: link:../../../packages/foundation/platform-node
+      '@objectql/protocol-rest':
+        specifier: workspace:*
+        version: link:../../../packages/protocols/rest
       sqlite3:
         specifier: ^5.1.7
         version: 5.1.7
