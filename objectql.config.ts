@@ -51,6 +51,7 @@ export default {
     // Runtime plugins (instances only)
     plugins: [
         new HonoServerPlugin({
+            port: 5050,
         }),
         new ObjectQLPlugin({
             enableRepository: true,
