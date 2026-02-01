@@ -4,7 +4,6 @@
   "packageManager": "pnpm@10.28.2",
   "scripts": {
     "dev:example": "tsx scripts/dev-server.ts",
-    "start:example": "tsx scripts/dev-server.ts",
     "cli:dev": "ts-node packages/tools/cli/src/index.ts",
     "site:dev": "pnpm --filter @objectql/site run dev",
     "build": "turbo run build",
@@ -19,9 +18,7 @@
     "release": "pnpm run build && changeset publish",
     "check-versions": "node scripts/check-versions.js",
     "analyze-deps": "node scripts/analyze-dependencies.js",
-    "audit-coverage": "node scripts/audit-test-coverage.js",
-    "build:legacy": "tsc -b && pnpm -r run build",
-    "test:legacy": "pnpm run check-versions && pnpm -r run test"
+    "audit-coverage": "node scripts/audit-test-coverage.js"
   },
   "devDependencies": {
     "@changesets/cli": "^2.29.8",
