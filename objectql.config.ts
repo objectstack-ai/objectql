@@ -16,6 +16,8 @@ import * as path from 'path';
 import * as yaml from 'js-yaml';
 
 // --- Patch for @objectstack/cli @0.8.0 compatibility ---
+// Removed to prevent circular dependency error with @objectstack/core ESM
+/*
 import { ObjectKernel } from '@objectstack/core';
 try {
     const proto = ObjectKernel.prototype;
@@ -30,6 +32,7 @@ try {
 } catch (e) {
     console.warn('Failed to patch ObjectKernel compatibility:', e);
 }
+*/
 // -------------------------------------------------------
 
 function loadObjects(dir: string) {
@@ -65,7 +68,7 @@ export default {
     // Runtime plugins (instances only)
     plugins: [
         new HonoServerPlugin({
-            port: 3000
+            port: 5050
         }),
         new ObjectQLSecurityPlugin({
             enableAudit: false

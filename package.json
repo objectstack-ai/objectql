@@ -11,7 +11,7 @@
     "lint": "turbo run lint",
     "format": "prettier --write \"packages/**/*.{ts,tsx,json,md}\"",
     "cli:dev": "ts-node packages/tools/cli/src/index.ts",
-    "dev:example": "objectstack serve objectql.config.ts",
+    "dev:example": "tsx scripts/dev-server.ts",
     "start:example": "objectstack serve objectql.config.ts",
     "check-versions": "node scripts/check-versions.js",
     "analyze-deps": "node scripts/analyze-dependencies.js",
