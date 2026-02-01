@@ -33,6 +33,9 @@ importers:
       '@objectql/plugin-validator':
         specifier: workspace:*
         version: link:packages/foundation/plugin-validator
+      '@objectql/protocol-graphql':
+        specifier: workspace:*
+        version: link:packages/protocols/graphql
       '@objectstack/cli':
         specifier: latest
         version: 0.8.0(esbuild@0.27.2)

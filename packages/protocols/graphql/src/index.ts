@@ -216,6 +216,16 @@ export class GraphQLPlugin implements RuntimePlugin {
         });
     }
 
+    // --- Adapter for @objectstack/core compatibility ---
+    async init(ctx: any): Promise<void> {
+        return this.install(ctx);
+    }
+
+    async start(ctx: any): Promise<void> {
+        return this.onStart(ctx);
+    }
+    // ---------------------------------------------------
+
     /**
      * Stop hook - called when kernel stops
      */
@@ -466,9 +476,10 @@ export class GraphQLPlugin implements RuntimePlugin {
         // Add Mutation type
         typeDefs += `  type Mutation {\n`;
         
-        for (const objectName of objectTypes) {
-            const pascalCaseName = this.toPascalCase(objectName);
-            typeDefs += `    
+        if (objectTypes.length > 0) {
+            for (const objectName of objectTypes) {
+                const pascalCaseName = this.toPascalCase(objectName);
+                typeDefs += `    
     # Create ${objectName}
     create${pascalCaseName}(input: ${pascalCaseName}Input!): ${pascalCaseName}
     
@@ -478,6 +489,9 @@ export class GraphQLPlugin implements RuntimePlugin {
     # Delete ${objectName}
     delete${pascalCaseName}(id: ID!): Boolean
 `;
+            }
+        } else {
+            typeDefs += `    _dummy: String\n`;
         }
 
         typeDefs += `  }\n\n`;
@@ -486,15 +500,19 @@ export class GraphQLPlugin implements RuntimePlugin {
         if (this.config.enableSubscriptions) {
             typeDefs += `  type Subscription {\n`;
             
-            for (const objectName of objectTypes) {
-                const pascalCaseName = this.toPascalCase(objectName);
-                const camelCaseName = this.toCamelCase(objectName);
-                typeDefs += `    
+            if (objectTypes.length > 0) {
+                for (const objectName of objectTypes) {
+                    const pascalCaseName = this.toPascalCase(objectName);
+                    const camelCaseName = this.toCamelCase(objectName);
+                    typeDefs += `    
     # Subscribe to ${objectName} changes
     ${camelCaseName}Created(where: ${pascalCaseName}Filter): ${pascalCaseName}
     ${camelCaseName}Updated(where: ${pascalCaseName}Filter): ${pascalCaseName}
     ${camelCaseName}Deleted: ID
 `;
+                }
+            } else {
+                typeDefs += `    _dummy: String\n`;
             }
             
             typeDefs += `  }\n\n`;
@@ -534,15 +552,21 @@ export class GraphQLPlugin implements RuntimePlugin {
             // Input Type (for create)
             typeDefs += `  input ${pascalCaseName}Input {\n`;
             
+            let hasInputFields = false;
             if (metadata?.fields) {
                 for (const [fieldName, field] of Object.entries(metadata.fields as Record<string, any>)) {
                     // Skip auto-generated fields like id, created_at, updated_at
                     if (fieldName === 'id' || fieldName === 'created_at' || fieldName === 'updated_at') continue;
                     
+                    hasInputFields = true;
                     const graphqlType = this.mapFieldTypeToGraphQL(field.type);
                     const required = field.required ? '!' : '';
                     typeDefs += `    ${fieldName}: ${graphqlType}${required}\n`;
                 }
+            }
+
+            if (!hasInputFields) {
+                typeDefs += `    _dummy: String\n`;
             }
             
             typeDefs += `  }\n\n`;
@@ -550,14 +574,20 @@ export class GraphQLPlugin implements RuntimePlugin {
             // Update Input Type (all fields optional)
             typeDefs += `  input ${pascalCaseName}UpdateInput {\n`;
             
+            let hasUpdateFields = false;
             if (metadata?.fields) {
                 for (const [fieldName, field] of Object.entries(metadata.fields as Record<string, any>)) {
                     // Skip auto-generated fields
                     if (fieldName === 'id' || fieldName === 'created_at' || fieldName === 'updated_at') continue;
                     
+                    hasUpdateFields = true;
                     const graphqlType = this.mapFieldTypeToGraphQL(field.type);
                     typeDefs += `    ${fieldName}: ${graphqlType}\n`;
                 }
+            }
+
+            if (!hasUpdateFields) {
+                typeDefs += `    _dummy: String\n`;
             }
             
             typeDefs += `  }\n\n`;

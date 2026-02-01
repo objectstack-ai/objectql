@@ -8,6 +8,7 @@
 
 import { ObjectQLSecurityPlugin } from '@objectql/plugin-security';
 import { ValidatorPlugin } from '@objectql/plugin-validator';
+import { GraphQLPlugin } from '@objectql/protocol-graphql';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as yaml from 'js-yaml';
@@ -64,6 +65,11 @@ export default {
         new ObjectQLSecurityPlugin({
             enableAudit: false
         }),
-        new ValidatorPlugin()
+        new ValidatorPlugin(),
+        new GraphQLPlugin({
+            port: 4000,
+            introspection: true,
+            enableSubscriptions: true
+        })
     ]
 };

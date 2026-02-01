@@ -31,6 +31,7 @@
     "@objectql/example-project-tracker": "workspace:*",
     "@objectql/plugin-security": "workspace:*",
     "@objectql/plugin-validator": "workspace:*",
+    "@objectql/protocol-graphql": "workspace:*",
     "@objectstack/cli": "latest",
     "@objectstack/core": "^0.8.0",
     "@types/jest": "^30.0.0",

@@ -217,6 +217,16 @@ export class JSONRPCPlugin implements RuntimePlugin {
         });
     }
 
+    // --- Adapter for @objectstack/core compatibility ---
+    async init(ctx: any): Promise<void> {
+        return this.install(ctx);
+    }
+
+    async start(ctx: any): Promise<void> {
+        return this.onStart(ctx);
+    }
+    // ---------------------------------------------------
+
     /**
      * Stop hook - called when kernel stops
      */
