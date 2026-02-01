@@ -40,10 +40,10 @@ importers:
         specifier: workspace:*
         version: link:packages/protocols/odata-v4
       '@objectstack/cli':
-        specifier: latest
-        version: 0.8.0(esbuild@0.27.2)
+        specifier: 0.8.1
+        version: 0.8.1(@objectstack/core@0.8.1)(esbuild@0.27.2)
       '@objectstack/core':
-        specifier: ^0.8.1
+        specifier: 0.8.1
         version: 0.8.1
       '@objectstack/plugin-hono-server':
         specifier: ^0.8.1
@@ -2296,9 +2296,11 @@ packages:
     engines: {node: '>=10'}
     deprecated: This functionality has been moved to @npmcli/fs
 
-  '@objectstack/cli@0.8.0':
-    resolution: {integrity: sha512-UToFlqxduSRl6/az0StK5WOgkdziCVRkXVmq0SQJyGEJUFV2qyIewHXg9aBblG74c1SJQ+TfisIZg4JEz4Ce0w==}
+  '@objectstack/cli@0.8.1':
+    resolution: {integrity: sha512-cx1eZO0vKyf/GXvnCNNBCTrU8Uau7pIACUSz/n5KI9iprinHQn+mFG4HuaBnHvF0GGVKmOBG5y3Hf39xhDAfNg==}
     hasBin: true
+    peerDependencies:
+      '@objectstack/core': ^0.8.1
 
   '@objectstack/core@0.8.0':
     resolution: {integrity: sha512-V1mnVnBemTBrTykYGLxYZiCqQ9qBB7BiukZld++m6RKjmVivf4ipyoXQdOuLx5j/fQXo+FziprlMmG5z1sDm9A==}
@@ -2308,9 +2310,6 @@ packages:
 
   '@objectstack/objectql@0.8.0':
     resolution: {integrity: sha512-Kr1IXnWZKTxrdDNx+5ny9OHxkdb9IpEtjr/ZRQMh/TrgkRf7pFils9/k+FzJ3PJdZJkAWddAsTUbuhiKDHFVMw==}
-
-  '@objectstack/plugin-hono-server@0.8.0':
-    resolution: {integrity: sha512-wRo1ZTtmlWTYObp578W0cjuKagp61ho152HwBuVyOau207fGllZqa2oBbHR097h0KEisl7WsMrcYGVkBweO+kA==}
 
   '@objectstack/plugin-hono-server@0.8.1':
     resolution: {integrity: sha512-UMAjz+Xht/s0W52xNus8la1y7wM5KVnnWSqwSnqyItf88Pg7UgGy9jXo3ZPv6mXY9PrFOYmftbQEVqk8jG6k5w==}
@@ -10447,11 +10446,11 @@ snapshots:
       rimraf: 3.0.2
     optional: true
 
-  '@objectstack/cli@0.8.0(esbuild@0.27.2)':
+  '@objectstack/cli@0.8.1(@objectstack/core@0.8.1)(esbuild@0.27.2)':
     dependencies:
-      '@objectstack/core': 0.8.0
-      '@objectstack/plugin-hono-server': 0.8.0
-      '@objectstack/spec': 0.8.0
+      '@objectstack/core': 0.8.1
+      '@objectstack/plugin-hono-server': 0.8.1
+      '@objectstack/spec': 0.8.1
       bundle-require: 5.1.0(esbuild@0.27.2)
       chalk: 5.6.2
       commander: 11.1.0
@@ -10479,14 +10478,6 @@ snapshots:
       '@objectstack/core': 0.8.0
       '@objectstack/spec': 0.8.0
       '@objectstack/types': 0.8.0
-
-  '@objectstack/plugin-hono-server@0.8.0':
-    dependencies:
-      '@hono/node-server': 1.19.9(hono@4.11.7)
-      '@objectstack/core': 0.8.0
-      '@objectstack/spec': 0.8.0
-      '@objectstack/types': 0.8.0
-      hono: 4.11.7
 
   '@objectstack/plugin-hono-server@0.8.1':
     dependencies:

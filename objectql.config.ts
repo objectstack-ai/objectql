@@ -48,7 +48,6 @@ export default {
     // Runtime plugins (instances only)
     plugins: [
         new HonoServerPlugin({
-            port: 5050
         }),
         new ObjectQLSecurityPlugin({
             enableAudit: false
