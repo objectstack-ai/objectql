@@ -161,8 +161,10 @@ export class FileSystemDriver extends MemoryDriver {
             }
             return JSON.parse(content);
         } catch (error) {
-            console.warn(`[FileSystemDriver] Failed to parse ${filePath}:`, error);
-            return [];
+            throw new ObjectQLError({
+                code: 'INVALID_JSON_FORMAT',
+                message: `Failed to parse ${filePath}: invalid JSON format`
+            });
         }
     }
 
@@ -174,7 +176,7 @@ export class FileSystemDriver extends MemoryDriver {
         
         // Create backup if enabled
         if (this.enableBackup && fs.existsSync(filePath)) {
-            const backupPath = `${filePath}.backup.json`;
+            const backupPath = `${filePath}.bak`;
             fs.copyFileSync(filePath, backupPath);
         }
 
@@ -208,6 +210,18 @@ export class FileSystemDriver extends MemoryDriver {
      * Override create to persist to disk
      */
     async create(objectName: string, data: any, options?: any): Promise<any> {
+        if (!objectName || objectName.trim() === '') {
+            throw new ObjectQLError({
+                code: 'INVALID_OBJECT_NAME',
+                message: 'Object name cannot be empty'
+            });
+        }
+        
+        // Handle _id field as alias for id (MongoDB compatibility)
+        if (data._id && !data.id) {
+            data = { ...data, id: data._id };
+        }
+        
         const result = await super.create(objectName, data, options);
         this.syncObjectToDisk(objectName);
         return result;
@@ -236,6 +250,29 @@ export class FileSystemDriver extends MemoryDriver {
     }
 
     /**
+     * Override find to load from disk if not in cache
+     */
+    async find(objectName: string, query: any = {}, options?: any): Promise<any[]> {
+        // Check if we need to load from disk (e.g., file created externally)
+        const filePath = this.getFilePath(objectName);
+        const hasRecordsInMemory = Array.from(this.store.keys()).some(key => key.startsWith(`${objectName}:`));
+        
+        if (!hasRecordsInMemory && fs.existsSync(filePath)) {
+            // Load from disk - this will throw on invalid JSON
+            const records = this.loadRecordsFromDisk(objectName);
+            
+            // Load into parent's store
+            for (const record of records) {
+                const id = record.id || record._id;
+                const key = `${objectName}:${id}`;
+                this.store.set(key, record);
+            }
+        }
+        
+        return super.find(objectName, query, options);
+    }
+
+    /**
      * Sync an object type's data to disk
      */
     protected syncObjectToDisk(objectName: string): void {
@@ -259,6 +296,69 @@ export class FileSystemDriver extends MemoryDriver {
             this.cache.delete(objectName);
         } else {
             this.cache.clear();
+        }
+    }
+
+    /**
+     * Get the number of cached objects
+     */
+    getCacheSize(): number {
+        return this.cache.size;
+    }
+
+    /**
+     * Clear data for a specific object or all data
+     */
+    async clear(objectName?: string): Promise<void> {
+        if (objectName) {
+            // Clear specific object from memory
+            const prefix = `${objectName}:`;
+            const keysToDelete: string[] = [];
+            
+            for (const key of this.store.keys()) {
+                if (key.startsWith(prefix)) {
+                    keysToDelete.push(key);
+                }
+            }
+            
+            for (const key of keysToDelete) {
+                this.store.delete(key);
+            }
+            
+            // Delete from disk
+            const filePath = this.getFilePath(objectName);
+            if (fs.existsSync(filePath)) {
+                fs.unlinkSync(filePath);
+            }
+            
+            // Clear cache
+            this.cache.delete(objectName);
+        } else {
+            // Clear all data
+            await super.clear();
+            this.cache.clear();
+        }
+    }
+
+    /**
+     * Clear all data from the store and disk
+     */
+    async clearAll(): Promise<void> {
+        // Clear in-memory store
+        await this.clear();
+        
+        // Clear cache
+        this.cache.clear();
+        
+        // Delete all JSON files from disk
+        if (fs.existsSync(this.dataDir)) {
+            const files = fs.readdirSync(this.dataDir);
+            for (const file of files) {
+                if (file.endsWith('.json')) {
+                    const filePath = path.join(this.dataDir, file);
+                    fs.unlinkSync(filePath);
+                }
+            }
         }
     }
 }

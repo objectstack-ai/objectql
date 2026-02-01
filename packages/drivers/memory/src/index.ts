@@ -790,13 +790,46 @@ export class MemoryDriver implements Driver {
      * Converts to MongoDB query format:
      * { $or: [{ field: { $operator: value }}, { field2: { $operator: value2 }}] }
      */
+    /**
+     * Convert ObjectQL filter format to MongoDB query format.
+     * Supports three input formats:
+     * 
+     * 1. AST Comparison Node: { type: 'comparison', field: string, operator: string, value: any }
+     * 2. AST Logical Node: { type: 'logical', operator: 'and' | 'or', conditions: Node[] }
+     * 3. Legacy Array Format: [field, operator, value, 'and', field2, operator2, value2]
+     * 4. MongoDB Format: { field: value } or { field: { $eq: value } } (passthrough)
+     * 
+     * @param filters - Filter in any supported format
+     * @returns MongoDB query object
+     */
     protected convertToMongoQuery(filters?: any[] | Record<string, any>): Record<string, any> {
         if (!filters) {
             return {};
         }
         
-        // If filters is already an object (FilterCondition format), return it directly
-        if (!Array.isArray(filters)) {
+        // Handle AST node format (ObjectQL QueryAST)
+        if (!Array.isArray(filters) && typeof filters === 'object') {
+            // AST Comparison Node: { type: 'comparison', field, operator, value }
+            if (filters.type === 'comparison') {
+                const mongoCondition = this.convertConditionToMongo(filters.field, filters.operator, filters.value);
+                return mongoCondition || {};
+            } 
+            
+            // AST Logical Node: { type: 'logical', operator: 'and' | 'or', conditions: [...] }
+            else if (filters.type === 'logical') {
+                const conditions = filters.conditions?.map((cond: any) => this.convertToMongoQuery(cond)) || [];
+                if (conditions.length === 0) {
+                    return {};
+                }
+                if (conditions.length === 1) {
+                    return conditions[0];
+                }
+                const operator = filters.operator === 'or' ? '$or' : '$and';
+                return { [operator]: conditions };
+            }
+            
+            // MongoDB format (passthrough): { field: value } or { field: { $eq: value } }
+            // This handles cases where filters is already a proper MongoDB query
             return filters;
         }
         
