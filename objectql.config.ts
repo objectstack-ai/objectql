@@ -77,8 +77,8 @@ export default {
             enableIntrospection: true,
             enableSessions: true
         }),
-        new RestPlugin({
-            basePath: '/api'
-        })
+        // new RestPlugin({
+        //     basePath: '/api'
+        // })
     ]
 };

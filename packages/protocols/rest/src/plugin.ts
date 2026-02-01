@@ -25,6 +25,7 @@ export class RestPlugin implements RuntimePlugin {
     private config: Required<RestPluginConfig>;
     private server?: ObjectQLServer;
     private engine?: any;
+    private ctx?: RuntimeContext;
 
     constructor(config: RestPluginConfig = {}) {
         this.config = {
@@ -34,11 +35,20 @@ export class RestPlugin implements RuntimePlugin {
 
     async install(ctx: RuntimeContext): Promise<void> {
         console.log(`[${this.name}] Installing REST protocol...`);
+        this.ctx = ctx;
         this.engine = ctx.engine || (ctx as any).getKernel?.();
         this.server = new ObjectQLServer(this.engine);
     }
 
     async onStart(ctx: RuntimeContext): Promise<void> {
+        // Check for Hono server service
+        const httpServer = (this.ctx as any)?.getService?.('http-server');
+        if (httpServer && httpServer.app) {
+             console.log(`[${this.name}] Attaching to existing Hono server...`);
+             this.attachToHono(httpServer.app);
+             return;
+        }
+
         console.log(`[${this.name}] REST protocol ready. Mount at ${this.config.basePath}`);
     }
 
