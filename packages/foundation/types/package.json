@@ -26,10 +26,9 @@
     "generate:schemas": "node scripts/generate-schemas.js",
     "test": "jest --passWithNoTests"
   },
-  "peerDependencies": {},
   "dependencies": {
-    "@objectstack/spec": "^0.8.0",
-    "@objectstack/objectql": "^0.8.0"
+    "@objectstack/objectql": "^0.8.2",
+    "@objectstack/spec": "^0.8.2"
   },
   "devDependencies": {
     "ts-json-schema-generator": "^2.4.0",

@@ -22,13 +22,13 @@
     "test": "jest"
   },
   "dependencies": {
-    "@objectql/types": "workspace:*",
     "@objectql/plugin-formula": "workspace:*",
     "@objectql/plugin-validator": "workspace:*",
-    "@objectstack/spec": "^0.8.0",
-    "@objectstack/runtime": "^0.8.0",
-    "@objectstack/objectql": "^0.8.0",
-    "@objectstack/core": "^0.8.0",
+    "@objectql/types": "workspace:*",
+    "@objectstack/core": "^0.8.2",
+    "@objectstack/objectql": "^0.8.2",
+    "@objectstack/runtime": "^0.8.2",
+    "@objectstack/spec": "^0.8.2",
     "js-yaml": "^4.1.0"
   },
   "devDependencies": {

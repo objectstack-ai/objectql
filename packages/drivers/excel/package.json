@@ -22,7 +22,7 @@
   "dependencies": {
     "@objectql/driver-memory": "workspace:*",
     "@objectql/types": "workspace:*",
-    "@objectstack/spec": "^0.8.0",
+    "@objectstack/spec": "^0.8.2",
     "exceljs": "^4.4.0"
   },
   "devDependencies": {

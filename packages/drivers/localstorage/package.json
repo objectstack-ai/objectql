@@ -20,9 +20,9 @@
     "test": "jest"
   },
   "dependencies": {
-    "@objectql/types": "workspace:*",
     "@objectql/driver-memory": "workspace:*",
-    "@objectstack/spec": "^0.8.0"
+    "@objectql/types": "workspace:*",
+    "@objectstack/spec": "^0.8.2"
   },
   "devDependencies": {
     "@types/jest": "^29.0.0",
