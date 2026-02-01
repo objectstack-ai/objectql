@@ -11,6 +11,7 @@ import { ValidatorPlugin } from '@objectql/plugin-validator';
 import { GraphQLPlugin } from '@objectql/protocol-graphql';
 import { ODataV4Plugin } from '@objectql/protocol-odata-v4';
 import { JSONRPCPlugin } from '@objectql/protocol-json-rpc';
+import { RestPlugin } from '@objectql/protocol-rest';
 import { HonoServerPlugin } from '@objectstack/plugin-hono-server';
 import { ObjectQLPlugin } from '@objectql/core';
 import * as fs from 'fs';
@@ -73,6 +74,9 @@ export default {
             basePath: '/rpc',
             enableIntrospection: true,
             enableSessions: true
+        }),
+        new RestPlugin({
+            basePath: '/api'
         })
     ]
 };

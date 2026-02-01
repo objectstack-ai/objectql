@@ -11,6 +11,9 @@ importers:
       '@objectql/protocol-json-rpc':
         specifier: workspace:*
         version: link:packages/protocols/json-rpc
+      '@objectql/protocol-rest':
+        specifier: workspace:*
+        version: link:packages/protocols/rest
       build:
         specifier: ^0.1.4
         version: 0.1.4
@@ -779,20 +782,11 @@ importers:
         specifier: ^1.0.4
         version: 1.6.1(@types/node@25.1.0)(jsdom@20.0.3)(lightningcss@1.30.2)
 
-  packages/runtime/server:
+  packages/protocols/rest:
     dependencies:
-      '@graphql-tools/schema':
-        specifier: ^10.0.2
-        version: 10.0.31(graphql@16.12.0)
-      '@objectql/core':
-        specifier: workspace:*
-        version: link:../../foundation/core
       '@objectql/types':
         specifier: workspace:*
         version: link:../../foundation/types
-      graphql:
-        specifier: ^16.8.1
-        version: 16.12.0
       js-yaml:
         specifier: ^4.1.1
         version: 4.1.1
@@ -824,9 +818,9 @@ importers:
       '@objectql/plugin-validator':
         specifier: workspace:*
         version: link:../../foundation/plugin-validator
-      '@objectql/server':
+      '@objectql/protocol-rest':
         specifier: workspace:*
-        version: link:../../runtime/server
+        version: link:../../protocols/rest
       '@objectql/types':
         specifier: workspace:*
         version: link:../../foundation/types

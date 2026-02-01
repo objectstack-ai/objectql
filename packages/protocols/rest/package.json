@@ -1,18 +1,12 @@
 {
-  "name": "@objectql/server",
-  "version": "4.0.3",
-  "description": "HTTP server adapter for ObjectQL - Express/NestJS compatible with GraphQL and REST API support",
+  "name": "@objectql/protocol-rest",
+  "version": "4.0.4",
+  "description": "REST Protocol Plugin for ObjectStack",
   "keywords": [
     "objectql",
-    "server",
-    "http",
-    "api",
+    "protocol",
     "rest",
-    "graphql",
-    "express",
-    "nestjs",
-    "adapter",
-    "backend"
+    "api"
   ],
   "license": "MIT",
   "main": "dist/index.js",
@@ -22,10 +16,7 @@
     "test": "jest"
   },
   "dependencies": {
-    "@objectql/core": "workspace:*",
     "@objectql/types": "workspace:*",
-    "graphql": "^16.8.1",
-    "@graphql-tools/schema": "^10.0.2",
     "js-yaml": "^4.1.1"
   },
   "devDependencies": {

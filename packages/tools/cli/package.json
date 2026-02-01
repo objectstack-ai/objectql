@@ -35,7 +35,7 @@
     "@objectql/core": "workspace:*",
     "@objectql/plugin-validator": "workspace:*",
     "@objectql/plugin-ai-agent": "workspace:*",
-    "@objectql/server": "workspace:*",
+    "@objectql/protocol-rest": "workspace:*",
     "@objectql/driver-sql": "workspace:*",
     "@objectql/platform-node": "workspace:*",
     "sqlite3": "^5.1.7",
