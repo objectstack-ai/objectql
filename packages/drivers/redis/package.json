@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@objectql/types": "workspace:*",
-    "@objectstack/spec": "^0.7.1",
+    "@objectstack/spec": "^0.8.0",
     "redis": "^4.6.0"
   },
   "devDependencies": {

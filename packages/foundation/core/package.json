@@ -25,10 +25,10 @@
     "@objectql/types": "workspace:*",
     "@objectql/plugin-formula": "workspace:*",
     "@objectql/plugin-validator": "workspace:*",
-    "@objectstack/spec": "^0.7.1",
-    "@objectstack/runtime": "^0.7.1",
-    "@objectstack/objectql": "^0.7.1",
-    "@objectstack/core": "^0.7.1",
+    "@objectstack/spec": "^0.8.0",
+    "@objectstack/runtime": "^0.8.0",
+    "@objectstack/objectql": "^0.8.0",
+    "@objectstack/core": "^0.8.0",
     "js-yaml": "^4.1.0"
   },
   "devDependencies": {
