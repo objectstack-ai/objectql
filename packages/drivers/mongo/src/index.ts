@@ -471,7 +471,8 @@ export class MongoDriver implements Driver {
         );
         
         // Return API format document (convert _id to id)
-        return this.mapFromMongo(result);
+        // findOneAndUpdate returns an object with a 'value' property containing the document
+        return this.mapFromMongo(result?.value);
     }
 
     async delete(objectName: string, id: string | number, options?: any) {
@@ -533,7 +534,7 @@ export class MongoDriver implements Driver {
         const result = session
             ? await collection.updateMany(filter, update, { session })
             : await collection.updateMany(filter, update);
-        return { modifiedCount: result.modifiedCount };
+        return result.modifiedCount;
     }
 
     async deleteMany(objectName: string, filters: any, options?: any): Promise<any> {
@@ -544,7 +545,7 @@ export class MongoDriver implements Driver {
         const result = session
             ? await collection.deleteMany(filter, { session })
             : await collection.deleteMany(filter);
-        return { deletedCount: result.deletedCount };
+        return result.deletedCount;
     }
 
     async aggregate(objectName: string, pipeline: any[], options?: any): Promise<any[]> {
