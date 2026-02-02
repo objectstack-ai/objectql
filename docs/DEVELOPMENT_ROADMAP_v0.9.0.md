@@ -58,18 +58,12 @@ The @objectstack/spec@0.9.0 introduces a five-namespace architecture that maps t
 - Prompt Management
 
 **Gap Analysis**:
-- ✅ @objectql/plugin-ai-agent exists but needs alignment with new spec
 - ❌ RAG capabilities not yet integrated
 - ❌ Model registry not implemented
 - ❌ Prompt management system missing
 
 **Priority Tasks**:
-1. **[High Priority] Align AI Agent Plugin with New Spec**
-   - Update @objectql/plugin-ai-agent to use `@objectstack/spec/ai` types
-   - Implement Agent interface defined in spec
-   - Add orchestration capabilities
-   
-2. **[Medium Priority] Implement RAG System**
+1. **[Medium Priority] Implement RAG System**
    - Create @objectql/plugin-rag package
    - Vector database integration (Redis/Pinecone/Qdrant)
    - Semantic search capabilities
@@ -215,11 +209,10 @@ The v0.9.0 kernel introduces several enterprise-grade features:
 
 **Tasks**:
 1. ✅ Update kernel dependencies to v0.9.0 (COMPLETED)
-2. [ ] Update @objectql/plugin-ai-agent to use `@objectstack/spec/ai`
-3. [ ] Update @objectql/plugin-security to use `@objectstack/spec/system/role`
-4. [ ] Add Zod validation schemas for all plugin configs
-5. [ ] Implement structured logging across all packages
-6. [ ] Update documentation to reflect new architecture
+2. [ ] Update @objectql/plugin-security to use `@objectstack/spec/system/role`
+3. [ ] Add Zod validation schemas for all plugin configs
+4. [ ] Implement structured logging across all packages
+5. [ ] Update documentation to reflect new architecture
 
 **Deliverables**:
 - [ ] Updated plugin packages (ai-agent, security)
@@ -256,7 +249,6 @@ The v0.9.0 kernel introduces several enterprise-grade features:
 
 **Deliverables**:
 - [ ] @objectql/plugin-rag package
-- [ ] Enhanced @objectql/plugin-ai-agent
 - [ ] @objectql/plugin-model-registry (optional)
 - [ ] RAG integration examples
 - [ ] AI features documentation
@@ -498,7 +490,6 @@ Following Semantic Versioning (SemVer):
 
 ### Week 3-4
 - [ ] Implement structured logging across packages
-- [ ] Update plugin-ai-agent with new spec types
 - [ ] Update plugin-security with enhanced RBAC
 - [ ] Write migration guide for v0.9.0
 
