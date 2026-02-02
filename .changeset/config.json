@@ -18,7 +18,6 @@
       "@objectql/driver-utils",
       "@objectql/example-multi-protocol-server",
       "@objectql/platform-node",
-      "@objectql/plugin-ai-agent",
       "@objectql/plugin-formula",
       "@objectql/plugin-security",
       "@objectql/plugin-validator",
