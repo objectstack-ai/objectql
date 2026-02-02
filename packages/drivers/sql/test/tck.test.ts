@@ -22,7 +22,7 @@ describe('SqlDriver TCK Compliance', () => {
         () => {
             // Use SQLite in-memory database for testing
             driver = new SqlDriver({
-                client: 'better-sqlite3',
+                client: 'sqlite3',
                 connection: {
                     filename: ':memory:'
                 },
@@ -38,24 +38,29 @@ describe('SqlDriver TCK Compliance', () => {
             timeout: 30000,
             hooks: {
                 beforeEach: async () => {
-                    // Clear all tables
-                    if (driver) {
-                        try {
-                            const tables = await driver['knex'].raw(`
-                                SELECT name FROM sqlite_master 
-                                WHERE type='table' AND name NOT LIKE 'sqlite_%'
-                            `);
-                            
-                            for (const table of tables) {
-                                await driver['knex'].raw(`DROP TABLE IF EXISTS "${table.name}"`);
+                    // Initialize the tck_test table
+                    await driver.init([
+                        {
+                            name: 'tck_test',
+                            fields: {
+                                name: { type: 'string' },
+                                email: { type: 'string' },
+                                age: { type: 'number' },
+                                role: { type: 'string' },
+                                active: { type: 'boolean' },
+                                status: { type: 'string' },
+                                department: { type: 'string' },
+                                description: { type: 'string' },
+                                optionalField: { type: 'string' }
                             }
-                        } catch (error) {
-                            // Ignore errors during cleanup
                         }
-                    }
+                    ]);
                 },
                 afterEach: async () => {
-                    // Cleanup handled in beforeEach
+                    // Close database connection
+                    if (driver && driver['knex']) {
+                        await driver['knex'].destroy();
+                    }
                 }
             }
         }
