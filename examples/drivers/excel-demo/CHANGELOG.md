@@ -1,5 +1,13 @@
 # @objectql/example-excel-demo
 
+## 4.0.4
+
+### Patch Changes
+
+- Updated dependencies
+  - @objectql/driver-excel@4.0.4
+  - @objectql/types@4.0.4
+
 ## 4.0.3
 
 ### Patch Changes

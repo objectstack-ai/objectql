@@ -1,5 +1,15 @@
 # @objectql/example-browser
 
+## 4.0.4
+
+### Patch Changes
+
+- Updated dependencies
+  - @objectql/core@4.0.4
+  - @objectql/driver-localstorage@4.0.4
+  - @objectql/driver-memory@4.0.4
+  - @objectql/types@4.0.4
+
 ## 4.0.3
 
 ### Patch Changes

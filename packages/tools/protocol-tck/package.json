@@ -1,6 +1,6 @@
 {
   "name": "@objectql/protocol-tck",
-  "version": "4.0.3",
+  "version": "4.0.4",
   "description": "Technology Compatibility Kit for ObjectQL protocols - Unified test suite",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
