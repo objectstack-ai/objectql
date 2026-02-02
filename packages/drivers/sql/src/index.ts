@@ -76,6 +76,8 @@ export class SqlDriver implements Driver {
     private knex: Knex;
     private config: any;
     private jsonFields: Record<string, string[]> = {};
+    private booleanFields: Record<string, string[]> = {};
+    private tablesWithTimestamps: Set<string> = new Set();
 
     constructor(config: any) {
         this.config = config;
@@ -309,7 +311,16 @@ export class SqlDriver implements Driver {
         if (offsetValue !== undefined) builder.offset(offsetValue);
         if (limitValue !== undefined) builder.limit(limitValue);
 
-        const results = await builder;
+        let results;
+        try {
+            results = await builder;
+        } catch (error: any) {
+            // Handle SQL errors gracefully - if querying non-existent columns, return empty array
+            if (error.message && (error.message.includes('no such column') || error.message.includes('column') && error.message.includes('does not exist'))) {
+                return [];
+            }
+            throw error;
+        }
         
         if (!Array.isArray(results)) {
             return [];
@@ -326,11 +337,11 @@ export class SqlDriver implements Driver {
     async findOne(objectName: string, id: string | number, query?: any, options?: any) {
         if (id) {
             const res = await this.getBuilder(objectName, options).where('id', id).first();
-            return this.formatOutput(objectName, res);
+            return this.formatOutput(objectName, res) || null;
         }
         if (query) {
              const results = await this.find(objectName, { ...query, limit: 1 }, options);
-             return results[0];
+             return results[0] || null;
         }
         return null;
     }
@@ -361,6 +372,18 @@ export class SqlDriver implements Driver {
     async update(objectName: string, id: string | number, data: any, options?: any) {
         const builder = this.getBuilder(objectName, options);
         const formatted = this.formatInput(objectName, data);
+        
+        // Automatically update the updated_at timestamp if the table has this column
+        if (this.tablesWithTimestamps.has(objectName)) {
+            // For SQLite, use JavaScript Date to get millisecond precision
+            if (this.config.client === 'sqlite3') {
+                const now = new Date();
+                formatted.updated_at = now.toISOString().replace('T', ' ').replace('Z', '');
+            } else {
+                formatted.updated_at = this.knex.fn.now();
+            }
+        }
+        
         await builder.where('id', id).update(formatted);
         
         // Fetch and return the updated record
@@ -562,13 +585,15 @@ export class SqlDriver implements Driver {
     async updateMany(objectName: string, filters: any, data: any, options?: any): Promise<any> {
         const builder = this.getBuilder(objectName, options);
         if(filters) this.applyFilters(builder, filters);
-        return await builder.update(data);
+        const count = await builder.update(data);
+        return { modifiedCount: count || 0 };
     }
     
     async deleteMany(objectName: string, filters: any, options?: any): Promise<any> {
         const builder = this.getBuilder(objectName, options);
         if(filters) this.applyFilters(builder, filters);
-        return await builder.delete();
+        const count = await builder.delete();
+        return { deletedCount: count || 0 };
     }
 
     /**
@@ -691,17 +716,22 @@ export class SqlDriver implements Driver {
         for (const obj of objects) {
             const tableName = obj.name;
             
-            // Cache JSON fields
+            // Cache JSON and Boolean fields
             const jsonCols: string[] = [];
+            const booleanCols: string[] = [];
             if (obj.fields) {
                 for (const [name, field] of Object.entries<any>(obj.fields)) {
                      const type = field.type || 'string';
                      if (this.isJsonField(type, field)) {
                          jsonCols.push(name);
                      }
+                     if (type === 'boolean') {
+                         booleanCols.push(name);
+                     }
                 }
             }
             this.jsonFields[tableName] = jsonCols;
+            this.booleanFields[tableName] = booleanCols;
 
             let exists = await this.knex.schema.hasTable(tableName);
             
@@ -730,9 +760,16 @@ export class SqlDriver implements Driver {
                     }
                 });
                 console.log(`[SqlDriver] Created table '${tableName}'`);
+                // Track that this table has timestamp columns
+                this.tablesWithTimestamps.add(tableName);
             } else {
                  const columnInfo = await this.knex(tableName).columnInfo();
                  const existingColumns = Object.keys(columnInfo);
+                 
+                 // Check if table has updated_at column
+                 if (existingColumns.includes('updated_at')) {
+                     this.tablesWithTimestamps.add(tableName);
+                 }
                  
                  await this.knex.schema.alterTable(tableName, (table) => {
                      if (obj.fields) {
@@ -878,21 +915,35 @@ export class SqlDriver implements Driver {
         if (!data) return data;
 
         const isSqlite = this.config.client === 'sqlite3';
-        if (!isSqlite) return data;
-
-        const fields = this.jsonFields[objectName];
-        if (!fields || fields.length === 0) return data;
-
-        // data is a single row object
-        for (const field of fields) {
-            if (data[field] !== undefined && typeof data[field] === 'string') {
-                try {
-                    data[field] = JSON.parse(data[field]);
-                } catch (e) {
-                    // ignore parse error, keep as string
+        
+        if (isSqlite) {
+            // Handle JSON fields
+            const jsonFields = this.jsonFields[objectName];
+            if (jsonFields && jsonFields.length > 0) {
+                // data is a single row object
+                for (const field of jsonFields) {
+                    if (data[field] !== undefined && typeof data[field] === 'string') {
+                        try {
+                            data[field] = JSON.parse(data[field]);
+                        } catch (e) {
+                            // ignore parse error, keep as string
+                        }
+                    }
+                }
+            }
+            
+            // Handle Boolean fields - SQLite stores booleans as integers (0 or 1)
+            const booleanFields = this.booleanFields[objectName];
+            if (booleanFields && booleanFields.length > 0) {
+                for (const field of booleanFields) {
+                    if (data[field] !== undefined && data[field] !== null) {
+                        // Convert 0/1 to false/true
+                        data[field] = Boolean(data[field]);
+                    }
                 }
             }
         }
+        
         return data;
     }
 
