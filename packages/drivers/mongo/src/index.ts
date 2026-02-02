@@ -11,7 +11,7 @@ type DriverInterface = Data.DriverInterface;
  */
 
 import { Driver } from '@objectql/types';
-import { MongoClient, Db, Filter, ObjectId, FindOptions, FindOneAndUpdateOptions, ChangeStream, ChangeStreamDocument } from 'mongodb';
+import { MongoClient, Db, Filter, ObjectId, FindOptions, FindOneAndUpdateOptions, UpdateFilter, ChangeStream, ChangeStreamDocument } from 'mongodb';
 
 /**
  * Change stream event handler callback
@@ -435,12 +435,24 @@ export class MongoDriver implements Driver {
         // But we should not allow updating the _id field itself
         const { id: _ignoredId, created_at: _ignoredCreatedAt, ...updateData } = data; // intentionally ignore id and created_at to prevent updating them
         
-        // Add updated_at timestamp
-        updateData.updated_at = new Date().toISOString();
-        
         // Handle atomic operators if present
         const isAtomic = Object.keys(updateData).some(k => k.startsWith('$'));
-        const update = isAtomic ? updateData : { $set: updateData };
+        
+        // Build the update object with updated_at timestamp
+        let update: UpdateFilter<any>;
+        if (isAtomic) {
+            // When using atomic operators, add updated_at to $set
+            // The spread is safe because id and created_at were already removed via destructuring
+            update = { ...updateData } as any;
+            if (!update.$set) {
+                update.$set = {};
+            }
+            update.$set.updated_at = new Date().toISOString();
+        } else {
+            // For regular updates, add updated_at to the data
+            updateData.updated_at = new Date().toISOString();
+            update = { $set: updateData };
+        }
 
         // Use findOneAndUpdate to return the updated document
         const mongoOptions: FindOneAndUpdateOptions = { returnDocument: 'after' };
