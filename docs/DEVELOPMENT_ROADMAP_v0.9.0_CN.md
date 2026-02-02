@@ -58,18 +58,12 @@
 - 提示词管理
 
 **差距分析**:
-- ✅ @objectql/plugin-ai-agent 存在但需要与新规范对齐
 - ❌ RAG 能力尚未集成
 - ❌ 模型注册表未实现
 - ❌ 提示词管理系统缺失
 
 **优先任务**:
-1. **[高优先级] 将 AI Agent 插件与新规范对齐**
-   - 更新 @objectql/plugin-ai-agent 以使用 `@objectstack/spec/ai` 类型
-   - 实现规范中定义的 Agent 接口
-   - 添加编排能力
-   
-2. **[中优先级] 实现 RAG 系统**
+1. **[中优先级] 实现 RAG 系统**
    - 创建 @objectql/plugin-rag 包
    - 向量数据库集成（Redis/Pinecone/Qdrant）
    - 语义搜索能力
@@ -215,14 +209,13 @@ v0.9.0 内核引入了几个企业级功能：
 
 **任务**:
 1. ✅ 将内核依赖项更新到 v0.9.0（已完成）
-2. [ ] 更新 @objectql/plugin-ai-agent 以使用 `@objectstack/spec/ai`
-3. [ ] 更新 @objectql/plugin-security 以使用 `@objectstack/spec/system/role`
-4. [ ] 为所有插件配置添加 Zod 验证模式
-5. [ ] 在所有包中实现结构化日志
-6. [ ] 更新文档以反映新架构
+2. [ ] 更新 @objectql/plugin-security 以使用 `@objectstack/spec/system/role`
+3. [ ] 为所有插件配置添加 Zod 验证模式
+4. [ ] 在所有包中实现结构化日志
+5. [ ] 更新文档以反映新架构
 
 **交付成果**:
-- [ ] 更新的插件包（ai-agent、security）
+- [ ] 更新的插件包（security）
 - [ ] v0.9.0 功能的迁移指南
 - [ ] 架构决策记录（ADR）
 
@@ -256,7 +249,6 @@ v0.9.0 内核引入了几个企业级功能：
 
 **交付成果**:
 - [ ] @objectql/plugin-rag 包
-- [ ] 增强的 @objectql/plugin-ai-agent
 - [ ] @objectql/plugin-model-registry（可选）
 - [ ] RAG 集成示例
 - [ ] AI 功能文档
@@ -498,7 +490,6 @@ v0.9.0 内核引入了几个企业级功能：
 
 ### 第 3-4 周
 - [ ] 在各个包中实现结构化日志
-- [ ] 使用新的规范类型更新 plugin-ai-agent
 - [ ] 使用增强的 RBAC 更新 plugin-security
 - [ ] 编写 v0.9.0 的迁移指南
 

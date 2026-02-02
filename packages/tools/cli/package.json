@@ -34,7 +34,6 @@
     "@objectql/types": "workspace:*",
     "@objectql/core": "workspace:*",
     "@objectql/plugin-validator": "workspace:*",
-    "@objectql/plugin-ai-agent": "workspace:*",
     "@objectql/protocol-rest": "workspace:*",
     "@objectql/driver-sql": "workspace:*",
     "@objectql/platform-node": "workspace:*",
@@ -45,7 +44,6 @@
     "js-yaml": "^4.1.0",
     "prettier": "^3.0.0",
     "ts-node": "^10.9.1",
-    "openai": "^4.28.0",
     "dotenv": "^16.4.5"
   },
   "devDependencies": {

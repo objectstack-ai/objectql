@@ -28,7 +28,6 @@ Welcome to the ObjectQL Examples repository. This collection demonstrates everyt
 | :--- | :--- | :--- |
 | **[Task Manager](./tutorials/tutorial-task-manager)** | A simple Todo list app to learn objects, fields, and basic validation. | 🟢 Basic |
 | **[CRM System](./tutorials/tutorial-crm-system)** | A relational database example with Customers, Contacts, and Deals. Demonstrates `lookup` fields. | 💡 Intermediate |
-| **[AI Agent](./tutorials/tutorial-ai-agent)** | Integrating LLMs to query your data using natural language. | 🧠 AI-Native |
 | **[Formulas & Rules](./tutorials/tutorial-formulas)** | Using Excel-like formula syntax for computed fields and validation. | 💡 Intermediate |
 | **[Federation](./tutorials/tutorial-federation)** | Connecting multiple ObjectQL services together. | 🏢 Advanced |
 
