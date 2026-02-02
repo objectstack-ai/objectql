@@ -12,6 +12,8 @@ import type { RuntimePlugin, RuntimeContext } from '@objectql/types';
 import { ApolloServer, HeaderMap } from '@apollo/server';
 import { expressMiddleware } from '@apollo/server/express4';
 import { ApolloServerPluginDrainHttpServer } from '@apollo/server/plugin/drainHttpServer';
+import { buildSubgraphSchema } from '@apollo/subgraph';
+import { gql } from 'graphql-tag';
 import { createServer } from 'http';
 import { WebSocketServer } from 'ws';
 import { useServer } from 'graphql-ws/lib/use/ws';
@@ -48,6 +50,19 @@ export interface GraphQLPluginConfig {
      * @default "/graphql"
      */
     basePath?: string;
+    
+    /**
+     * Enable Apollo Federation support
+     * When enabled, generates a federated subgraph schema
+     * @default false
+     */
+    enableFederation?: boolean;
+    
+    /**
+     * Federation service name for subgraph identification
+     * @default "objectql"
+     */
+    federationServiceName?: string;
 }
 
 /**
@@ -104,6 +119,8 @@ export class GraphQLPlugin implements RuntimePlugin {
             introspection: config.introspection !== false,
             typeDefs: config.typeDefs || '',
             enableSubscriptions: config.enableSubscriptions !== false,
+            enableFederation: config.enableFederation || false,
+            federationServiceName: config.federationServiceName || 'objectql',
             maxDepth: config.maxDepth || 10,
             pubsub: config.pubsub || new PubSub(),
             path: config.path,
@@ -152,11 +169,25 @@ export class GraphQLPlugin implements RuntimePlugin {
         const typeDefs = this.generateSchema();
         const resolvers = this.generateResolvers();
 
-        // Create executable schema
-        const schema = makeExecutableSchema({
-            typeDefs,
-            resolvers
-        });
+        // Create executable schema with optional Federation support
+        let schema;
+        if (this.config.enableFederation) {
+            // Build federated subgraph schema
+            // buildSubgraphSchema expects parsed GraphQL documents
+            schema = buildSubgraphSchema([
+                {
+                    typeDefs: gql(typeDefs),
+                    resolvers
+                }
+            ]);
+            console.log(`[${this.name}] 🔗 Apollo Federation enabled - service: ${this.config.federationServiceName}`);
+        } else {
+            // Build standard GraphQL schema
+            schema = makeExecutableSchema({
+                typeDefs,
+                resolvers
+            });
+        }
 
         // Create Express app
         this.expressApp = express();
@@ -620,7 +651,14 @@ export class GraphQLPlugin implements RuntimePlugin {
             const pascalCaseName = this.toPascalCase(objectName);
             
             // Main Type
-            typeDefs += `  type ${pascalCaseName} {\n`;
+            typeDefs += `  type ${pascalCaseName}`;
+            
+            // Add Federation @key directive if enabled
+            if (this.config.enableFederation) {
+                typeDefs += ` @key(fields: "id")`;
+            }
+            
+            typeDefs += ` {\n`;
             typeDefs += `    id: ID!\n`;
             
             if (metadata?.fields) {
