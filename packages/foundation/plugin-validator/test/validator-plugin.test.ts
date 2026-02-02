@@ -31,7 +31,7 @@ describe('ValidatorPlugin', () => {
     describe('Plugin Metadata', () => {
         it('should have correct name and version', () => {
             expect(plugin.name).toBe('@objectql/plugin-validator');
-            expect(plugin.version).toBe('4.0.2');
+            expect(plugin.version).toBe('4.0.5');
         });
     });
 

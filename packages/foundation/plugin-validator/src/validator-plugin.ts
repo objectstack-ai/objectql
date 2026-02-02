@@ -7,7 +7,10 @@
  */
 
 import type { RuntimePlugin, RuntimeContext } from '@objectql/types';
+import type { Logger } from '@objectstack/spec/contracts';
+import { createLogger } from '@objectstack/core';
 import { Validator, ValidatorOptions } from './validator';
+import { ValidatorPluginConfigSchema, ValidatorPluginConfig } from './config.schema';
 
 /**
  * Extended kernel with validator capability
@@ -19,23 +22,6 @@ interface KernelWithValidator {
 }
 
 /**
- * Configuration for the Validator Plugin
- */
-export interface ValidatorPluginConfig extends ValidatorOptions {
-  /**
-   * Enable validation on queries
-   * @default true
-   */
-  enableQueryValidation?: boolean;
-  
-  /**
-   * Enable validation on mutations
-   * @default true
-   */
-  enableMutationValidation?: boolean;
-}
-
-/**
  * Validator Plugin
  * 
  * Wraps the ObjectQL Validator engine as a microkernel plugin.
@@ -43,22 +29,27 @@ export interface ValidatorPluginConfig extends ValidatorOptions {
  */
 export class ValidatorPlugin implements RuntimePlugin {
   name = '@objectql/plugin-validator';
-  version = '4.0.2';
+  version = '4.0.5';
   
   private validator: Validator;
   private config: ValidatorPluginConfig;
+  private logger: Logger;
   
-  constructor(config: ValidatorPluginConfig = {}) {
-    this.config = {
-      enableQueryValidation: true,
-      enableMutationValidation: true,
-      ...config
-    };
+  constructor(config: Partial<ValidatorPluginConfig> = {}) {
+    // Validate and parse configuration using Zod schema
+    this.config = ValidatorPluginConfigSchema.parse(config);
+    
+    // Initialize structured logger
+    this.logger = createLogger({
+      name: this.name,
+      level: 'info',
+      format: 'pretty'
+    });
     
     // Initialize the validator with language options
     this.validator = new Validator({
-      language: config.language,
-      languageFallback: config.languageFallback,
+      language: this.config.language,
+      languageFallback: this.config.languageFallback,
     });
   }
   
@@ -69,7 +60,13 @@ export class ValidatorPlugin implements RuntimePlugin {
   async install(ctx: RuntimeContext | any): Promise<void> {
     const kernel = (ctx.engine || (ctx.getKernel && ctx.getKernel())) as KernelWithValidator;
     
-    console.log(`[${this.name}] Installing validator plugin...`);
+    this.logger.info('Installing validator plugin', {
+      config: {
+        enableQueryValidation: this.config.enableQueryValidation,
+        enableMutationValidation: this.config.enableMutationValidation,
+        language: this.config.language
+      }
+    });
     
     // Make validator accessible from the kernel for direct usage
     kernel.validator = this.validator;
@@ -84,7 +81,7 @@ export class ValidatorPlugin implements RuntimePlugin {
       this.registerMutationValidation(kernel, ctx);
     }
     
-    console.log(`[${this.name}] Validator plugin installed`);
+    this.logger.info('Validator plugin installed successfully');
   }
 
   // --- Adapter for @objectstack/core compatibility ---

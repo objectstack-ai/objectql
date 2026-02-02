@@ -8,3 +8,4 @@
 
 export * from './formula-engine';
 export * from './formula-plugin';
+export * from './config.schema';

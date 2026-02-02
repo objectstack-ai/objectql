@@ -7,6 +7,10 @@
  */
 
 import type { PermissionConfig, PermissionCheckContext, PermissionCheckResult } from '@objectql/types';
+import type { Role } from '@objectstack/spec/auth';
+
+// Re-export Role from @objectstack/spec for convenience
+export type { Role };
 
 /**
  * Permission storage backend type
@@ -35,6 +39,8 @@ export interface IPermissionStorage {
 
 /**
  * Configuration for the Security Plugin
+ * 
+ * @deprecated Use SecurityPluginConfigSchema from './config.schema' for runtime validation
  */
 export interface SecurityPluginConfig {
   /**

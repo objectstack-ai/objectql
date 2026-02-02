@@ -7,7 +7,10 @@
  */
 
 import type { RuntimePlugin, RuntimeContext } from '@objectql/types';
+import type { Logger } from '@objectstack/spec/contracts';
+import { createLogger } from '@objectstack/core';
 import type { SecurityPluginConfig, SecurityContext, PermissionAuditLog } from './types';
+import { SecurityPluginConfigSchema } from './config.schema';
 import { PermissionLoader } from './permission-loader';
 import { PermissionGuard } from './permission-guard';
 import { QueryTrimmer } from './query-trimmer';
@@ -47,7 +50,7 @@ interface KernelWithSecurity {
  */
 export class ObjectQLSecurityPlugin implements RuntimePlugin {
   name = '@objectql/plugin-security';
-  version = '4.0.1';
+  version = '4.0.5';
   
   private config: SecurityPluginConfig;
   private loader!: PermissionLoader;
@@ -55,23 +58,21 @@ export class ObjectQLSecurityPlugin implements RuntimePlugin {
   private trimmer!: QueryTrimmer;
   private masker!: FieldMasker;
   private auditLog: PermissionAuditLog[] = [];
+  private logger: Logger;
   
   constructor(config: SecurityPluginConfig = {}) {
-    // Set defaults
-    this.config = {
-      enabled: true,
-      storageType: 'memory',
-      permissions: [],
-      exemptObjects: [],
-      enableRowLevelSecurity: true,
-      enableFieldLevelSecurity: true,
-      precompileRules: true,
-      enableCache: true,
-      cacheTTL: 60000,
-      throwOnDenied: true,
-      enableAudit: false,
-      ...config
-    };
+    // Validate and parse configuration using Zod schema
+    const validatedConfig = SecurityPluginConfigSchema.parse(config);
+    
+    // Set configuration with validated defaults
+    this.config = validatedConfig;
+    
+    // Initialize structured logger
+    this.logger = createLogger({
+      name: this.name,
+      level: 'info',
+      format: 'pretty'
+    });
   }
   
   /**
@@ -81,10 +82,15 @@ export class ObjectQLSecurityPlugin implements RuntimePlugin {
   async install(ctx: any): Promise<void> {
     const kernel = (ctx.engine || (ctx.getKernel && ctx.getKernel())) as KernelWithSecurity;
     
-    console.log(`[${this.name}] Installing security plugin...`);
+    this.logger.info('Installing security plugin', { 
+      config: { 
+        enabled: this.config.enabled, 
+        storageType: this.config.storageType 
+      } 
+    });
     
     if (!this.config.enabled) {
-      console.log(`[${this.name}] Security plugin is disabled`);
+      this.logger.warn('Security plugin is disabled');
       return;
     }
     
@@ -101,7 +107,7 @@ export class ObjectQLSecurityPlugin implements RuntimePlugin {
     // Pre-load and compile all permissions
     if (this.config.precompileRules) {
       await this.loader.loadAll();
-      console.log(`[${this.name}] Permission rules pre-compiled`);
+      this.logger.info('Permission rules pre-compiled');
     }
     
     // Make security components accessible from the kernel
@@ -116,14 +122,14 @@ export class ObjectQLSecurityPlugin implements RuntimePlugin {
     // Register security hooks
     this.registerSecurityHooks(kernel, ctx);
     
-    console.log(`[${this.name}] Security plugin installed successfully`);
+    this.logger.info('Security plugin installed successfully');
   }
   
   /**
    * Called when the kernel starts
    */
   async onStart(ctx: RuntimeContext): Promise<void> {
-    console.log(`[${this.name}] Security plugin started`);
+    this.logger.info('Security plugin started');
   }
 
   // --- Adapter for @objectstack/core compatibility ---
@@ -156,21 +162,21 @@ export class ObjectQLSecurityPlugin implements RuntimePlugin {
       registerHook('beforeQuery', async (context: any) => {
         await this.handleBeforeQuery(context);
       });
-      console.log(`[${this.name}] beforeQuery hook registered`);
+      this.logger.debug('beforeQuery hook registered');
     }
     
     // Register beforeMutation hook for permission checks
     registerHook('beforeMutation', async (context: any) => {
         await this.handleBeforeMutation(context);
     });
-    console.log(`[${this.name}] beforeMutation hook registered`);
+    this.logger.debug('beforeMutation hook registered');
     
     // Register afterQuery hook for field-level security
     if (this.config.enableFieldLevelSecurity) {
       registerHook('afterQuery', async (context: any) => {
         await this.handleAfterQuery(context);
       });
-      console.log(`[${this.name}] afterQuery hook registered`);
+      this.logger.debug('afterQuery hook registered');
     }
   }
   
@@ -215,7 +221,10 @@ export class ObjectQLSecurityPlugin implements RuntimePlugin {
         context.skip = true; // Skip database query
       }
     } catch (error) {
-      console.error(`[${this.name}] Error in beforeQuery:`, error);
+      this.logger.error('Error in beforeQuery', error as Error, { 
+        objectName, 
+        operation: 'read' 
+      });
       if (this.config.throwOnDenied) {
         throw error;
       }
@@ -274,7 +283,10 @@ export class ObjectQLSecurityPlugin implements RuntimePlugin {
         }
       }
     } catch (error) {
-      console.error(`[${this.name}] Error in beforeMutation:`, error);
+      this.logger.error('Error in beforeMutation', error as Error, { 
+        objectName, 
+        operation 
+      });
       throw error;
     }
   }
@@ -315,7 +327,10 @@ export class ObjectQLSecurityPlugin implements RuntimePlugin {
         ? maskedResults
         : maskedResults[0];
     } catch (error) {
-      console.error(`[${this.name}] Error in afterQuery:`, error);
+      this.logger.error('Error in afterQuery', error as Error, { 
+        objectName, 
+        operation: 'read' 
+      });
       if (this.config.throwOnDenied) {
         throw error;
       }
