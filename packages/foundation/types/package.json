@@ -30,6 +30,7 @@
     "@objectstack/spec": "^0.8.2"
   },
   "devDependencies": {
+    "@objectstack/spec": "^0.8.2",
     "ts-json-schema-generator": "^2.4.0",
     "zod": "^3.23.8"
   }

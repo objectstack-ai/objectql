@@ -87,15 +87,28 @@ describe('CLI Commands', () => {
             expect(tsContent).toContain('afterInsert');
         });
 
-        // Skip this test as it calls process.exit which causes test failures
-        it.skip('should validate object name format', async () => {
-            await expect(
-                newMetadata({
+        it('should validate object name format', async () => {
+            const mockExit = jest.spyOn(process, 'exit').mockImplementation((code?: number) => {
+                throw new Error(`Process exited with code ${code}`);
+            });
+
+            // Mock console.error to keep output clean and verify error message
+            const mockConsoleError = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+            try {
+                await newMetadata({
                     type: 'object',
                     name: 'InvalidName',  // Should be lowercase
                     dir: testDir
-                })
-            ).rejects.toThrow();
+                });
+                // Should fail before this
+                expect(true).toBe(false); 
+            } catch (e: any) {
+                expect(e.message).toContain('Process exited');
+            } finally {
+                mockExit.mockRestore();
+                mockConsoleError.mockRestore();
+            }
         });
     });
 
