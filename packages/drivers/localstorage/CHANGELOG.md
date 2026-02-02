@@ -1,5 +1,14 @@
 # Changelog
 
+## 4.0.5
+
+### Patch Changes
+
+- Patch release 4.0.5 - Bug fixes and stability improvements
+- Updated dependencies
+  - @objectql/driver-memory@4.0.5
+  - @objectql/types@4.0.5
+
 ## 4.0.4
 
 ### Patch Changes

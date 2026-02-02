@@ -1,6 +1,6 @@
 {
   "name": "@objectql/protocol-rest",
-  "version": "4.0.5",
+  "version": "4.0.6",
   "description": "REST Protocol Plugin for ObjectStack",
   "keywords": [
     "objectql",

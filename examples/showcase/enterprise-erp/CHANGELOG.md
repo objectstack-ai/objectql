@@ -1,5 +1,15 @@
 # @objectql/starter-enterprise
 
+## 4.0.5
+
+### Patch Changes
+
+- Updated dependencies
+  - @objectql/core@4.0.5
+  - @objectql/driver-sql@4.0.5
+  - @objectql/platform-node@4.0.5
+  - @objectql/types@4.0.5
+
 ## 4.0.4
 
 ### Patch Changes

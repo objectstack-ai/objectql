@@ -1,5 +1,13 @@
 # @objectql/plugin-security
 
+## 4.0.5
+
+### Patch Changes
+
+- Patch release 4.0.5 - Bug fixes and stability improvements
+- Updated dependencies
+  - @objectql/types@4.0.5
+
 ## 4.0.4
 
 ### Patch Changes
