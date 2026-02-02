@@ -8,3 +8,4 @@
 
 export * from './validator';
 export * from './validator-plugin';
+export * from './config.schema';

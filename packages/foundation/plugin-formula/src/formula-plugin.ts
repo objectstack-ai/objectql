@@ -7,8 +7,10 @@
  */
 
 import type { RuntimePlugin, RuntimeContext } from '@objectql/types';
+import type { Logger } from '@objectstack/spec/contracts';
+import { createLogger } from '@objectstack/core';
 import { FormulaEngine } from './formula-engine';
-import type { FormulaEngineConfig } from '@objectql/types';
+import { FormulaPluginConfigSchema, FormulaPluginConfig } from './config.schema';
 
 /**
  * Extended kernel with formula engine capability
@@ -20,17 +22,6 @@ interface KernelWithFormulas {
 }
 
 /**
- * Configuration for the Formula Plugin
- */
-export interface FormulaPluginConfig extends FormulaEngineConfig {
-  /**
-   * Enable automatic formula evaluation on queries
-   * @default true
-   */
-  autoEvaluateOnQuery?: boolean;
-}
-
-/**
  * Formula Plugin
  * 
  * Wraps the ObjectQL Formula Engine as a microkernel plugin.
@@ -38,19 +29,29 @@ export interface FormulaPluginConfig extends FormulaEngineConfig {
  */
 export class FormulaPlugin implements RuntimePlugin {
   name = '@objectql/plugin-formula';
-  version = '4.0.2';
+  version = '4.0.5';
   
   private engine: FormulaEngine;
   private config: FormulaPluginConfig;
+  private logger: Logger;
   
-  constructor(config: FormulaPluginConfig = {}) {
-    this.config = {
-      autoEvaluateOnQuery: true,
-      ...config
-    };
+  constructor(config: Partial<FormulaPluginConfig> = {}) {
+    // Validate and parse configuration using Zod schema
+    this.config = FormulaPluginConfigSchema.parse(config);
+    
+    // Initialize structured logger
+    this.logger = createLogger({
+      name: this.name,
+      level: 'info',
+      format: 'pretty'
+    });
     
     // Initialize the formula engine with configuration
-    this.engine = new FormulaEngine(config);
+    this.engine = new FormulaEngine({
+      enable_cache: this.config.enableCache,
+      cache_ttl: Math.floor(this.config.cacheTTL / 1000), // Convert ms to seconds
+      max_execution_time: this.config.timeout
+    });
   }
   
   /**
@@ -60,7 +61,13 @@ export class FormulaPlugin implements RuntimePlugin {
   async install(ctx: RuntimeContext): Promise<void> {
     const kernel = ctx.engine as KernelWithFormulas;
     
-    console.log(`[${this.name}] Installing formula plugin...`);
+    this.logger.info('Installing formula plugin', {
+      config: {
+        autoEvaluateOnQuery: this.config.autoEvaluateOnQuery,
+        strict: this.config.strict,
+        timeout: this.config.timeout
+      }
+    });
     
     // Make formula engine accessible from the kernel for direct usage
     kernel.formulaEngine = this.engine;
@@ -73,7 +80,7 @@ export class FormulaPlugin implements RuntimePlugin {
       this.registerFormulaMiddleware(kernel);
     }
     
-    console.log(`[${this.name}] Formula plugin installed`);
+    this.logger.info('Formula plugin installed successfully');
   }
   
   /**
