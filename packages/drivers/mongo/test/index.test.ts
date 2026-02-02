@@ -22,6 +22,7 @@ const mockCollection = {
         insertedCount: 2
     }),
     updateOne: jest.fn().mockResolvedValue({ modifiedCount: 1 }),
+    findOneAndUpdate: jest.fn().mockResolvedValue({ _id: '123', name: 'Updated' }),
     deleteOne: jest.fn().mockResolvedValue({ deletedCount: 1 }),
     countDocuments: jest.fn().mockResolvedValue(10)
 };
@@ -437,20 +438,17 @@ describe('MongoDriver', () => {
                     data: { name: 'Updated User' }
                 };
 
-                mockCollection.updateOne.mockResolvedValue({ 
-                    modifiedCount: 1,
-                    acknowledged: true
-                } as any);
-                mockCollection.findOne.mockResolvedValue({ 
+                mockCollection.findOneAndUpdate.mockResolvedValue({ 
                     _id: '123', 
-                    name: 'Updated User' 
+                    name: 'Updated User',
+                    updated_at: new Date().toISOString()
                 });
 
                 const result = await driver.executeCommand(command);
 
                 expect(result.success).toBe(true);
                 expect(result.affected).toBe(1);
-                expect(mockCollection.updateOne).toHaveBeenCalled();
+                expect(mockCollection.findOneAndUpdate).toHaveBeenCalled();
             });
 
             it('should execute delete command', async () => {
@@ -504,11 +502,11 @@ describe('MongoDriver', () => {
                     ]
                 };
 
-                mockCollection.updateOne.mockResolvedValue({ 
-                    modifiedCount: 1,
-                    acknowledged: true
-                } as any);
-                mockCollection.findOne.mockResolvedValue({ _id: '1', name: 'Updated 1' });
+                mockCollection.findOneAndUpdate.mockResolvedValue({ 
+                    _id: '1', 
+                    name: 'Updated 1',
+                    updated_at: new Date().toISOString()
+                });
 
                 const result = await driver.executeCommand(command);
 
