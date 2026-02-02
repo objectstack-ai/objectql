@@ -46,13 +46,16 @@ describe('MongoDriver TCK Compliance', () => {
             return driver;
         },
         {
-            // MongoDB supports all features
+            // MongoDB supports most features
             skip: {
-                // No features to skip
+                // No features to skip - MongoDB now supports transactions
             },
             timeout: 30000,
             hooks: {
                 beforeEach: async () => {
+                    // Wait for driver to connect
+                    await driver['connected'];
+                    
                     // Clear all collections
                     if (driver && driver['db']) {
                         const collections = await driver['db'].listCollections().toArray();
