@@ -11,7 +11,7 @@ type DriverInterface = Data.DriverInterface;
  */
 
 import { Driver } from '@objectql/types';
-import { MongoClient, Db, Filter, ObjectId, FindOptions, ChangeStream, ChangeStreamDocument } from 'mongodb';
+import { MongoClient, Db, Filter, ObjectId, FindOptions, FindOneAndUpdateOptions, ChangeStream, ChangeStreamDocument } from 'mongodb';
 
 /**
  * Change stream event handler callback
@@ -410,9 +410,20 @@ export class MongoDriver implements Driver {
             mongoDoc._id = new ObjectId().toHexString();
         }
 
-        // Pass session for transactional operations
-        const mongoOptions = options?.session ? { session: options.session } : {};
-        const result = await collection.insertOne(mongoDoc, mongoOptions);
+        // Add timestamps if not already present
+        const now = new Date().toISOString();
+        if (!mongoDoc.created_at) {
+            mongoDoc.created_at = now;
+        }
+        if (!mongoDoc.updated_at) {
+            mongoDoc.updated_at = now;
+        }
+
+        // Pass session for transactional operations only if it exists
+        const result = options?.session 
+            ? await collection.insertOne(mongoDoc, { session: options.session })
+            : await collection.insertOne(mongoDoc);
+        
         // Return API format document (convert _id to id)
         return this.mapFromMongo({ ...mongoDoc, _id: result.insertedId });
     }
@@ -422,23 +433,37 @@ export class MongoDriver implements Driver {
         
         // Map API document (id) to MongoDB document (_id) for update data
         // But we should not allow updating the _id field itself
-        const { id: _ignoredId, ...updateData } = data; // intentionally ignore id to prevent updating primary key
+        const { id: _ignoredId, created_at: _ignoredCreatedAt, ...updateData } = data; // intentionally ignore id and created_at to prevent updating them
+        
+        // Add updated_at timestamp
+        updateData.updated_at = new Date().toISOString();
         
         // Handle atomic operators if present
         const isAtomic = Object.keys(updateData).some(k => k.startsWith('$'));
         const update = isAtomic ? updateData : { $set: updateData };
 
-        // Pass session for transactional operations
-        const mongoOptions = options?.session ? { session: options.session } : {};
-        const result = await collection.updateOne({ _id: this.normalizeId(id) }, update, mongoOptions);
-        return result.modifiedCount; // or return updated document?
+        // Use findOneAndUpdate to return the updated document
+        const mongoOptions: FindOneAndUpdateOptions = { returnDocument: 'after' };
+        if (options?.session) {
+            mongoOptions.session = options.session;
+        }
+        
+        const result = await collection.findOneAndUpdate(
+            { _id: this.normalizeId(id) },
+            update,
+            mongoOptions
+        );
+        
+        // Return API format document (convert _id to id)
+        return this.mapFromMongo(result);
     }
 
     async delete(objectName: string, id: string | number, options?: any) {
         const collection = await this.getCollection(objectName);
-        // Pass session for transactional operations
-        const mongoOptions = options?.session ? { session: options.session } : {};
-        const result = await collection.deleteOne({ _id: this.normalizeId(id) }, mongoOptions);
+        // Pass session for transactional operations only if it exists
+        const result = options?.session
+            ? await collection.deleteOne({ _id: this.normalizeId(id) }, { session: options.session })
+            : await collection.deleteOne({ _id: this.normalizeId(id) });
         return result.deletedCount;
     }
 
