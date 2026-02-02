@@ -895,6 +895,9 @@ importers:
 
   packages/tools/driver-tck:
     devDependencies:
+      '@types/jest':
+        specifier: ^29.0.0
+        version: 29.5.14
       typescript:
         specifier: ^5.3.0
         version: 5.9.3
