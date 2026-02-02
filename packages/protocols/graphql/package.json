@@ -22,7 +22,7 @@
     "@apollo/subgraph": "^2.13.0",
     "@graphql-tools/schema": "^10.0.2",
     "@objectql/types": "workspace:*",
-    "@objectstack/spec": "^0.8.2",
+    "@objectstack/spec": "^0.9.0",
     "cors": "^2.8.5",
     "dataloader": "^2.2.2",
     "express": "^4.18.2",

@@ -389,8 +389,8 @@ importers:
         specifier: workspace:*
         version: link:../../foundation/types
       '@objectstack/spec':
-        specifier: ^0.8.2
-        version: 0.8.2
+        specifier: ^0.9.0
+        version: 0.9.0
       exceljs:
         specifier: ^4.4.0
         version: 4.4.0
@@ -417,8 +417,8 @@ importers:
         specifier: workspace:*
         version: link:../../foundation/types
       '@objectstack/spec':
-        specifier: ^0.8.2
-        version: 0.8.2
+        specifier: ^0.9.0
+        version: 0.9.0
     devDependencies:
       '@types/jest':
         specifier: ^29.0.0
@@ -442,8 +442,8 @@ importers:
         specifier: workspace:*
         version: link:../../foundation/types
       '@objectstack/spec':
-        specifier: ^0.8.2
-        version: 0.8.2
+        specifier: ^0.9.0
+        version: 0.9.0
     devDependencies:
       '@types/jest':
         specifier: ^29.0.0
@@ -464,8 +464,8 @@ importers:
         specifier: workspace:*
         version: link:../../foundation/types
       '@objectstack/spec':
-        specifier: ^0.8.2
-        version: 0.8.2
+        specifier: ^0.9.0
+        version: 0.9.0
       mingo:
         specifier: ^7.1.1
         version: 7.2.0
@@ -486,8 +486,8 @@ importers:
         specifier: workspace:*
         version: link:../../foundation/types
       '@objectstack/spec':
-        specifier: ^0.8.2
-        version: 0.8.2
+        specifier: ^0.9.0
+        version: 0.9.0
       mongodb:
         specifier: ^5.9.2
         version: 5.9.2
@@ -502,8 +502,8 @@ importers:
         specifier: workspace:*
         version: link:../../foundation/types
       '@objectstack/spec':
-        specifier: ^0.8.2
-        version: 0.8.2
+        specifier: ^0.9.0
+        version: 0.9.0
       redis:
         specifier: ^4.6.0
         version: 4.7.1
@@ -527,8 +527,8 @@ importers:
         specifier: workspace:*
         version: link:../../foundation/types
       '@objectstack/spec':
-        specifier: ^0.8.2
-        version: 0.8.2
+        specifier: ^0.9.0
+        version: 0.9.0
     devDependencies:
       typescript:
         specifier: ^5.3.0
@@ -540,8 +540,8 @@ importers:
         specifier: workspace:*
         version: link:../../foundation/types
       '@objectstack/spec':
-        specifier: ^0.8.2
-        version: 0.8.2
+        specifier: ^0.9.0
+        version: 0.9.0
       knex:
         specifier: ^3.1.0
         version: 3.1.0(sqlite3@5.1.7)
@@ -559,8 +559,8 @@ importers:
         specifier: workspace:*
         version: link:../../foundation/types
       '@objectstack/spec':
-        specifier: ^0.8.2
-        version: 0.8.2
+        specifier: ^0.9.0
+        version: 0.9.0
     devDependencies:
       '@types/jest':
         specifier: ^29.0.0
@@ -615,8 +615,8 @@ importers:
         specifier: workspace:*
         version: link:../types
       '@objectstack/spec':
-        specifier: ^0.8.2
-        version: 0.8.2
+        specifier: ^0.9.0
+        version: 0.9.0
       fast-glob:
         specifier: ^3.3.2
         version: 3.3.3
@@ -695,8 +695,8 @@ importers:
   packages/foundation/types:
     dependencies:
       '@objectstack/spec':
-        specifier: ^0.8.2
-        version: 0.8.2
+        specifier: ^0.9.0
+        version: 0.9.0
     devDependencies:
       ts-json-schema-generator:
         specifier: ^2.4.0
@@ -723,8 +723,8 @@ importers:
         specifier: workspace:*
         version: link:../../foundation/types
       '@objectstack/spec':
-        specifier: ^0.8.2
-        version: 0.8.2
+        specifier: ^0.9.0
+        version: 0.9.0
       cors:
         specifier: ^2.8.5
         version: 2.8.6
@@ -778,8 +778,8 @@ importers:
         specifier: workspace:*
         version: link:../../foundation/types
       '@objectstack/spec':
-        specifier: ^0.8.2
-        version: 0.8.2
+        specifier: ^0.9.0
+        version: 0.9.0
     devDependencies:
       '@objectql/driver-memory':
         specifier: workspace:*
@@ -800,8 +800,8 @@ importers:
         specifier: workspace:*
         version: link:../../foundation/types
       '@objectstack/spec':
-        specifier: ^0.8.2
-        version: 0.8.2
+        specifier: ^0.9.0
+        version: 0.9.0
     devDependencies:
       '@objectql/driver-memory':
         specifier: workspace:*
