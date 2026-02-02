@@ -508,6 +508,9 @@ importers:
         specifier: ^4.6.0
         version: 4.7.1
     devDependencies:
+      '@objectql/driver-tck':
+        specifier: workspace:*
+        version: link:../../tools/driver-tck
       '@types/jest':
         specifier: ^29.0.0
         version: 29.5.14

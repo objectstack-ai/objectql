@@ -13,5 +13,6 @@ module.exports = {
   collectCoverageFrom: ['src/**/*.ts'],
   moduleNameMapper: {
     '^@objectql/types$': '<rootDir>/../../foundation/types/src',
+    '^@objectql/driver-tck$': '<rootDir>/../../tools/driver-tck/src',
   }
 };
