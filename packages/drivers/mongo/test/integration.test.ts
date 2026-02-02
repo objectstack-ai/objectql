@@ -299,12 +299,12 @@ describe('MongoDriver Integration Tests', () => {
             await driver.create('users', { name: 'Bob', status: 'pending' });
             await driver.create('users', { name: 'Charlie', status: 'active' });
 
-            const modifiedCount = await driver.updateMany('users',
+            const result = await driver.updateMany('users',
                 [['status', '=', 'pending']],
                 { status: 'active' }
             );
 
-            expect(modifiedCount).toBe(2);
+            expect(result.modifiedCount).toBe(2);
 
             const results = await driver.find('users', {
                 filters: [['status', '=', 'active']]
@@ -318,12 +318,12 @@ describe('MongoDriver Integration Tests', () => {
             await driver.create('users', { name: 'Bob', score: 20, active: true });
             await driver.create('users', { name: 'Charlie', score: 30, active: false });
 
-            const modifiedCount = await driver.updateMany('users',
+            const result = await driver.updateMany('users',
                 [['active', '=', true]],
                 { $inc: { score: 5 } }
             );
 
-            expect(modifiedCount).toBe(2);
+            expect(result.modifiedCount).toBe(2);
 
             const alice = await driver.findOne('users', null as any, {
                 filters: [['name', '=', 'Alice']]
@@ -337,11 +337,11 @@ describe('MongoDriver Integration Tests', () => {
             await driver.create('users', { name: 'Bob', status: 'inactive' });
             await driver.create('users', { name: 'Charlie', status: 'active' });
 
-            const deletedCount = await driver.deleteMany('users',
+            const result = await driver.deleteMany('users',
                 [['status', '=', 'inactive']]
             );
 
-            expect(deletedCount).toBe(2);
+            expect(result.deletedCount).toBe(2);
 
             const remaining = await driver.count('users', []);
             expect(remaining).toBe(1);
@@ -352,16 +352,16 @@ describe('MongoDriver Integration Tests', () => {
             const result = await driver.createMany('users', []);
             expect(result).toBeDefined();
 
-            const updated = await driver.updateMany('users',
+            const updateResult = await driver.updateMany('users',
                 [['name', '=', 'nonexistent']],
                 { status: 'updated' }
             );
-            expect(updated).toBe(0);
+            expect(updateResult.modifiedCount).toBe(0);
 
-            const deleted = await driver.deleteMany('users',
+            const deleteResult = await driver.deleteMany('users',
                 [['name', '=', 'nonexistent']]
             );
-            expect(deleted).toBe(0);
+            expect(deleteResult.deletedCount).toBe(0);
         });
     });
 
