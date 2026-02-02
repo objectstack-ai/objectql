@@ -420,8 +420,10 @@ export class MongoDriver implements Driver {
         }
 
         // Pass session for transactional operations only if it exists
-        const result = options?.session 
-            ? await collection.insertOne(mongoDoc, { session: options.session })
+        // Support both 'transaction' and 'session' option keys for compatibility
+        const session = options?.transaction || options?.session;
+        const result = session 
+            ? await collection.insertOne(mongoDoc, { session })
             : await collection.insertOne(mongoDoc);
         
         // Return API format document (convert _id to id)
@@ -456,8 +458,10 @@ export class MongoDriver implements Driver {
 
         // Use findOneAndUpdate to return the updated document
         const mongoOptions: FindOneAndUpdateOptions = { returnDocument: 'after' };
-        if (options?.session) {
-            mongoOptions.session = options.session;
+        // Support both 'transaction' and 'session' option keys for compatibility
+        const session = options?.transaction || options?.session;
+        if (session) {
+            mongoOptions.session = session;
         }
         
         const result = await collection.findOneAndUpdate(
@@ -473,8 +477,10 @@ export class MongoDriver implements Driver {
     async delete(objectName: string, id: string | number, options?: any) {
         const collection = await this.getCollection(objectName);
         // Pass session for transactional operations only if it exists
-        const result = options?.session
-            ? await collection.deleteOne({ _id: this.normalizeId(id) }, { session: options.session })
+        // Support both 'transaction' and 'session' option keys for compatibility
+        const session = options?.transaction || options?.session;
+        const result = session
+            ? await collection.deleteOne({ _id: this.normalizeId(id) }, { session })
             : await collection.deleteOne({ _id: this.normalizeId(id) });
         return result.deletedCount;
     }
@@ -503,7 +509,11 @@ export class MongoDriver implements Driver {
             }
             return mongoDoc;
         });
-        const result = await collection.insertMany(mongoDocs);
+        // Support both 'transaction' and 'session' option keys for compatibility
+        const session = options?.transaction || options?.session;
+        const result = session
+            ? await collection.insertMany(mongoDocs, { session })
+            : await collection.insertMany(mongoDocs);
         // Return API format (convert _id to id)
         return Object.values(result.insertedIds).map(id => ({ id }));
     }
@@ -518,15 +528,23 @@ export class MongoDriver implements Driver {
         const isAtomic = Object.keys(updateData).some(k => k.startsWith('$'));
         const update = isAtomic ? updateData : { $set: updateData };
         
-        const result = await collection.updateMany(filter, update);
-        return result.modifiedCount;
+        // Support both 'transaction' and 'session' option keys for compatibility
+        const session = options?.transaction || options?.session;
+        const result = session
+            ? await collection.updateMany(filter, update, { session })
+            : await collection.updateMany(filter, update);
+        return { modifiedCount: result.modifiedCount };
     }
 
     async deleteMany(objectName: string, filters: any, options?: any): Promise<any> {
         const collection = await this.getCollection(objectName);
         const filter = this.mapFilters(filters);
-        const result = await collection.deleteMany(filter);
-        return result.deletedCount;
+        // Support both 'transaction' and 'session' option keys for compatibility
+        const session = options?.transaction || options?.session;
+        const result = session
+            ? await collection.deleteMany(filter, { session })
+            : await collection.deleteMany(filter);
+        return { deletedCount: result.deletedCount };
     }
 
     async aggregate(objectName: string, pipeline: any[], options?: any): Promise<any[]> {
