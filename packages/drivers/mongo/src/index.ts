@@ -11,7 +11,7 @@ type DriverInterface = Data.DriverInterface;
  */
 
 import { Driver } from '@objectql/types';
-import { MongoClient, Db, Filter, ObjectId, FindOptions, ChangeStream, ChangeStreamDocument } from 'mongodb';
+import { MongoClient, Db, Filter, ObjectId, FindOptions, FindOneAndUpdateOptions, ChangeStream, ChangeStreamDocument } from 'mongodb';
 
 /**
  * Change stream event handler callback
@@ -443,7 +443,7 @@ export class MongoDriver implements Driver {
         const update = isAtomic ? updateData : { $set: updateData };
 
         // Use findOneAndUpdate to return the updated document
-        const mongoOptions: any = { returnDocument: 'after' };
+        const mongoOptions: FindOneAndUpdateOptions = { returnDocument: 'after' };
         if (options?.session) {
             mongoOptions.session = options.session;
         }
