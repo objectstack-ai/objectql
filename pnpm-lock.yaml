@@ -938,6 +938,9 @@ importers:
       typescript:
         specifier: ^5.3.0
         version: 5.9.3
+      vitest:
+        specifier: ^1.6.1
+        version: 1.6.1(@types/node@25.1.0)(jsdom@20.0.3)(lightningcss@1.30.2)
 
   packages/tools/vscode-objectql:
     dependencies:
