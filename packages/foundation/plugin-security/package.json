@@ -1,6 +1,6 @@
 {
   "name": "@objectql/plugin-security",
-  "version": "4.0.3",
+  "version": "4.0.4",
   "description": "Security plugin for ObjectQL - RBAC, Field-Level Security, and Row-Level Security enforcement",
   "keywords": [
     "objectql",

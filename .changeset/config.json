@@ -15,6 +15,7 @@
       "@objectql/driver-redis",
       "@objectql/driver-sql",
       "@objectql/driver-tck",
+      "@objectql/driver-utils",
       "@objectql/example-multi-protocol-server",
       "@objectql/platform-node",
       "@objectql/plugin-ai-agent",
@@ -24,8 +25,8 @@
       "@objectql/protocol-graphql",
       "@objectql/protocol-json-rpc",
       "@objectql/protocol-odata-v4",
+      "@objectql/protocol-tck",
       "@objectql/sdk",
-      "@objectql/server",
       "@objectql/types"
     ]
   ],
