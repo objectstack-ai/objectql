@@ -468,6 +468,9 @@ export class RedisDriver implements Driver {
         } else if (filters && !Array.isArray(filters) && !Array.isArray(actualFilters) && filters.field && 'operator' in filters && filters.value !== undefined) {
             // Also handle FilterCondition without explicit type (some simplified formats)
             actualFilters = this.convertFilterConditionToArray(filters);
+        } else if (filters && !Array.isArray(filters) && !Array.isArray(actualFilters)) {
+            // Handle simple object filters like { role: 'user' } or MongoDB-style filters
+            actualFilters = this.convertFilterConditionToArray(filters);
         }
         
         // Count only records matching filters
@@ -529,6 +532,9 @@ export class RedisDriver implements Driver {
         if (filters && !Array.isArray(filters) && !Array.isArray(actualFilters) && filters.type) {
             actualFilters = this.convertFilterConditionToArray(filters);
         } else if (filters && !Array.isArray(filters) && !Array.isArray(actualFilters) && filters.field && 'operator' in filters && filters.value !== undefined) {
+            actualFilters = this.convertFilterConditionToArray(filters);
+        } else if (filters && !Array.isArray(filters) && !Array.isArray(actualFilters)) {
+            // Handle simple object filters like { role: 'user' } or MongoDB-style filters
             actualFilters = this.convertFilterConditionToArray(filters);
         }
         
