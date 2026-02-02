@@ -10,6 +10,8 @@ The GraphQL API provides:
 - **Strongly-typed schema** automatically generated from ObjectQL metadata
 - **Single endpoint** for all queries and mutations
 - **Efficient data fetching** with precise field selection
+- **Real-time subscriptions** via WebSocket for live data updates
+- **Apollo Federation** support for microservices architecture
 - **Real-time introspection** for developer tools
 - **Standards-compliant** GraphQL implementation
 
@@ -33,25 +35,23 @@ Both GET and POST methods are supported:
 The GraphQL adapter is included in `@objectql/server`:
 
 ```typescript
-import { createGraphQLHandler } from '@objectql/server';
-import { ObjectQL } from '@objectql/core';
+import { ObjectStackKernel } from '@objectstack/runtime';
+import { GraphQLPlugin } from '@objectql/protocol-graphql';
 
-const app = new ObjectQL({
-  datasources: {
-    default: myDriver
-  }
-});
+const kernel = new ObjectStackKernel([
+  myDriver,
+  new GraphQLPlugin({ 
+    port: 4000,
+    introspection: true,
+    enableSubscriptions: true,  // Enable WebSocket subscriptions
+    enableFederation: false,    // Enable Apollo Federation if needed
+    federationServiceName: 'objectql'
+  })
+]);
 
-// Create GraphQL handler
-const graphqlHandler = createGraphQLHandler(app);
-
-// Use with your HTTP server
-server.on('request', (req, res) => {
-  if (req.url?.startsWith('/api/graphql')) {
-    return graphqlHandler(req, res);
-  }
-  // ... other handlers
-});
+await kernel.start();
+// Access GraphQL endpoint: http://localhost:4000/graphql
+// WebSocket subscriptions: ws://localhost:4000/graphql
 ```
 
 ## Basic Query Example
@@ -290,6 +290,302 @@ mutation {
   }
 }
 ```
+
+---
+
+## Subscriptions
+
+ObjectQL GraphQL supports **real-time subscriptions** via WebSocket for live data updates. Subscriptions allow clients to receive automatic notifications when data changes.
+
+### Enabling Subscriptions
+
+Enable subscriptions in the GraphQL plugin configuration:
+
+```typescript
+new GraphQLPlugin({
+  port: 4000,
+  enableSubscriptions: true,  // Enable WebSocket support
+  pubsub: myPubSub  // Optional: provide custom PubSub instance
+})
+```
+
+### Available Subscriptions
+
+For each entity, ObjectQL automatically generates three subscription types:
+
+1. **Created**: Notified when a new record is created
+2. **Updated**: Notified when a record is updated  
+3. **Deleted**: Notified when a record is deleted
+
+### Subscribe to Created Events
+
+```graphql
+subscription {
+  userCreated {
+    id
+    name
+    email
+    role
+  }
+}
+```
+
+When a new user is created, subscribers receive:
+
+```json
+{
+  "data": {
+    "userCreated": {
+      "id": "user_789",
+      "name": "New User",
+      "email": "new@example.com",
+      "role": "user"
+    }
+  }
+}
+```
+
+### Subscribe to Updated Events
+
+```graphql
+subscription {
+  userUpdated {
+    id
+    name
+    email
+    updated_at
+  }
+}
+```
+
+### Subscribe to Deleted Events
+
+```graphql
+subscription {
+  userDeleted {
+    id
+  }
+}
+```
+
+### Filtered Subscriptions
+
+Add `where` conditions to receive only relevant updates:
+
+```graphql
+subscription {
+  userCreated(where: { role: "admin" }) {
+    id
+    name
+    email
+    role
+  }
+}
+```
+
+Only users with `role = "admin"` will trigger notifications.
+
+### Client Integration
+
+#### JavaScript/TypeScript with graphql-ws
+
+```typescript
+import { createClient } from 'graphql-ws';
+
+const client = createClient({
+  url: 'ws://localhost:4000/graphql',
+  connectionParams: {
+    authorization: 'Bearer ' + token
+  }
+});
+
+const subscription = client.subscribe(
+  {
+    query: `
+      subscription {
+        userCreated {
+          id
+          name
+          email
+        }
+      }
+    `
+  },
+  {
+    next: (data) => {
+      console.log('New user created:', data);
+    },
+    error: (err) => {
+      console.error('Subscription error:', err);
+    },
+    complete: () => {
+      console.log('Subscription complete');
+    }
+  }
+);
+
+// Unsubscribe when done
+subscription();
+```
+
+#### Apollo Client
+
+```typescript
+import { ApolloClient, InMemoryCache, split, HttpLink } from '@apollo/client';
+import { GraphQLWsLink } from '@apollo/client/link/subscriptions';
+import { getMainDefinition } from '@apollo/client/utilities';
+import { createClient } from 'graphql-ws';
+
+const httpLink = new HttpLink({
+  uri: 'http://localhost:4000/graphql'
+});
+
+const wsLink = new GraphQLWsLink(
+  createClient({
+    url: 'ws://localhost:4000/graphql'
+  })
+);
+
+// Split between HTTP and WebSocket
+const splitLink = split(
+  ({ query }) => {
+    const definition = getMainDefinition(query);
+    return (
+      definition.kind === 'OperationDefinition' &&
+      definition.operation === 'subscription'
+    );
+  },
+  wsLink,
+  httpLink
+);
+
+const client = new ApolloClient({
+  link: splitLink,
+  cache: new InMemoryCache()
+});
+```
+
+#### React with Apollo
+
+```tsx
+import { useSubscription, gql } from '@apollo/client';
+
+const USER_CREATED = gql`
+  subscription OnUserCreated {
+    userCreated {
+      id
+      name
+      email
+    }
+  }
+`;
+
+function UserNotifications() {
+  const { data, loading, error } = useSubscription(USER_CREATED);
+  
+  if (loading) return <p>Waiting for updates...</p>;
+  if (error) return <p>Error: {error.message}</p>;
+  if (data) {
+    return <p>New user: {data.userCreated.name}</p>;
+  }
+  return null;
+}
+```
+
+---
+
+## Apollo Federation
+
+ObjectQL GraphQL supports **Apollo Federation v2** for building distributed GraphQL architectures. This allows you to compose multiple ObjectQL services into a unified supergraph.
+
+### Enabling Federation
+
+Enable federation in the GraphQL plugin configuration:
+
+```typescript
+new GraphQLPlugin({
+  port: 4000,
+  enableFederation: true,
+  federationServiceName: 'users-service'  // Unique service identifier
+})
+```
+
+### How It Works
+
+When federation is enabled, ObjectQL:
+
+1. **Generates federated schema** with `@key` directives on entities
+2. **Implements reference resolvers** for entity resolution
+3. **Exports subgraph schema** compatible with Apollo Gateway/Router
+
+### Entity Keys
+
+ObjectQL automatically adds `@key` directives to all entities using their `id` field:
+
+```graphql
+type User @key(fields: "id") {
+  id: String!
+  name: String!
+  email: String!
+}
+```
+
+### Reference Resolution
+
+ObjectQL implements the `_entities` resolver required by Federation:
+
+```graphql
+query {
+  _entities(representations: [{ __typename: "User", id: "user_123" }]) {
+    ... on User {
+      id
+      name
+      email
+    }
+  }
+}
+```
+
+### Composing with Apollo Gateway
+
+Create a federated gateway that composes multiple ObjectQL services:
+
+```typescript
+import { ApolloGateway, IntrospectAndCompose } from '@apollo/gateway';
+import { ApolloServer } from '@apollo/server';
+
+const gateway = new ApolloGateway({
+  supergraphSdl: new IntrospectAndCompose({
+    subgraphs: [
+      { name: 'users', url: 'http://localhost:4000/graphql' },
+      { name: 'orders', url: 'http://localhost:4001/graphql' },
+      { name: 'products', url: 'http://localhost:4002/graphql' }
+    ]
+  })
+});
+
+const server = new ApolloServer({ gateway });
+await server.start();
+```
+
+### Cross-Service References
+
+Extend entities from other services:
+
+```graphql
+# In orders-service
+extend type User @key(fields: "id") {
+  id: String! @external
+  orders: [Order!]!
+}
+```
+
+### Best Practices
+
+1. **Use descriptive service names**: Makes debugging easier
+2. **Version your subgraphs**: Track schema changes independently
+3. **Monitor gateway health**: Watch for subgraph failures
+4. **Test composition locally**: Validate schema composition before deployment
 
 ---
 
@@ -787,20 +1083,18 @@ if (json.data) {
 
 ## Current Limitations
 
-1. **No Subscriptions**: Real-time subscriptions are not yet supported
-2. **No Nested Mutations**: Cannot create related records in a single mutation
-3. **Basic Relationships**: Relationships are represented as IDs, not nested objects
-4. **No Custom Scalars**: Uses built-in GraphQL scalars only
-5. **No Directives**: Custom directives not supported
+1. **No Nested Mutations**: Cannot create related records in a single mutation
+2. **Basic Relationships**: Relationships are represented as IDs, not nested objects
+3. **No Custom Scalars**: Uses built-in GraphQL scalars only
+4. **No Custom Directives**: User-defined directives not supported
 
 ## Planned Features
 
 - **Nested Relationships**: Query related objects without separate requests
-- **Subscriptions**: Real-time updates via WebSocket
 - **Custom Scalars**: Date, DateTime, JSON scalars
-- **Relay Connections**: Standardized pagination
+- **Relay Connections**: Standardized pagination with cursor-based pagination
 - **Field Resolvers**: Custom field resolution logic
-- **DataLoader Integration**: Batch and cache database queries
+- **Query Complexity Analysis**: Automated query cost calculation
 
 ---
 
@@ -947,5 +1241,6 @@ mutation DeleteUser($id: String!) {
 
 ---
 
-**Last Updated**: January 2026  
-**API Version**: 1.0.0
+**Last Updated**: February 2026  
+**API Version**: 1.0.0  
+**New in v4.0.3**: WebSocket Subscriptions, Apollo Federation v2 support

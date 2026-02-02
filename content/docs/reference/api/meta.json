@@ -6,6 +6,7 @@
     "authentication",
     "rest",
     "graphql",
+    "odata-v4",
     "json-rpc",
     "websocket",
     "attachments",

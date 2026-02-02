@@ -1,0 +1,854 @@
+---
+title: "Protocol TCK"
+description: Protocol Technology Compatibility Kit for testing protocol implementations
+---
+
+The **Protocol Technology Compatibility Kit (TCK)** is a comprehensive test suite that ensures all ObjectQL protocol implementations provide consistent behavior across core operations. It serves as a standardized contract for protocol development and validation.
+
+## Overview
+
+The Protocol TCK provides:
+- **Standardized test contract** for all protocols (GraphQL, OData, REST, JSON-RPC)
+- **Core CRUD operation tests** for create, read, update, delete
+- **Query operation tests** for filtering, pagination, sorting
+- **Metadata operation tests** for protocol introspection
+- **Error handling tests** for consistent error responses
+- **Batch operation tests** for bulk operations
+- **Performance benchmarking** capabilities for protocol efficiency
+- **Protocol-specific feature tests** for advanced capabilities
+
+## Installation
+
+The Protocol TCK is available as a development dependency:
+
+```bash
+npm install --save-dev @objectql/protocol-tck
+```
+
+Or with pnpm:
+
+```bash
+pnpm add -D @objectql/protocol-tck
+```
+
+---
+
+## Basic Usage
+
+### With Vitest
+
+```typescript
+import { describe } from 'vitest';
+import { runProtocolTCK, ProtocolEndpoint } from '@objectql/protocol-tck';
+import { MyProtocol } from './my-protocol';
+
+class MyProtocolEndpoint implements ProtocolEndpoint {
+  async execute(operation) {
+    // Implement protocol-specific request/response handling
+    return { success: true, data: result };
+  }
+  
+  async getMetadata() {
+    // Return protocol metadata
+    return metadata;
+  }
+}
+
+describe('MyProtocol TCK', () => {
+  runProtocolTCK(
+    () => new MyProtocolEndpoint(),
+    'MyProtocol',
+    {
+      timeout: 30000,
+      performance: { enabled: true }
+    }
+  );
+});
+```
+
+### With Jest
+
+```typescript
+import { runProtocolTCK } from '@objectql/protocol-tck';
+import { MyProtocolEndpoint } from './my-protocol-endpoint';
+
+describe('MyProtocol TCK', () => {
+  runProtocolTCK(
+    () => new MyProtocolEndpoint(),
+    'MyProtocol'
+  );
+});
+```
+
+---
+
+## Protocol Endpoint Interface
+
+Your protocol must implement the `ProtocolEndpoint` interface:
+
+```typescript
+interface ProtocolEndpoint {
+  /**
+   * Execute a protocol operation
+   */
+  execute(operation: ProtocolOperation): Promise<ProtocolResponse>;
+  
+  /**
+   * Get protocol metadata (optional)
+   */
+  getMetadata?(): Promise<any>;
+  
+  /**
+   * Cleanup resources (optional)
+   */
+  close?(): Promise<void>;
+}
+```
+
+### Operation Types
+
+```typescript
+interface ProtocolOperation {
+  type: 'create' | 'read' | 'update' | 'delete' | 'query' | 'batch' | 'subscribe';
+  entity: string;
+  data?: any;
+  id?: string;
+  filter?: any;
+  options?: {
+    limit?: number;
+    offset?: number;
+    orderBy?: Array<{ field: string; order: 'asc' | 'desc' }>;
+    select?: string[];
+  };
+}
+```
+
+### Response Format
+
+```typescript
+interface ProtocolResponse {
+  success: boolean;
+  data?: any;
+  error?: {
+    code: string;
+    message: string;
+    details?: any[];
+  };
+  metadata?: any;
+}
+```
+
+---
+
+## Test Categories
+
+### 1. Core CRUD Operations
+
+Tests basic entity lifecycle operations:
+
+- ✅ **Create entities** with auto-generated IDs
+- ✅ **Read entities by ID** 
+- ✅ **Update entities** with partial data
+- ✅ **Delete entities**
+- ✅ **Auto-generated timestamps** (created_at, updated_at)
+- ✅ **Null safety** for non-existent entities
+
+**Example:**
+```typescript
+// TCK will test:
+await endpoint.execute({
+  type: 'create',
+  entity: 'users',
+  data: { name: 'Alice', email: 'alice@example.com' }
+});
+```
+
+### 2. Query Operations
+
+Tests data retrieval with filtering and pagination:
+
+- ✅ **Query all entities**
+- ✅ **Filter by conditions** (eq, ne, gt, lt, contains)
+- ✅ **Pagination** (limit/offset)
+- ✅ **Sorting** (orderBy with asc/desc)
+- ✅ **Combined queries** (filter + sort + pagination)
+
+**Example:**
+```typescript
+// TCK will test:
+await endpoint.execute({
+  type: 'query',
+  entity: 'users',
+  filter: { role: 'admin' },
+  options: {
+    limit: 10,
+    offset: 0,
+    orderBy: [{ field: 'name', order: 'asc' }]
+  }
+});
+```
+
+### 3. Metadata Operations
+
+Tests protocol introspection capabilities:
+
+- ✅ **Retrieve protocol metadata**
+- ✅ **List available entities**
+- ✅ **Entity schema information**
+- ✅ **Field type information**
+
+**Example:**
+```typescript
+// TCK will test:
+const metadata = await endpoint.getMetadata();
+// Should return entity definitions and schema
+```
+
+### 4. Error Handling
+
+Tests consistent error responses:
+
+- ✅ **Invalid entity names**
+- ✅ **Invalid IDs**
+- ✅ **Validation errors**
+- ✅ **Protocol-specific error formats**
+- ✅ **Error code consistency**
+
+**Example:**
+```typescript
+// TCK will test:
+const response = await endpoint.execute({
+  type: 'read',
+  entity: 'nonexistent',
+  id: 'invalid'
+});
+// Should return structured error
+```
+
+### 5. Batch Operations
+
+Tests bulk operation support:
+
+- ✅ **Batch create** (multiple entities at once)
+- ✅ **Batch update**
+- ✅ **Batch delete**
+- ✅ **Transaction support** (all or nothing)
+- ✅ **Error handling in batches**
+
+**Example:**
+```typescript
+// TCK will test:
+await endpoint.execute({
+  type: 'batch',
+  operations: [
+    { type: 'create', entity: 'users', data: { name: 'Alice' } },
+    { type: 'create', entity: 'users', data: { name: 'Bob' } }
+  ]
+});
+```
+
+### 6. Protocol-Specific Features
+
+Optional tests for advanced protocol features:
+
+#### GraphQL Features
+- ✅ **Subscriptions** (real-time updates)
+- ✅ **Federation** (subgraph support)
+- ✅ **DataLoader** (N+1 prevention)
+- ✅ **Introspection** (schema discovery)
+
+#### OData V4 Features
+- ✅ **$expand** (nested entities)
+- ✅ **$batch** (bulk operations)
+- ✅ **$search** (full-text search)
+- ✅ **ETags** (optimistic concurrency)
+
+#### REST Features
+- ✅ **OpenAPI/Swagger** metadata
+- ✅ **File uploads**
+- ✅ **Custom endpoints**
+- ✅ **CORS support**
+
+#### JSON-RPC Features
+- ✅ **Batch requests**
+- ✅ **Notification methods**
+- ✅ **Error codes** (JSON-RPC 2.0 compliant)
+
+---
+
+## Configuration
+
+### Skip Tests
+
+Disable tests for unsupported features:
+
+```typescript
+runProtocolTCK(
+  () => new MyProtocolEndpoint(),
+  'MyProtocol',
+  {
+    skip: {
+      metadata: false,         // Skip metadata tests
+      subscriptions: true,     // Skip subscription tests
+      batch: true,            // Skip batch operation tests
+      search: true,           // Skip full-text search tests
+      transactions: true,     // Skip transaction tests
+      expand: true,           // Skip expand tests (OData)
+      federation: true        // Skip federation tests (GraphQL)
+    }
+  }
+);
+```
+
+### Performance Benchmarks
+
+Enable performance tracking:
+
+```typescript
+runProtocolTCK(
+  () => new MyProtocolEndpoint(),
+  'MyProtocol',
+  {
+    performance: {
+      enabled: true,
+      thresholds: {
+        create: 100,   // Max 100ms average
+        read: 50,      // Max 50ms average
+        update: 100,   // Max 100ms average
+        delete: 50,    // Max 50ms average
+        query: 200,    // Max 200ms average
+        batch: 500     // Max 500ms average
+      }
+    }
+  }
+);
+```
+
+The TCK will:
+1. Measure average, min, and max execution times
+2. Report results after all tests complete
+3. Warn if averages exceed thresholds
+
+**Example output:**
+```
+Performance Report:
+  create: avg 45ms (min: 20ms, max: 80ms) ✓
+  read:   avg 35ms (min: 15ms, max: 60ms) ✓
+  update: avg 50ms (min: 25ms, max: 90ms) ✓
+  delete: avg 30ms (min: 10ms, max: 55ms) ✓
+  query:  avg 180ms (min: 100ms, max: 250ms) ✓
+```
+
+### Setup Hooks
+
+Provide custom setup/teardown logic:
+
+```typescript
+runProtocolTCK(
+  () => new MyProtocolEndpoint(),
+  'MyProtocol',
+  {
+    hooks: {
+      beforeAll: async () => {
+        // Setup test server, database, etc.
+        await startTestServer();
+        await initializeDatabase();
+      },
+      afterAll: async () => {
+        // Cleanup resources
+        await stopTestServer();
+        await cleanupDatabase();
+      },
+      beforeEach: async () => {
+        // Clear test data between tests
+        await clearTestData();
+      },
+      afterEach: async () => {
+        // Post-test cleanup
+        await logTestResults();
+      }
+    }
+  }
+);
+```
+
+### Timeout Configuration
+
+Set custom timeouts for slow operations:
+
+```typescript
+runProtocolTCK(
+  () => new MyProtocolEndpoint(),
+  'MyProtocol',
+  {
+    timeout: 60000  // 60 seconds for all tests
+  }
+);
+```
+
+---
+
+## Implementation Examples
+
+### GraphQL Protocol Endpoint
+
+```typescript
+import { GraphQLPlugin } from '@objectql/protocol-graphql';
+import { ProtocolEndpoint } from '@objectql/protocol-tck';
+
+class GraphQLEndpoint implements ProtocolEndpoint {
+  private client: any;
+  
+  constructor(plugin: GraphQLPlugin) {
+    this.client = createGraphQLClient(plugin);
+  }
+  
+  async execute(operation: ProtocolOperation): Promise<ProtocolResponse> {
+    try {
+      if (operation.type === 'create') {
+        const mutation = `
+          mutation Create${operation.entity}($data: ${operation.entity}Input!) {
+            create${operation.entity}(data: $data) {
+              id
+              ...allFields
+            }
+          }
+        `;
+        const result = await this.client.mutate({ 
+          mutation, 
+          variables: { data: operation.data } 
+        });
+        return { 
+          success: true, 
+          data: result.data[`create${operation.entity}`] 
+        };
+      }
+      
+      if (operation.type === 'query') {
+        const query = `
+          query List${operation.entity}($filter: FilterInput) {
+            ${operation.entity}List(filter: $filter) {
+              id
+              ...allFields
+            }
+          }
+        `;
+        const result = await this.client.query({ 
+          query, 
+          variables: { filter: operation.filter } 
+        });
+        return { 
+          success: true, 
+          data: result.data[`${operation.entity}List`] 
+        };
+      }
+      
+      // ... implement other operations
+      
+    } catch (error) {
+      return {
+        success: false,
+        error: {
+          code: error.extensions?.code || 'UNKNOWN_ERROR',
+          message: error.message
+        }
+      };
+    }
+  }
+  
+  async getMetadata() {
+    const query = `{ __schema { types { name fields { name type { name } } } } }`;
+    const result = await this.client.query({ query });
+    return result.data;
+  }
+  
+  async close() {
+    await this.client.close();
+  }
+}
+
+// Use in tests
+describe('GraphQL Protocol TCK', () => {
+  runProtocolTCK(
+    () => new GraphQLEndpoint(myGraphQLPlugin),
+    'GraphQL',
+    {
+      skip: {
+        expand: true  // GraphQL doesn't use $expand
+      }
+    }
+  );
+});
+```
+
+### OData V4 Protocol Endpoint
+
+```typescript
+import { ODataV4Plugin } from '@objectql/protocol-odata-v4';
+import { ProtocolEndpoint } from '@objectql/protocol-tck';
+
+class ODataEndpoint implements ProtocolEndpoint {
+  private baseUrl: string;
+  
+  constructor(plugin: ODataV4Plugin) {
+    this.baseUrl = `http://localhost:${plugin.port}${plugin.basePath}`;
+  }
+  
+  async execute(operation: ProtocolOperation): Promise<ProtocolResponse> {
+    try {
+      if (operation.type === 'create') {
+        const response = await fetch(`${this.baseUrl}/${operation.entity}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(operation.data)
+        });
+        const data = await response.json();
+        return { success: true, data };
+      }
+      
+      if (operation.type === 'query') {
+        let url = `${this.baseUrl}/${operation.entity}`;
+        const params = new URLSearchParams();
+        
+        if (operation.filter) {
+          params.append('$filter', this.buildODataFilter(operation.filter));
+        }
+        if (operation.options?.limit) {
+          params.append('$top', operation.options.limit.toString());
+        }
+        if (operation.options?.offset) {
+          params.append('$skip', operation.options.offset.toString());
+        }
+        
+        const response = await fetch(`${url}?${params}`);
+        const data = await response.json();
+        return { success: true, data: data.value };
+      }
+      
+      // ... implement other operations
+      
+    } catch (error) {
+      return {
+        success: false,
+        error: {
+          code: 'ODATA_ERROR',
+          message: error.message
+        }
+      };
+    }
+  }
+  
+  private buildODataFilter(filter: any): string {
+    // Convert filter to OData $filter syntax
+    const conditions = Object.entries(filter)
+      .map(([key, value]) => `${key} eq '${value}'`)
+      .join(' and ');
+    return conditions;
+  }
+  
+  async getMetadata() {
+    const response = await fetch(`${this.baseUrl}/$metadata`);
+    return await response.text();
+  }
+}
+
+// Use in tests
+describe('OData V4 Protocol TCK', () => {
+  runProtocolTCK(
+    () => new ODataEndpoint(myODataPlugin),
+    'ODataV4',
+    {
+      skip: {
+        subscriptions: true,  // OData doesn't support subscriptions
+        federation: true      // OData doesn't support federation
+      }
+    }
+  );
+});
+```
+
+---
+
+## Expected Behavior
+
+The TCK expects protocols to follow these conventions:
+
+### 1. Auto-generated IDs
+
+If no ID is provided in create, generate a unique one:
+
+```typescript
+// Request
+{ type: 'create', entity: 'users', data: { name: 'Alice' } }
+
+// Expected response
+{ success: true, data: { id: 'auto_generated_id', name: 'Alice' } }
+```
+
+### 2. Timestamps
+
+Automatically add `created_at` and `updated_at` (if supported by engine):
+
+```typescript
+// Create response
+{ 
+  id: 'user_1', 
+  name: 'Alice',
+  created_at: '2026-02-02T10:00:00Z',
+  updated_at: '2026-02-02T10:00:00Z'
+}
+
+// Update response
+{
+  id: 'user_1',
+  name: 'Alice Updated',
+  created_at: '2026-02-02T10:00:00Z',
+  updated_at: '2026-02-02T10:05:00Z'
+}
+```
+
+### 3. Null Safety
+
+Return `null` for non-existent entities:
+
+```typescript
+// Request
+{ type: 'read', entity: 'users', id: 'nonexistent' }
+
+// Expected response
+{ success: true, data: null }
+```
+
+### 4. Error Handling
+
+Return structured errors with `code` and `message`:
+
+```typescript
+// Request
+{ type: 'create', entity: 'users', data: { } }  // Missing required fields
+
+// Expected response
+{
+  success: false,
+  error: {
+    code: 'VALIDATION_ERROR',
+    message: 'Name is required',
+    details: [
+      { field: 'name', code: 'REQUIRED', message: 'Field is required' }
+    ]
+  }
+}
+```
+
+### 5. Type Safety
+
+Preserve data types (numbers, booleans, strings):
+
+```typescript
+// Request
+{ type: 'create', entity: 'users', data: { age: 30, active: true } }
+
+// Expected response
+{ success: true, data: { age: 30, active: true } }  // Not "30" or "true"
+```
+
+---
+
+## Running the TCK
+
+### Run with npm/pnpm
+
+```bash
+npm test protocol-tck
+```
+
+### Run specific protocol tests
+
+```bash
+npm test -- --testNamePattern="GraphQL"
+```
+
+### Run with coverage
+
+```bash
+npm test -- --coverage
+```
+
+### CI/CD Integration
+
+Add to your CI pipeline:
+
+```yaml
+# .github/workflows/protocol-tck.yml
+name: Protocol TCK
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+      - run: npm install
+      - run: npm test protocol-tck
+```
+
+---
+
+## Best Practices
+
+### 1. Test All Protocols
+
+Run the TCK for every protocol implementation:
+
+```typescript
+// graphql.test.ts
+runProtocolTCK(() => new GraphQLEndpoint(), 'GraphQL');
+
+// odata.test.ts
+runProtocolTCK(() => new ODataEndpoint(), 'OData');
+
+// rest.test.ts
+runProtocolTCK(() => new RESTEndpoint(), 'REST');
+
+// json-rpc.test.ts
+runProtocolTCK(() => new JSONRPCEndpoint(), 'JSON-RPC');
+```
+
+### 2. Use Realistic Test Data
+
+Create a test database with realistic data:
+
+```typescript
+beforeAll(async () => {
+  await db.seed({
+    users: 100,
+    projects: 50,
+    tasks: 500
+  });
+});
+```
+
+### 3. Enable Performance Benchmarks
+
+Track protocol performance over time:
+
+```typescript
+runProtocolTCK(endpoint, 'MyProtocol', {
+  performance: {
+    enabled: true,
+    thresholds: { /* ... */ }
+  }
+});
+```
+
+### 4. Skip Unsupported Features
+
+Don't skip tests unnecessarily - only skip what your protocol truly doesn't support:
+
+```typescript
+runProtocolTCK(endpoint, 'REST', {
+  skip: {
+    subscriptions: true,  // REST doesn't support subscriptions
+    federation: true      // REST doesn't support federation
+  }
+});
+```
+
+### 5. Clean Up Resources
+
+Always implement the `close()` method:
+
+```typescript
+class MyEndpoint implements ProtocolEndpoint {
+  async close() {
+    await this.server.stop();
+    await this.db.disconnect();
+  }
+}
+```
+
+---
+
+## Troubleshooting
+
+### Tests Failing
+
+**Common causes:**
+- Incorrect response format
+- Missing required fields
+- Wrong data types
+- Error handling not implemented
+
+**Solution:**
+Check the TCK output for specific failures and ensure your endpoint follows expected behavior.
+
+### Performance Benchmarks Failing
+
+**Common causes:**
+- Slow database queries
+- No indexes on filter fields
+- Large datasets
+- Network latency
+
+**Solution:**
+- Add database indexes
+- Optimize queries
+- Use smaller test datasets
+- Increase timeout thresholds
+
+### Metadata Tests Failing
+
+**Common causes:**
+- `getMetadata()` not implemented
+- Wrong metadata format
+- Missing entity definitions
+
+**Solution:**
+Implement `getMetadata()` according to your protocol's specification.
+
+---
+
+## Contributing
+
+The Protocol TCK is open source and welcomes contributions:
+
+### Adding New Tests
+
+Submit a PR with new test cases:
+
+```typescript
+export function runProtocolTCK(/* ... */) {
+  // ... existing tests
+  
+  it('should handle concurrent requests', async () => {
+    // New test case
+  });
+}
+```
+
+### Reporting Issues
+
+Found a bug or missing test? [Open an issue](https://github.com/objectstack-ai/objectql/issues) with:
+- Protocol being tested
+- Expected behavior
+- Actual behavior
+- Test code
+
+---
+
+## Further Reading
+
+- [Custom Drivers Guide](./custom-drivers.mdx)
+- [Plugin Development](./plugins.mdx)
+- [GraphQL Protocol](../reference/api/graphql.mdx)
+- [OData V4 Protocol](../reference/api/odata-v4.mdx)
+- [REST API](../reference/api/rest.mdx)
+- [JSON-RPC API](../reference/api/json-rpc.mdx)
+
+---
+
+**Last Updated**: February 2026  
+**Package Version**: 0.1.0  
+**New in v4.0.3**: Initial release with comprehensive test coverage
