@@ -534,7 +534,7 @@ export class MongoDriver implements Driver {
         const result = session
             ? await collection.updateMany(filter, update, { session })
             : await collection.updateMany(filter, update);
-        return result.modifiedCount;
+        return { modifiedCount: result.modifiedCount };
     }
 
     async deleteMany(objectName: string, filters: any, options?: any): Promise<any> {
@@ -545,7 +545,7 @@ export class MongoDriver implements Driver {
         const result = session
             ? await collection.deleteMany(filter, { session })
             : await collection.deleteMany(filter);
-        return result.deletedCount;
+        return { deletedCount: result.deletedCount };
     }
 
     async aggregate(objectName: string, pipeline: any[], options?: any): Promise<any[]> {

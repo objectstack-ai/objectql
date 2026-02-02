@@ -22,7 +22,7 @@ const mockCollection = {
         insertedCount: 2
     }),
     updateOne: jest.fn().mockResolvedValue({ modifiedCount: 1 }),
-    findOneAndUpdate: jest.fn().mockResolvedValue({ _id: '123', name: 'Updated' }),
+    findOneAndUpdate: jest.fn().mockResolvedValue({ value: { _id: '123', name: 'Updated' } }),
     deleteOne: jest.fn().mockResolvedValue({ deletedCount: 1 }),
     countDocuments: jest.fn().mockResolvedValue(10)
 };
@@ -439,9 +439,11 @@ describe('MongoDriver', () => {
                 };
 
                 mockCollection.findOneAndUpdate.mockResolvedValue({ 
-                    _id: '123', 
-                    name: 'Updated User',
-                    updated_at: new Date().toISOString()
+                    value: {
+                        _id: '123', 
+                        name: 'Updated User',
+                        updated_at: new Date().toISOString()
+                    }
                 });
 
                 const result = await driver.executeCommand(command);
@@ -503,9 +505,11 @@ describe('MongoDriver', () => {
                 };
 
                 mockCollection.findOneAndUpdate.mockResolvedValue({ 
-                    _id: '1', 
-                    name: 'Updated 1',
-                    updated_at: new Date().toISOString()
+                    value: {
+                        _id: '1', 
+                        name: 'Updated 1',
+                        updated_at: new Date().toISOString()
+                    }
                 });
 
                 const result = await driver.executeCommand(command);
