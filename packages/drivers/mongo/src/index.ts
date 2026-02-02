@@ -442,7 +442,8 @@ export class MongoDriver implements Driver {
         let update: UpdateFilter<any>;
         if (isAtomic) {
             // When using atomic operators, add updated_at to $set
-            update = { ...updateData };
+            // The spread is safe because id and created_at were already removed via destructuring
+            update = { ...updateData } as any;
             if (!update.$set) {
                 update.$set = {};
             }
