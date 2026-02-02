@@ -1336,7 +1336,7 @@ export class ODataV4Plugin implements RuntimePlugin {
             const url = part.url;
             
             // Parse URL to extract entity set and key
-            const urlParts = url.replace(this.config.basePath, '').split('/').filter(p => p);
+            const urlParts = url.replace(this.config.basePath, '').split('/').filter((p: string) => p);
             
             if (urlParts.length === 0) {
                 return 'HTTP/1.1 400 Bad Request\r\nContent-Type: application/json\r\n\r\n{"error":{"code":"400","message":"Invalid URL"}}';

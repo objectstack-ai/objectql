@@ -13,6 +13,7 @@ import { ApolloServer, HeaderMap } from '@apollo/server';
 import { expressMiddleware } from '@apollo/server/express4';
 import { ApolloServerPluginDrainHttpServer } from '@apollo/server/plugin/drainHttpServer';
 import { buildSubgraphSchema } from '@apollo/subgraph';
+import { gql } from 'graphql-tag';
 import { createServer } from 'http';
 import { WebSocketServer } from 'ws';
 import { useServer } from 'graphql-ws/lib/use/ws';
@@ -172,10 +173,13 @@ export class GraphQLPlugin implements RuntimePlugin {
         let schema;
         if (this.config.enableFederation) {
             // Build federated subgraph schema
-            schema = buildSubgraphSchema({
-                typeDefs,
-                resolvers
-            });
+            // buildSubgraphSchema expects parsed GraphQL documents
+            schema = buildSubgraphSchema([
+                {
+                    typeDefs: gql(typeDefs),
+                    resolvers
+                }
+            ]);
             console.log(`[${this.name}] 🔗 Apollo Federation enabled - service: ${this.config.federationServiceName}`);
         } else {
             // Build standard GraphQL schema
