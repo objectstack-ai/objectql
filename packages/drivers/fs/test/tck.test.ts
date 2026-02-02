@@ -31,8 +31,7 @@ describe('FileSystemDriver TCK Compliance', () => {
     runDriverTCK(
         () => {
             driver = new FileSystemDriver({
-                rootPath: testDir,
-                format: 'json'
+                dataDir: testDir
             });
             return driver;
         },
