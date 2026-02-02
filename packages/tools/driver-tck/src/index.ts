@@ -56,7 +56,7 @@ export function runDriverTCK(
         
         beforeEach(async () => {
             driver = createDriver();
-            if (driver.clear) {
+            if (driver && driver.clear) {
                 await driver.clear();
             }
             if (hooks.beforeEach) {
@@ -68,7 +68,7 @@ export function runDriverTCK(
             if (hooks.afterEach) {
                 await hooks.afterEach();
             }
-            if (driver.clear) {
+            if (driver && driver.clear) {
                 await driver.clear();
             }
         }, timeout);
