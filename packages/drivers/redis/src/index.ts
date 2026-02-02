@@ -394,7 +394,13 @@ export class RedisDriver implements Driver {
         };
         
         const key = this.generateRedisKey(objectName, id);
-        await this.client.set(key, JSON.stringify(doc));
+        
+        // Use SET with NX option to prevent overwriting existing records
+        const result = await this.client.set(key, JSON.stringify(doc), { NX: true });
+        
+        if (!result) {
+            throw new Error(`Record with ID ${id} already exists in ${objectName}`);
+        }
         
         return doc;
     }
