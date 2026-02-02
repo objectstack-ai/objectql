@@ -1,6 +1,6 @@
 {
   "name": "fs-demo",
-  "version": "4.0.4",
+  "version": "4.0.5",
   "private": true,
   "description": "Example demonstrating @objectql/driver-fs",
   "scripts": {
