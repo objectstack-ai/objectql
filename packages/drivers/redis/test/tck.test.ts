@@ -20,10 +20,10 @@ describe('RedisDriver TCK Compliance', () => {
     
     runDriverTCK(
         () => {
+            const host = process.env.REDIS_HOST || 'localhost';
+            const port = process.env.REDIS_PORT || '6379';
             driver = new RedisDriver({
-                host: process.env.REDIS_HOST || 'localhost',
-                port: parseInt(process.env.REDIS_PORT || '6379'),
-                db: 15 // Use a separate DB for testing
+                url: `redis://${host}:${port}/15` // Use DB 15 for testing
             });
             return driver;
         },
@@ -36,8 +36,8 @@ describe('RedisDriver TCK Compliance', () => {
             hooks: {
                 beforeEach: async () => {
                     // Clear the test database
-                    if (driver && driver['redis']) {
-                        await driver['redis'].flushdb();
+                    if (driver && driver['client']) {
+                        await driver['client'].flushDb();
                     }
                 },
                 afterEach: async () => {
