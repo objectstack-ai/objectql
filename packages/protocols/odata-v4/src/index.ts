@@ -1283,18 +1283,40 @@ export class ODataV4Plugin implements RuntimePlugin {
     /**
      * Parse multipart batch request
      */
-    private parseBatchRequest(body: string, boundary: string): Array<{ type: string; requests?: any[] }> {
-        // Simple implementation - in production, use a proper multipart parser
-        const parts: Array<{ type: string; requests?: any[] }> = [];
+    private parseBatchRequest(body: string, boundary: string): Array<{ type: string; method?: string; url?: string; body?: string; requests?: any[] }> {
+        const parts: Array<{ type: string; method?: string; url?: string; body?: string; requests?: any[] }> = [];
         const sections = body.split(`--${boundary}`).filter(s => s.trim() && !s.startsWith('--'));
 
         for (const section of sections) {
             if (section.includes('Content-Type: multipart/mixed')) {
-                // This is a changeset
-                parts.push({ type: 'changeset', requests: [] });
-            } else if (section.includes('GET') || section.includes('POST') || section.includes('PATCH') || section.includes('PUT') || section.includes('DELETE')) {
-                // This is a single request
-                parts.push({ type: 'request' });
+                // This is a changeset - parse nested requests
+                const changesetBoundaryMatch = section.match(/boundary=(.+)/);
+                if (changesetBoundaryMatch) {
+                    const changesetBoundary = changesetBoundaryMatch[1].trim();
+                    const changesetRequests = this.parseBatchRequest(section, changesetBoundary);
+                    parts.push({ type: 'changeset', requests: changesetRequests });
+                }
+            } else {
+                // Parse individual HTTP request
+                const httpMatch = section.match(/(GET|POST|PATCH|PUT|DELETE)\s+([^\s]+)/);
+                if (httpMatch) {
+                    const method = httpMatch[1];
+                    const url = httpMatch[2];
+                    
+                    // Extract body if present (for POST/PATCH/PUT)
+                    let requestBody = '';
+                    const bodyMatch = section.match(/\r\n\r\n(.+)/s);
+                    if (bodyMatch) {
+                        requestBody = bodyMatch[1].trim();
+                    }
+                    
+                    parts.push({ 
+                        type: 'request', 
+                        method, 
+                        url,
+                        body: requestBody
+                    });
+                }
             }
         }
 
@@ -1305,17 +1327,99 @@ export class ODataV4Plugin implements RuntimePlugin {
      * Process a single batch request
      */
     private async processBatchRequest(part: any): Promise<string> {
-        // Simple response - full implementation would parse and execute the request
-        return 'HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{"status":"ok"}';
+        try {
+            if (!part.method || !part.url) {
+                return 'HTTP/1.1 400 Bad Request\r\nContent-Type: application/json\r\n\r\n{"error":{"code":"400","message":"Invalid request format"}}';
+            }
+
+            const method = part.method;
+            const url = part.url;
+            
+            // Parse URL to extract entity set and key
+            const urlParts = url.replace(this.config.basePath, '').split('/').filter(p => p);
+            
+            if (urlParts.length === 0) {
+                return 'HTTP/1.1 400 Bad Request\r\nContent-Type: application/json\r\n\r\n{"error":{"code":"400","message":"Invalid URL"}}';
+            }
+
+            const entitySet = urlParts[0].split('(')[0]; // Remove key if present
+            const keyMatch = url.match(/\(([^)]+)\)/);
+            const key = keyMatch ? keyMatch[1].replace(/'/g, '') : null;
+
+            let result: any;
+            let statusCode = 200;
+
+            // Execute the operation
+            if (method === 'GET') {
+                if (key) {
+                    result = await this.getData(entitySet, key);
+                    if (!result) {
+                        return 'HTTP/1.1 404 Not Found\r\nContent-Type: application/json\r\n\r\n{"error":{"code":"404","message":"Entity not found"}}';
+                    }
+                } else {
+                    result = await this.findData(entitySet, {});
+                }
+            } else if (method === 'POST') {
+                const data = part.body ? JSON.parse(part.body) : {};
+                result = await this.createData(entitySet, data);
+                statusCode = 201;
+            } else if (method === 'PATCH' || method === 'PUT') {
+                if (!key) {
+                    return 'HTTP/1.1 400 Bad Request\r\nContent-Type: application/json\r\n\r\n{"error":{"code":"400","message":"Key required for update"}}';
+                }
+                const data = part.body ? JSON.parse(part.body) : {};
+                result = await this.updateData(entitySet, key, data);
+            } else if (method === 'DELETE') {
+                if (!key) {
+                    return 'HTTP/1.1 400 Bad Request\r\nContent-Type: application/json\r\n\r\n{"error":{"code":"400","message":"Key required for delete"}}';
+                }
+                await this.deleteData(entitySet, key);
+                return 'HTTP/1.1 204 No Content\r\n\r\n';
+            }
+
+            const responseBody = JSON.stringify(result, null, 2);
+            return `HTTP/1.1 ${statusCode} OK\r\nContent-Type: application/json\r\n\r\n${responseBody}`;
+
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Internal server error';
+            return `HTTP/1.1 500 Internal Server Error\r\nContent-Type: application/json\r\n\r\n{"error":{"code":"500","message":"${message}"}}`;
+        }
     }
 
     /**
      * Process changeset (transactional batch of write operations)
+     * 
+     * In OData V4, changesets are atomic - either all operations succeed or all fail.
+     * This implementation simulates transactional behavior.
      */
     private async processChangeset(requests: any[]): Promise<string[]> {
-        // In a real implementation, this would be transactional
-        // For now, return a simple success response
-        return ['HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{"status":"ok"}'];
+        const responses: string[] = [];
+        const tempResults: any[] = [];
+        
+        try {
+            // Process all requests in the changeset
+            for (const request of requests) {
+                const response = await this.processBatchRequest(request);
+                
+                // Check if any request failed
+                if (response.includes('HTTP/1.1 4') || response.includes('HTTP/1.1 5')) {
+                    // Rollback: return error for all requests in the changeset
+                    throw new Error('Changeset operation failed - rolling back all operations');
+                }
+                
+                tempResults.push(response);
+            }
+            
+            // All succeeded - commit all responses
+            responses.push(...tempResults);
+            
+        } catch (error) {
+            // Return error for the entire changeset
+            const errorMessage = error instanceof Error ? error.message : 'Changeset failed';
+            responses.push(`HTTP/1.1 500 Internal Server Error\r\nContent-Type: application/json\r\n\r\n{"error":{"code":"500","message":"${errorMessage}"}}`);
+        }
+        
+        return responses;
     }
 
     /**
