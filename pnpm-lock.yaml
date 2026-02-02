@@ -49,14 +49,14 @@ importers:
         specifier: workspace:*
         version: link:packages/protocols/odata-v4
       '@objectstack/cli':
-        specifier: 0.8.2
-        version: 0.8.2(@objectstack/core@0.8.2)(esbuild@0.27.2)
+        specifier: 0.9.0
+        version: 0.9.0(@objectstack/core@0.9.0)(esbuild@0.27.2)
       '@objectstack/core':
-        specifier: 0.8.2
-        version: 0.8.2
+        specifier: 0.9.0
+        version: 0.9.0
       '@objectstack/plugin-hono-server':
-        specifier: ^0.8.2
-        version: 0.8.2
+        specifier: ^0.9.0
+        version: 0.9.0
       '@types/jest':
         specifier: ^30.0.0
         version: 30.0.0
@@ -584,17 +584,17 @@ importers:
         specifier: workspace:*
         version: link:../types
       '@objectstack/core':
-        specifier: ^0.8.2
-        version: 0.8.2
+        specifier: ^0.9.0
+        version: 0.9.0
       '@objectstack/objectql':
-        specifier: ^0.8.2
-        version: 0.8.2
+        specifier: ^0.9.0
+        version: 0.9.0
       '@objectstack/runtime':
-        specifier: ^0.8.2
-        version: 0.8.2
+        specifier: ^0.9.0
+        version: 0.9.0
       '@objectstack/spec':
-        specifier: ^0.8.2
-        version: 0.8.2
+        specifier: ^0.9.0
+        version: 0.9.0
       js-yaml:
         specifier: ^4.1.0
         version: 4.1.1
@@ -2381,30 +2381,37 @@ packages:
     engines: {node: '>=10'}
     deprecated: This functionality has been moved to @npmcli/fs
 
-  '@objectstack/cli@0.8.2':
-    resolution: {integrity: sha512-S6uDQ5Adlxg9CP+ZkwlZ/Zqkxg3qQWJxtlSIaQwh6N2lTLgUEYMBtPXr6pNOIx8goFqldAt/tGpg6fvmWi6MaQ==}
+  '@objectstack/cli@0.9.0':
+    resolution: {integrity: sha512-UV4qmHguWSqq9dTSPPtkXHaQX7K3WZQFKG96ZnINKFeVr1w68R8Dos73OfmqrNtXyPiAJYTmJa8h5hodn+cUHQ==}
     hasBin: true
     peerDependencies:
-      '@objectstack/core': ^0.8.2
+      '@objectstack/core': ^0.9.0
 
   '@objectstack/core@0.8.2':
     resolution: {integrity: sha512-WKrggsUqQJrbdx5sfi4dW5zE8m960dCHMPBkEFHEGGL5qsJDtuFc8qYIOa7H2IcoVQXa2Y5o3eWoLySycAEQ6Q==}
 
-  '@objectstack/objectql@0.8.2':
-    resolution: {integrity: sha512-l2GnOXOB4QjsisXC92qwslShX5mGzF7CvSVjwAkLxOkUKAkUMszOwaO2T/QrGyqOHvD5NG3dvOJgD4sOGfGSwQ==}
+  '@objectstack/core@0.9.0':
+    resolution: {integrity: sha512-tc+DADlDEDMTgQNPGBmaA/XKiFW4m0alNAlpQ2nUJKrWwxPHPZb39kkKwqJoiflmz/qXJvfNOEWBNZiJrVHVtQ==}
 
-  '@objectstack/plugin-hono-server@0.8.2':
-    resolution: {integrity: sha512-lEkVEFz4sjiSWpA7VT95Js4rIXMSEPeWuM75kfPoqR2n609dtDYNp/ap6OevtMSC8z7/1gqmTIaFovTBMYeAxg==}
+  '@objectstack/objectql@0.9.0':
+    resolution: {integrity: sha512-oWxzu7ITqzeQL/MJnHCzDvLJwIlXvPRYL3Bxxxq0jVs4Amd1qDccCwNRNfRnUtdf5jQFtW5mIEt7I30vd9DrgA==}
 
-  '@objectstack/runtime@0.8.2':
-    resolution: {integrity: sha512-9MfBlOnVVE5UWKPgN/B/90AjXms5a9h1b0Vz7hcp2bqZ8cdchk+FAFtPSDxAPxgp4KigULUTYLd1yPQqsC2t2w==}
+  '@objectstack/plugin-hono-server@0.9.0':
+    resolution: {integrity: sha512-DwI1rpVAZhktj1pIkFiQFdl1Ro4L+35TZYVs+qVEk2K6fiBWPycB8Y+OE2ayOCIrdHAx7482T2lpA29MvbW0lA==}
+
+  '@objectstack/runtime@0.9.0':
+    resolution: {integrity: sha512-xFI6VmQSpQg4u7I+XhWRtvuzTBbhD2SWrZSpQKzdO9KkJMnW/kCGDKtdVRUKKsrp7OMSmGhnG8V9lEARaWRM6g==}
 
   '@objectstack/spec@0.8.2':
     resolution: {integrity: sha512-PLEREF3dGIPRooKbAJPv8weC8cuAPFXoQcFXntGxeLdoCb4iOyDjujSRpCIpyG3dNXtDvr+SL8O1bX7QolsUFw==}
     engines: {node: '>=18.0.0'}
 
-  '@objectstack/types@0.8.2':
-    resolution: {integrity: sha512-VbIFxvOhKWsamqyeGIS5m/y9+Fo4oLzQggeYRd2dPIrRJL+fcMfrb1JiYgTmMb6Bq8gVdbfAqOSLT3hW2ryOxQ==}
+  '@objectstack/spec@0.9.0':
+    resolution: {integrity: sha512-AdPhlP3Lfv82cJgwiyoFk/XHz5Lk5jACUbFB5n3oyJFXTcgqo7dblfZ/74EWI8k78dgg/PeTMXz9yRlpD7hMQA==}
+    engines: {node: '>=18.0.0'}
+
+  '@objectstack/types@0.9.0':
+    resolution: {integrity: sha512-8akcYSbHOZ1SqqmuJVvkulUQLo3zAJpMP4Ni7ackqrHxi2EbnzOHTznOAiHHWZUlyIhHYRp6I3PSWOrZvVLthQ==}
 
   '@orama/orama@3.1.18':
     resolution: {integrity: sha512-a61ljmRVVyG5MC/698C8/FfFDw5a8LOIvyOLW5fztgUXqUpc1jOfQzOitSCbge657OgXXThmY3Tk8fpiDb4UcA==}
@@ -10614,11 +10621,11 @@ snapshots:
       rimraf: 3.0.2
     optional: true
 
-  '@objectstack/cli@0.8.2(@objectstack/core@0.8.2)(esbuild@0.27.2)':
+  '@objectstack/cli@0.9.0(@objectstack/core@0.9.0)(esbuild@0.27.2)':
     dependencies:
-      '@objectstack/core': 0.8.2
-      '@objectstack/plugin-hono-server': 0.8.2
-      '@objectstack/spec': 0.8.2
+      '@objectstack/core': 0.9.0
+      '@objectstack/plugin-hono-server': 0.9.0
+      '@objectstack/spec': 0.9.0
       bundle-require: 5.1.0(esbuild@0.27.2)
       chalk: 5.6.2
       commander: 11.1.0
@@ -10634,33 +10641,44 @@ snapshots:
       pino-pretty: 10.3.1
       zod: 4.3.6
 
-  '@objectstack/objectql@0.8.2':
+  '@objectstack/core@0.9.0':
     dependencies:
-      '@objectstack/core': 0.8.2
-      '@objectstack/spec': 0.8.2
-      '@objectstack/types': 0.8.2
+      '@objectstack/spec': 0.9.0
+      pino: 8.21.0
+      pino-pretty: 10.3.1
+      zod: 4.3.6
 
-  '@objectstack/plugin-hono-server@0.8.2':
+  '@objectstack/objectql@0.9.0':
+    dependencies:
+      '@objectstack/core': 0.9.0
+      '@objectstack/spec': 0.9.0
+      '@objectstack/types': 0.9.0
+
+  '@objectstack/plugin-hono-server@0.9.0':
     dependencies:
       '@hono/node-server': 1.19.9(hono@4.11.7)
-      '@objectstack/core': 0.8.2
-      '@objectstack/spec': 0.8.2
-      '@objectstack/types': 0.8.2
+      '@objectstack/core': 0.9.0
+      '@objectstack/spec': 0.9.0
+      '@objectstack/types': 0.9.0
       hono: 4.11.7
 
-  '@objectstack/runtime@0.8.2':
+  '@objectstack/runtime@0.9.0':
     dependencies:
-      '@objectstack/core': 0.8.2
-      '@objectstack/spec': 0.8.2
-      '@objectstack/types': 0.8.2
+      '@objectstack/core': 0.9.0
+      '@objectstack/spec': 0.9.0
+      '@objectstack/types': 0.9.0
 
   '@objectstack/spec@0.8.2':
     dependencies:
       zod: 4.3.6
 
-  '@objectstack/types@0.8.2':
+  '@objectstack/spec@0.9.0':
     dependencies:
-      '@objectstack/spec': 0.8.2
+      zod: 4.3.6
+
+  '@objectstack/types@0.9.0':
+    dependencies:
+      '@objectstack/spec': 0.9.0
 
   '@orama/orama@3.1.18': {}
 
