@@ -410,7 +410,9 @@ export class MongoDriver implements Driver {
             mongoDoc._id = new ObjectId().toHexString();
         }
 
-        const result = await collection.insertOne(mongoDoc);
+        // Pass session for transactional operations
+        const mongoOptions = options?.session ? { session: options.session } : {};
+        const result = await collection.insertOne(mongoDoc, mongoOptions);
         // Return API format document (convert _id to id)
         return this.mapFromMongo({ ...mongoDoc, _id: result.insertedId });
     }
@@ -426,13 +428,17 @@ export class MongoDriver implements Driver {
         const isAtomic = Object.keys(updateData).some(k => k.startsWith('$'));
         const update = isAtomic ? updateData : { $set: updateData };
 
-        const result = await collection.updateOne({ _id: this.normalizeId(id) }, update);
+        // Pass session for transactional operations
+        const mongoOptions = options?.session ? { session: options.session } : {};
+        const result = await collection.updateOne({ _id: this.normalizeId(id) }, update, mongoOptions);
         return result.modifiedCount; // or return updated document?
     }
 
     async delete(objectName: string, id: string | number, options?: any) {
         const collection = await this.getCollection(objectName);
-        const result = await collection.deleteOne({ _id: this.normalizeId(id) });
+        // Pass session for transactional operations
+        const mongoOptions = options?.session ? { session: options.session } : {};
+        const result = await collection.deleteOne({ _id: this.normalizeId(id) }, mongoOptions);
         return result.deletedCount;
     }
 
@@ -550,6 +556,79 @@ export class MongoDriver implements Driver {
         // We handle both for backward compatibility
         const doc = result?.value !== undefined ? result.value : result;
         return doc ? this.mapFromMongo(doc) : null;
+    }
+
+    // ========== Transaction Support ==========
+    
+    /**
+     * Begin a new transaction session
+     * 
+     * @returns MongoDB ClientSession that can be used for transactional operations
+     * 
+     * @example
+     * const session = await driver.beginTransaction();
+     * try {
+     *   await driver.create('users', { name: 'Alice' }, { session });
+     *   await driver.create('orders', { userId: 'alice' }, { session });
+     *   await driver.commitTransaction(session);
+     * } catch (error) {
+     *   await driver.rollbackTransaction(session);
+     *   throw error;
+     * }
+     */
+    async beginTransaction(): Promise<any> {
+        await this.connected;
+        const session = this.client.startSession();
+        session.startTransaction();
+        return session;
+    }
+    
+    /**
+     * Commit a transaction
+     * 
+     * @param transaction - MongoDB ClientSession returned by beginTransaction()
+     * 
+     * @example
+     * const session = await driver.beginTransaction();
+     * // ... perform operations with { session } in options
+     * await driver.commitTransaction(session);
+     */
+    async commitTransaction(transaction: any): Promise<void> {
+        if (!transaction || typeof transaction.commitTransaction !== 'function') {
+            throw new Error('Invalid transaction object. Must be a MongoDB ClientSession.');
+        }
+        
+        try {
+            await transaction.commitTransaction();
+        } finally {
+            await transaction.endSession();
+        }
+    }
+    
+    /**
+     * Rollback a transaction
+     * 
+     * @param transaction - MongoDB ClientSession returned by beginTransaction()
+     * 
+     * @example
+     * const session = await driver.beginTransaction();
+     * try {
+     *   // ... perform operations
+     *   await driver.commitTransaction(session);
+     * } catch (error) {
+     *   await driver.rollbackTransaction(session);
+     * }
+     */
+    async rollbackTransaction(transaction: any): Promise<void> {
+        if (!transaction || typeof transaction.abortTransaction !== 'function') {
+            throw new Error('Invalid transaction object. Must be a MongoDB ClientSession.');
+        }
+        
+        try {
+            await transaction.abortTransaction();
+        } finally {
+            await transaction.endSession();
+        }
     }
 
     async disconnect() {

@@ -27,6 +27,7 @@
     "test": "jest --passWithNoTests"
   },
   "dependencies": {
+    "@objectstack/spec": "^0.8.2"
   },
   "devDependencies": {
     "@objectstack/spec": "^0.8.2",

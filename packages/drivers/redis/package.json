@@ -24,6 +24,7 @@
     "redis": "^4.6.0"
   },
   "devDependencies": {
+    "@objectql/driver-tck": "workspace:*",
     "@types/jest": "^29.0.0",
     "jest": "^29.0.0",
     "typescript": "^5.0.0"
