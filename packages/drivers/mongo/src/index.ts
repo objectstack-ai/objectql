@@ -11,7 +11,7 @@ type DriverInterface = Data.DriverInterface;
  */
 
 import { Driver } from '@objectql/types';
-import { MongoClient, Db, Filter, ObjectId, FindOptions, FindOneAndUpdateOptions, ChangeStream, ChangeStreamDocument } from 'mongodb';
+import { MongoClient, Db, Filter, ObjectId, FindOptions, FindOneAndUpdateOptions, UpdateFilter, ChangeStream, ChangeStreamDocument } from 'mongodb';
 
 /**
  * Change stream event handler callback
@@ -439,7 +439,7 @@ export class MongoDriver implements Driver {
         const isAtomic = Object.keys(updateData).some(k => k.startsWith('$'));
         
         // Build the update object with updated_at timestamp
-        let update: any;
+        let update: UpdateFilter<any>;
         if (isAtomic) {
             // When using atomic operators, add updated_at to $set
             update = { ...updateData };
