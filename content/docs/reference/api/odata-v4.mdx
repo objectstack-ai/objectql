@@ -1,0 +1,969 @@
+---
+title: "OData V4 API"
+description: OData V4 Protocol API
+---
+
+ObjectQL provides a **OData V4 interface** for standardized, RESTful data access with powerful query capabilities. OData (Open Data Protocol) is an ISO/IEC approved OASIS standard that defines best practices for building and consuming RESTful APIs.
+
+## Overview
+
+The OData V4 API provides:
+- **Standardized URL conventions** for querying, filtering, and manipulating data
+- **Automatic metadata generation** ($metadata endpoint)
+- **Advanced query features** including $filter, $select, $orderby, $top, $skip
+- **Nested entity expansion** with $expand for related data
+- **Batch operations** with $batch for multiple requests
+- **Full-text search** with $search
+- **ETags** for optimistic concurrency control
+- **Standards-compliant** OData V4 implementation
+
+## Endpoints
+
+```
+GET  /odata                          # Service document
+GET  /odata/$metadata                # Metadata document (EDMX)
+GET  /odata/{EntitySet}              # Query entity set
+GET  /odata/{EntitySet}({id})        # Get single entity by ID
+POST /odata/{EntitySet}              # Create new entity
+PATCH/odata/{EntitySet}({id})        # Update entity
+DELETE /odata/{EntitySet}({id})      # Delete entity
+POST /odata/$batch                   # Batch operations
+```
+
+---
+
+## Getting Started
+
+## Installation
+
+The OData V4 protocol is available as a plugin:
+
+```typescript
+import { ObjectStackKernel } from '@objectstack/runtime';
+import { ODataV4Plugin } from '@objectql/protocol-odata-v4';
+
+const kernel = new ObjectStackKernel([
+  myDriver,
+  new ODataV4Plugin({
+    port: 8080,
+    basePath: '/odata',
+    maxExpandDepth: 3,
+    enableBatch: true,
+    enableSearch: true,
+    enableETags: true
+  })
+]);
+
+await kernel.start();
+// Access OData endpoint: http://localhost:8080/odata
+```
+
+## Service Document
+
+Get the list of available entity sets:
+
+```http
+GET /odata
+```
+
+**Response:**
+```json
+{
+  "@odata.context": "http://localhost:8080/odata/$metadata",
+  "value": [
+    {
+      "name": "users",
+      "kind": "EntitySet",
+      "url": "users"
+    },
+    {
+      "name": "projects",
+      "kind": "EntitySet",
+      "url": "projects"
+    }
+  ]
+}
+```
+
+## Metadata Document
+
+Get the full schema definition in EDMX format:
+
+```http
+GET /odata/$metadata
+```
+
+**Response (XML):**
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<edmx:Edmx Version="4.0" xmlns:edmx="http://docs.oasis-open.org/odata/ns/edmx">
+  <edmx:DataServices>
+    <Schema Namespace="ObjectStack" xmlns="http://docs.oasis-open.org/odata/ns/edm">
+      <EntityType Name="user">
+        <Key>
+          <PropertyRef Name="id"/>
+        </Key>
+        <Property Name="id" Type="Edm.String" Nullable="false"/>
+        <Property Name="name" Type="Edm.String"/>
+        <Property Name="email" Type="Edm.String"/>
+        <Property Name="role" Type="Edm.String"/>
+      </EntityType>
+      <EntityContainer Name="Container">
+        <EntitySet Name="users" EntityType="ObjectStack.user"/>
+      </EntityContainer>
+    </Schema>
+  </edmx:DataServices>
+</edmx:Edmx>
+```
+
+---
+
+## Query Operations
+
+## Get All Entities
+
+```http
+GET /odata/users
+```
+
+**Response:**
+```json
+{
+  "@odata.context": "http://localhost:8080/odata/$metadata#users",
+  "value": [
+    {
+      "id": "user_123",
+      "name": "Alice",
+      "email": "alice@example.com",
+      "role": "admin"
+    },
+    {
+      "id": "user_456",
+      "name": "Bob",
+      "email": "bob@example.com",
+      "role": "user"
+    }
+  ]
+}
+```
+
+## Get Single Entity
+
+Get an entity by its ID:
+
+```http
+GET /odata/users('user_123')
+```
+
+**Response:**
+```json
+{
+  "@odata.context": "http://localhost:8080/odata/$metadata#users/$entity",
+  "id": "user_123",
+  "name": "Alice",
+  "email": "alice@example.com",
+  "role": "admin"
+}
+```
+
+## Filtering with $filter
+
+Filter entities using OData query expressions:
+
+```http
+GET /odata/users?$filter=role eq 'admin'
+```
+
+### Comparison Operators
+
+| Operator | Description | Example |
+|----------|-------------|---------|
+| `eq` | Equal | `role eq 'admin'` |
+| `ne` | Not equal | `status ne 'inactive'` |
+| `gt` | Greater than | `age gt 30` |
+| `ge` | Greater than or equal | `age ge 18` |
+| `lt` | Less than | `price lt 100` |
+| `le` | Less than or equal | `quantity le 10` |
+
+### Logical Operators
+
+```http
+# AND
+GET /odata/users?$filter=role eq 'admin' and age gt 25
+
+# OR
+GET /odata/users?$filter=role eq 'admin' or role eq 'manager'
+
+# NOT
+GET /odata/users?$filter=not (role eq 'guest')
+```
+
+### String Functions
+
+```http
+# Contains
+GET /odata/users?$filter=contains(name, 'Alice')
+
+# Starts with
+GET /odata/users?$filter=startswith(email, 'admin')
+
+# Ends with
+GET /odata/users?$filter=endswith(email, '@example.com')
+
+# Length
+GET /odata/users?$filter=length(name) gt 5
+```
+
+## Field Selection with $select
+
+Request only specific fields:
+
+```http
+GET /odata/users?$select=id,name,email
+```
+
+**Response:**
+```json
+{
+  "@odata.context": "http://localhost:8080/odata/$metadata#users(id,name,email)",
+  "value": [
+    {
+      "id": "user_123",
+      "name": "Alice",
+      "email": "alice@example.com"
+    }
+  ]
+}
+```
+
+## Sorting with $orderby
+
+Sort results by one or more fields:
+
+```http
+# Ascending (default)
+GET /odata/users?$orderby=name
+
+# Descending
+GET /odata/users?$orderby=created_at desc
+
+# Multiple fields
+GET /odata/users?$orderby=role,name desc
+```
+
+## Pagination
+
+### Using $top and $skip
+
+```http
+# Get first 10 records
+GET /odata/users?$top=10
+
+# Skip first 20 records, then get 10
+GET /odata/users?$top=10&$skip=20
+
+# Page 3 (20 records per page)
+GET /odata/users?$top=20&$skip=40
+```
+
+### Count Total Records
+
+Get the total count with $count:
+
+```http
+GET /odata/users?$count=true&$top=10
+```
+
+**Response:**
+```json
+{
+  "@odata.context": "http://localhost:8080/odata/$metadata#users",
+  "@odata.count": 150,
+  "value": [
+    // ... first 10 records
+  ]
+}
+```
+
+## Combining Query Options
+
+Combine multiple query options for complex queries:
+
+```http
+GET /odata/users?$filter=role eq 'admin'&$select=id,name&$orderby=name&$top=5
+```
+
+---
+
+## $expand - Nested Entities
+
+The `$expand` system query option allows you to include related entities inline with the response. This is one of OData's most powerful features for reducing round trips.
+
+### Basic Expansion
+
+Expand a single navigation property:
+
+```http
+GET /odata/projects?$expand=owner
+```
+
+**Response:**
+```json
+{
+  "@odata.context": "http://localhost:8080/odata/$metadata#projects",
+  "value": [
+    {
+      "id": "proj_1",
+      "name": "Project Alpha",
+      "owner_id": "user_123",
+      "owner": {
+        "id": "user_123",
+        "name": "Alice",
+        "email": "alice@example.com"
+      }
+    }
+  ]
+}
+```
+
+### Multiple Expansions
+
+Expand multiple navigation properties:
+
+```http
+GET /odata/projects?$expand=owner,department
+```
+
+### Nested Expansion
+
+Expand related entities multiple levels deep:
+
+```http
+GET /odata/projects?$expand=owner($expand=department)
+```
+
+**Response:**
+```json
+{
+  "id": "proj_1",
+  "name": "Project Alpha",
+  "owner": {
+    "id": "user_123",
+    "name": "Alice",
+    "department": {
+      "id": "dept_1",
+      "name": "Engineering"
+    }
+  }
+}
+```
+
+### Expansion with Query Options
+
+Apply query options to expanded entities:
+
+```http
+# Filter expanded entities
+GET /odata/users?$expand=orders($filter=status eq 'active')
+
+# Select fields in expanded entities
+GET /odata/users?$expand=orders($select=id,total)
+
+# Order expanded entities
+GET /odata/users?$expand=orders($orderby=created_at desc)
+
+# Limit expanded entities
+GET /odata/users?$expand=orders($top=5)
+
+# Combine options
+GET /odata/users?$expand=orders($filter=status eq 'active';$orderby=created_at desc;$top=10)
+```
+
+### Depth Limiting
+
+ObjectQL limits expansion depth to prevent performance issues:
+
+```typescript
+new ODataV4Plugin({
+  maxExpandDepth: 3  // Default: 3 levels
+})
+```
+
+Exceeding the depth limit returns an error:
+
+```json
+{
+  "error": {
+    "code": "EXPAND_DEPTH_EXCEEDED",
+    "message": "Maximum expand depth of 3 exceeded"
+  }
+}
+```
+
+---
+
+## $batch - Batch Operations
+
+The `$batch` endpoint allows you to submit multiple operations in a single HTTP request, reducing network overhead and enabling transactional operations.
+
+### Batch Request Format
+
+Batch requests use `multipart/mixed` content type:
+
+```http
+POST /odata/$batch
+Content-Type: multipart/mixed; boundary=batch_123
+
+--batch_123
+Content-Type: application/http
+
+GET /odata/users HTTP/1.1
+
+--batch_123
+Content-Type: application/http
+
+GET /odata/projects HTTP/1.1
+
+--batch_123--
+```
+
+### Batch with Changesets
+
+Changesets allow transactional write operations:
+
+```http
+POST /odata/$batch
+Content-Type: multipart/mixed; boundary=batch_abc
+
+--batch_abc
+Content-Type: multipart/mixed; boundary=changeset_xyz
+
+--changeset_xyz
+Content-Type: application/http
+Content-Transfer-Encoding: binary
+
+POST /odata/users HTTP/1.1
+Content-Type: application/json
+
+{"name":"Alice","email":"alice@example.com"}
+
+--changeset_xyz
+Content-Type: application/http
+Content-Transfer-Encoding: binary
+
+POST /odata/projects HTTP/1.1
+Content-Type: application/json
+
+{"name":"Project Alpha","owner_id":"$1"}
+
+--changeset_xyz--
+--batch_abc--
+```
+
+### Batch Response Format
+
+```http
+HTTP/1.1 200 OK
+Content-Type: multipart/mixed; boundary=batchresponse_123
+
+--batchresponse_123
+Content-Type: application/http
+
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "id": "user_789",
+  "name": "Alice",
+  "email": "alice@example.com"
+}
+
+--batchresponse_123
+Content-Type: application/http
+
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "id": "proj_456",
+  "name": "Project Alpha",
+  "owner_id": "user_789"
+}
+
+--batchresponse_123--
+```
+
+### Error Handling in Batch
+
+If any operation in a changeset fails, all operations in that changeset are rolled back:
+
+```http
+--batchresponse_123
+Content-Type: multipart/mixed; boundary=changesetresponse_xyz
+
+--changesetresponse_xyz
+Content-Type: application/http
+
+HTTP/1.1 400 Bad Request
+Content-Type: application/json
+
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Email is required"
+  }
+}
+
+--changesetresponse_xyz--
+```
+
+---
+
+## CRUD Operations
+
+## Create Entity
+
+```http
+POST /odata/users
+Content-Type: application/json
+
+{
+  "name": "Charlie",
+  "email": "charlie@example.com",
+  "role": "user"
+}
+```
+
+**Response:**
+```http
+HTTP/1.1 201 Created
+Location: /odata/users('user_789')
+Content-Type: application/json
+
+{
+  "@odata.context": "http://localhost:8080/odata/$metadata#users/$entity",
+  "id": "user_789",
+  "name": "Charlie",
+  "email": "charlie@example.com",
+  "role": "user",
+  "created_at": "2026-02-02T10:30:00Z"
+}
+```
+
+## Update Entity
+
+```http
+PATCH /odata/users('user_123')
+Content-Type: application/json
+
+{
+  "name": "Alice Updated",
+  "role": "admin"
+}
+```
+
+**Response:**
+```http
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "@odata.context": "http://localhost:8080/odata/$metadata#users/$entity",
+  "id": "user_123",
+  "name": "Alice Updated",
+  "email": "alice@example.com",
+  "role": "admin",
+  "updated_at": "2026-02-02T10:35:00Z"
+}
+```
+
+## Delete Entity
+
+```http
+DELETE /odata/users('user_123')
+```
+
+**Response:**
+```http
+HTTP/1.1 204 No Content
+```
+
+---
+
+## Full-Text Search ($search)
+
+Use `$search` for full-text search across multiple fields:
+
+```http
+GET /odata/users?$search="Alice"
+```
+
+Search is case-insensitive and searches across all text fields:
+
+```http
+# Search in multiple entity sets
+GET /odata/users?$search="admin" OR "manager"
+
+# Combine with filters
+GET /odata/users?$search="Alice"&$filter=role eq 'admin'
+```
+
+---
+
+## ETags for Concurrency Control
+
+ETags enable optimistic concurrency control to prevent lost updates:
+
+### Get Entity with ETag
+
+```http
+GET /odata/users('user_123')
+```
+
+**Response:**
+```http
+HTTP/1.1 200 OK
+ETag: W/"2026-02-02T10:30:00Z"
+Content-Type: application/json
+
+{
+  "id": "user_123",
+  "name": "Alice",
+  "email": "alice@example.com"
+}
+```
+
+### Update with ETag
+
+```http
+PATCH /odata/users('user_123')
+If-Match: W/"2026-02-02T10:30:00Z"
+Content-Type: application/json
+
+{
+  "name": "Alice Updated"
+}
+```
+
+If the entity was modified by another client:
+
+```http
+HTTP/1.1 412 Precondition Failed
+Content-Type: application/json
+
+{
+  "error": {
+    "code": "PRECONDITION_FAILED",
+    "message": "Entity has been modified by another client"
+  }
+}
+```
+
+---
+
+## Error Handling
+
+OData errors follow the standard format:
+
+```json
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Email is required",
+    "details": [
+      {
+        "code": "REQUIRED_FIELD",
+        "message": "The 'email' field is required",
+        "target": "email"
+      }
+    ]
+  }
+}
+```
+
+### Common Error Codes
+
+| HTTP Status | Error Code | Description |
+|-------------|------------|-------------|
+| 400 | VALIDATION_ERROR | Request validation failed |
+| 404 | NOT_FOUND | Entity not found |
+| 409 | CONFLICT | Entity already exists |
+| 412 | PRECONDITION_FAILED | ETag mismatch |
+| 500 | INTERNAL_ERROR | Server error |
+
+---
+
+## Type Mapping
+
+ObjectQL field types are mapped to OData EDM types:
+
+| ObjectQL Type | OData EDM Type | Notes |
+|--------------|----------------|-------|
+| `text`, `textarea`, `email`, `url`, `phone` | `Edm.String` | Text fields |
+| `number`, `currency`, `percent` | `Edm.Double` | Numeric fields |
+| `auto_number` | `Edm.Int32` | Integer fields |
+| `boolean` | `Edm.Boolean` | True/false |
+| `date` | `Edm.Date` | Date only |
+| `datetime` | `Edm.DateTimeOffset` | Date and time with timezone |
+| `time` | `Edm.TimeOfDay` | Time only |
+| `select` | `Edm.String` | String enum values |
+| `lookup`, `master_detail` | `Edm.String` | Reference by ID |
+
+---
+
+## Client Integration
+
+### JavaScript/TypeScript
+
+```typescript
+const response = await fetch('/odata/users?$filter=role eq \'admin\'&$top=10', {
+  headers: {
+    'Accept': 'application/json',
+    'Authorization': 'Bearer ' + token
+  }
+});
+
+const data = await response.json();
+console.log(data.value); // Array of users
+```
+
+### OData Client Libraries
+
+#### JavaScript: o-data
+
+```typescript
+import { o } from 'odata';
+
+const users = await o('/odata')
+  .get('users')
+  .filter({ role: 'admin' })
+  .select('id', 'name', 'email')
+  .top(10)
+  .query();
+```
+
+#### C#: Simple.OData.Client
+
+```csharp
+var client = new ODataClient("http://localhost:8080/odata");
+
+var users = await client
+  .For<User>("users")
+  .Filter(u => u.Role == "admin")
+  .Select(u => new { u.Id, u.Name, u.Email })
+  .Top(10)
+  .FindEntriesAsync();
+```
+
+#### Python: pyodata
+
+```python
+import requests
+from pyodata import Client
+
+session = requests.Session()
+session.headers.update({'Authorization': f'Bearer {token}'})
+
+client = Client('http://localhost:8080/odata', session)
+users = client.entity_sets.users.get_entities().filter("role eq 'admin'").top(10).execute()
+```
+
+---
+
+## Best Practices
+
+### 1. Use $select to Limit Fields
+
+❌ **Don't** request all fields:
+```http
+GET /odata/users
+```
+
+✅ **Do** request specific fields:
+```http
+GET /odata/users?$select=id,name,email
+```
+
+### 2. Use $expand for Related Data
+
+❌ **Don't** make multiple requests:
+```http
+GET /odata/projects
+GET /odata/users('user_123')
+GET /odata/users('user_456')
+```
+
+✅ **Do** use $expand:
+```http
+GET /odata/projects?$expand=owner
+```
+
+### 3. Implement Pagination
+
+❌ **Don't** fetch all records:
+```http
+GET /odata/users
+```
+
+✅ **Do** use pagination:
+```http
+GET /odata/users?$top=20&$skip=0
+```
+
+### 4. Use $count for Total Records
+
+```http
+GET /odata/users?$count=true&$top=20
+```
+
+### 5. Leverage $batch for Multiple Operations
+
+❌ **Don't** make separate requests:
+```http
+POST /odata/users (user 1)
+POST /odata/users (user 2)
+POST /odata/users (user 3)
+```
+
+✅ **Do** use batch:
+```http
+POST /odata/$batch (all 3 users in one request)
+```
+
+---
+
+## Comparison with Other APIs
+
+### OData vs REST
+
+| Feature | OData V4 | REST |
+|---------|----------|------|
+| **Filtering** | Standardized $filter | Custom query params |
+| **Expansion** | Built-in $expand | Manual joins or separate requests |
+| **Metadata** | Automatic $metadata | Manual documentation |
+| **Batch** | Standardized $batch | Custom implementation |
+| **Standards** | ISO/IEC approved | Best practices |
+| **Learning Curve** | Moderate | Low |
+
+### OData vs GraphQL
+
+| Feature | OData V4 | GraphQL |
+|---------|----------|---------|
+| **Protocol** | RESTful HTTP | POST-based |
+| **Query Language** | URL-based | Query strings |
+| **Nested Data** | $expand | Native support |
+| **Batch** | $batch | Native support |
+| **Caching** | HTTP caching | Custom caching |
+| **Tooling** | Excellent | Excellent |
+
+### When to Use OData
+
+**Use OData when:**
+- Building enterprise applications with complex queries
+- Need standardized API conventions
+- Working with Microsoft ecosystem (.NET, Power BI)
+- Client needs flexible query capabilities
+- Metadata-driven clients required
+
+**Use REST when:**
+- Simple CRUD operations
+- Custom API design needed
+- Team prefers flexibility over standards
+
+**Use GraphQL when:**
+- Building complex UIs with nested data
+- Client needs maximum flexibility
+- Working with modern frontend frameworks
+
+---
+
+## Performance Considerations
+
+### Query Optimization
+
+1. **Use Indexes**: Index fields used in $filter and $orderby
+2. **Limit $expand Depth**: Keep maxExpandDepth low (default: 3)
+3. **Use $select**: Request only needed fields
+4. **Implement Pagination**: Always use $top and $skip
+5. **Monitor $batch**: Large batches can impact performance
+
+### Caching
+
+OData responses are HTTP-cacheable:
+
+```http
+GET /odata/users
+Cache-Control: max-age=300
+ETag: W/"2026-02-02T10:30:00Z"
+```
+
+---
+
+## Security
+
+### Authentication
+
+OData uses the same authentication as other ObjectQL APIs:
+
+```http
+GET /odata/users
+Authorization: Bearer eyJhbGc...
+```
+
+### Authorization
+
+ObjectQL's permission system works with OData:
+- Object-level permissions
+- Field-level permissions (via $select)
+- Record-level permissions (via $filter)
+
+### Best Practices
+
+1. **Always Authenticate**: Require authentication for all endpoints
+2. **Validate Input**: OData query injection prevention
+3. **Rate Limit**: Prevent abuse of $batch and complex queries
+4. **Sanitize Errors**: Don't expose internal details in production
+5. **Use HTTPS**: Always in production
+6. **Limit $expand Depth**: Prevent performance attacks
+
+---
+
+## Troubleshooting
+
+### Query Returns Empty
+
+Check that:
+- Entity set name is correct (case-sensitive)
+- $filter syntax is valid
+- User has permission
+- Records exist in database
+
+### $expand Not Working
+
+Ensure:
+- Navigation property exists in metadata
+- maxExpandDepth is not exceeded
+- Related entity exists
+
+### $batch Fails
+
+Solutions:
+- Check multipart boundary format
+- Ensure Content-Type headers are correct
+- Verify all operations in changeset are valid
+
+---
+
+## Further Reading
+
+- [OData V4 Specification](https://www.odata.org/documentation/)
+- [OData Query Language](https://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part2-url-conventions.html)
+- [ObjectQL REST API](./rest.mdx)
+- [ObjectQL GraphQL API](./graphql.mdx)
+
+---
+
+**Last Updated**: February 2026  
+**API Version**: 1.0.0  
+**OData Version**: 4.0  
+**New in v4.0.3**: Full $expand and $batch support

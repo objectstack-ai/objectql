@@ -1,5 +1,6 @@
 {
   "index": "Overview",
   "custom-drivers": "Custom Drivers",
-  "plugins": "Plugin Development"
+  "plugins": "Plugin Development",
+  "protocol-tck": "Protocol TCK"
 }
