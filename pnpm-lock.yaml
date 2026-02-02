@@ -694,9 +694,6 @@ importers:
 
   packages/foundation/types:
     dependencies:
-      '@objectstack/objectql':
-        specifier: ^0.8.2
-        version: 0.8.2
       '@objectstack/spec':
         specifier: ^0.8.2
         version: 0.8.2
