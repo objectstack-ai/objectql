@@ -19,6 +19,8 @@ export type QueryAST = Data.QueryAST;
 export type DriverInterface = Data.DriverInterface;
 export type DriverOptions = Data.DriverOptions;
 
+export * from './gateway';
+
 // Export our enhanced runtime components (actual implementations)
 export * from './repository';
 export * from './app';

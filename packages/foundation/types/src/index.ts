@@ -33,3 +33,4 @@ export * from './api';
 export * from './workflow';
 export * from './formula';
 export * from './plugin';
+export * from './gateway';
