@@ -215,7 +215,7 @@ The v0.9.0 kernel introduces several enterprise-grade features:
 5. [ ] Update documentation to reflect new architecture
 
 **Deliverables**:
-- [ ] Updated plugin packages (ai-agent, security)
+- [ ] Updated plugin packages (security)
 - [ ] Migration guide for v0.9.0 features
 - [ ] Architecture decision records (ADRs)
 
