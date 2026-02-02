@@ -509,7 +509,11 @@ export class MongoDriver implements Driver {
             }
             return mongoDoc;
         });
-        const result = await collection.insertMany(mongoDocs);
+        // Support both 'transaction' and 'session' option keys for compatibility
+        const session = options?.transaction || options?.session;
+        const result = session
+            ? await collection.insertMany(mongoDocs, { session })
+            : await collection.insertMany(mongoDocs);
         // Return API format (convert _id to id)
         return Object.values(result.insertedIds).map(id => ({ id }));
     }
@@ -524,14 +528,22 @@ export class MongoDriver implements Driver {
         const isAtomic = Object.keys(updateData).some(k => k.startsWith('$'));
         const update = isAtomic ? updateData : { $set: updateData };
         
-        const result = await collection.updateMany(filter, update);
+        // Support both 'transaction' and 'session' option keys for compatibility
+        const session = options?.transaction || options?.session;
+        const result = session
+            ? await collection.updateMany(filter, update, { session })
+            : await collection.updateMany(filter, update);
         return { modifiedCount: result.modifiedCount };
     }
 
     async deleteMany(objectName: string, filters: any, options?: any): Promise<any> {
         const collection = await this.getCollection(objectName);
         const filter = this.mapFilters(filters);
-        const result = await collection.deleteMany(filter);
+        // Support both 'transaction' and 'session' option keys for compatibility
+        const session = options?.transaction || options?.session;
+        const result = session
+            ? await collection.deleteMany(filter, { session })
+            : await collection.deleteMany(filter);
         return { deletedCount: result.deletedCount };
     }
 
