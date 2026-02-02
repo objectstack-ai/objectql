@@ -6,6 +6,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import type { Logger } from '@objectstack/spec/contracts';
+import { createLogger } from '@objectstack/core';
 import type { PermissionConfig } from '@objectql/types';
 import type { IPermissionStorage, SecurityPluginConfig, CompiledPermissionRule } from './types';
 
@@ -45,12 +47,20 @@ export class PermissionLoader {
   private storage: IPermissionStorage;
   private compiledRules: Map<string, CompiledPermissionRule[]>;
   private precompileEnabled: boolean;
+  private logger: Logger;
   
   constructor(config: SecurityPluginConfig) {
     // Initialize storage based on configuration
     this.storage = this.initializeStorage(config);
     this.compiledRules = new Map();
     this.precompileEnabled = config.precompileRules !== false;
+    
+    // Initialize structured logger
+    this.logger = createLogger({
+      name: '@objectql/plugin-security/permission-loader',
+      level: 'info',
+      format: 'pretty'
+    });
   }
   
   /**
@@ -266,7 +276,9 @@ export class PermissionLoader {
           `);
           return !!fn(evalContext);
         } catch (error) {
-          console.error('Error evaluating formula condition:', error);
+          this.logger.error('Error evaluating formula condition', error as Error, {
+            formula: condition.formula
+          });
           return false;
         }
       };

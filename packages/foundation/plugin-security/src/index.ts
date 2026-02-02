@@ -15,6 +15,13 @@ export { PermissionGuard } from './permission-guard';
 export { QueryTrimmer } from './query-trimmer';
 export { FieldMasker } from './field-masker';
 
+// Configuration schema
+export { 
+  SecurityPluginConfigSchema,
+  PermissionStorageTypeSchema,
+  DatabaseConfigSchema 
+} from './config.schema';
+
 // Type exports
 export type {
   SecurityPluginConfig,
@@ -23,7 +30,8 @@ export type {
   CompiledPermissionRule,
   SecurityContext,
   PermissionCacheEntry,
-  PermissionAuditLog
+  PermissionAuditLog,
+  Role
 } from './types';
 
 // Re-export permission types from @objectql/types for convenience
