@@ -107,7 +107,7 @@ describe('SqlDriver (SQLite Integration)', () => {
         await driver.delete('users', charlie.id);
 
         const deleted = await driver.findOne('users', charlie.id);
-        expect(deleted).toBeUndefined();
+        expect(deleted).toBeNull();
     });
 
     it('should count objects', async () => {

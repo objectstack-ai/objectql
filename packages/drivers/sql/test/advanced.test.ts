@@ -162,12 +162,12 @@ describe('SqlDriver Advanced Operations (SQLite)', () => {
         });
 
         it('should update many records', async () => {
-            const updated = await driver.updateMany('orders', 
+            const result = await driver.updateMany('orders', 
                 { status: 'pending' },
                 { status: 'processing' }
             );
 
-            expect(updated).toBeGreaterThan(0);
+            expect(result.modifiedCount).toBeGreaterThan(0);
 
             const results = await driver.find('orders', {
                 where: { status: 'processing' }
@@ -177,23 +177,23 @@ describe('SqlDriver Advanced Operations (SQLite)', () => {
         });
 
         it('should delete many records', async () => {
-            const deleted = await driver.deleteMany('orders', { status: 'cancelled' });
+            const result = await driver.deleteMany('orders', { status: 'cancelled' });
 
-            expect(deleted).toBe(1);
+            expect(result.deletedCount).toBe(1);
 
             const remaining = await driver.count('orders', {});
             expect(remaining).toBe(4);
         });
 
         it('should handle empty bulk update and delete', async () => {
-            const updated = await driver.updateMany('orders', 
+            const result = await driver.updateMany('orders', 
                 { status: 'nonexistent' },
                 { status: 'updated' }
             );
-            expect(updated).toBe(0);
+            expect(result.modifiedCount).toBe(0);
 
-            const deleted = await driver.deleteMany('orders', { id: 'nonexistent' });
-            expect(deleted).toBe(0);
+            const deleteResult = await driver.deleteMany('orders', { id: 'nonexistent' });
+            expect(deleteResult.deletedCount).toBe(0);
         });
     });
 
@@ -238,7 +238,7 @@ describe('SqlDriver Advanced Operations (SQLite)', () => {
                 await driver.rollbackTransaction(trx);
 
                 const result = await driver.findOne('orders', 'trx2');
-                expect(result).toBeUndefined();
+                expect(result).toBeNull();
             } catch (e) {
                 await driver.rollbackTransaction(trx);
                 throw e;
@@ -273,7 +273,7 @@ describe('SqlDriver Advanced Operations (SQLite)', () => {
                 expect(updated.status).toBe('shipped');
 
                 const deleted = await driver.findOne('orders', '5');
-                expect(deleted).toBeUndefined();
+                expect(deleted).toBeNull();
             } catch (e) {
                 await driver.rollbackTransaction(trx);
                 throw e;
@@ -394,9 +394,9 @@ describe('SqlDriver Advanced Operations (SQLite)', () => {
             expect(result.customer).toBe('Charlie');
         });
 
-        it('should return undefined for non-existent record', async () => {
+        it('should return null for non-existent record', async () => {
             const result = await driver.findOne('orders', 'nonexistent');
-            expect(result).toBeUndefined();
+            expect(result).toBeNull();
         });
 
         it('should handle count with complex filters', async () => {
