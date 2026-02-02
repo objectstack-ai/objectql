@@ -1,0 +1,37 @@
+{
+  "name": "@objectql/protocol-tck",
+  "version": "4.0.3",
+  "description": "Technology Compatibility Kit for ObjectQL protocols - Unified test suite",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "keywords": [
+    "objectql",
+    "protocol",
+    "tck",
+    "test",
+    "compatibility",
+    "graphql",
+    "odata",
+    "rest"
+  ],
+  "license": "MIT",
+  "peerDependencies": {
+    "jest": "^30.0.0",
+    "vitest": "^1.0.0"
+  },
+  "peerDependenciesMeta": {
+    "jest": {
+      "optional": true
+    },
+    "vitest": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/jest": "^29.0.0",
+    "typescript": "^5.3.0"
+  }
+}
