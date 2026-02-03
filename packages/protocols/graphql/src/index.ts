@@ -12,6 +12,7 @@ import type { RuntimePlugin, RuntimeContext } from '@objectql/types';
 import { ApolloServer, HeaderMap } from '@apollo/server';
 import { expressMiddleware } from '@apollo/server/express4';
 import { ApolloServerPluginDrainHttpServer } from '@apollo/server/plugin/drainHttpServer';
+import { ApolloServerPluginLandingPageDisabled } from '@apollo/server/plugin/disabled';
 import { buildSubgraphSchema } from '@apollo/subgraph';
 import { gql } from 'graphql-tag';
 import { createServer } from 'http';
@@ -35,6 +36,8 @@ export interface GraphQLPluginConfig {
     port?: number;
     /** Enable introspection (also enables Apollo Sandbox in development) */
     introspection?: boolean;
+    /** Enable GraphQL Playground/landing page (Apollo Sandbox). When false, disables the landing page. */
+    playground?: boolean;
     /** Custom type definitions (optional) */
     typeDefs?: string;
     /** Enable subscriptions via WebSocket */
@@ -219,21 +222,28 @@ export class GraphQLPlugin implements RuntimePlugin {
         }
 
         // Create Apollo Server with WebSocket support
+        const plugins: any[] = [
+            ApolloServerPluginDrainHttpServer({ httpServer: this.httpServer }),
+            {
+                async serverWillStart() {
+                    return {
+                        async drainServer() {
+                            // Cleanup WebSocket server on shutdown
+                        }
+                    };
+                }
+            }
+        ];
+
+        // Disable landing page in test mode when playground is explicitly set to false
+        if (this.config.playground === false) {
+            plugins.push(ApolloServerPluginLandingPageDisabled());
+        }
+
         this.server = new ApolloServer({
             schema,
             introspection: this.config.introspection,
-            plugins: [
-                ApolloServerPluginDrainHttpServer({ httpServer: this.httpServer }),
-                {
-                    async serverWillStart() {
-                        return {
-                            async drainServer() {
-                                // Cleanup WebSocket server on shutdown
-                            }
-                        };
-                    }
-                }
-            ],
+            plugins,
             includeStacktraceInErrorResponses: process.env.NODE_ENV !== 'production',
             formatError: (formattedError, error) => {
                 return {
@@ -296,16 +306,23 @@ export class GraphQLPlugin implements RuntimePlugin {
         const schema = makeExecutableSchema({ typeDefs, resolvers });
 
         // Initialize Apollo Server (without express middleware yet)
+        const plugins: any[] = [
+            {
+                async serverWillStart() {
+                    return { async drainServer() {} };
+                }
+            }
+        ];
+
+        // Disable landing page in test mode when playground is explicitly set to false
+        if (this.config.playground === false) {
+            plugins.push(ApolloServerPluginLandingPageDisabled());
+        }
+
         this.server = new ApolloServer({
             schema,
             introspection: this.config.introspection,
-            plugins: [
-                {
-                    async serverWillStart() {
-                        return { async drainServer() {} };
-                    }
-                }
-            ],
+            plugins,
             includeStacktraceInErrorResponses: process.env.NODE_ENV !== 'production',
         });
 

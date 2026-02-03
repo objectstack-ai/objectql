@@ -25,7 +25,7 @@ class GraphQLEndpoint implements ProtocolEndpoint {
   constructor(plugin: GraphQLPlugin, kernel: ObjectKernel) {
     this.plugin = plugin;
     this.kernel = kernel;
-    this.baseUrl = `http://localhost:${plugin.config.port || 4000}`;
+    this.baseUrl = `http://localhost:${plugin.config.port || 4000}/graphql`;
   }
   
   async execute(operation: ProtocolOperation): Promise<ProtocolResponse> {
@@ -306,6 +306,12 @@ class GraphQLEndpoint implements ProtocolEndpoint {
       },
       body: JSON.stringify({ query, variables })
     });
+    
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      const text = await response.text();
+      throw new Error(`Expected JSON response but got: ${contentType}. Response: ${text.substring(0, 200)}`);
+    }
     
     return await response.json();
   }
