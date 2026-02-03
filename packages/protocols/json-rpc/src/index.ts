@@ -296,12 +296,14 @@ export class JSONRPCPlugin implements RuntimePlugin {
 
                     // Handle client disconnect
                     c.req.raw.signal.addEventListener('abort', () => {
+                        console.log(`[${this.name}] Client disconnected from progress stream: ${sessionId}`);
                         clearInterval(heartbeat);
                         const clients = this.progressClients.get(sessionId);
                         if (clients) {
                             clients.delete(callback);
                             if (clients.size === 0) {
                                 this.progressClients.delete(sessionId);
+                                console.log(`[${this.name}] All clients disconnected, session cleaned up: ${sessionId}`);
                             }
                         }
                     });

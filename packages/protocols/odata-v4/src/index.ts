@@ -1472,7 +1472,15 @@ export class ODataV4Plugin implements RuntimePlugin {
 
     /**
      * Attempt to rollback completed changeset operations
-     * This is a best-effort rollback mechanism
+     * 
+     * NOTE: This is a best-effort rollback mechanism for demonstration purposes.
+     * In production, this should use database transaction support (BEGIN/COMMIT/ROLLBACK)
+     * or implement a compensating transaction pattern by storing previous state.
+     * 
+     * Current limitations:
+     * - Does not actually reverse operations (logs intentions only)
+     * - Requires storing created IDs, deleted records, and previous values
+     * - Should be replaced with proper database transaction support
      */
     private async rollbackChangeset(operations: Array<{ type: string; entitySet: string; key?: string; data?: any }>, completedCount: number): Promise<void> {
         // Rollback in reverse order
@@ -1482,16 +1490,15 @@ export class ODataV4Plugin implements RuntimePlugin {
                 // Reverse the operation
                 if (op.type === 'POST') {
                     // Created record - try to delete it
-                    // Note: We would need to extract the created ID from the response
-                    // This is a simplified example
+                    // TODO: Need to extract and store the created ID from the response
                     console.log(`[${this.name}] Would rollback CREATE on ${op.entitySet}`);
                 } else if (op.type === 'DELETE') {
                     // Deleted record - try to restore it
-                    // This requires keeping the deleted data
+                    // TODO: Need to store the deleted record data before deletion
                     console.log(`[${this.name}] Would rollback DELETE on ${op.entitySet}(${op.key})`);
                 } else if (op.type === 'PATCH' || op.type === 'PUT') {
                     // Updated record - try to restore previous values
-                    // This requires keeping the previous data
+                    // TODO: Need to fetch and store previous values before update
                     console.log(`[${this.name}] Would rollback UPDATE on ${op.entitySet}(${op.key})`);
                 }
             } catch (error) {

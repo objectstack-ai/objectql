@@ -395,7 +395,7 @@ The plugin provides detailed error information when batch operations fail:
    - Ensures data consistency across multiple entities
 
 2. **Separate Read and Write Operations**
-   - PUT read operations (GET) outside changesets
+   - Put read operations (GET) outside changesets
    - Only write operations (POST, PATCH, PUT, DELETE) should be in changesets
 
 3. **Handle Errors Gracefully**
