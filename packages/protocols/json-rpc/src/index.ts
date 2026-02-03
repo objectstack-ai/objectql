@@ -7,6 +7,20 @@
  */
 
 import type { RuntimePlugin, RuntimeContext } from '@objectql/types';
+import {
+    validateRequest,
+    validateBatchRequest,
+    validateResponse,
+    validateBatchResponse,
+    createErrorResponse,
+    createSuccessResponse,
+    JSONRPCValidationError,
+    JSONRPCErrorCode,
+    JSONRPC_VERSION
+} from './validation.js';
+
+// Re-export validation utilities
+export * from './validation.js';
 
 /**
  * Configuration for the JSON-RPC Plugin
@@ -207,14 +221,27 @@ export class JSONRPCPlugin implements RuntimePlugin {
                 
                 // Handle batch requests with optional chaining
                 if (Array.isArray(body)) {
+                    // Validate batch request
+                    try {
+                        validateBatchRequest(body);
+                    } catch (error: any) {
+                        if (error instanceof JSONRPCValidationError) {
+                            return c.json(createErrorResponse(null, error.code, error.message, error.data));
+                        }
+                        return c.json(createErrorResponse(null, JSONRPCErrorCode.INVALID_REQUEST, 'Invalid batch request'));
+                    }
+                    
                     if (this.config.enableChaining) {
                         const responses = await this.processBatchWithChaining(body);
-                        return c.json(responses);
+                        const validatedResponses = validateBatchResponse(responses);
+                        return c.json(validatedResponses);
                     } else {
                         const responses = await Promise.all(
                             body.map((request: any) => this.processRequest(request))
                         );
-                        return c.json(responses);
+                        const filteredResponses = responses.filter(r => r !== null);
+                        const validatedResponses = validateBatchResponse(filteredResponses);
+                        return c.json(validatedResponses);
                     }
                 } else {
                     const response = await this.processRequest(body);
@@ -227,7 +254,7 @@ export class JSONRPCPlugin implements RuntimePlugin {
                 }
             } catch (error) {
                 console.error(`[${this.name}] Request error:`, error);
-                const errorResponse = this.createErrorResponse(null, -32700, 'Parse error');
+                const errorResponse = createErrorResponse(null, JSONRPCErrorCode.PARSE_ERROR, 'Parse error');
                 return c.json(errorResponse);
             }
         });
@@ -644,69 +671,93 @@ export class JSONRPCPlugin implements RuntimePlugin {
      * Process a single JSON-RPC request
      */
     private async processRequest(request: any): Promise<JSONRPCResponse | null> {
-        // Validate JSON-RPC 2.0 format
-        if (request.jsonrpc !== '2.0') {
-            return this.createErrorResponse(request.id, -32600, 'Invalid Request: jsonrpc must be "2.0"');
-        }
-
-        if (typeof request.method !== 'string') {
-            return this.createErrorResponse(request.id, -32600, 'Invalid Request: method must be a string');
-        }
-
-        // Check if this is a notification (no id)
-        const isNotification = request.id === undefined;
-
         try {
-            // Find method
-            const method = this.methods.get(request.method);
-            if (!method) {
-                if (isNotification) return null;
-                return this.createErrorResponse(request.id, -32601, `Method not found: ${request.method}`);
-            }
+            // Validate JSON-RPC 2.0 format using Zod schema
+            const validatedRequest = validateRequest(request);
 
-            // Execute method with params
-            let result: any;
-            if (Array.isArray(request.params)) {
-                // Positional parameters - pass directly
-                result = await method(...request.params);
-            } else if (request.params && typeof request.params === 'object') {
-                // Named parameters - map to positional based on method signature
-                const signature = this.methodSignatures.get(request.method);
-                if (signature && signature.params.length > 0) {
-                    // Map named params to positional array
-                    const positionalParams = signature.params.map((paramName, index) => {
-                        const value = request.params[paramName];
-                        // Note: undefined values are allowed - the method will handle validation
-                        // If you need stricter validation, check required params here
-                        return value;
-                    });
-                    result = await method(...positionalParams);
-                } else {
-                    // No signature or no params - pass params object as single argument
-                    // This handles methods that accept a single object parameter
-                    result = await method(request.params);
+            // Check if this is a notification (no id)
+            const isNotification = validatedRequest.id === undefined;
+
+            try {
+                // Find method
+                const method = this.methods.get(validatedRequest.method);
+                if (!method) {
+                    if (isNotification) return null;
+                    return createErrorResponse(
+                        validatedRequest.id ?? null,
+                        JSONRPCErrorCode.METHOD_NOT_FOUND,
+                        `Method not found: ${validatedRequest.method}`
+                    );
                 }
-            } else {
-                // No parameters
-                result = await method();
+
+                // Execute method with params
+                let result: any;
+                if (Array.isArray(validatedRequest.params)) {
+                    // Positional parameters - pass directly
+                    result = await method(...validatedRequest.params);
+                } else if (validatedRequest.params && typeof validatedRequest.params === 'object' && !Array.isArray(validatedRequest.params)) {
+                    // Named parameters - map to positional based on method signature
+                    const signature = this.methodSignatures.get(validatedRequest.method);
+                    if (signature && signature.params.length > 0) {
+                        // Map named params to positional array
+                        const positionalParams = signature.params.map((paramName, index) => {
+                            const value = (validatedRequest.params as Record<string, any>)[paramName];
+                            // Note: undefined values are allowed - the method will handle validation
+                            // If you need stricter validation, check required params here
+                            return value;
+                        });
+                        result = await method(...positionalParams);
+                    } else {
+                        // No signature or no params - pass params object as single argument
+                        // This handles methods that accept a single object parameter
+                        result = await method(validatedRequest.params);
+                    }
+                } else {
+                    // No parameters
+                    result = await method();
+                }
+
+                // Don't send response for notifications
+                if (isNotification) return null;
+
+                const response = createSuccessResponse(validatedRequest.id ?? null, result);
+                return validateResponse(response);
+            } catch (error: any) {
+                console.error(error);
+                if (isNotification) return null;
+                
+                // Handle validation errors
+                if (error instanceof JSONRPCValidationError) {
+                    return createErrorResponse(
+                        validatedRequest.id ?? null,
+                        error.code,
+                        error.message,
+                        error.data
+                    );
+                }
+
+                return createErrorResponse(
+                    validatedRequest.id ?? null,
+                    JSONRPCErrorCode.INTERNAL_ERROR,
+                    error instanceof Error ? error.message : 'Internal error'
+                );
             }
-
-            // Don't send response for notifications
-            if (isNotification) return null;
-
-            return {
-                jsonrpc: '2.0',
-                result,
-                id: request.id
-            };
-        } catch (error) {
-            console.error(error);
-            if (isNotification) return null;
+        } catch (error: any) {
+            // Handle request validation errors
+            if (error instanceof JSONRPCValidationError) {
+                return createErrorResponse(
+                    null,
+                    error.code,
+                    error.message,
+                    error.data
+                );
+            }
             
-            return this.createErrorResponse(
-                request.id,
-                -32603,
-                error instanceof Error ? error.message : 'Internal error'
+            // Fallback for unexpected errors
+            return createErrorResponse(
+                null,
+                JSONRPCErrorCode.INVALID_REQUEST,
+                error instanceof Error ? error.message : 'Invalid request'
             );
         }
     }

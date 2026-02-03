@@ -22,6 +22,10 @@ import { PubSub } from 'graphql-subscriptions';
 import DataLoader from 'dataloader';
 import express from 'express';
 import cors from 'cors';
+import { mapErrorToGraphQLError } from './validation.js';
+
+// Re-export validation utilities
+export * from './validation.js';
 
 /**
  * Configuration for the GraphQL Plugin
