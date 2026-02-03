@@ -1230,7 +1230,7 @@ export class ODataV4Plugin implements RuntimePlugin {
 
         try {
             const contentType = req.headers['content-type'] || '';
-            const boundaryMatch = contentType.match(/boundary=["']?([^"';,\s]+)["']?/);
+            const boundaryMatch = contentType.match(/boundary=["']?([^"';,\s\r\n]+)["']?/);
             
             if (!boundaryMatch) {
                 this.sendError(res, 400, 'Missing multipart boundary in Content-Type');
