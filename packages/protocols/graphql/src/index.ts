@@ -663,6 +663,9 @@ export class GraphQLPlugin implements RuntimePlugin {
         const objectTypes = this.getMetaTypes();
         
         let typeDefs = `#graphql
+  # Custom scalars
+  scalar JSON
+  
   # Common filter types
   input StringFilter {
     eq: String
@@ -977,6 +980,38 @@ export class GraphQLPlugin implements RuntimePlugin {
         const objectTypes = this.getMetaTypes();
         
         const resolvers: any = {
+            // JSON scalar resolver - passes through any value
+            JSON: {
+                __parseValue(value: any) {
+                    return value; // value from the client input variables
+                },
+                __serialize(value: any) {
+                    return value; // value sent to the client
+                },
+                __parseLiteral(ast: any) {
+                    // Parse GraphQL query literals (not used for variables)
+                    if (ast.kind === 'StringValue') {
+                        return JSON.parse(ast.value);
+                    }
+                    if (ast.kind === 'IntValue' || ast.kind === 'FloatValue') {
+                        return parseFloat(ast.value);
+                    }
+                    if (ast.kind === 'BooleanValue' || ast.kind === 'NullValue') {
+                        return ast.value;
+                    }
+                    if (ast.kind === 'ObjectValue') {
+                        const obj: any = {};
+                        ast.fields.forEach((field: any) => {
+                            obj[field.name.value] = this.__parseLiteral(field.value);
+                        });
+                        return obj;
+                    }
+                    if (ast.kind === 'ListValue') {
+                        return ast.values.map((value: any) => this.__parseLiteral(value));
+                    }
+                    return null;
+                }
+            },
             Query: {
                 hello: () => 'Hello from GraphQL Protocol Plugin with Subscriptions!',
                 
