@@ -98,6 +98,7 @@ export class SwaggerUIPlugin implements RuntimePlugin {
 
     /**
      * Install hook - called during kernel initialization
+     * (RuntimePlugin interface)
      */
     async install(ctx: RuntimeContext): Promise<void> {
         console.log(`[${this.name}] Installing Swagger UI plugin...`);
@@ -106,15 +107,47 @@ export class SwaggerUIPlugin implements RuntimePlugin {
     }
 
     /**
+     * Init hook - called during kernel initialization
+     * (ObjectStack Plugin interface)
+     */
+    async init(ctx: any): Promise<void> {
+        console.log(`[${this.name}] Installing Swagger UI plugin...`);
+        this.ctx = ctx;
+        // Don't try to get the service yet - it might not be registered
+        // We'll get it when we actually need it in startPlugin
+    }
+
+    /**
      * Start hook - called when kernel starts
      */
     async onStart(ctx: RuntimeContext): Promise<void> {
+        return this.startPlugin(ctx);
+    }
+    
+    /**
+     * Start hook - called when kernel starts
+     * (ObjectStack Plugin interface)
+     */
+    async start(ctx: any): Promise<void> {
+        return this.startPlugin(ctx);
+    }
+    
+    /**
+     * Internal start method used by both interfaces
+     */
+    private async startPlugin(ctx: any): Promise<void> {
         if (!this.engine) {
-            throw new Error('Swagger UI plugin not initialized. Install hook must be called first.');
+            // Try to get engine from context - don't fail if it doesn't exist
+            try {
+                this.engine = (ctx as any).getService?.('objectql') || (ctx as any).getService?.('engine');
+            } catch (e) {
+                // Service not found - that's ok, Swagger UI will still work
+                console.log(`[${this.name}] No ObjectQL service found`);
+            }
         }
 
         // Check for shared HTTP server (Hono)
-        const httpServer = (this.ctx as any)?.getService?.('http-server');
+        const httpServer = (ctx as any)?.getService?.('http-server');
         if (httpServer && httpServer.app) {
             console.log(`[${this.name}] 🔗 Attaching to shared HTTP server...`);
             this.attachToHono(httpServer.app);
@@ -129,6 +162,14 @@ export class SwaggerUIPlugin implements RuntimePlugin {
      * Stop hook - called when kernel stops
      */
     async onStop(ctx: RuntimeContext): Promise<void> {
+        console.log(`[${this.name}] Stopping Swagger UI...`);
+    }
+    
+    /**
+     * Destroy hook - called when kernel stops
+     * (ObjectStack Plugin interface)
+     */
+    async destroy(): Promise<void> {
         console.log(`[${this.name}] Stopping Swagger UI...`);
     }
 

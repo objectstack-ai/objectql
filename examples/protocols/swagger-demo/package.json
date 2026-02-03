@@ -9,11 +9,8 @@
     "dev": "tsx watch src/index.ts"
   },
   "dependencies": {
-    "@objectql/core": "workspace:*",
-    "@objectql/driver-memory": "workspace:*",
     "@objectql/protocol-rest": "workspace:*",
     "@objectql/protocol-swagger-ui": "workspace:*",
-    "@objectql/types": "workspace:*",
     "@objectstack/core": "^0.9.1",
     "@objectstack/plugin-hono-server": "^0.9.1"
   },

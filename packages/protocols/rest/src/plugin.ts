@@ -40,10 +40,49 @@ export class RestPlugin implements RuntimePlugin {
         this.engine = ctx.engine || (ctx as any).getKernel?.();
         this.server = new ObjectQLServer(this.engine);
     }
+    
+    /**
+     * Init hook - for ObjectStack Plugin interface compatibility
+     */
+    async init(ctx: any): Promise<void> {
+        console.log(`[${this.name}] Installing REST protocol...`);
+        this.ctx = ctx;
+        // Don't try to get the service yet - it might not be registered
+        // We'll get it when we actually need it in startPlugin
+        this.server = undefined; // Will be initialized when needed
+    }
 
     async onStart(ctx: RuntimeContext): Promise<void> {
+        return this.startPlugin(ctx);
+    }
+    
+    /**
+     * Start hook - for ObjectStack Plugin interface compatibility
+     */
+    async start(ctx: any): Promise<void> {
+        return this.startPlugin(ctx);
+    }
+    
+    /**
+     * Internal start method used by both interfaces
+     */
+    private async startPlugin(ctx: any): Promise<void> {
+        // Initialize server if not already done
+        if (!this.server) {
+            // Try to get engine from context - don't fail if it doesn't exist
+            try {
+                this.engine = (ctx as any).getService?.('objectql') || (ctx as any).getService?.('engine') || this.engine;
+            } catch (e) {
+                // Service not found - that's ok, we'll work without it
+                console.log(`[${this.name}] No ObjectQL service found, using minimal spec`);
+            }
+            if (this.engine) {
+                this.server = new ObjectQLServer(this.engine);
+            }
+        }
+        
         // Check for Hono server service
-        const httpServer = (this.ctx as any)?.getService?.('http-server');
+        const httpServer = (ctx as any)?.getService?.('http-server');
         if (httpServer && httpServer.app) {
              console.log(`[${this.name}] Attaching to existing Hono server...`);
              this.attachToHono(httpServer.app);
@@ -53,16 +92,6 @@ export class RestPlugin implements RuntimePlugin {
         console.log(`[${this.name}] REST protocol ready. Mount at ${this.config.basePath}`);
     }
 
-    // --- Adapter for compatibility ---
-    async init(ctx: any): Promise<void> {
-        return this.install(ctx);
-    }
-
-    async start(ctx: any): Promise<void> {
-        return this.onStart(ctx);
-    }
-    // ---------------------------------
-
     attachToHono(app: any) {
         const { basePath } = this.config;
         console.log(`[${this.name}] Attaching REST to Hono at ${basePath}`);
@@ -70,7 +99,17 @@ export class RestPlugin implements RuntimePlugin {
         // OpenAPI Specification Endpoint
         app.get(`${basePath}/openapi.json`, (c: any) => {
             try {
-                const spec = generateOpenAPI(this.engine);
+                // Generate spec even if engine is not available (will show minimal spec)
+                const spec = this.engine ? generateOpenAPI(this.engine) : {
+                    openapi: '3.0.0',
+                    info: {
+                        title: 'ObjectQL API',
+                        version: '1.0.0',
+                        description: 'API is initializing...'
+                    },
+                    paths: {},
+                    components: { schemas: {} }
+                };
                 return c.json(spec);
             } catch (error) {
                 console.error(`[${this.name}] Error generating OpenAPI spec:`, error);
