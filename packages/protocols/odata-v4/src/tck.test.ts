@@ -78,6 +78,7 @@ class ODataEndpoint implements ProtocolEndpoint {
     
     if (!response.ok) {
       const error = await response.json();
+      console.error('[TCK OData] Create error:', error);
       return {
         success: false,
         error: {
@@ -365,7 +366,12 @@ class ODataEndpoint implements ProtocolEndpoint {
   }
   
   private capitalize(str: string): string {
-    return str.charAt(0).toUpperCase() + str.slice(1);
+    // Convert to PascalCase (handle underscores and hyphens)
+    return str
+      .split(/[_-]/)
+      .filter(word => word.length > 0) // Remove empty segments
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join('');
   }
 }
 
@@ -381,6 +387,9 @@ describe('OData V4 Protocol TCK', () => {
     // Use a unique port for tests to avoid conflicts
     testPort = 9100 + Math.floor(Math.random() * 1000);
     
+    // Create memory driver
+    const driver = new MemoryDriver();
+    
     // Create test kernel with memory driver
     plugin = new ODataV4Plugin({
       port: testPort,
@@ -388,10 +397,55 @@ describe('OData V4 Protocol TCK', () => {
       namespace: 'TCKTest'
     });
     
-    kernel = new ObjectKernel([
-      new MemoryDriver(),
-      plugin
-    ]);
+    // Create kernel and register plugins
+    kernel = new ObjectKernel();
+    
+    // Register plugin if kernel.use exists
+    if (typeof (kernel as any).use === 'function') {
+      (kernel as any).use(plugin);
+    }
+    
+    // Patch kernel with CRUD methods that delegate to the driver
+    // This is necessary because @objectstack/core@0.9.x doesn't provide these methods
+    (kernel as any).create = (object: string, doc: any, options?: any) => driver.create(object, doc, options);
+    (kernel as any).update = (object: string, id: any, doc: any, options?: any) => driver.update(object, id, doc, options);
+    (kernel as any).delete = (object: string, id: any, options?: any) => driver.delete(object, id, options);
+    (kernel as any).find = async (object: string, query?: any, options?: any) => {
+      const res = await driver.find(object, query, options);
+      return { value: res || [], count: (res || []).length };
+    };
+    (kernel as any).findOne = (object: string, id: any, options?: any) => driver.findOne(object, id, options);
+    (kernel as any).get = (object: string, id: any) => driver.findOne(object, id);
+    (kernel as any).count = (object: string, query?: any, options?: any) => driver.count(object, query, options);
+    (kernel as any).getDriver = () => driver;
+    
+    // Stub metadata registry
+    (kernel as any).metadata = {
+      register: (type: string, name: string, item: any) => {
+        // Simple in-memory metadata storage
+        if (!(kernel as any)._metadata) {
+          (kernel as any)._metadata = new Map();
+        }
+        if (!(kernel as any)._metadata.has(type)) {
+          (kernel as any)._metadata.set(type, new Map());
+        }
+        (kernel as any)._metadata.get(type).set(name, item);
+      },
+      get: (type: string, name: string) => {
+        if (!(kernel as any)._metadata) return null;
+        const typeMap = (kernel as any)._metadata.get(type);
+        const item = typeMap ? typeMap.get(name) : null;
+        // Return the item with content wrapper for protocol plugins
+        return item ? { content: item } : null;
+      },
+      list: (type: string) => {
+        if (!(kernel as any)._metadata) return [];
+        const typeMap = (kernel as any)._metadata.get(type);
+        const items = typeMap ? Array.from(typeMap.values()) : [];
+        // Wrap each item in content wrapper for protocol plugins
+        return items.map(item => ({ content: item }));
+      }
+    };
     
     // Register test entity
     kernel.metadata.register('object', 'tck_test_entity', {
@@ -404,14 +458,31 @@ describe('OData V4 Protocol TCK', () => {
       }
     });
     
-    await kernel.start();
+    // Manually install and start the plugin
+    // Since the new kernel might not auto-start plugins, we do it manually
+    const ctx = {
+      engine: kernel,
+      services: (kernel as any).services || new Map()
+    };
+    
+    if (typeof (plugin as any).install === 'function') {
+      await (plugin as any).install(ctx);
+    }
+    
+    if (typeof (plugin as any).onStart === 'function') {
+      await (plugin as any).onStart(ctx);
+    }
     
     // Wait for server to be ready
     await new Promise(resolve => setTimeout(resolve, 1000));
   }, 30000);
   
   afterAll(async () => {
-    await kernel.stop();
+    if ((kernel as any).shutdown) {
+      await (kernel as any).shutdown();
+    } else if ((kernel as any).stop) {
+      await (kernel as any).stop();
+    }
   }, 30000);
   
   // Run the Protocol TCK
