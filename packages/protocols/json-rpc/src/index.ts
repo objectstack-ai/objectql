@@ -199,8 +199,14 @@ export class JSONRPCPlugin implements RuntimePlugin {
         
         // Start listening
         await new Promise<void>((resolve, reject) => {
-            this.server!.on('error', reject);
+            const onError = (err: Error) => {
+                this.server!.removeListener('error', onError);
+                reject(err);
+            };
+            
+            this.server!.on('error', onError);
             this.server!.listen(this.config.port, () => {
+                this.server!.removeListener('error', onError);
                 console.log(`[${this.name}] 🚀 JSON-RPC server listening on http://localhost:${this.config.port}${this.config.basePath}`);
                 resolve();
             });
