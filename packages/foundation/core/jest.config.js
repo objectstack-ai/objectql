@@ -7,17 +7,17 @@
  */
 
 module.exports = {
-  preset: 'ts-jest/presets/default-esm',
+  preset: 'ts-jest',
   testEnvironment: 'node',
   testMatch: ['**/test/**/*.test.ts'],
-  extensionsToTreatAsEsm: ['.ts'],
   moduleNameMapper: {
     '^@objectql/(.*)$': '<rootDir>/../$1/src',
-    '^(\\.{1,2}/.*)\\.js$': '$1',
+    '^@objectstack/core$': '<rootDir>/test/__mocks__/@objectstack/core.ts',
+    '^@objectstack/objectql$': '<rootDir>/test/__mocks__/@objectstack/objectql.ts',
+    '^@objectstack/runtime$': '<rootDir>/test/__mocks__/@objectstack/runtime.ts',
   },
   transform: {
     '^.+\\.(t|j)sx?$': ['ts-jest', {
-      useESM: true,
       isolatedModules: true,
       tsconfig: {
         esModuleInterop: true,
@@ -26,5 +26,4 @@ module.exports = {
       }
     }],
   },
-  transformIgnorePatterns: [],
 };
