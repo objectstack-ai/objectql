@@ -8,6 +8,10 @@
 
 import type { RuntimePlugin, RuntimeContext } from '@objectql/types';
 import { IncomingMessage, ServerResponse, createServer, Server } from 'http';
+import { mapErrorToODataError } from './validation.js';
+
+// Re-export validation utilities
+export * from './validation.js';
 
 /**
  * Configuration for the OData V4 Plugin
