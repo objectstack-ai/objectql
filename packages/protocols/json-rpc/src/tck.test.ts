@@ -94,8 +94,8 @@ class JSONRPCEndpoint implements ProtocolEndpoint {
   private async executeRead(operation: ProtocolOperation): Promise<ProtocolResponse> {
     const request = {
       jsonrpc: '2.0',
-      method: 'object.findOne',
-      params: [operation.entity, { id: operation.id }],
+      method: 'object.get',
+      params: [operation.entity, operation.id],
       id: this.requestId++
     };
     
@@ -263,15 +263,15 @@ class JSONRPCEndpoint implements ProtocolEndpoint {
   async getMetadata(): Promise<any> {
     const request = {
       jsonrpc: '2.0',
-      method: 'system.listObjects',
-      params: [],
+      method: 'metadata.getAll',
+      params: ['object'],
       id: this.requestId++
     };
     
     const result = await this.rpcRequest(request);
     
     return {
-      objects: result.result || [],
+      entities: result.result || [],
       protocol: 'JSON-RPC 2.0'
     };
   }
