@@ -10,6 +10,7 @@ module.exports = {
     preset: 'ts-jest',
     testEnvironment: 'node',
     testMatch: ['**/*.test.ts'],
+    testPathIgnorePatterns: ['/node_modules/', 'tck.test.ts'],
     moduleNameMapper: {
         '^@objectstack/runtime$': '<rootDir>/test/__mocks__/@objectstack/runtime.ts',
         '^@objectstack/core$': '<rootDir>/test/__mocks__/@objectstack/core.ts',
@@ -18,6 +19,10 @@ module.exports = {
         '^@objectql/core$': '<rootDir>/../../foundation/core/src',
         '^@objectql/driver-sql$': '<rootDir>/../../drivers/sql/src',
         '^@objectql/driver-mongo$': '<rootDir>/../../drivers/mongo/src',
+        '^@objectql/driver-memory$': '<rootDir>/../../drivers/memory/src',
+        '^@objectql/plugin-validator$': '<rootDir>/test/__mocks__/@objectql/plugin-validator.ts',
+        '^@objectql/plugin-formula$': '<rootDir>/test/__mocks__/@objectql/plugin-formula.ts',
+        '^@objectql/protocol-tck$': '<rootDir>/../../tools/protocol-tck/src',
         '^(.*)\\.js$': '$1',
     },
     transform: {

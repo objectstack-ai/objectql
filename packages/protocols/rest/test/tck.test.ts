@@ -5,9 +5,9 @@
  * complies with the Protocol TCK requirements and RESTful principles.
  */
 
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
 import { runProtocolTCK, ProtocolEndpoint, ProtocolOperation, ProtocolResponse } from '@objectql/protocol-tck';
-import { RESTPlugin } from '../src/index';
+import { RestPlugin } from '../src/index';
 import { ObjectKernel } from '@objectstack/core';
 import { MemoryDriver } from '@objectql/driver-memory';
 
@@ -17,11 +17,11 @@ import { MemoryDriver } from '@objectql/driver-memory';
  * Translates TCK operations into RESTful HTTP requests
  */
 class RESTEndpoint implements ProtocolEndpoint {
-  private plugin: RESTPlugin;
+  private plugin: RestPlugin;
   private kernel: ObjectKernel;
   private baseUrl: string;
   
-  constructor(plugin: RESTPlugin, kernel: ObjectKernel) {
+  constructor(plugin: RestPlugin, kernel: ObjectKernel) {
     this.plugin = plugin;
     this.kernel = kernel;
     const port = plugin.config.port || 3000;
@@ -313,7 +313,7 @@ class RESTEndpoint implements ProtocolEndpoint {
  */
 describe('REST Protocol TCK', () => {
   let kernel: ObjectKernel;
-  let plugin: RESTPlugin;
+  let plugin: RestPlugin;
   let testPort: number;
   
   beforeAll(async () => {
@@ -321,7 +321,7 @@ describe('REST Protocol TCK', () => {
     testPort = 9200 + Math.floor(Math.random() * 1000);
     
     // Create test kernel with memory driver
-    plugin = new RESTPlugin({
+    plugin = new RestPlugin({
       port: testPort,
       basePath: '/api',
       enableOpenAPI: true
