@@ -24,8 +24,9 @@ export const FormulaPluginConfigSchema = z.object({
   
   /**
    * Maximum execution time for formula evaluation in milliseconds
-   * Set to 0 to disable timeout enforcement (required for synchronous execution)
-   * Note: Timeout enforcement is not supported for synchronous formula execution
+   * Must be 0 (no timeout) for the current synchronous execution model.
+   * Timeout enforcement requires an async/isolated runtime that can safely interrupt
+   * long-running formulas, which is not yet implemented.
    * @default 0
    */
   timeout: z.number().nonnegative().optional().default(0),
