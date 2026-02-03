@@ -979,6 +979,33 @@ export class GraphQLPlugin implements RuntimePlugin {
     private generateResolvers(): any {
         const objectTypes = this.getMetaTypes();
         
+        // Helper function for parsing GraphQL literals to JSON
+        const parseLiteral = (ast: any): any => {
+            if (ast.kind === 'StringValue') {
+                return JSON.parse(ast.value);
+            }
+            if (ast.kind === 'IntValue' || ast.kind === 'FloatValue') {
+                return parseFloat(ast.value);
+            }
+            if (ast.kind === 'BooleanValue') {
+                return ast.value;
+            }
+            if (ast.kind === 'NullValue') {
+                return null;
+            }
+            if (ast.kind === 'ObjectValue') {
+                const obj: any = {};
+                ast.fields.forEach((field: any) => {
+                    obj[field.name.value] = parseLiteral(field.value);
+                });
+                return obj;
+            }
+            if (ast.kind === 'ListValue') {
+                return ast.values.map((value: any) => parseLiteral(value));
+            }
+            return null;
+        };
+        
         const resolvers: any = {
             // JSON scalar resolver - passes through any value
             JSON: {
@@ -989,27 +1016,7 @@ export class GraphQLPlugin implements RuntimePlugin {
                     return value; // value sent to the client
                 },
                 __parseLiteral(ast: any) {
-                    // Parse GraphQL query literals (not used for variables)
-                    if (ast.kind === 'StringValue') {
-                        return JSON.parse(ast.value);
-                    }
-                    if (ast.kind === 'IntValue' || ast.kind === 'FloatValue') {
-                        return parseFloat(ast.value);
-                    }
-                    if (ast.kind === 'BooleanValue' || ast.kind === 'NullValue') {
-                        return ast.value;
-                    }
-                    if (ast.kind === 'ObjectValue') {
-                        const obj: any = {};
-                        ast.fields.forEach((field: any) => {
-                            obj[field.name.value] = this.__parseLiteral(field.value);
-                        });
-                        return obj;
-                    }
-                    if (ast.kind === 'ListValue') {
-                        return ast.values.map((value: any) => this.__parseLiteral(value));
-                    }
-                    return null;
+                    return parseLiteral(ast);
                 }
             },
             Query: {

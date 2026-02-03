@@ -323,6 +323,7 @@ class GraphQLEndpoint implements ProtocolEndpoint {
     // Convert to PascalCase (handle underscores and hyphens)
     return str
       .split(/[_-]/)
+      .filter(word => word.length > 0) // Remove empty segments
       .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
       .join('');
   }
