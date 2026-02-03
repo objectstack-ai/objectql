@@ -664,6 +664,10 @@ export class GraphQLPlugin implements RuntimePlugin {
         
         let typeDefs = `#graphql
   # Custom scalars
+  """
+  Represents arbitrary JSON values. Can be used for dynamic data structures.
+  Supports objects, arrays, strings, numbers, booleans, and null.
+  """
   scalar JSON
   
   # Common filter types

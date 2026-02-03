@@ -74,7 +74,6 @@ class GraphQLEndpoint implements ProtocolEndpoint {
     const result = await this.graphqlRequest(mutation, { input: operation.data });
     
     if (result.errors) {
-      console.log('GraphQL create error:', JSON.stringify(result.errors, null, 2));
       return {
         success: false,
         error: {
