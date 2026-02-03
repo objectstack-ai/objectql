@@ -148,7 +148,7 @@ export class JSONRPCPlugin implements RuntimePlugin {
     private methods: Map<string, Function>;
     private methodSignatures: Map<string, MethodSignature>;
     private sessions: Map<string, Session> = new Map();
-    // private progressClients: Map<string, any> = new Map(); // TODO: SSE implementation for Hono
+    private progressClients: Map<string, Set<(data: string) => void>> = new Map();
 
     constructor(config: JSONRPCPluginConfig = {}) {
         this.config = {
@@ -259,7 +259,55 @@ export class JSONRPCPlugin implements RuntimePlugin {
             }
         });
 
-        // TODO: Implement GET /rpc/progress if needed using Hono streaming
+        // SSE endpoint for progress notifications
+        if (this.config.enableProgress) {
+            app.get(`${basePath}/progress/:sessionId`, async (c: any) => {
+                const sessionId = c.req.param('sessionId');
+                
+                // Set SSE headers
+                c.header('Content-Type', 'text/event-stream');
+                c.header('Cache-Control', 'no-cache');
+                c.header('Connection', 'keep-alive');
+
+                // Use Hono's stream helper
+                return c.streamText(async (stream: any) => {
+                    // Create a callback for this client
+                    const callback = (data: string) => {
+                        stream.write(data);
+                    };
+
+                    // Register client
+                    if (!this.progressClients.has(sessionId)) {
+                        this.progressClients.set(sessionId, new Set());
+                    }
+                    this.progressClients.get(sessionId)!.add(callback);
+
+                    // Send initial connection message
+                    await stream.write(`data: ${JSON.stringify({ type: 'connected', sessionId })}\n\n`);
+
+                    // Keep connection alive with heartbeat
+                    const heartbeat = setInterval(async () => {
+                        try {
+                            await stream.write(`: heartbeat\n\n`);
+                        } catch (e) {
+                            clearInterval(heartbeat);
+                        }
+                    }, 30000); // 30 seconds
+
+                    // Handle client disconnect
+                    c.req.raw.signal.addEventListener('abort', () => {
+                        clearInterval(heartbeat);
+                        const clients = this.progressClients.get(sessionId);
+                        if (clients) {
+                            clients.delete(callback);
+                            if (clients.size === 0) {
+                                this.progressClients.delete(sessionId);
+                            }
+                        }
+                    });
+                });
+            });
+        }
     }
 
     /**
@@ -861,9 +909,40 @@ export class JSONRPCPlugin implements RuntimePlugin {
     /**
      * Send progress notification to SSE clients
      */
-    // private sendProgress(sessionId: string, progress: ProgressNotification): void {
-    //     // TODO: Implement for Hono
-    // }
+    private sendProgress(sessionId: string, progress: ProgressNotification): void {
+        const clients = this.progressClients.get(sessionId);
+        if (!clients || clients.size === 0) return;
+
+        const message = `data: ${JSON.stringify(progress)}\n\n`;
+        
+        // Send to all connected clients for this session
+        clients.forEach(callback => {
+            try {
+                callback(message);
+            } catch (error) {
+                console.error(`[${this.name}] Error sending progress to client:`, error);
+            }
+        });
+    }
+
+    /**
+     * Send progress update for a specific operation
+     */
+    public emitProgress(sessionId: string, operationId: string, progress: number, total: number, message?: string): void {
+        if (!this.config.enableProgress) return;
+
+        const notification: ProgressNotification = {
+            method: 'progress.update',
+            params: {
+                id: operationId,
+                progress,
+                total,
+                message
+            }
+        };
+
+        this.sendProgress(sessionId, notification);
+    }
 
     /**
      * Resolve result references in batch requests (e.g., $1.result.id)
