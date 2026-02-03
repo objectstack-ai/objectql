@@ -528,6 +528,14 @@ export class JSONRPCPlugin implements RuntimePlugin {
             return await this.engine.get(objectName, id);
         }
         
+        if (this.engine.repository && typeof this.engine.repository.get === 'function') {
+            return await this.engine.repository.get(objectName, id);
+        }
+        
+        if (this.engine.repository && typeof this.engine.repository.findOne === 'function') {
+            return await this.engine.repository.findOne(objectName, id);
+        }
+        
         return null;
     }
     
@@ -539,6 +547,11 @@ export class JSONRPCPlugin implements RuntimePlugin {
         
         if (typeof this.engine.find === 'function') {
             const result = await this.engine.find(objectName, query);
+            return Array.isArray(result) ? result : (result?.value || []);
+        }
+        
+        if (this.engine.repository && typeof this.engine.repository.find === 'function') {
+            const result = await this.engine.repository.find(objectName, query);
             return Array.isArray(result) ? result : (result?.value || []);
         }
         
@@ -555,6 +568,10 @@ export class JSONRPCPlugin implements RuntimePlugin {
             return await this.engine.create(objectName, data);
         }
         
+        if (this.engine.repository && typeof this.engine.repository.create === 'function') {
+            return await this.engine.repository.create(objectName, data);
+        }
+        
         return null;
     }
     
@@ -566,6 +583,10 @@ export class JSONRPCPlugin implements RuntimePlugin {
         
         if (typeof this.engine.update === 'function') {
             return await this.engine.update(objectName, id, data);
+        }
+        
+        if (this.engine.repository && typeof this.engine.repository.update === 'function') {
+            return await this.engine.repository.update(objectName, id, data);
         }
         
         return null;
@@ -581,6 +602,10 @@ export class JSONRPCPlugin implements RuntimePlugin {
             return await this.engine.delete(objectName, id);
         }
         
+        if (this.engine.repository && typeof this.engine.repository.delete === 'function') {
+            return await this.engine.repository.delete(objectName, id);
+        }
+        
         return false;
     }
     
@@ -592,6 +617,10 @@ export class JSONRPCPlugin implements RuntimePlugin {
         
         if (typeof this.engine.count === 'function') {
             return await this.engine.count(objectName, filters);
+        }
+        
+        if (this.engine.repository && typeof this.engine.repository.count === 'function') {
+            return await this.engine.repository.count(objectName, filters);
         }
         
         return 0;
