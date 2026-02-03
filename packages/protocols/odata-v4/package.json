@@ -23,6 +23,7 @@
   },
   "devDependencies": {
     "@objectql/driver-memory": "workspace:*",
+    "@objectql/protocol-tck": "workspace:*",
     "@objectstack/core": "^0.8.2",
     "typescript": "^5.3.3",
     "vitest": "^1.0.4"
