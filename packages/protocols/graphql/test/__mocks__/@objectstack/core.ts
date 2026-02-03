@@ -114,6 +114,25 @@ export class ObjectKernel {
         }
     }
     
+    async stop(): Promise<void> {
+        // Mock implementation that calls plugin lifecycle methods
+        for (const plugin of this.plugins) {
+            if (plugin.onStop) {
+                await plugin.onStop({ engine: this });
+            }
+        }
+    }
+    
+    getDriver(): any {
+        // Return the first driver-like plugin (typically MemoryDriver, SQLDriver, etc.)
+        // Drivers usually don't have an 'install' method or have specific driver methods
+        const driver = this.plugins.find(p => 
+            p.constructor.name?.includes('Driver') || 
+            (typeof p.find === 'function' && typeof p.create === 'function')
+        );
+        return driver || this.driver;
+    }
+    
     async seed(): Promise<void> {
         // Mock implementation
     }
