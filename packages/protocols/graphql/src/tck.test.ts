@@ -67,7 +67,12 @@ class GraphQLEndpoint implements ProtocolEndpoint {
     const entityName = this.capitalize(operation.entity);
     const mutation = `
       mutation Create${entityName}($input: ${entityName}Input!) {
-        create${entityName}(input: $input)
+        create${entityName}(input: $input) {
+          id
+          name
+          value
+          active
+        }
       }
     `;
     
@@ -94,7 +99,12 @@ class GraphQLEndpoint implements ProtocolEndpoint {
     const camelName = this.toCamelCase(operation.entity);
     const query = `
       query Get${entityName}($id: ID!) {
-        ${camelName}(id: $id)
+        ${camelName}(id: $id) {
+          id
+          name
+          value
+          active
+        }
       }
     `;
     
@@ -120,7 +130,12 @@ class GraphQLEndpoint implements ProtocolEndpoint {
     const entityName = this.capitalize(operation.entity);
     const mutation = `
       mutation Update${entityName}($id: ID!, $input: ${entityName}UpdateInput!) {
-        update${entityName}(id: $id, input: $input)
+        update${entityName}(id: $id, input: $input) {
+          id
+          name
+          value
+          active
+        }
       }
     `;
     
@@ -180,7 +195,17 @@ class GraphQLEndpoint implements ProtocolEndpoint {
     
     if (operation.filter) {
       queryArgs += `$where: ${entityName}Filter`;
-      variables.where = operation.filter;
+      // Transform filter to GraphQL format
+      // Convert { field: value } to { field: { eq: value } }
+      const transformedFilter: any = {};
+      for (const [key, value] of Object.entries(operation.filter)) {
+        if (typeof value === 'object' && value !== null) {
+          transformedFilter[key] = value; // Already in correct format
+        } else {
+          transformedFilter[key] = { eq: value };
+        }
+      }
+      variables.where = transformedFilter;
     }
     
     if (operation.options?.limit) {
@@ -195,9 +220,24 @@ class GraphQLEndpoint implements ProtocolEndpoint {
       variables.offset = operation.options.offset;
     }
     
+    if (operation.options?.orderBy) {
+      queryArgs += queryArgs ? ', ' : '';
+      queryArgs += `$orderBy: [${entityName}OrderBy!]`;
+      // Transform orderBy: [{field: 'value', order: 'DESC'}] to [{field: 'value', direction: 'DESC'}]
+      variables.orderBy = operation.options.orderBy.map((sort: any) => ({
+        field: sort.field,
+        direction: sort.order || sort.direction || 'ASC'
+      }));
+    }
+    
     const query = `
       query List${entityName}${queryArgs ? `(${queryArgs})` : ''} {
-        ${camelName}List${this.buildQueryArgs(variables)}
+        ${camelName}List${this.buildQueryArgs(variables)} {
+          id
+          name
+          value
+          active
+        }
       }
     `;
     
@@ -234,7 +274,12 @@ class GraphQLEndpoint implements ProtocolEndpoint {
     }
     
     const mutations = operation.data.map((item, index) => `
-      item${index}: create${entityName}(input: $input${index})
+      item${index}: create${entityName}(input: $input${index}) {
+        id
+        name
+        value
+        active
+      }
     `).join('\n');
     
     const variables: any = {};
@@ -293,7 +338,11 @@ class GraphQLEndpoint implements ProtocolEndpoint {
     `;
     
     const result = await this.graphqlRequest(query, {});
-    return result.data;
+    // Return both the raw __schema and a normalized types list for TCK compatibility
+    return {
+      __schema: result.data?.__schema,
+      types: result.data?.__schema?.types || []
+    };
   }
   
   async close(): Promise<void> {
@@ -355,6 +404,9 @@ describe('GraphQL Protocol TCK', () => {
     // Use a unique port for tests to avoid conflicts
     testPort = 9000 + Math.floor(Math.random() * 1000);
     
+    // Create memory driver
+    const driver = new MemoryDriver();
+    
     // Create test kernel with memory driver
     plugin = new GraphQLPlugin({
       port: testPort,
@@ -362,10 +414,51 @@ describe('GraphQL Protocol TCK', () => {
       playground: false // Disable playground in tests
     });
     
-    kernel = new ObjectKernel([
-      new MemoryDriver(),
-      plugin
-    ]);
+    // Create kernel and register plugins
+    kernel = new ObjectKernel();
+    
+    // Register plugin if kernel.use exists
+    if (typeof (kernel as any).use === 'function') {
+      (kernel as any).use(plugin);
+    }
+    
+    // Patch kernel with CRUD methods that delegate to the driver
+    // This is necessary because @objectstack/core@0.9.x doesn't provide these methods
+    (kernel as any).create = (object: string, doc: any, options?: any) => driver.create(object, doc, options);
+    (kernel as any).update = (object: string, id: any, doc: any, options?: any) => driver.update(object, id, doc, options);
+    (kernel as any).delete = (object: string, id: any, options?: any) => driver.delete(object, id, options);
+    (kernel as any).find = async (object: string, query?: any, options?: any) => {
+      const res = await driver.find(object, query, options);
+      return { value: res || [], count: (res || []).length };
+    };
+    (kernel as any).findOne = (object: string, id: any, options?: any) => driver.findOne(object, id, options);
+    (kernel as any).get = (object: string, id: any) => driver.findOne(object, id);
+    (kernel as any).count = (object: string, query?: any, options?: any) => driver.count(object, query, options);
+    (kernel as any).getDriver = () => driver;
+    
+    // Stub metadata registry
+    (kernel as any).metadata = {
+      register: (type: string, name: string, item: any) => {
+        // Simple in-memory metadata storage
+        if (!(kernel as any)._metadata) {
+          (kernel as any)._metadata = new Map();
+        }
+        if (!(kernel as any)._metadata.has(type)) {
+          (kernel as any)._metadata.set(type, new Map());
+        }
+        (kernel as any)._metadata.get(type).set(name, item);
+      },
+      get: (type: string, name: string) => {
+        if (!(kernel as any)._metadata) return null;
+        const typeMap = (kernel as any)._metadata.get(type);
+        return typeMap ? typeMap.get(name) : null;
+      },
+      list: (type: string) => {
+        if (!(kernel as any)._metadata) return [];
+        const typeMap = (kernel as any)._metadata.get(type);
+        return typeMap ? Array.from(typeMap.values()) : [];
+      }
+    };
     
     // Register test entity
     kernel.metadata.register('object', 'tck_test_entity', {
@@ -378,14 +471,31 @@ describe('GraphQL Protocol TCK', () => {
       }
     });
     
-    await kernel.start();
+    // Manually install and start the plugin
+    // Since the new kernel might not auto-start plugins, we do it manually
+    const ctx = {
+      engine: kernel,
+      services: (kernel as any).services || new Map()
+    };
+    
+    if (typeof (plugin as any).install === 'function') {
+      await (plugin as any).install(ctx);
+    }
+    
+    if (typeof (plugin as any).onStart === 'function') {
+      await (plugin as any).onStart(ctx);
+    }
     
     // Wait for server to be ready
     await new Promise(resolve => setTimeout(resolve, 1000));
   }, 30000);
   
   afterAll(async () => {
-    await kernel.stop();
+    if ((kernel as any).shutdown) {
+      await (kernel as any).shutdown();
+    } else if ((kernel as any).stop) {
+      await (kernel as any).stop();
+    }
   }, 30000);
   
   // Run the Protocol TCK
