@@ -195,15 +195,15 @@ export class JSONRPCPlugin implements RuntimePlugin {
         console.log(`[${this.name}] Starting JSON-RPC server (standalone)...`);
         
         // Create HTTP server
-        this.server = createServer((req, res) => this.handleRequest(req, res));
+        this.server = createServer(this.handleRequest.bind(this));
         
         // Start listening
         await new Promise<void>((resolve, reject) => {
+            this.server!.on('error', reject);
             this.server!.listen(this.config.port, () => {
                 console.log(`[${this.name}] 🚀 JSON-RPC server listening on http://localhost:${this.config.port}${this.config.basePath}`);
                 resolve();
             });
-            this.server!.on('error', reject);
         });
         
         console.log(`[${this.name}] JSON-RPC protocol ready`);
@@ -226,7 +226,10 @@ export class JSONRPCPlugin implements RuntimePlugin {
         if (this.server) {
             console.log(`[${this.name}] Stopping JSON-RPC server...`);
             await new Promise<void>((resolve) => {
-                this.server!.close(() => {
+                this.server!.close((err) => {
+                    if (err) {
+                        console.error(`[${this.name}] Error closing server:`, err);
+                    }
                     resolve();
                 });
             });
@@ -275,12 +278,26 @@ export class JSONRPCPlugin implements RuntimePlugin {
         }
 
         try {
-            // Read request body
-            let body = '';
+            // Read request body with size limit (10MB)
+            const maxBodySize = 10 * 1024 * 1024; // 10MB
+            const chunks: Buffer[] = [];
+            let totalSize = 0;
+            
             for await (const chunk of req) {
-                body += chunk;
+                totalSize += chunk.length;
+                if (totalSize > maxBodySize) {
+                    res.writeHead(413, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify(createErrorResponse(
+                        null,
+                        JSONRPCErrorCode.INVALID_REQUEST,
+                        'Request body too large'
+                    )));
+                    return;
+                }
+                chunks.push(chunk);
             }
-
+            
+            const body = Buffer.concat(chunks).toString();
             const jsonBody = JSON.parse(body);
             
             // Handle batch or single request
