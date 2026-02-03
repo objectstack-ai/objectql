@@ -24,10 +24,12 @@ export const FormulaPluginConfigSchema = z.object({
   
   /**
    * Maximum execution time for formula evaluation in milliseconds
-   * Prevents infinite loops and long-running calculations
-   * @default 1000
+   * Must be 0 (no timeout) for the current synchronous execution model.
+   * Timeout enforcement requires an async/isolated runtime that can safely interrupt
+   * long-running formulas, which is not yet implemented.
+   * @default 0
    */
-  timeout: z.number().positive().optional().default(1000),
+  timeout: z.number().nonnegative().optional().default(0),
   
   /**
    * Enable automatic formula evaluation on queries
