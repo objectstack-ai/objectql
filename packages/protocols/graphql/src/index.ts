@@ -575,7 +575,9 @@ export class GraphQLPlugin implements RuntimePlugin {
         const groups = new Map<string, any[]>();
         
         for (const record of records) {
-            const key = groupBy.map(field => String(record[field] || 'null')).join('|');
+            // Use JSON.stringify to avoid key collisions with delimiter characters
+            const keyValues = groupBy.map(field => record[field] ?? null);
+            const key = JSON.stringify(keyValues);
             if (!groups.has(key)) {
                 groups.set(key, []);
             }
@@ -584,7 +586,7 @@ export class GraphQLPlugin implements RuntimePlugin {
         
         // Calculate aggregates for each group
         const data = Array.from(groups.entries()).map(([key, groupRecords]) => ({
-            key,
+            key, // JSON stringified array of values
             count: groupRecords.length,
             aggregates: this.calculateAggregates(groupRecords, functions || [])
         }));
@@ -597,12 +599,14 @@ export class GraphQLPlugin implements RuntimePlugin {
 
     /**
      * Calculate aggregate functions for a set of records
+     * Note: Non-numeric values are filtered out for numeric aggregations (SUM, AVG, MIN, MAX)
      */
     private calculateAggregates(
         records: any[],
         functions: Array<{ field: string; function: string }>
     ): any[] {
         return functions.map(({ field, function: fn }) => {
+            // Filter to numeric values only for numeric aggregations
             const values = records
                 .map(r => r[field])
                 .filter(v => v !== null && v !== undefined && typeof v === 'number');
@@ -625,7 +629,8 @@ export class GraphQLPlugin implements RuntimePlugin {
                     result.max = values.length > 0 ? Math.max(...values) : null;
                     break;
                 case 'COUNT':
-                    // Count is already provided at the group level
+                    // COUNT is handled at the group level, not per-field
+                    // This case is here for completeness but doesn't populate result
                     break;
             }
             
