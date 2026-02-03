@@ -114,6 +114,15 @@ export class ObjectKernel {
         }
     }
     
+    async stop(): Promise<void> {
+        // Mock implementation for stopping the kernel
+        for (const plugin of this.plugins) {
+            if (plugin.onStop) {
+                await plugin.onStop({ engine: this });
+            }
+        }
+    }
+    
     async seed(): Promise<void> {
         // Mock implementation
     }
