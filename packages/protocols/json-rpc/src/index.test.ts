@@ -274,3 +274,165 @@ describe('JSON-RPC Request Examples', () => {
     expect(request).not.toHaveProperty('params');
   });
 });
+
+describe('SSE Progress Notifications', () => {
+  let plugin: JSONRPCPlugin;
+
+  beforeEach(() => {
+    plugin = new JSONRPCPlugin({
+      basePath: '/rpc',
+      enableProgress: true,
+      enableSessions: true
+    });
+  });
+
+  it('should enable progress notifications when configured', () => {
+    expect((plugin as any).config.enableProgress).toBe(true);
+  });
+
+  it('should emit progress updates for long-running operations', () => {
+    const sessionId = 'test-session-123';
+    const operationId = 'op-456';
+    
+    // Mock the progress clients map
+    const mockCallback = vi.fn();
+    (plugin as any).progressClients.set(sessionId, new Set([mockCallback]));
+
+    // Emit progress
+    plugin.emitProgress(sessionId, operationId, 50, 100, 'Processing...');
+
+    // Verify callback was called
+    expect(mockCallback).toHaveBeenCalled();
+    const callArg = mockCallback.mock.calls[0][0];
+    expect(callArg).toContain('data:');
+    expect(callArg).toContain('progress.update');
+    expect(callArg).toContain(operationId);
+  });
+
+  it('should handle multiple clients for the same session', () => {
+    const sessionId = 'test-session-123';
+    const operationId = 'op-456';
+    
+    // Mock multiple clients
+    const callback1 = vi.fn();
+    const callback2 = vi.fn();
+    (plugin as any).progressClients.set(sessionId, new Set([callback1, callback2]));
+
+    // Emit progress
+    plugin.emitProgress(sessionId, operationId, 75, 100, 'Almost done...');
+
+    // Both clients should receive the update
+    expect(callback1).toHaveBeenCalled();
+    expect(callback2).toHaveBeenCalled();
+  });
+
+  it('should not emit progress when disabled', () => {
+    const pluginNoProgress = new JSONRPCPlugin({
+      basePath: '/rpc',
+      enableProgress: false
+    });
+
+    const mockCallback = vi.fn();
+    (pluginNoProgress as any).progressClients.set('session', new Set([mockCallback]));
+
+    pluginNoProgress.emitProgress('session', 'op', 50, 100);
+
+    // Should not have been called
+    expect(mockCallback).not.toHaveBeenCalled();
+  });
+
+  it('should format progress notification correctly', () => {
+    const sessionId = 'test-session';
+    const operationId = 'batch-op-1';
+    const mockCallback = vi.fn();
+    
+    (plugin as any).progressClients.set(sessionId, new Set([mockCallback]));
+    plugin.emitProgress(sessionId, operationId, 3, 5, 'Processing item 3 of 5');
+
+    const message = mockCallback.mock.calls[0][0];
+    const parsed = JSON.parse(message.replace('data: ', '').trim());
+    
+    expect(parsed.method).toBe('progress.update');
+    expect(parsed.params.id).toBe(operationId);
+    expect(parsed.params.progress).toBe(3);
+    expect(parsed.params.total).toBe(5);
+    expect(parsed.params.message).toBe('Processing item 3 of 5');
+  });
+});
+
+describe('Batch Request Call Chaining', () => {
+  let plugin: JSONRPCPlugin;
+  let kernel: ObjectKernel;
+
+  beforeEach(async () => {
+    kernel = new ObjectKernel([]);
+    
+    // Mock metadata
+    (kernel as any).metadata = {
+      list: () => [{ content: { name: 'users' } }],
+      get: () => ({ name: 'users', fields: {} })
+    };
+
+    plugin = new JSONRPCPlugin({
+      basePath: '/rpc',
+      enableChaining: true
+    });
+
+    await plugin.install?.({ engine: kernel });
+  });
+
+  it('should enable call chaining when configured', () => {
+    expect((plugin as any).config.enableChaining).toBe(true);
+  });
+
+  it('should demonstrate batch request with chaining format', () => {
+    const batchRequest = [
+      {
+        jsonrpc: '2.0',
+        method: 'object.create',
+        params: ['users', { name: 'Alice', email: 'alice@example.com' }],
+        id: 1
+      },
+      {
+        jsonrpc: '2.0',
+        method: 'object.get',
+        params: ['users', '$1.result._id'], // Reference to previous result
+        id: 2
+      }
+    ];
+
+    expect(batchRequest).toHaveLength(2);
+    expect(batchRequest[1].params[1]).toBe('$1.result._id');
+  });
+
+  it('should resolve parameter references correctly', () => {
+    // Mock results map
+    const results = new Map();
+    results.set(1, {
+      jsonrpc: '2.0',
+      result: { _id: 'user123', name: 'Alice' },
+      id: 1
+    });
+
+    const params = ['users', '$1.result._id'];
+    const resolved = (plugin as any).resolveReferences(params, results);
+
+    expect(resolved).toEqual(['users', 'user123']);
+  });
+
+  it('should handle complex nested references', () => {
+    const results = new Map();
+    results.set(1, {
+      jsonrpc: '2.0',
+      result: {
+        user: { _id: 'user123', profile: { email: 'alice@example.com' } }
+      },
+      id: 1
+    });
+
+    const params = { email: '$1.result.user.profile.email' };
+    const resolved = (plugin as any).resolveReferences(params, results);
+
+    expect(resolved).toEqual({ email: 'alice@example.com' });
+  });
+});

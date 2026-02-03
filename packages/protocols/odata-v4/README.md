@@ -266,6 +266,210 @@ Delete an entity.
 curl -X DELETE http://localhost:8080/odata/users\('123'\)
 ```
 
+## Batch Operations ($batch)
+
+The OData V4 plugin supports batch requests for executing multiple operations in a single HTTP request. Batch operations can include both read operations and changesets (for transactional writes).
+
+### Batch Request Format
+
+**POST** `{basePath}/$batch`
+
+Batch requests use multipart MIME format with a boundary delimiter.
+
+**Example: Mixed Read and Write Operations**
+
+```http
+POST /odata/$batch HTTP/1.1
+Content-Type: multipart/mixed; boundary=batch_123
+
+--batch_123
+Content-Type: application/http
+
+GET /odata/users HTTP/1.1
+
+--batch_123
+Content-Type: application/http
+
+GET /odata/users('user1') HTTP/1.1
+
+--batch_123
+Content-Type: multipart/mixed; boundary=changeset_456
+
+--changeset_456
+Content-Type: application/http
+
+POST /odata/users HTTP/1.1
+Content-Type: application/json
+
+{"name":"Alice","email":"alice@example.com"}
+
+--changeset_456
+Content-Type: application/http
+
+POST /odata/projects HTTP/1.1
+Content-Type: application/json
+
+{"name":"Project Alpha","owner":"user1"}
+
+--changeset_456--
+--batch_123--
+```
+
+### Changesets (Atomic Operations)
+
+Changesets are groups of write operations (POST, PATCH, PUT, DELETE) that are executed atomically. Either all operations in a changeset succeed, or all fail and are rolled back.
+
+**Example: Atomic Multi-Entity Creation**
+
+```http
+POST /odata/$batch HTTP/1.1
+Content-Type: multipart/mixed; boundary=batch_123
+
+--batch_123
+Content-Type: multipart/mixed; boundary=changeset_456
+
+--changeset_456
+Content-Type: application/http
+
+POST /odata/users HTTP/1.1
+Content-Type: application/json
+
+{"name":"Alice","email":"alice@example.com"}
+
+--changeset_456
+Content-Type: application/http
+
+POST /odata/users HTTP/1.1
+Content-Type: application/json
+
+{"name":"Bob","email":"bob@example.com"}
+
+--changeset_456
+Content-Type: application/http
+
+POST /odata/users HTTP/1.1
+Content-Type: application/json
+
+{"name":"Charlie","email":"charlie@example.com"}
+
+--changeset_456--
+--batch_123--
+```
+
+**Atomic Behavior:**
+- If any operation in the changeset fails, **all operations are rolled back**
+- No partial commits - it's all or nothing
+- Ideal for maintaining data consistency
+
+### Enhanced Error Handling
+
+The plugin provides detailed error information when batch operations fail:
+
+**Error Response Format:**
+
+```json
+{
+  "error": {
+    "code": "CHANGESET_FAILED",
+    "message": "Changeset operation 2/5 failed: Validation failed for field 'email'",
+    "details": {
+      "completedOperations": 1,
+      "totalOperations": 5,
+      "rollbackAttempted": true
+    }
+  }
+}
+```
+
+**Error Details:**
+- `code` - Error code identifying the failure type
+- `message` - Detailed error message including which operation failed
+- `details.completedOperations` - Number of operations completed before failure
+- `details.totalOperations` - Total number of operations in the changeset
+- `details.rollbackAttempted` - Whether rollback was attempted
+
+### Batch Operation Best Practices
+
+1. **Use Changesets for Related Writes**
+   - Group related POST/PATCH/DELETE operations in a changeset
+   - Ensures data consistency across multiple entities
+
+2. **Separate Read and Write Operations**
+   - Put read operations (GET) outside changesets
+   - Only write operations (POST, PATCH, PUT, DELETE) should be in changesets
+
+3. **Handle Errors Gracefully**
+   - Check for `CHANGESET_FAILED` error code
+   - Use the `details` object to understand what failed
+   - Implement retry logic if appropriate
+
+4. **Limit Batch Size**
+   - Keep batch requests reasonable in size
+   - Consider breaking very large batches into multiple requests
+
+**Example: JavaScript Client**
+
+```javascript
+async function createMultipleUsers(users) {
+  const boundary = `batch_${Date.now()}`;
+  const changesetBoundary = `changeset_${Date.now()}`;
+  
+  let body = '';
+  
+  // Start changeset
+  body += `--${boundary}\r\n`;
+  body += `Content-Type: multipart/mixed; boundary=${changesetBoundary}\r\n\r\n`;
+  
+  // Add each user creation
+  users.forEach(user => {
+    body += `--${changesetBoundary}\r\n`;
+    body += `Content-Type: application/http\r\n\r\n`;
+    body += `POST /odata/users HTTP/1.1\r\n`;
+    body += `Content-Type: application/json\r\n\r\n`;
+    body += JSON.stringify(user) + '\r\n';
+  });
+  
+  // Close changeset and batch
+  body += `--${changesetBoundary}--\r\n`;
+  body += `--${boundary}--\r\n`;
+  
+  const response = await fetch('http://localhost:8080/odata/$batch', {
+    method: 'POST',
+    headers: {
+      'Content-Type': `multipart/mixed; boundary=${boundary}`
+    },
+    body
+  });
+  
+  if (!response.ok) {
+    const error = await response.json();
+    console.error('Batch operation failed:', error);
+    
+    if (error.error?.code === 'CHANGESET_FAILED') {
+      console.error(`Failed at operation ${error.error.details.completedOperations + 1}/${error.error.details.totalOperations}`);
+      console.error(`Rollback attempted: ${error.error.details.rollbackAttempted}`);
+    }
+    throw new Error(error.error?.message || 'Batch operation failed');
+  }
+  
+  return response;
+}
+
+// Usage
+const users = [
+  { name: 'Alice', email: 'alice@example.com' },
+  { name: 'Bob', email: 'bob@example.com' },
+  { name: 'Charlie', email: 'charlie@example.com' }
+];
+
+try {
+  await createMultipleUsers(users);
+  console.log('All users created successfully');
+} catch (error) {
+  console.error('Failed to create users:', error);
+}
+```
+
 ## Type Mapping
 
 ObjectQL field types are automatically mapped to OData EDM types:

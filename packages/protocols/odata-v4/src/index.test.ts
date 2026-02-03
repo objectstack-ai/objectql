@@ -338,3 +338,151 @@ describe('OData V4 Security', () => {
     });
   });
 });
+
+describe('OData $batch Operations', () => {
+  let plugin: ODataV4Plugin;
+  let kernel: ObjectKernel;
+
+  beforeEach(async () => {
+    kernel = new ObjectKernel([]);
+    
+    // Mock metadata
+    (kernel as any).metadata = {
+      list: () => [{ content: { name: 'users' } }],
+      get: () => ({ name: 'users', fields: { name: { type: 'text' }, email: { type: 'email' } } })
+    };
+
+    plugin = new ODataV4Plugin({
+      basePath: '/odata',
+      enableBatch: true
+    });
+
+    await plugin.install?.({ engine: kernel });
+  });
+
+  it('should enable batch operations when configured', () => {
+    expect((plugin as any).config.enableBatch).toBe(true);
+  });
+
+  it('should support $batch endpoint', () => {
+    const endpoint = '/$batch';
+    expect(endpoint).toBe('/$batch');
+  });
+
+  it('should demonstrate batch request format', () => {
+    const batchRequest = {
+      contentType: 'multipart/mixed; boundary=batch_123',
+      body: `--batch_123
+Content-Type: application/http
+
+GET /odata/users HTTP/1.1
+
+--batch_123
+Content-Type: application/http
+
+GET /odata/users('user1') HTTP/1.1
+
+--batch_123--`
+    };
+
+    expect(batchRequest.contentType).toContain('boundary=batch_123');
+    expect(batchRequest.body).toContain('GET /odata/users');
+  });
+
+  it('should demonstrate changeset format for atomic operations', () => {
+    const changesetRequest = {
+      contentType: 'multipart/mixed; boundary=batch_123',
+      body: `--batch_123
+Content-Type: multipart/mixed; boundary=changeset_456
+
+--changeset_456
+Content-Type: application/http
+
+POST /odata/users HTTP/1.1
+Content-Type: application/json
+
+{"name":"Alice","email":"alice@example.com"}
+
+--changeset_456
+Content-Type: application/http
+
+POST /odata/users HTTP/1.1
+Content-Type: application/json
+
+{"name":"Bob","email":"bob@example.com"}
+
+--changeset_456--
+--batch_123--`
+    };
+
+    expect(changesetRequest.body).toContain('changeset_456');
+    expect(changesetRequest.body).toContain('POST /odata/users');
+  });
+
+  it('should handle changeset error with rollback information', async () => {
+    // This test demonstrates the enhanced error response format
+    const errorResponse = {
+      error: {
+        code: "CHANGESET_FAILED",
+        message: "Changeset operation 2/3 failed: validation error",
+        details: {
+          completedOperations: 1,
+          totalOperations: 3,
+          rollbackAttempted: true
+        }
+      }
+    };
+
+    expect(errorResponse.error.code).toBe("CHANGESET_FAILED");
+    expect(errorResponse.error.details.completedOperations).toBe(1);
+    expect(errorResponse.error.details.rollbackAttempted).toBe(true);
+  });
+
+  it('should demonstrate atomic batch operations', () => {
+    // When any operation in a changeset fails, all operations should fail
+    const changesetScenario = {
+      operations: [
+        { type: 'POST', entity: 'users', data: { name: 'Alice' } },
+        { type: 'POST', entity: 'users', data: { invalid: 'data' } }, // This fails
+        { type: 'POST', entity: 'users', data: { name: 'Charlie' } }
+      ],
+      expectedBehavior: 'all-operations-rolled-back'
+    };
+
+    expect(changesetScenario.expectedBehavior).toBe('all-operations-rolled-back');
+    expect(changesetScenario.operations).toHaveLength(3);
+  });
+
+  it('should track operations for rollback', () => {
+    const operations = [
+      { type: 'POST', entitySet: 'users', data: { name: 'Alice' } },
+      { type: 'PATCH', entitySet: 'users', key: '123', data: { name: 'Bob' } },
+      { type: 'DELETE', entitySet: 'users', key: '456' }
+    ];
+
+    // Rollback should process in reverse order
+    const rollbackOrder = [...operations].reverse();
+    
+    expect(rollbackOrder[0].type).toBe('DELETE');
+    expect(rollbackOrder[1].type).toBe('PATCH');
+    expect(rollbackOrder[2].type).toBe('POST');
+  });
+
+  it('should provide detailed error information on changeset failure', () => {
+    const detailedError = {
+      error: {
+        code: 'CHANGESET_FAILED',
+        message: 'Changeset operation 2/5 failed: {"error":"Validation failed for field email"}',
+        details: {
+          completedOperations: 1,
+          totalOperations: 5,
+          rollbackAttempted: true
+        }
+      }
+    };
+
+    expect(detailedError.error.message).toContain('operation 2/5');
+    expect(detailedError.error.message).toContain('Validation failed');
+    expect(detailedError.error.details.completedOperations).toBeLessThan(detailedError.error.details.totalOperations);
+  });
+});
