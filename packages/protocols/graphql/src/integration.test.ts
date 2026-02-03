@@ -421,6 +421,98 @@ describe('GraphQL Protocol Integration Tests', () => {
         });
     });
     
+    describe('GraphQL Count Queries', () => {
+        beforeEach(async () => {
+            // Create test data
+            await kernel.repository.create('users', {
+                id: 'user-1',
+                name: 'Alice',
+                email: 'alice@example.com',
+                role: 'admin',
+                age: 30
+            });
+            
+            await kernel.repository.create('users', {
+                id: 'user-2',
+                name: 'Bob',
+                email: 'bob@example.com',
+                role: 'user',
+                age: 25
+            });
+            
+            await kernel.repository.create('posts', {
+                id: 'post-1',
+                title: 'First Post',
+                content: 'Hello World',
+                user_id: 'user-1',
+                published: true
+            });
+            
+            await kernel.repository.create('posts', {
+                id: 'post-2',
+                title: 'Second Post',
+                content: 'GraphQL is great',
+                user_id: 'user-2',
+                published: true
+            });
+            
+            await kernel.repository.create('posts', {
+                id: 'post-3',
+                title: 'Draft Post',
+                content: 'Work in progress',
+                user_id: 'user-1',
+                published: false
+            });
+        });
+        
+        it('should count all records', async () => {
+            const usersCount = await kernel.repository.count('users', {});
+            const postsCount = await kernel.repository.count('posts', {});
+            
+            expect(usersCount).toBe(2);
+            expect(postsCount).toBe(3);
+        });
+        
+        it('should count with filter', async () => {
+            const publishedCount = await kernel.repository.count('posts', {
+                where: {
+                    type: 'comparison',
+                    field: 'published',
+                    operator: '=',
+                    value: true
+                }
+            });
+            
+            expect(publishedCount).toBe(2);
+        });
+        
+        it('should count admin users', async () => {
+            const adminCount = await kernel.repository.count('users', {
+                where: {
+                    type: 'comparison',
+                    field: 'role',
+                    operator: '=',
+                    value: 'admin'
+                }
+            });
+            
+            expect(adminCount).toBe(1);
+        });
+        
+        it('should return 0 for no matches', async () => {
+            const count = await kernel.repository.count('posts', {
+                where: {
+                    type: 'comparison',
+                    field: 'title',
+                    operator: '=',
+                    value: 'Non-existent Post'
+                }
+            });
+            
+            expect(count).toBe(0);
+        });
+    });
+    
     describe('Metadata Queries', () => {
         it('should list all objects', () => {
             const objects = kernel.metadata.list('object');

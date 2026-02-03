@@ -476,6 +476,33 @@ describe('OData V4 Protocol Integration Tests', () => {
             expect(count).toBe(10);
         });
         
+        it('should support $count with filters', async () => {
+            const inStockCount = await kernel.repository.count('Products', {
+                where: {
+                    type: 'comparison',
+                    field: 'inStock',
+                    operator: '=',
+                    value: true
+                }
+            });
+            
+            expect(inStockCount).toBeLessThan(10);
+            expect(inStockCount).toBeGreaterThan(0);
+        });
+        
+        it('should return 0 count when no records match filter', async () => {
+            const count = await kernel.repository.count('Products', {
+                where: {
+                    type: 'comparison',
+                    field: 'name',
+                    operator: '=',
+                    value: 'Non-existent Product'
+                }
+            });
+            
+            expect(count).toBe(0);
+        });
+        
         it('should support $select (field projection)', async () => {
             const results = await kernel.repository.find('Products', {
                 fields: ['name', 'price']

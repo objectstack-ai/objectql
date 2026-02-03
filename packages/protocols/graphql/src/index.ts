@@ -525,6 +525,19 @@ export class GraphQLPlugin implements RuntimePlugin {
     }
 
     /**
+     * Helper: Count data
+     */
+    private async countData(objectName: string, query?: any): Promise<number> {
+        if (!this.engine) return 0;
+        
+        if (typeof this.engine.count === 'function') {
+            return await this.engine.count(objectName, query);
+        }
+        
+        return 0;
+    }
+
+    /**
      * Generate GraphQL schema from ObjectStack metadata
      * Includes Input Types, Filtering, Pagination (Relay Connection), and Subscriptions
      */
@@ -599,6 +612,9 @@ export class GraphQLPlugin implements RuntimePlugin {
       last: Int
       before: String
     ): ${pascalCaseName}Connection!
+    
+    # Count ${objectName}
+    ${camelCaseName}Count(where: ${pascalCaseName}Filter): Int!
 `;
         }
 
@@ -920,6 +936,17 @@ export class GraphQLPlugin implements RuntimePlugin {
                     },
                     totalCount: items.length // This should ideally be the total count from database
                 };
+            };
+
+            // Count resolver
+            resolvers.Query[`${camelCaseName}Count`] = async (_: any, args: { where?: any }) => {
+                const query: any = {};
+                
+                if (args.where) {
+                    query.where = this.convertFilterToQuery(args.where);
+                }
+                
+                return await this.countData(objectName, query);
             };
 
             // Mutation resolvers with type-safe inputs
