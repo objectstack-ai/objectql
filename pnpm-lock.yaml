@@ -292,6 +292,37 @@ importers:
         specifier: ^5.3.3
         version: 5.9.3
 
+  examples/protocols/swagger-demo:
+    dependencies:
+      '@objectql/core':
+        specifier: workspace:*
+        version: link:../../../packages/foundation/core
+      '@objectql/driver-memory':
+        specifier: workspace:*
+        version: link:../../../packages/drivers/memory
+      '@objectql/protocol-rest':
+        specifier: workspace:*
+        version: link:../../../packages/protocols/rest
+      '@objectql/protocol-swagger-ui':
+        specifier: workspace:*
+        version: link:../../../packages/protocols/swagger-ui
+      '@objectql/types':
+        specifier: workspace:*
+        version: link:../../../packages/foundation/types
+      '@objectstack/core':
+        specifier: ^0.9.1
+        version: 0.9.1
+      '@objectstack/plugin-hono-server':
+        specifier: ^0.9.1
+        version: 0.9.1
+    devDependencies:
+      tsx:
+        specifier: ^4.21.0
+        version: 4.21.0
+      typescript:
+        specifier: ^5.3.3
+        version: 5.9.3
+
   examples/quickstart/hello-world:
     dependencies:
       '@objectql/core':
@@ -860,6 +891,19 @@ importers:
       '@types/node':
         specifier: ^20.10.0
         version: 20.19.30
+      typescript:
+        specifier: ^5.3.0
+        version: 5.9.3
+
+  packages/protocols/swagger-ui:
+    dependencies:
+      '@objectql/types':
+        specifier: workspace:*
+        version: link:../../foundation/types
+      swagger-ui-dist:
+        specifier: ^5.11.0
+        version: 5.31.0
+    devDependencies:
       typescript:
         specifier: ^5.3.0
         version: 5.9.3
@@ -3024,6 +3068,9 @@ packages:
     resolution: {integrity: sha512-Zv7v6q6aV+VslnpwzqKAmrk5JdVkLUzok2208ZXGipjb+msxBr/fJPZyeEXiFgH7k62Ak0SLIfxQRZQvTuf7rQ==}
     cpu: [x64]
     os: [win32]
+
+  '@scarf/scarf@1.4.0':
+    resolution: {integrity: sha512-xxeapPiUXdZAE3che6f3xogoJPeZgig6omHEy1rIY5WVsB3H2BHNnZH+gHG6x91SCWyQCzWGsuL2Hh3ClO5/qQ==}
 
   '@secretlint/config-creator@10.2.2':
     resolution: {integrity: sha512-BynOBe7Hn3LJjb3CqCHZjeNB09s/vgf0baBaHVw67w7gHF0d25c3ZsZ5+vv8TgwSchRdUCRrbbcq5i2B1fJ2QQ==}
@@ -8077,6 +8124,9 @@ packages:
     resolution: {integrity: sha512-ot0WnXS9fgdkgIcePe6RHNk1WA8+muPa6cSjeR3V8K27q9BB1rTE3R1p7Hv0z1ZyAc8s6Vvv8DIyWf681MAt0w==}
     engines: {node: '>= 0.4'}
 
+  swagger-ui-dist@5.31.0:
+    resolution: {integrity: sha512-zSUTIck02fSga6rc0RZP3b7J7wgHXwLea8ZjgLA3Vgnb8QeOl3Wou2/j5QkzSGeoz6HusP/coYuJl33aQxQZpg==}
+
   symbol-tree@3.2.4:
     resolution: {integrity: sha512-9QNk5KwDF+Bvz+PyObkmSYjI5ksVUYtjW7AU22r2NKcfLJcXp96hkDWU3+XndOsUb+AQ9QhfzfCT2O+CNWT5Tw==}
 
@@ -11195,6 +11245,8 @@ snapshots:
 
   '@rollup/rollup-win32-x64-msvc@4.57.0':
     optional: true
+
+  '@scarf/scarf@1.4.0': {}
 
   '@secretlint/config-creator@10.2.2':
     dependencies:
@@ -17712,6 +17764,10 @@ snapshots:
       supports-color: 7.2.0
 
   supports-preserve-symlinks-flag@1.0.0: {}
+
+  swagger-ui-dist@5.31.0:
+    dependencies:
+      '@scarf/scarf': 1.4.0
 
   symbol-tree@3.2.4: {}
 

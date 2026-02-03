@@ -1,0 +1,27 @@
+{
+  "name": "@objectql/protocol-swagger-ui",
+  "version": "4.0.0",
+  "description": "Swagger UI Plugin for ObjectStack - Provides interactive API documentation and debugging interface",
+  "keywords": [
+    "objectql",
+    "swagger",
+    "swagger-ui",
+    "openapi",
+    "api-docs",
+    "protocol"
+  ],
+  "license": "MIT",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@objectql/types": "workspace:*",
+    "swagger-ui-dist": "^5.11.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0"
+  }
+}

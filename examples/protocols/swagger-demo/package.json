@@ -1,0 +1,24 @@
+{
+  "name": "@objectql/example-swagger-demo",
+  "version": "4.0.5",
+  "description": "Example demonstrating Swagger UI plugin for API documentation",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "dev": "tsx watch src/index.ts"
+  },
+  "dependencies": {
+    "@objectql/core": "workspace:*",
+    "@objectql/driver-memory": "workspace:*",
+    "@objectql/protocol-rest": "workspace:*",
+    "@objectql/protocol-swagger-ui": "workspace:*",
+    "@objectql/types": "workspace:*",
+    "@objectstack/core": "^0.9.1",
+    "@objectstack/plugin-hono-server": "^0.9.1"
+  },
+  "devDependencies": {
+    "tsx": "^4.21.0",
+    "typescript": "^5.3.3"
+  }
+}

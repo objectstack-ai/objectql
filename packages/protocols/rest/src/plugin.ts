@@ -9,6 +9,7 @@
 import { RuntimePlugin, RuntimeContext } from '@objectql/types';
 import { ObjectQLServer } from './server';
 import { ObjectQLRequest } from './types';
+import { generateOpenAPI } from './openapi';
 
 export interface RestPluginConfig {
     /**
@@ -65,6 +66,17 @@ export class RestPlugin implements RuntimePlugin {
     attachToHono(app: any) {
         const { basePath } = this.config;
         console.log(`[${this.name}] Attaching REST to Hono at ${basePath}`);
+
+        // OpenAPI Specification Endpoint
+        app.get(`${basePath}/openapi.json`, (c: any) => {
+            try {
+                const spec = generateOpenAPI(this.engine);
+                return c.json(spec);
+            } catch (error) {
+                console.error(`[${this.name}] Error generating OpenAPI spec:`, error);
+                return c.json({ error: 'Failed to generate OpenAPI specification' }, 500);
+            }
+        });
 
         // Helper to map Hono request to ObjectQLRequest
         const handleRequest = async (c: any, op: string) => {
