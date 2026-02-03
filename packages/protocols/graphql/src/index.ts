@@ -538,6 +538,102 @@ export class GraphQLPlugin implements RuntimePlugin {
     }
 
     /**
+     * Helper: Aggregate data with groupBy support
+     */
+    private async aggregateData(
+        objectName: string,
+        query: any,
+        groupBy?: string[],
+        functions?: Array<{ field: string; function: string }>
+    ): Promise<any> {
+        if (!this.engine) return null;
+        
+        // Fetch all matching records
+        const records = await this.findData(objectName, query);
+        
+        if (!records || records.length === 0) {
+            return {
+                groupBy: groupBy || [],
+                data: []
+            };
+        }
+        
+        // If no groupBy, perform global aggregation
+        if (!groupBy || groupBy.length === 0) {
+            const aggregates = this.calculateAggregates(records, functions || []);
+            return {
+                groupBy: [],
+                data: [{
+                    key: 'all',
+                    count: records.length,
+                    aggregates
+                }]
+            };
+        }
+        
+        // Group records by the specified fields
+        const groups = new Map<string, any[]>();
+        
+        for (const record of records) {
+            const key = groupBy.map(field => String(record[field] || 'null')).join('|');
+            if (!groups.has(key)) {
+                groups.set(key, []);
+            }
+            groups.get(key)!.push(record);
+        }
+        
+        // Calculate aggregates for each group
+        const data = Array.from(groups.entries()).map(([key, groupRecords]) => ({
+            key,
+            count: groupRecords.length,
+            aggregates: this.calculateAggregates(groupRecords, functions || [])
+        }));
+        
+        return {
+            groupBy,
+            data
+        };
+    }
+
+    /**
+     * Calculate aggregate functions for a set of records
+     */
+    private calculateAggregates(
+        records: any[],
+        functions: Array<{ field: string; function: string }>
+    ): any[] {
+        return functions.map(({ field, function: fn }) => {
+            const values = records
+                .map(r => r[field])
+                .filter(v => v !== null && v !== undefined && typeof v === 'number');
+            
+            const result: any = { field };
+            
+            switch (fn) {
+                case 'SUM':
+                    result.sum = values.reduce((sum, val) => sum + val, 0);
+                    break;
+                case 'AVG':
+                    result.avg = values.length > 0 
+                        ? values.reduce((sum, val) => sum + val, 0) / values.length 
+                        : null;
+                    break;
+                case 'MIN':
+                    result.min = values.length > 0 ? Math.min(...values) : null;
+                    break;
+                case 'MAX':
+                    result.max = values.length > 0 ? Math.max(...values) : null;
+                    break;
+                case 'COUNT':
+                    // Count is already provided at the group level
+                    break;
+            }
+            
+            return result;
+        });
+    }
+
+    /**
      * Generate GraphQL schema from ObjectStack metadata
      * Includes Input Types, Filtering, Pagination (Relay Connection), and Subscriptions
      */
@@ -570,6 +666,47 @@ export class GraphQLPlugin implements RuntimePlugin {
   input BooleanFilter {
     eq: Boolean
     ne: Boolean
+  }
+
+  # Aggregation types
+  type AggregateResult {
+    count: Int!
+    sum: Float
+    avg: Float
+    min: Float
+    max: Float
+  }
+
+  input AggregateFunction {
+    field: String!
+    function: AggregateFunctionType!
+  }
+
+  enum AggregateFunctionType {
+    COUNT
+    SUM
+    AVG
+    MIN
+    MAX
+  }
+
+  type GroupByResult {
+    groupBy: [String!]!
+    data: [GroupByData!]!
+  }
+
+  type GroupByData {
+    key: String!
+    count: Int!
+    aggregates: [AggregateFieldResult!]
+  }
+
+  type AggregateFieldResult {
+    field: String!
+    sum: Float
+    avg: Float
+    min: Float
+    max: Float
   }
 
   # Relay Connection types
@@ -615,6 +752,13 @@ export class GraphQLPlugin implements RuntimePlugin {
     
     # Count ${objectName}
     ${camelCaseName}Count(where: ${pascalCaseName}Filter): Int!
+    
+    # Aggregate ${objectName}
+    ${camelCaseName}Aggregate(
+      where: ${pascalCaseName}Filter
+      groupBy: [String!]
+      functions: [AggregateFunction!]!
+    ): GroupByResult
 `;
         }
 
@@ -947,6 +1091,21 @@ export class GraphQLPlugin implements RuntimePlugin {
                 }
                 
                 return await this.countData(objectName, query);
+            };
+
+            // Aggregate resolver
+            resolvers.Query[`${camelCaseName}Aggregate`] = async (_: any, args: {
+                where?: any;
+                groupBy?: string[];
+                functions: Array<{ field: string; function: string }>;
+            }) => {
+                const query: any = {};
+                
+                if (args.where) {
+                    query.where = this.convertFilterToQuery(args.where);
+                }
+                
+                return await this.aggregateData(objectName, query, args.groupBy, args.functions);
             };
 
             // Mutation resolvers with type-safe inputs
