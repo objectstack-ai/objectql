@@ -7,14 +7,17 @@
  */
 
 module.exports = {
-  preset: 'ts-jest',
+  preset: 'ts-jest/presets/default-esm',
   testEnvironment: 'node',
   testMatch: ['**/test/**/*.test.ts'],
+  extensionsToTreatAsEsm: ['.ts'],
   moduleNameMapper: {
     '^@objectql/(.*)$': '<rootDir>/../$1/src',
+    '^(\\.{1,2}/.*)\\.js$': '$1',
   },
   transform: {
     '^.+\\.(t|j)sx?$': ['ts-jest', {
+      useESM: true,
       isolatedModules: true,
       tsconfig: {
         esModuleInterop: true,
@@ -23,7 +26,5 @@ module.exports = {
       }
     }],
   },
-  transformIgnorePatterns: [
-    "/node_modules/(?!(@objectstack|.pnpm))"
-  ],
+  transformIgnorePatterns: [],
 };

@@ -14,12 +14,14 @@
  */
 
 module.exports = {
-  preset: 'ts-jest',
+  preset: 'ts-jest/presets/default-esm',
   testEnvironment: 'node',
   roots: ['<rootDir>/src', '<rootDir>/test'],
   testMatch: ['**/__tests__/**/*.ts', '**/?(*.)+(spec|test).ts'],
+  extensionsToTreatAsEsm: ['.ts'],
   transform: {
     '^.+\\.ts$': ['ts-jest', {
+      useESM: true,
       tsconfig: {
         esModuleInterop: true,
         allowSyntheticDefaultImports: true
@@ -56,11 +58,13 @@ module.exports = {
     'json'
   ],
   moduleNameMapper: {
-    '^@objectql/(.*)$': '<rootDir>/../../$1/src'
+    '^@objectql/(.*)$': '<rootDir>/../../$1/src',
+    '^(\\.{1,2}/.*)\\.js$': '$1',
   },
   testPathIgnorePatterns: [
     '/node_modules/',
     '/dist/'
   ],
+  transformIgnorePatterns: [],
   verbose: true
 };
