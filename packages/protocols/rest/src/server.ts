@@ -8,6 +8,7 @@
 
 import { IObjectQL, ObjectQLContext } from '@objectql/types';
 import { ObjectQLRequest, ObjectQLResponse, ErrorCode } from './types';
+import { validateRequest, validateResponse, ValidationError } from './validation';
 
 export class ObjectQLServer {
     constructor(private app: IObjectQL) {}
@@ -18,22 +19,25 @@ export class ObjectQLServer {
      */
     async handle(req: ObjectQLRequest): Promise<ObjectQLResponse> {
         try {
+            // Validate the request using Zod schemas
+            const validatedReq = validateRequest(req);
+            
             // Log AI context if provided
-            if (req.ai_context) {
+            if (validatedReq.ai_context) {
                 console.log('[ObjectQL AI Context]', {
-                    object: req.object,
-                    op: req.op,
-                    intent: req.ai_context.intent,
-                    natural_language: req.ai_context.natural_language,
-                    use_case: req.ai_context.use_case
+                    object: validatedReq.object,
+                    op: validatedReq.op,
+                    intent: validatedReq.ai_context.intent,
+                    natural_language: validatedReq.ai_context.natural_language,
+                    use_case: validatedReq.ai_context.use_case
                 });
             }
 
             // 1. Build Context
             // TODO: integrate with real session/auth
             const contextOptions = {
-                userId: req.user?.id,
-                roles: req.user?.roles || [],
+                userId: validatedReq.user?.id,
+                roles: validatedReq.user?.roles || [],
                 // TODO: spaceId
             };
             
@@ -51,118 +55,99 @@ export class ObjectQLServer {
             const ctx: ObjectQLContext = app.createContext(contextOptions);
             
             // Validate object exists
-            const objectConfig = app.getObject(req.object);
+            const objectConfig = app.getObject(validatedReq.object);
             if (!objectConfig) {
                 return this.errorResponse(
                     ErrorCode.NOT_FOUND,
-                    `Object '${req.object}' not found`
+                    `Object '${validatedReq.object}' not found`
                 );
             }
             
-            const repo = ctx.object(req.object);
+            const repo = ctx.object(validatedReq.object);
 
             let result: any;
             
-            switch (req.op) {
+            switch (validatedReq.op) {
                 case 'find':
-                    result = await repo.find(req.args);
+                    result = await repo.find(validatedReq.args);
                     // For find operations, return items array with pagination metadata
-                    return this.buildListResponse(result, req.args, repo);
+                    const findResponse = await this.buildListResponse(result, validatedReq.args, repo);
+                    return validateResponse(findResponse);
                 case 'findOne':
                     // Support both string ID and query object
-                    result = await repo.findOne(req.args);
+                    result = await repo.findOne(validatedReq.args);
                     if (result) {
-                        return { data: { ...result, '@type': req.object } };
+                        return validateResponse({ data: { ...result, '@type': validatedReq.object } });
                     }
-                    return { data: null };
+                    return validateResponse({ data: null });
                 case 'create':
-                    result = await repo.create(req.args);
+                    result = await repo.create(validatedReq.args);
                     if (result) {
-                        return { data: { ...result, '@type': req.object } };
+                        return validateResponse({ data: { ...result, '@type': validatedReq.object } });
                     }
-                    return { data: null };
+                    return validateResponse({ data: null });
                 case 'update':
-                    result = await repo.update(req.args.id, req.args.data);
+                    result = await repo.update(validatedReq.args.id, validatedReq.args.data);
                     if (result) {
-                        return { data: { ...result, '@type': req.object } };
+                        return validateResponse({ data: { ...result, '@type': validatedReq.object } });
                     }
-                    return { data: null };
+                    return validateResponse({ data: null });
                 case 'delete':
-                    result = await repo.delete(req.args.id);
+                    result = await repo.delete(validatedReq.args.id);
                     if (!result) {
                         return this.errorResponse(
                             ErrorCode.NOT_FOUND,
-                            `Record with id '${req.args.id}' not found for delete`
+                            `Record with id '${validatedReq.args.id}' not found for delete`
                         );
                     }
                     // Return standardized delete response with data wrapper
-                    return { 
+                    return validateResponse({ 
                         data: {
-                            id: req.args.id,
+                            id: validatedReq.args.id,
                             deleted: true,
-                            '@type': req.object
+                            '@type': validatedReq.object
                         }
-                    };
+                    });
                 case 'count':
-                    result = await repo.count(req.args);
-                    return { count: result, '@type': req.object };
+                    result = await repo.count(validatedReq.args);
+                    return validateResponse({ count: result, '@type': validatedReq.object });
                 case 'action':
                     // Map generic args to ActionContext
-                    result = await app.executeAction(req.object, req.args.action, {
+                    result = await app.executeAction(validatedReq.object, validatedReq.args.action, {
                          ...ctx, // Pass context (user, etc.)
-                         id: req.args.id,
-                         input: req.args.input || req.args.params // Support both for convenience
+                         id: validatedReq.args.id,
+                         input: validatedReq.args.input || validatedReq.args.params // Support both for convenience
                     });
                     if (result && typeof result === 'object') {
-                        return { ...result, '@type': req.object };
+                        return validateResponse({ ...result, '@type': validatedReq.object });
                     }
-                    return result;
+                    return validateResponse(result);
                 case 'createMany':
-                    // Bulk create operation
-                    if (!Array.isArray(req.args)) {
-                        return this.errorResponse(
-                            ErrorCode.INVALID_REQUEST,
-                            'createMany expects args to be an array of records'
-                        );
-                    }
-                    result = await repo.createMany(req.args);
-                    return { 
+                    // Bulk create operation (already validated by schema)
+                    result = await repo.createMany(validatedReq.args);
+                    return validateResponse({ 
                         items: result,
                         count: Array.isArray(result) ? result.length : 0,
-                        '@type': req.object
-                    };
+                        '@type': validatedReq.object
+                    });
                 case 'updateMany':
-                    // Bulk update operation
-                    // args should be { filters, data }
-                    if (!req.args || typeof req.args !== 'object' || !req.args.data) {
-                        return this.errorResponse(
-                            ErrorCode.INVALID_REQUEST,
-                            'updateMany expects args to be an object with { filters, data }'
-                        );
-                    }
-                    result = await repo.updateMany(req.args.filters || {}, req.args.data);
-                    return { 
+                    // Bulk update operation (already validated by schema)
+                    result = await repo.updateMany(validatedReq.args.filters || {}, validatedReq.args.data);
+                    return validateResponse({ 
                         count: result,
-                        '@type': req.object
-                    };
+                        '@type': validatedReq.object
+                    });
                 case 'deleteMany':
-                    // Bulk delete operation
-                    // args should be { filters }
-                    if (!req.args || typeof req.args !== 'object') {
-                        return this.errorResponse(
-                            ErrorCode.INVALID_REQUEST,
-                            'deleteMany expects args to be an object with { filters }'
-                        );
-                    }
-                    result = await repo.deleteMany(req.args.filters || {});
-                    return { 
+                    // Bulk delete operation (already validated by schema)
+                    result = await repo.deleteMany(validatedReq.args.filters || {});
+                    return validateResponse({ 
                         count: result,
-                        '@type': req.object
-                    };
+                        '@type': validatedReq.object
+                    });
                 default:
                     return this.errorResponse(
                         ErrorCode.INVALID_REQUEST,
-                        `Unknown operation: ${req.op}`
+                        `Unknown operation: ${validatedReq.op}`
                     );
             }
 
@@ -213,12 +198,12 @@ export class ObjectQLServer {
     private handleError(error: any): ObjectQLResponse {
         console.error('[ObjectQL Server] Error:', error);
 
-        // Handle validation errors
-        if (error.name === 'ValidationError' || error.code === 'VALIDATION_ERROR') {
+        // Handle validation errors (including Zod validation)
+        if (error instanceof ValidationError || error.name === 'ValidationError' || error.code === 'VALIDATION_ERROR') {
             return this.errorResponse(
                 ErrorCode.VALIDATION_ERROR,
-                'Validation failed',
-                { fields: error.fields || error.details }
+                error.message || 'Validation failed',
+                error.details || { fields: error.fields }
             );
         }
 
