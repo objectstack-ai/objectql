@@ -7,6 +7,7 @@
  */
 
 import type { RuntimePlugin, RuntimeContext } from '@objectql/types';
+import { IncomingMessage, ServerResponse, createServer, Server } from 'http';
 import {
     validateRequest,
     validateBatchRequest,
@@ -149,6 +150,7 @@ export class JSONRPCPlugin implements RuntimePlugin {
     private methodSignatures: Map<string, MethodSignature>;
     private sessions: Map<string, Session> = new Map();
     private progressClients: Map<string, Set<(data: string) => void>> = new Map();
+    private server?: Server;
 
     constructor(config: JSONRPCPluginConfig = {}) {
         this.config = {
@@ -188,7 +190,23 @@ export class JSONRPCPlugin implements RuntimePlugin {
         if (!this.engine) {
             throw new Error('Protocol not initialized. Install hook must be called first.');
         }
-        console.log(`[${this.name}] JSON-RPC protocol ready. Mount at ${this.config.basePath}`);
+        
+        // Start standalone HTTP server for testing/development
+        console.log(`[${this.name}] Starting JSON-RPC server (standalone)...`);
+        
+        // Create HTTP server
+        this.server = createServer((req, res) => this.handleRequest(req, res));
+        
+        // Start listening
+        await new Promise<void>((resolve, reject) => {
+            this.server!.listen(this.config.port, () => {
+                console.log(`[${this.name}] 🚀 JSON-RPC server listening on http://localhost:${this.config.port}${this.config.basePath}`);
+                resolve();
+            });
+            this.server!.on('error', reject);
+        });
+        
+        console.log(`[${this.name}] JSON-RPC protocol ready`);
     }
 
     // --- Adapter for @objectstack/core compatibility ---
@@ -204,7 +222,116 @@ export class JSONRPCPlugin implements RuntimePlugin {
      * Stop hook - called when kernel stops
      */
     async onStop(ctx: RuntimeContext): Promise<void> {
-       // Cleanup logic if needed
+        // Stop the HTTP server
+        if (this.server) {
+            console.log(`[${this.name}] Stopping JSON-RPC server...`);
+            await new Promise<void>((resolve) => {
+                this.server!.close(() => {
+                    resolve();
+                });
+            });
+        }
+        // Cleanup sessions
+        for (const session of this.sessions.values()) {
+            if (session.timeout) {
+                clearTimeout(session.timeout);
+            }
+        }
+        this.sessions.clear();
+    }
+
+    /**
+     * Handle HTTP request for standalone server
+     */
+    private async handleRequest(req: IncomingMessage, res: ServerResponse): Promise<void> {
+        // Enable CORS if configured
+        if (this.config.enableCORS) {
+            res.setHeader('Access-Control-Allow-Origin', '*');
+            res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+            res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+            
+            if (req.method === 'OPTIONS') {
+                res.writeHead(204);
+                res.end();
+                return;
+            }
+        }
+
+        const url = req.url || '/';
+        const basePath = this.config.basePath;
+
+        // Check if request is for RPC endpoint
+        if (!url.startsWith(basePath)) {
+            res.writeHead(404, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Not Found' }));
+            return;
+        }
+
+        // Only accept POST requests
+        if (req.method !== 'POST') {
+            res.writeHead(405, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Method Not Allowed' }));
+            return;
+        }
+
+        try {
+            // Read request body
+            let body = '';
+            for await (const chunk of req) {
+                body += chunk;
+            }
+
+            const jsonBody = JSON.parse(body);
+            
+            // Handle batch or single request
+            let response;
+            if (Array.isArray(jsonBody)) {
+                // Validate batch request
+                try {
+                    validateBatchRequest(jsonBody);
+                } catch (error: any) {
+                    if (error instanceof JSONRPCValidationError) {
+                        response = createErrorResponse(null, error.code, error.message, error.data);
+                    } else {
+                        response = createErrorResponse(null, JSONRPCErrorCode.INVALID_REQUEST, 'Invalid batch request');
+                    }
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify(response));
+                    return;
+                }
+                
+                if (this.config.enableChaining) {
+                    const responses = await this.processBatchWithChaining(jsonBody);
+                    response = validateBatchResponse(responses);
+                } else {
+                    const responses = await Promise.all(
+                        jsonBody.map((request: any) => this.processRequest(request))
+                    );
+                    const filteredResponses = responses.filter(r => r !== null);
+                    response = validateBatchResponse(filteredResponses);
+                }
+            } else {
+                response = await this.processRequest(jsonBody);
+            }
+
+            // Send response (don't send for notifications)
+            if (response) {
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify(response));
+            } else {
+                res.writeHead(204);
+                res.end();
+            }
+        } catch (error) {
+            console.error(`[${this.name}] Request error:`, error);
+            const errorResponse = createErrorResponse(
+                null,
+                JSONRPCErrorCode.PARSE_ERROR,
+                error instanceof Error ? error.message : 'Parse error'
+            );
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify(errorResponse));
+        }
     }
 
     /**
