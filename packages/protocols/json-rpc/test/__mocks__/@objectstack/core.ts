@@ -139,42 +139,86 @@ export class ObjectKernel {
     
     async find(objectName: string, query: any): Promise<{ value: Record<string, any>[]; count: number }> {
         // Delegate to driver during migration phase
-        if (this.driver) {
-            // Convert QueryAST back to UnifiedQuery format for driver
-            const unifiedQuery: any = {};
+        const driver = this.getDriver();
+        if (driver) {
+            // Normalize query format - handle both legacy and new formats
+            const normalizedQuery: any = {};
             
-            if (query.fields) {
-                unifiedQuery.fields = query.fields;
-            }
+            // Handle filters/filter/where
             if (query.filters) {
-                unifiedQuery.filters = query.filters;
+                normalizedQuery.where = query.filters;
+            } else if (query.filter) {
+                normalizedQuery.where = query.filter;
+            } else if (query.where) {
+                normalizedQuery.where = query.where;
             }
+            
+            // Handle fields
+            if (query.fields) {
+                normalizedQuery.fields = query.fields;
+            }
+            
+            // Handle sorting - convert from various formats to driver format (orderBy)
             if (query.sort) {
-                unifiedQuery.sort = query.sort.map((s: any) => [s.field, s.order]);
+                if (Array.isArray(query.sort) && query.sort.length > 0) {
+                    // Could be [['field', 'asc'], ...] or [{field: 1}, ...]
+                    const firstItem = query.sort[0];
+                    if (firstItem !== undefined) {
+                        if (Array.isArray(firstItem)) {
+                            // Format: [['field', 'asc'], ...] - use directly as orderBy
+                            normalizedQuery.orderBy = query.sort.map((s: any) => ({
+                                field: s[0],
+                                order: s[1]
+                            }));
+                        } else if (typeof firstItem === 'object') {
+                            // Format: [{field: 1}, {field: -1}, ...]
+                            // Convert to orderBy format
+                            // 1 or 'asc' means ascending, -1 or 'desc' means descending
+                            normalizedQuery.orderBy = query.sort.flatMap((s: any) => 
+                                Object.entries(s).map(([field, order]) => ({
+                                    field,
+                                    order: (order === -1 || order === 'desc' || order === 'DESC') ? 'desc' : 'asc'
+                                }))
+                            );
+                        }
+                    }
+                } else if (query.sort) {
+                    normalizedQuery.orderBy = query.sort;
+                }
+            } else if (query.orderBy) {
+                // New QueryAST format - use directly
+                normalizedQuery.orderBy = query.orderBy;
             }
-            if (query.top !== undefined) {
-                unifiedQuery.limit = query.top;
+            
+            // Handle limit/top
+            if (query.limit !== undefined) {
+                normalizedQuery.limit = query.limit;
+            } else if (query.top !== undefined) {
+                normalizedQuery.limit = query.top;
             }
-            // QueryAST uses 'offset', pass it through
+            
+            // Handle offset/skip
             if (query.offset !== undefined) {
-                unifiedQuery.offset = query.offset;
+                normalizedQuery.offset = query.offset;
+            } else if (query.skip !== undefined) {
+                normalizedQuery.offset = query.skip;
             }
-            // Legacy support: also handle 'skip' if present
-            if (query.skip !== undefined) {
-                unifiedQuery.skip = query.skip;
-            }
+            
+            // Handle aggregations
             if (query.aggregations) {
-                unifiedQuery.aggregate = query.aggregations.map((agg: any) => ({
+                normalizedQuery.aggregate = query.aggregations.map((agg: any) => ({
                     func: agg.function,
                     field: agg.field,
                     alias: agg.alias
                 }));
             }
+            
+            // Handle groupBy
             if (query.groupBy) {
-                unifiedQuery.groupBy = query.groupBy;
+                normalizedQuery.groupBy = query.groupBy;
             }
             
-            const results = await this.driver.find(objectName, unifiedQuery, {});
+            const results = await driver.find(objectName, normalizedQuery, {});
             return { value: results, count: results.length };
         }
         return { value: [], count: 0 };
@@ -182,32 +226,36 @@ export class ObjectKernel {
     
     async get(objectName: string, id: string): Promise<Record<string, any>> {
         // Delegate to driver during migration phase
-        if (this.driver) {
-            return await this.driver.findOne(objectName, id, {}, {});
+        const driver = this.getDriver();
+        if (driver) {
+            return await driver.findOne(objectName, id, {}, {});
         }
         return {};
     }
     
     async create(objectName: string, data: any): Promise<Record<string, any>> {
         // Delegate to driver during migration phase
-        if (this.driver) {
-            return await this.driver.create(objectName, data, {});
+        const driver = this.getDriver();
+        if (driver) {
+            return await driver.create(objectName, data, {});
         }
         return data;
     }
     
     async update(objectName: string, id: string, data: any): Promise<Record<string, any>> {
         // Delegate to driver during migration phase
-        if (this.driver) {
-            return await this.driver.update(objectName, id, data, {});
+        const driver = this.getDriver();
+        if (driver) {
+            return await driver.update(objectName, id, data, {});
         }
         return data;
     }
     
     async delete(objectName: string, id: string): Promise<boolean> {
         // Delegate to driver during migration phase
-        if (this.driver) {
-            const result = await this.driver.delete(objectName, id, {});
+        const driver = this.getDriver();
+        if (driver) {
+            const result = await driver.delete(objectName, id, {});
             return result > 0; // Driver returns count of deleted records
         }
         return true;

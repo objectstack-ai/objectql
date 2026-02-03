@@ -1230,7 +1230,7 @@ export class ODataV4Plugin implements RuntimePlugin {
 
         try {
             const contentType = req.headers['content-type'] || '';
-            const boundaryMatch = contentType.match(/boundary=(.+)/);
+            const boundaryMatch = contentType.match(/boundary=["']?([^"';,\s\r\n]+)["']?/);
             
             if (!boundaryMatch) {
                 this.sendError(res, 400, 'Missing multipart boundary in Content-Type');
@@ -1292,15 +1292,20 @@ export class ODataV4Plugin implements RuntimePlugin {
         const sections = body.split(`--${boundary}`).filter(s => s.trim() && !s.startsWith('--'));
 
         for (const section of sections) {
+            // Check if this is a changeset header (contains boundary definition but no HTTP methods)
             if (section.includes('Content-Type: multipart/mixed')) {
-                // This is a changeset - parse nested requests
-                const changesetBoundaryMatch = section.match(/boundary=(.+)/);
+                const changesetBoundaryMatch = section.match(/boundary=["']?([^"';,\s\r\n]+)["']?/);
                 if (changesetBoundaryMatch) {
-                    const changesetBoundary = changesetBoundaryMatch[1].trim();
-                    const changesetRequests = this.parseBatchRequest(section, changesetBoundary);
-                    parts.push({ type: 'changeset', requests: changesetRequests });
+                    const changesetBoundary = changesetBoundaryMatch[1];
+                    
+                    // Only recurse if the boundary is different from current boundary
+                    // This prevents infinite recursion on header-only sections
+                    if (changesetBoundary !== boundary) {
+                        const changesetRequests = this.parseBatchRequest(section, changesetBoundary);
+                        parts.push({ type: 'changeset', requests: changesetRequests });
+                    }
                 }
-            } else {
+            } else if (section.match(/(GET|POST|PATCH|PUT|DELETE)\s+/)) {
                 // Parse individual HTTP request
                 const httpMatch = section.match(/(GET|POST|PATCH|PUT|DELETE)\s+([^\s]+)/);
                 if (httpMatch) {
@@ -1308,10 +1313,11 @@ export class ODataV4Plugin implements RuntimePlugin {
                     const url = httpMatch[2];
                     
                     // Extract body if present (for POST/PATCH/PUT)
+                    // Body is the content after the last \r\n\r\n separator
                     let requestBody = '';
-                    const bodyMatch = section.match(/\r\n\r\n(.+)/s);
-                    if (bodyMatch) {
-                        requestBody = bodyMatch[1].trim();
+                    const sectionParts = section.split('\r\n\r\n');
+                    if (sectionParts.length > 1) {
+                        requestBody = sectionParts[sectionParts.length - 1].trim();
                     }
                     
                     parts.push({ 

@@ -25,7 +25,7 @@ class GraphQLEndpoint implements ProtocolEndpoint {
   constructor(plugin: GraphQLPlugin, kernel: ObjectKernel) {
     this.plugin = plugin;
     this.kernel = kernel;
-    this.baseUrl = `http://localhost:${plugin.config.port || 4000}`;
+    this.baseUrl = `http://localhost:${plugin.config.port || 4000}/graphql`;
   }
   
   async execute(operation: ProtocolOperation): Promise<ProtocolResponse> {
@@ -66,12 +66,12 @@ class GraphQLEndpoint implements ProtocolEndpoint {
   private async executeCreate(operation: ProtocolOperation): Promise<ProtocolResponse> {
     const entityName = this.capitalize(operation.entity);
     const mutation = `
-      mutation Create${entityName}($data: JSON!) {
-        create${entityName}(data: $data)
+      mutation Create${entityName}($input: ${entityName}Input!) {
+        create${entityName}(input: $input)
       }
     `;
     
-    const result = await this.graphqlRequest(mutation, { data: operation.data });
+    const result = await this.graphqlRequest(mutation, { input: operation.data });
     
     if (result.errors) {
       return {
@@ -91,9 +91,10 @@ class GraphQLEndpoint implements ProtocolEndpoint {
   
   private async executeRead(operation: ProtocolOperation): Promise<ProtocolResponse> {
     const entityName = this.capitalize(operation.entity);
+    const camelName = this.toCamelCase(operation.entity);
     const query = `
-      query Get${entityName}($id: String!) {
-        ${operation.entity}(id: $id)
+      query Get${entityName}($id: ID!) {
+        ${camelName}(id: $id)
       }
     `;
     
@@ -111,21 +112,21 @@ class GraphQLEndpoint implements ProtocolEndpoint {
     
     return {
       success: true,
-      data: result.data[operation.entity]
+      data: result.data[camelName]
     };
   }
   
   private async executeUpdate(operation: ProtocolOperation): Promise<ProtocolResponse> {
     const entityName = this.capitalize(operation.entity);
     const mutation = `
-      mutation Update${entityName}($id: String!, $data: JSON!) {
-        update${entityName}(id: $id, data: $data)
+      mutation Update${entityName}($id: ID!, $input: ${entityName}UpdateInput!) {
+        update${entityName}(id: $id, input: $input)
       }
     `;
     
     const result = await this.graphqlRequest(mutation, {
       id: operation.id,
-      data: operation.data
+      input: operation.data
     });
     
     if (result.errors) {
@@ -147,7 +148,7 @@ class GraphQLEndpoint implements ProtocolEndpoint {
   private async executeDelete(operation: ProtocolOperation): Promise<ProtocolResponse> {
     const entityName = this.capitalize(operation.entity);
     const mutation = `
-      mutation Delete${entityName}($id: String!) {
+      mutation Delete${entityName}($id: ID!) {
         delete${entityName}(id: $id)
       }
     `;
@@ -172,13 +173,14 @@ class GraphQLEndpoint implements ProtocolEndpoint {
   
   private async executeQuery(operation: ProtocolOperation): Promise<ProtocolResponse> {
     const entityName = this.capitalize(operation.entity);
+    const camelName = this.toCamelCase(operation.entity);
     
     let queryArgs = '';
     const variables: any = {};
     
     if (operation.filter) {
-      queryArgs += '$filter: JSON';
-      variables.filter = operation.filter;
+      queryArgs += `$where: ${entityName}Filter`;
+      variables.where = operation.filter;
     }
     
     if (operation.options?.limit) {
@@ -195,7 +197,7 @@ class GraphQLEndpoint implements ProtocolEndpoint {
     
     const query = `
       query List${entityName}${queryArgs ? `(${queryArgs})` : ''} {
-        ${operation.entity}List${this.buildQueryArgs(variables)}
+        ${camelName}List${this.buildQueryArgs(variables)}
       }
     `;
     
@@ -213,7 +215,7 @@ class GraphQLEndpoint implements ProtocolEndpoint {
     
     return {
       success: true,
-      data: result.data[`${operation.entity}List`] || []
+      data: result.data[`${camelName}List`] || []
     };
   }
   
@@ -232,16 +234,16 @@ class GraphQLEndpoint implements ProtocolEndpoint {
     }
     
     const mutations = operation.data.map((item, index) => `
-      item${index}: create${entityName}(data: $data${index})
+      item${index}: create${entityName}(input: $input${index})
     `).join('\n');
     
     const variables: any = {};
     const variableDefinitions = operation.data.map((_, index) => 
-      `$data${index}: JSON!`
+      `$input${index}: ${entityName}Input!`
     ).join(', ');
     
     operation.data.forEach((item, index) => {
-      variables[`data${index}`] = item;
+      variables[`input${index}`] = item;
     });
     
     const mutation = `
@@ -307,11 +309,27 @@ class GraphQLEndpoint implements ProtocolEndpoint {
       body: JSON.stringify({ query, variables })
     });
     
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      const text = await response.text();
+      throw new Error(`Expected JSON response but got: ${contentType}. Response: ${text.substring(0, 200)}`);
+    }
+    
     return await response.json();
   }
   
   private capitalize(str: string): string {
-    return str.charAt(0).toUpperCase() + str.slice(1);
+    // Convert to PascalCase (handle underscores and hyphens)
+    return str
+      .split(/[_-]/)
+      .filter(word => word.length > 0) // Remove empty segments
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join('');
+  }
+  
+  private toCamelCase(str: string): string {
+    const pascal = this.capitalize(str);
+    return pascal.charAt(0).toLowerCase() + pascal.slice(1);
   }
   
   private buildQueryArgs(variables: any): string {
