@@ -446,7 +446,7 @@ async function createMultipleUsers(users) {
     console.error('Batch operation failed:', error);
     
     if (error.error?.code === 'CHANGESET_FAILED') {
-      console.error(`Failed at operation ${error.error.details.completedOperations + 1}`);
+      console.error(`Failed at operation ${error.error.details.completedOperations + 1}/${error.error.details.totalOperations}`);
       console.error(`Rollback attempted: ${error.error.details.rollbackAttempted}`);
     }
     throw new Error(error.error?.message || 'Batch operation failed');

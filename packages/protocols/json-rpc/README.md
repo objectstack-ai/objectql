@@ -431,8 +431,11 @@ eventSource.addEventListener('error', (error) => {
 
 **Progress Notification Format:**
 
+The notification follows JSON-RPC 2.0 format but without the `id` field (as it's a notification):
+
 ```json
 {
+  "jsonrpc": "2.0",
   "method": "progress.update",
   "params": {
     "id": "operation-123",
@@ -441,6 +444,12 @@ eventSource.addEventListener('error', (error) => {
     "message": "Processing item 50 of 100"
   }
 }
+```
+
+Note: The complete SSE message includes the `data:` prefix and double newline:
+```
+data: {"jsonrpc":"2.0","method":"progress.update","params":{...}}
+
 ```
 
 **Example: Batch Import with Progress**

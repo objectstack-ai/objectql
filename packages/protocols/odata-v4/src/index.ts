@@ -1473,14 +1473,25 @@ export class ODataV4Plugin implements RuntimePlugin {
     /**
      * Attempt to rollback completed changeset operations
      * 
-     * NOTE: This is a best-effort rollback mechanism for demonstration purposes.
-     * In production, this should use database transaction support (BEGIN/COMMIT/ROLLBACK)
-     * or implement a compensating transaction pattern by storing previous state.
+     * ⚠️ IMPORTANT: This is a DEMONSTRATION-ONLY implementation.
+     * DO NOT use in production without proper database transaction support!
+     * 
+     * This method only LOGS rollback intentions but does NOT actually reverse operations.
+     * 
+     * For production use, you must implement ONE of the following:
+     * 1. Database transaction support (BEGIN TRANSACTION / ROLLBACK)
+     * 2. Compensating transaction pattern with state storage
+     * 3. Event sourcing with operation replay capability
      * 
      * Current limitations:
      * - Does not actually reverse operations (logs intentions only)
      * - Requires storing created IDs, deleted records, and previous values
-     * - Should be replaced with proper database transaction support
+     * - No guaranteed atomicity without database transaction support
+     * 
+     * Implementation requirements for true rollback:
+     * - Store created IDs during POST operations for deletion
+     * - Store deleted records before DELETE operations for restoration
+     * - Store previous values before PATCH/PUT operations for reversion
      */
     private async rollbackChangeset(operations: Array<{ type: string; entitySet: string; key?: string; data?: any }>, completedCount: number): Promise<void> {
         // Rollback in reverse order

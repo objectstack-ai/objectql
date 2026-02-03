@@ -60,6 +60,9 @@ async function startBatchImport() {
   eventSource.addEventListener('error', (error) => {
     console.error('❌ SSE connection error:', error);
     eventSource.close();
+    
+    // Production: Implement reconnection with exponential backoff
+    // See Best Practices section below for reconnection logic example
   });
   
   // 2. Start the batch operation
