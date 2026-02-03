@@ -160,27 +160,29 @@ export class ObjectKernel {
             
             // Handle sorting - convert from various formats to driver format (orderBy)
             if (query.sort) {
-                if (Array.isArray(query.sort)) {
+                if (Array.isArray(query.sort) && query.sort.length > 0) {
                     // Could be [['field', 'asc'], ...] or [{field: 1}, ...]
-                    if (query.sort.length > 0) {
-                        if (Array.isArray(query.sort[0])) {
+                    const firstItem = query.sort[0];
+                    if (firstItem !== undefined) {
+                        if (Array.isArray(firstItem)) {
                             // Format: [['field', 'asc'], ...] - use directly as orderBy
                             normalizedQuery.orderBy = query.sort.map((s: any) => ({
                                 field: s[0],
                                 order: s[1]
                             }));
-                        } else if (typeof query.sort[0] === 'object') {
+                        } else if (typeof firstItem === 'object') {
                             // Format: [{field: 1}, {field: -1}, ...]
                             // Convert to orderBy format
+                            // 1 or 'asc' means ascending, -1 or 'desc' means descending
                             normalizedQuery.orderBy = query.sort.flatMap((s: any) => 
                                 Object.entries(s).map(([field, order]) => ({
                                     field,
-                                    order: order === -1 || order === 'desc' ? 'desc' : 'asc'
+                                    order: (order === -1 || order === 'desc' || order === 'DESC') ? 'desc' : 'asc'
                                 }))
                             );
                         }
                     }
-                } else {
+                } else if (query.sort) {
                     normalizedQuery.orderBy = query.sort;
                 }
             } else if (query.orderBy) {
