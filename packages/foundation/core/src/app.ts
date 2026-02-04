@@ -110,18 +110,23 @@ export class ObjectQL implements IObjectQL {
                 return items.map(unwrapContent);
             },
             unregister: (type: string, name: string) => {
-                 // Access private static storage using any cast
-                 const metadata = (SchemaRegistry as any).metadata;
-                 if (metadata instanceof Map) {
-                     const collection = metadata.get(type);
-                     if (collection instanceof Map) {
-                         collection.delete(name);
+                 // Use the official unregisterItem API
+                 if (typeof SchemaRegistry.unregisterItem === 'function') {
+                     SchemaRegistry.unregisterItem(type, name);
+                 } else {
+                     // Fallback: try to access metadata Map directly
+                     const metadata = SchemaRegistry.metadata;
+                     if (metadata && metadata instanceof Map) {
+                         const collection = metadata.get(type);
+                         if (collection && collection instanceof Map) {
+                             collection.delete(name);
+                         }
                      }
                  }
             },
             unregisterPackage: (packageName: string) => {
-                 const metadata = (SchemaRegistry as any).metadata;
-                 if (metadata instanceof Map) {
+                 const metadata = SchemaRegistry.metadata;
+                 if (metadata && metadata instanceof Map) {
                      for (const [type, collection] of metadata.entries()) {
                          if (collection instanceof Map) {
                              for (const [key, item] of collection.entries()) {
@@ -395,6 +400,16 @@ export class ObjectQL implements IObjectQL {
             await (this.kernel as any).bootstrap();
         } else {
              console.warn('ObjectKernel does not have start() or bootstrap() method');
+             
+             // Manually initialize plugins if kernel doesn't support lifecycle
+             for (const plugin of this.kernelPlugins) {
+                 if (typeof (plugin as any).init === 'function') {
+                     await (plugin as any).init();
+                 }
+                 if (typeof (plugin as any).start === 'function') {
+                     await (plugin as any).start();
+                 }
+             }
         }
         
         // TEMPORARY: Set driver for backward compatibility during migration
