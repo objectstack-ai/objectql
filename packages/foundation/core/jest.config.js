@@ -12,6 +12,9 @@ module.exports = {
   testMatch: ['**/test/**/*.test.ts'],
   moduleNameMapper: {
     '^@objectql/(.*)$': '<rootDir>/../$1/src',
+    '^@objectstack/core$': '<rootDir>/test/__mocks__/@objectstack/core.ts',
+    '^@objectstack/objectql$': '<rootDir>/test/__mocks__/@objectstack/objectql.ts',
+    '^@objectstack/runtime$': '<rootDir>/test/__mocks__/@objectstack/runtime.ts',
   },
   transform: {
     '^.+\\.(t|j)sx?$': ['ts-jest', {
@@ -23,7 +26,4 @@ module.exports = {
       }
     }],
   },
-  transformIgnorePatterns: [
-    "/node_modules/(?!(@objectstack|.pnpm))"
-  ],
 };
