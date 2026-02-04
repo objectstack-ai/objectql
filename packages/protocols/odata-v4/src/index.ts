@@ -373,7 +373,9 @@ export class ODataV4Plugin implements RuntimePlugin {
         }
 
         try {
-            const path = url.substring(basePath.length) || '/';
+            // Extract path without query string
+            const urlWithoutQuery = url.split('?')[0];
+            const path = urlWithoutQuery.substring(basePath.length) || '/';
             
             // Route to appropriate handler
             if (path === '/' || path === '') {
@@ -724,7 +726,8 @@ export class ODataV4Plugin implements RuntimePlugin {
         for (const pair of pairs) {
             const [key, value] = pair.split('=');
             if (key) {
-                params[key as keyof ODataQueryParams] = decodeURIComponent(value || '');
+                const decodedKey = decodeURIComponent(key);
+                params[decodedKey as keyof ODataQueryParams] = decodeURIComponent(value || '');
             }
         }
 

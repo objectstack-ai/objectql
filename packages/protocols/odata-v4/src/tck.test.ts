@@ -228,12 +228,20 @@ class ODataEndpoint implements ProtocolEndpoint {
     });
     
     if (!response.ok) {
-      const error = await response.json();
+      let errorMessage = 'Query failed';
+      let errorCode = 'QUERY_ERROR';
+      try {
+        const error = await response.json();
+        errorCode = error.error?.code || 'QUERY_ERROR';
+        errorMessage = error.error?.message || 'Query failed';
+      } catch (e) {
+        errorMessage = `HTTP ${response.status}: ${await response.text().catch(() => 'No error message')}`;
+      }
       return {
         success: false,
         error: {
-          code: error.error?.code || 'QUERY_ERROR',
-          message: error.error?.message || 'Query failed'
+          code: errorCode,
+          message: errorMessage
         }
       };
     }
