@@ -76,7 +76,7 @@ export class ODataV4Plugin implements RuntimePlugin {
     
     private server?: Server;
     private engine?: any;
-    private config: Required<ODataV4PluginConfig>;
+    readonly config: Required<ODataV4PluginConfig>;
 
     constructor(config: ODataV4PluginConfig = {}) {
         this.config = {
