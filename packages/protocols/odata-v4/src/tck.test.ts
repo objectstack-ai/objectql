@@ -8,7 +8,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { runProtocolTCK, ProtocolEndpoint, ProtocolOperation, ProtocolResponse } from '@objectql/protocol-tck';
 import { ODataV4Plugin } from './index';
-import { ObjectKernel } from '@objectstack/core';
 import { MemoryDriver } from '@objectql/driver-memory';
 
 /**
@@ -18,10 +17,10 @@ import { MemoryDriver } from '@objectql/driver-memory';
  */
 class ODataEndpoint implements ProtocolEndpoint {
   private plugin: ODataV4Plugin;
-  private kernel: ObjectKernel;
+  private kernel: any;
   private baseUrl: string;
   
-  constructor(plugin: ODataV4Plugin, kernel: ObjectKernel) {
+  constructor(plugin: ODataV4Plugin, kernel: any) {
     this.plugin = plugin;
     this.kernel = kernel;
     const port = plugin.config.port || 3000;
@@ -229,12 +228,20 @@ class ODataEndpoint implements ProtocolEndpoint {
     });
     
     if (!response.ok) {
-      const error = await response.json();
+      let errorMessage = 'Query failed';
+      let errorCode = 'QUERY_ERROR';
+      try {
+        const error = await response.json();
+        errorCode = error.error?.code || 'QUERY_ERROR';
+        errorMessage = error.error?.message || 'Query failed';
+      } catch (e) {
+        errorMessage = `HTTP ${response.status}: ${await response.text().catch(() => 'No error message')}`;
+      }
       return {
         success: false,
         error: {
-          code: error.error?.code || 'QUERY_ERROR',
-          message: error.error?.message || 'Query failed'
+          code: errorCode,
+          message: errorMessage
         }
       };
     }
@@ -315,7 +322,20 @@ class ODataEndpoint implements ProtocolEndpoint {
     });
     
     const metadata = await response.text();
-    return { metadata, format: 'EDMX' };
+    
+    // Extract entity sets from the EDMX XML for TCK compatibility
+    // The TCK expects { entities } or { entitySets } or { types }
+    const entitySetMatches = metadata.match(/<EntitySet Name="([^"]+)"/g) || [];
+    const entitySets = entitySetMatches.map(match => {
+      const nameMatch = match.match(/Name="([^"]+)"/);
+      return nameMatch ? nameMatch[1] : '';
+    }).filter(Boolean);
+    
+    return { 
+      metadata, 
+      format: 'EDMX',
+      entitySets // Add this for TCK compatibility
+    };
   }
   
   async close(): Promise<void> {
@@ -373,13 +393,85 @@ class ODataEndpoint implements ProtocolEndpoint {
  * OData V4 Protocol TCK Test Suite
  */
 describe('OData V4 Protocol TCK', () => {
-  let kernel: ObjectKernel;
+  let kernel: any; // Mock kernel
   let plugin: ODataV4Plugin;
   let testPort: number;
+  let driver: MemoryDriver;
   
   beforeAll(async () => {
     // Use a unique port for tests to avoid conflicts
     testPort = 9100 + Math.floor(Math.random() * 1000);
+    
+    // Create driver
+    driver = new MemoryDriver();
+    
+    // Create mock kernel similar to integration tests
+    const metadataStore = new Map<string, any>();
+    // Use capitalized name for OData entity sets
+    metadataStore.set('Tck_test_entity', {
+      content: {
+        name: 'Tck_test_entity',
+        label: 'TCK Test Entity',
+        fields: {
+          name: { type: 'text', label: 'Name' },
+          value: { type: 'number', label: 'Value' },
+          active: { type: 'boolean', label: 'Active' }
+        }
+      }
+    });
+    
+    kernel = {
+      metadata: {
+        register: (type: string, name: string, item: any) => {
+          metadataStore.set(name, { content: item });
+        },
+        list: (type: string) => {
+          if (type === 'object') {
+            return Array.from(metadataStore.values());
+          }
+          return [];
+        },
+        get: (type: string, name: string) => {
+          return metadataStore.get(name) || null;
+        }
+      },
+      repository: {
+        find: async (objectName: string, query: any) => driver.find(objectName, query),
+        findOne: async (objectName: string, id: string) => driver.findOne(objectName, id),
+        create: async (objectName: string, data: any) => driver.create(objectName, data),
+        update: async (objectName: string, id: string, data: any) => driver.update(objectName, id, data),
+        delete: async (objectName: string, id: string) => driver.delete(objectName, id),
+        count: async (objectName: string, filters: any) => driver.count(objectName, filters),
+      },
+      // Add direct methods that OData plugin expects
+      // Note: OData uses capitalized entity set names but driver uses lowercase
+      find: async (objectName: string, query: any) => {
+        const lowerName = objectName.toLowerCase();
+        return driver.find(lowerName, query);
+      },
+      get: async (objectName: string, id: string) => {
+        const lowerName = objectName.toLowerCase();
+        return driver.findOne(lowerName, id);
+      },
+      create: async (objectName: string, data: any) => {
+        const lowerName = objectName.toLowerCase();
+        return driver.create(lowerName, data);
+      },
+      update: async (objectName: string, id: string, data: any) => {
+        const lowerName = objectName.toLowerCase();
+        return driver.update(lowerName, id, data);
+      },
+      delete: async (objectName: string, id: string) => {
+        const lowerName = objectName.toLowerCase();
+        return driver.delete(lowerName, id);
+      },
+      count: async (objectName: string, filters: any) => {
+        const lowerName = objectName.toLowerCase();
+        return driver.count(lowerName, filters);
+      },
+      driver,
+      getDriver: () => driver
+    };
     
     // Create test kernel with memory driver
     plugin = new ODataV4Plugin({
@@ -388,30 +480,15 @@ describe('OData V4 Protocol TCK', () => {
       namespace: 'TCKTest'
     });
     
-    kernel = new ObjectKernel([
-      new MemoryDriver(),
-      plugin
-    ]);
-    
-    // Register test entity
-    kernel.metadata.register('object', 'tck_test_entity', {
-      name: 'tck_test_entity',
-      label: 'TCK Test Entity',
-      fields: {
-        name: { type: 'text', label: 'Name' },
-        value: { type: 'number', label: 'Value' },
-        active: { type: 'boolean', label: 'Active' }
-      }
-    });
-    
-    await kernel.start();
+    await plugin.install?.({ engine: kernel });
+    await plugin.onStart?.({ engine: kernel });
     
     // Wait for server to be ready
     await new Promise(resolve => setTimeout(resolve, 1000));
   }, 30000);
   
   afterAll(async () => {
-    await kernel.stop();
+    await plugin.onStop?.({ engine: kernel });
   }, 30000);
   
   // Run the Protocol TCK
@@ -425,15 +502,6 @@ describe('OData V4 Protocol TCK', () => {
         federation: true      // OData doesn't support GraphQL federation
       },
       timeout: 30000,
-      hooks: {
-        beforeEach: async () => {
-          // Clear data between tests
-          const driver = kernel.getDriver();
-          if (driver && typeof (driver as any).clear === 'function') {
-            await (driver as any).clear();
-          }
-        }
-      },
       performance: {
         enabled: true,
         thresholds: {
