@@ -28,6 +28,12 @@ export const SchemaRegistry = {
     const key = item[keyField];
     mockStore.get(type)!.set(key, item);
   }),
+  unregisterItem: jest.fn((type: string, name: string) => {
+    const collection = mockStore.get(type);
+    if (collection) {
+      collection.delete(name);
+    }
+  }),
   getItem: jest.fn((type: string, name: string) => {
     return mockStore.get(type)?.get(name);
   }),
@@ -35,5 +41,5 @@ export const SchemaRegistry = {
     const items = mockStore.get(type);
     return items ? Array.from(items.values()) : [];
   }),
-  metadata: {},
+  metadata: mockStore,
 };
