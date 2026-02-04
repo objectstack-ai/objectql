@@ -115,7 +115,7 @@ export class ObjectQL implements IObjectQL {
                      SchemaRegistry.unregisterItem(type, name);
                  } else {
                      // Fallback: try to access metadata Map directly
-                     const metadata = SchemaRegistry.metadata;
+                     const metadata = (SchemaRegistry as any).metadata;
                      if (metadata && metadata instanceof Map) {
                          const collection = metadata.get(type);
                          if (collection && collection instanceof Map) {
@@ -125,7 +125,7 @@ export class ObjectQL implements IObjectQL {
                  }
             },
             unregisterPackage: (packageName: string) => {
-                 const metadata = SchemaRegistry.metadata;
+                 const metadata = (SchemaRegistry as any).metadata;
                  if (metadata && metadata instanceof Map) {
                      for (const [type, collection] of metadata.entries()) {
                          if (collection instanceof Map) {
