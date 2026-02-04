@@ -7,10 +7,10 @@
  */
 
 import type { PermissionConfig, PermissionCheckContext, PermissionCheckResult } from '@objectql/types';
-import type { Role } from '@objectstack/spec/auth';
+import type { Identity } from '@objectstack/spec';
 
-// Re-export Role from @objectstack/spec for convenience
-export type { Role };
+// Extract Role type from Identity namespace
+export type Role = Identity.Role;
 
 /**
  * Permission storage backend type

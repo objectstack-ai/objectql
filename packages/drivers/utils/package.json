@@ -18,7 +18,7 @@
   "license": "MIT",
   "dependencies": {
     "@objectql/types": "workspace:*",
-    "@objectstack/spec": "^0.9.2"
+    "@objectstack/spec": "^1.0.0"
   },
   "devDependencies": {
     "@types/jest": "^29.0.0",

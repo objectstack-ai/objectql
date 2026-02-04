@@ -246,4 +246,46 @@ export class ObjectStackProtocolImplementation implements ObjectStackProtocol {
         // Not implemented in this shim yet
         throw new Error('Action execution not implemented in protocol shim');
     }
+
+    /**
+     * Analytics Query - Execute analytics query
+     */
+    async analyticsQuery(args: any): Promise<any> {
+        throw new Error('analyticsQuery not implemented');
+    }
+
+    /**
+     * Get Analytics Metadata
+     */
+    async getAnalyticsMeta(args: any): Promise<any> {
+        throw new Error('getAnalyticsMeta not implemented');
+    }
+
+    /**
+     * Trigger Automation
+     */
+    async triggerAutomation(args: { trigger: string; payload: Record<string, any> }): Promise<{ success: boolean; jobId?: string; result?: any }> {
+        throw new Error('triggerAutomation not implemented');
+    }
+
+    /**
+     * List Spaces (Hub/Workspace Management)
+     */
+    async listSpaces(args: any): Promise<any> {
+        throw new Error('listSpaces not implemented');
+    }
+
+    /**
+     * Create Space (Hub/Workspace Management)
+     */
+    async createSpace(args: any): Promise<any> {
+        throw new Error('createSpace not implemented');
+    }
+
+    /**
+     * Install Plugin (Hub/Extension Management)
+     */
+    async installPlugin(args: any): Promise<any> {
+        throw new Error('installPlugin not implemented');
+    }
 }

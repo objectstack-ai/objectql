@@ -9,7 +9,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { runProtocolTCK, ProtocolEndpoint, ProtocolOperation, ProtocolResponse } from '@objectql/protocol-tck';
 import { GraphQLPlugin } from './index';
-import { ObjectKernel } from '@objectstack/core';
 import { MemoryDriver } from '@objectql/driver-memory';
 
 /**
@@ -19,10 +18,10 @@ import { MemoryDriver } from '@objectql/driver-memory';
  */
 class GraphQLEndpoint implements ProtocolEndpoint {
   private plugin: GraphQLPlugin;
-  private kernel: ObjectKernel;
+  private kernel: any;
   private baseUrl: string;
   
-  constructor(plugin: GraphQLPlugin, kernel: ObjectKernel) {
+  constructor(plugin: GraphQLPlugin, kernel: any) {
     this.plugin = plugin;
     this.kernel = kernel;
     this.baseUrl = `http://localhost:${plugin.config.port || 4000}/graphql`;
@@ -67,13 +66,19 @@ class GraphQLEndpoint implements ProtocolEndpoint {
     const entityName = this.capitalize(operation.entity);
     const mutation = `
       mutation Create${entityName}($input: ${entityName}Input!) {
-        create${entityName}(input: $input)
+        create${entityName}(input: $input) {
+          id
+          name
+          value
+          active
+        }
       }
     `;
     
     const result = await this.graphqlRequest(mutation, { input: operation.data });
     
     if (result.errors) {
+      console.error('GraphQL create error:', JSON.stringify(result.errors, null, 2));
       return {
         success: false,
         error: {
@@ -94,7 +99,12 @@ class GraphQLEndpoint implements ProtocolEndpoint {
     const camelName = this.toCamelCase(operation.entity);
     const query = `
       query Get${entityName}($id: ID!) {
-        ${camelName}(id: $id)
+        ${camelName}(id: $id) {
+          id
+          name
+          value
+          active
+        }
       }
     `;
     
@@ -120,7 +130,12 @@ class GraphQLEndpoint implements ProtocolEndpoint {
     const entityName = this.capitalize(operation.entity);
     const mutation = `
       mutation Update${entityName}($id: ID!, $input: ${entityName}UpdateInput!) {
-        update${entityName}(id: $id, input: $input)
+        update${entityName}(id: $id, input: $input) {
+          id
+          name
+          value
+          active
+        }
       }
     `;
     
@@ -197,7 +212,12 @@ class GraphQLEndpoint implements ProtocolEndpoint {
     
     const query = `
       query List${entityName}${queryArgs ? `(${queryArgs})` : ''} {
-        ${camelName}List${this.buildQueryArgs(variables)}
+        ${camelName}List${this.buildQueryArgs(variables)} {
+          id
+          name
+          value
+          active
+        }
       }
     `;
     
@@ -234,7 +254,12 @@ class GraphQLEndpoint implements ProtocolEndpoint {
     }
     
     const mutations = operation.data.map((item, index) => `
-      item${index}: create${entityName}(input: $input${index})
+      item${index}: create${entityName}(input: $input${index}) {
+        id
+        name
+        value
+        active
+      }
     `).join('\n');
     
     const variables: any = {};
@@ -347,7 +372,7 @@ class GraphQLEndpoint implements ProtocolEndpoint {
  * GraphQL Protocol TCK Test Suite
  */
 describe('GraphQL Protocol TCK', () => {
-  let kernel: ObjectKernel;
+  let kernel: any;
   let plugin: GraphQLPlugin;
   let testPort: number;
   
@@ -356,36 +381,93 @@ describe('GraphQL Protocol TCK', () => {
     testPort = 9000 + Math.floor(Math.random() * 1000);
     
     // Create test kernel with memory driver
+    const driver = new MemoryDriver();
+    
+    // Mock metadata for TCK test entity
+    const metadata = {
+      register: (type: string, name: string, item: any) => {
+        // mock register
+      },
+      list: (type: string) => {
+        if (type === 'object') {
+          return [
+            {
+              content: {
+                name: 'tck_test_entity',
+                label: 'TCK Test Entity',
+                fields: {
+                  id: { type: 'text', label: 'ID' },
+                  name: { type: 'text', label: 'Name' },
+                  value: { type: 'number', label: 'Value' },
+                  active: { type: 'boolean', label: 'Active' }
+                }
+              }
+            }
+          ];
+        }
+        return [];
+      },
+      get: (type: string, name: string) => {
+        if (type === 'object' && name === 'tck_test_entity') {
+          return {
+            content: {
+              name: 'tck_test_entity',
+              label: 'TCK Test Entity',
+              fields: {
+                id: { type: 'text', label: 'ID' },
+                name: { type: 'text', label: 'Name' },
+                value: { type: 'number', label: 'Value' },
+                active: { type: 'boolean', label: 'Active' }
+              }
+            }
+          };
+        }
+        return null;
+      }
+    };
+    
+    // Mock repository with actual Memory Driver
+    const repository = {
+      find: async (objectName: string, query: any) => driver.find(objectName, query),
+      findOne: async (objectName: string, id: string) => driver.findOne(objectName, id),
+      create: async (objectName: string, data: any) => driver.create(objectName, data),
+      update: async (objectName: string, id: string, data: any) => driver.update(objectName, id, data),
+      delete: async (objectName: string, id: string) => driver.delete(objectName, id),
+      count: async (objectName: string, filters: any) => driver.count(objectName, filters),
+    };
+    
+    kernel = {
+      metadata,
+      repository,
+      driver,
+      // Add engine methods that delegate to repository
+      find: repository.find,
+      get: repository.findOne,
+      create: repository.create,
+      update: repository.update,
+      delete: repository.delete,
+      count: repository.count
+    };
+    
+    // Create GraphQL plugin
     plugin = new GraphQLPlugin({
       port: testPort,
       introspection: true,
       playground: false // Disable playground in tests
     });
     
-    kernel = new ObjectKernel([
-      new MemoryDriver(),
-      plugin
-    ]);
-    
-    // Register test entity
-    kernel.metadata.register('object', 'tck_test_entity', {
-      name: 'tck_test_entity',
-      label: 'TCK Test Entity',
-      fields: {
-        name: { type: 'text', label: 'Name' },
-        value: { type: 'number', label: 'Value' },
-        active: { type: 'boolean', label: 'Active' }
-      }
-    });
-    
-    await kernel.start();
+    // Install and start plugin
+    await plugin.install?.({ engine: kernel });
+    await plugin.onStart?.({ engine: kernel });
     
     // Wait for server to be ready
     await new Promise(resolve => setTimeout(resolve, 1000));
   }, 30000);
   
   afterAll(async () => {
-    await kernel.stop();
+    if (plugin) {
+      await plugin.onStop?.({ engine: kernel });
+    }
   }, 30000);
   
   // Run the Protocol TCK
@@ -403,9 +485,8 @@ describe('GraphQL Protocol TCK', () => {
       hooks: {
         beforeEach: async () => {
           // Clear data between tests
-          const driver = kernel.getDriver();
-          if (driver && typeof (driver as any).clear === 'function') {
-            await (driver as any).clear();
+          if (kernel?.driver && typeof kernel.driver.clear === 'function') {
+            await kernel.driver.clear();
           }
         }
       },
