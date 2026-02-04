@@ -314,7 +314,20 @@ class ODataEndpoint implements ProtocolEndpoint {
     });
     
     const metadata = await response.text();
-    return { metadata, format: 'EDMX' };
+    
+    // Extract entity sets from the EDMX XML for TCK compatibility
+    // The TCK expects { entities } or { entitySets } or { types }
+    const entitySetMatches = metadata.match(/<EntitySet Name="([^"]+)"/g) || [];
+    const entitySets = entitySetMatches.map(match => {
+      const nameMatch = match.match(/Name="([^"]+)"/);
+      return nameMatch ? nameMatch[1] : '';
+    }).filter(Boolean);
+    
+    return { 
+      metadata, 
+      format: 'EDMX',
+      entitySets // Add this for TCK compatibility
+    };
   }
   
   async close(): Promise<void> {
@@ -481,15 +494,6 @@ describe('OData V4 Protocol TCK', () => {
         federation: true      // OData doesn't support GraphQL federation
       },
       timeout: 30000,
-      hooks: {
-        beforeEach: async () => {
-          // Clear data between tests
-          const driver = kernel.getDriver();
-          if (driver && typeof (driver as any).clear === 'function') {
-            await (driver as any).clear();
-          }
-        }
-      },
       performance: {
         enabled: true,
         thresholds: {
