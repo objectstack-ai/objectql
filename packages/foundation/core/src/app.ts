@@ -110,7 +110,8 @@ export class ObjectQL implements IObjectQL {
                 return items.map(unwrapContent);
             },
             unregister: (type: string, name: string) => {
-                 // Use the official unregisterItem API
+                 // Use the official unregisterItem API when available (added in @objectstack/objectql v0.9.2)
+                 // Fallback to direct metadata access for older versions or test mocks
                  if (typeof SchemaRegistry.unregisterItem === 'function') {
                      SchemaRegistry.unregisterItem(type, name);
                  } else {
@@ -403,11 +404,16 @@ export class ObjectQL implements IObjectQL {
              
              // Manually initialize plugins if kernel doesn't support lifecycle
              for (const plugin of this.kernelPlugins) {
-                 if (typeof (plugin as any).init === 'function') {
-                     await (plugin as any).init();
-                 }
-                 if (typeof (plugin as any).start === 'function') {
-                     await (plugin as any).start();
+                 try {
+                     if (typeof (plugin as any).init === 'function') {
+                         await (plugin as any).init();
+                     }
+                     if (typeof (plugin as any).start === 'function') {
+                         await (plugin as any).start();
+                     }
+                 } catch (error) {
+                     console.error(`Failed to initialize plugin ${(plugin as any).name || 'unknown'}:`, error);
+                     // Continue with other plugins even if one fails
                  }
              }
         }
