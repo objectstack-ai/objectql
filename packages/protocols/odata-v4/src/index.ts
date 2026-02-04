@@ -727,7 +727,9 @@ export class ODataV4Plugin implements RuntimePlugin {
             const [key, value] = pair.split('=');
             if (key) {
                 const decodedKey = decodeURIComponent(key);
-                params[decodedKey as keyof ODataQueryParams] = decodeURIComponent(value || '');
+                // Replace + with space before decoding (application/x-www-form-urlencoded format)
+                const decodedValue = decodeURIComponent((value || '').replace(/\+/g, ' '));
+                params[decodedKey as keyof ODataQueryParams] = decodedValue;
             }
         }
 
