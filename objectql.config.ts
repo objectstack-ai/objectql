@@ -6,6 +6,18 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import { createRequire } from 'module';
+import * as path from 'path';
+
+// Polyfill require and __dirname for ESM
+if (typeof globalThis.require === 'undefined') {
+    const require = createRequire(import.meta.url);
+    (globalThis as any).require = require;
+}
+if (typeof globalThis.__dirname === 'undefined') {
+    (globalThis as any).__dirname = path.dirname(new URL(import.meta.url).pathname);
+}
+
 import { ObjectQLSecurityPlugin } from '@objectql/plugin-security';
 import { GraphQLPlugin } from '@objectql/protocol-graphql';
 import { ODataV4Plugin } from '@objectql/protocol-odata-v4';
