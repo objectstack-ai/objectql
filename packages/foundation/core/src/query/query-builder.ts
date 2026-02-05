@@ -6,18 +6,16 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import type { UnifiedQuery } from '@objectql/types';
-import { Data } from '@objectstack/spec';
-import { z } from 'zod';
+import type { UnifiedQuery, QueryAST } from '@objectql/types';
+// import { QueryAST } from './types'; (Removed)
 
 // Local QueryAST type extension to include all properties we need
-type QueryASTBase = z.infer<typeof Data.QueryAST>;
-interface QueryAST extends QueryASTBase {
-    top?: number;
-    expand?: Record<string, any>;
-    aggregations?: any[];
-    having?: any;
-}
+// interface QueryAST extends Data.QueryAST {
+//    top?: number;
+//    expand?: Record<string, any>;
+//    aggregations?: any[];
+//    having?: any;
+// }
 
 import { FilterTranslator } from './filter-translator';
 

@@ -8,8 +8,7 @@
  */
 
 import { Data } from '@objectstack/spec';
-import { z } from 'zod';
-type QueryAST = z.infer<typeof Data.QueryAST>;
+import { QueryAST } from '@objectql/types';
 type SortNode = typeof Data.SortNode;
 
 /**

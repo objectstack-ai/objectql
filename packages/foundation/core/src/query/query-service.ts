@@ -13,9 +13,7 @@ import type {
     Filter,
     MetadataRegistry
 } from '@objectql/types';
-import { Data } from '@objectstack/spec';
-import { z } from 'zod';
-type QueryAST = z.infer<typeof Data.QueryAST>;
+import { QueryAST } from '@objectql/types';
 import { QueryBuilder } from './query-builder';
 import { QueryCompiler } from '../optimizations/QueryCompiler';
 

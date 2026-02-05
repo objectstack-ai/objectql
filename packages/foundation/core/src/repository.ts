@@ -6,12 +6,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { ObjectQLContext, IObjectQL, ObjectConfig, Driver, UnifiedQuery, ActionContext, HookAPI, RetrievalHookContext, MutationHookContext, UpdateHookContext, ValidationContext, ValidationError, ValidationRuleResult, FormulaContext, Filter } from '@objectql/types';
+import { ObjectQLContext, IObjectQL, ObjectConfig, Driver, UnifiedQuery, ActionContext, HookAPI, RetrievalHookContext, MutationHookContext, UpdateHookContext, ValidationContext, ValidationError, ValidationRuleResult, FormulaContext, Filter, QueryAST } from '@objectql/types';
 import type { ObjectKernel } from '@objectstack/runtime';
 import { Data } from '@objectstack/spec';
 import { z } from 'zod';
-type QueryAST = z.infer<typeof Data.QueryAST>;
-type SortNode = z.infer<typeof Data.SortNode>;
+type SortNode = z.infer<typeof Data.SortNodeSchema>;
 
 export class ObjectRepository {
 

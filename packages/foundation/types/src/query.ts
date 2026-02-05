@@ -107,3 +107,12 @@ export interface UnifiedQuery {
     /** Enable distinct results */
     distinct?: boolean;
 }
+
+/**
+ * Standard QueryAST definition to resolve type inference issues from spec.
+ */
+export interface QueryAST extends UnifiedQuery {
+    object?: string;
+    joins?: any[];
+    [key: string]: any;
+}

@@ -9,7 +9,7 @@
 import type { Filter } from '@objectql/types';
 import { Data } from '@objectstack/spec';
 import { z } from 'zod';
-type FilterCondition = z.infer<typeof Data.FilterCondition>;
+type FilterCondition = z.infer<typeof Data.FilterConditionSchema>;
 import { ObjectQLError } from '@objectql/types';
 
 /**

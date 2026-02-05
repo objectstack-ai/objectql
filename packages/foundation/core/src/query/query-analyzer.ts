@@ -7,9 +7,7 @@
  */
 
 import type { UnifiedQuery, ObjectConfig, MetadataRegistry } from '@objectql/types';
-import { Data } from '@objectstack/spec';
-import { z } from 'zod';
-type QueryAST = z.infer<typeof Data.QueryAST>;
+import { QueryAST } from '@objectql/types';
 import { QueryService, QueryOptions } from './query-service';
 
 /**
