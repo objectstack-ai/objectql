@@ -107,6 +107,13 @@ export class ObjectQLPlugin implements RuntimePlugin {
   }
   
   /**
+   * Initialize the plugin
+   */
+  async init(ctx: RuntimeContext): Promise<void> {
+    return this.install(ctx);
+  }
+
+  /**
    * Install the plugin into the kernel
    * This is called during kernel initialization
    */
