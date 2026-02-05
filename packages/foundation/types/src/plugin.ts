@@ -82,6 +82,12 @@ export interface RuntimePlugin {
      * Example: '1.0.0', '2.1.3-beta'
      */
     version?: string;
+
+    /**
+     * Initialize the plugin
+     * Called when the plugin is loaded into the kernel
+     */
+    init?(ctx: RuntimeContext): Promise<void>;
     
     /**
      * Install hook - called during kernel initialization

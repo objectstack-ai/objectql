@@ -16,7 +16,6 @@
       "@objectql/driver-sql",
       "@objectql/driver-tck",
       "@objectql/driver-utils",
-      "@objectql/example-multi-protocol-server",
       "@objectql/platform-node",
       "@objectql/plugin-formula",
       "@objectql/plugin-security",
