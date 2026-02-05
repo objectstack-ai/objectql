@@ -3,6 +3,7 @@
   "displayName": "ObjectQL",
   "description": "Language support for ObjectQL - The Standard Protocol for AI Software Generation",
   "version": "4.1.0",
+  "private": true,
   "publisher": "ObjectStack",
   "repository": {
     "type": "git",
