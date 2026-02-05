@@ -195,7 +195,17 @@ class GraphQLEndpoint implements ProtocolEndpoint {
     
     if (operation.filter) {
       queryArgs += `$where: ${entityName}Filter`;
-      variables.where = operation.filter;
+      // Transform simple filter format { field: value } to GraphQL format { field: { eq: value } }
+      variables.where = this.transformFilter(operation.filter);
+    }
+    
+    if (operation.options?.orderBy) {
+      queryArgs += queryArgs ? ', ' : '';
+      queryArgs += `$orderBy: [${entityName}OrderBy!]`;
+      variables.orderBy = operation.options.orderBy.map((o: any) => ({
+        field: o.field,
+        direction: o.order || 'ASC'
+      }));
     }
     
     if (operation.options?.limit) {
@@ -237,6 +247,28 @@ class GraphQLEndpoint implements ProtocolEndpoint {
       success: true,
       data: result.data[`${camelName}List`] || []
     };
+  }
+  
+  /**
+   * Transform TCK filter format to GraphQL filter format
+   * TCK: { active: true } -> GraphQL: { active: { eq: true } }
+   */
+  private transformFilter(filter: any): any {
+    if (!filter || typeof filter !== 'object') {
+      return filter;
+    }
+    
+    const transformed: any = {};
+    for (const [key, value] of Object.entries(filter)) {
+      if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+        // Already in GraphQL format (e.g., { eq: value })
+        transformed[key] = value;
+      } else {
+        // Simple format, wrap in { eq: value }
+        transformed[key] = { eq: value };
+      }
+    }
+    return transformed;
   }
   
   private async executeBatch(operation: ProtocolOperation): Promise<ProtocolResponse> {
@@ -318,7 +350,11 @@ class GraphQLEndpoint implements ProtocolEndpoint {
     `;
     
     const result = await this.graphqlRequest(query, {});
-    return result.data;
+    // Include both TCK-compatible format and original schema
+    return {
+      types: result.data.__schema?.types || [],
+      __schema: result.data.__schema
+    };
   }
   
   async close(): Promise<void> {
