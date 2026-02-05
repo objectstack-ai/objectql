@@ -184,7 +184,18 @@ export class GraphQLPlugin implements RuntimePlugin {
         }
 
         // Check for Hono server service
-        const httpServer = (this.ctx as any).getService?.('http-server');
+        // Try getting from local context first, then fallback to kernel engine
+        let httpServer = (this.ctx as any).getService?.('http-server');
+        if (!httpServer && this.engine && (this.engine as any).getService) {
+            httpServer = (this.engine as any).getService('http-server');
+        }
+
+        // Compatibility fallback: try 'http.server' shim if registered
+        if (!httpServer) {
+             httpServer = (this.ctx as any).getService?.('http.server') ||
+                          (this.engine as any).getService?.('http.server');
+        }
+
         if (httpServer && httpServer.app) {
             console.log(`[${this.name}] Attaching to existing Hono server...`);
             await this.attachToHono(httpServer.app);
