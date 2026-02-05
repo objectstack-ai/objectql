@@ -61,7 +61,11 @@ export class ValidatorPlugin implements RuntimePlugin {
    * Registers validation middleware for queries and mutations
    */
   async install(ctx: RuntimeContext | any): Promise<void> {
-    const kernel = (ctx.engine || (ctx.getKernel && ctx.getKernel())) as KernelWithValidator;
+    // Robust kernel detection:
+    // 1. ctx.engine (Legacy ObjectStack)
+    // 2. ctx.getKernel() (ObjectStack Factory)
+    // 3. ctx is the Kernel itself (Modern Microkernel)
+    const kernel = (ctx.engine || (ctx.getKernel && ctx.getKernel()) || ctx) as KernelWithValidator;
     this.kernel = kernel; 
     
     this.logger.info('Installing validator plugin', {
@@ -108,7 +112,8 @@ export class ValidatorPlugin implements RuntimePlugin {
         if (typeof ctx.hook === 'function') {
             ctx.hook(name, handler);
         } else if (kernel.hooks && typeof kernel.hooks.register === 'function') {
-            kernel.hooks.register(name, handler);
+            // Register for all objects using wildcard
+            kernel.hooks.register(name, '*', handler);
         }
       };
 
@@ -135,7 +140,8 @@ export class ValidatorPlugin implements RuntimePlugin {
         if (typeof ctx.hook === 'function') {
             ctx.hook(name, handler);
         } else if (kernel.hooks && typeof kernel.hooks.register === 'function') {
-            kernel.hooks.register(name, handler);
+            // Register for all objects using wildcard
+            kernel.hooks.register(name, '*', handler);
         }
       };
 

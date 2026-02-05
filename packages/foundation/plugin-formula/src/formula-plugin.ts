@@ -60,7 +60,11 @@ export class FormulaPlugin implements RuntimePlugin {
    * Registers formula evaluation capabilities
    */
   async install(ctx: RuntimeContext | any): Promise<void> {
-    const kernel = (ctx.engine || (ctx.getKernel && ctx.getKernel())) as KernelWithFormulas;
+    // Robust kernel detection:
+    // 1. ctx.engine (Legacy ObjectStack)
+    // 2. ctx.getKernel() (ObjectStack Factory)
+    // 3. ctx is the Kernel itself (Modern Microkernel)
+    const kernel = (ctx.engine || (ctx.getKernel && ctx.getKernel()) || ctx) as KernelWithFormulas;
     this.kernel = kernel;
     
     this.logger.info('Installing formula plugin', {
@@ -136,7 +140,8 @@ export class FormulaPlugin implements RuntimePlugin {
         if (typeof ctx.hook === 'function') {
             ctx.hook(name, handler);
         } else if (kernel.hooks && typeof kernel.hooks.register === 'function') {
-            kernel.hooks.register(name, handler);
+            // Register for all objects using wildcard
+            kernel.hooks.register(name, '*', handler);
         }
       };
 
@@ -148,7 +153,9 @@ export class FormulaPlugin implements RuntimePlugin {
           // Get schema
           const schemaItem = this.kernel.metadata.get('object', objectName);
           const schema = schemaItem?.content || schemaItem;
-          if (!schema || !schema.fields) return;
+          if (!schema || !schema.fields) {
+               return;
+          }
           
           // Identify formula fields
           const formulaFields: [string, any][] = [];

@@ -24,6 +24,8 @@ import {
 } from '@objectql/types';
 import { ObjectKernel, type Plugin } from '@objectstack/runtime';
 import { ObjectQL as RuntimeObjectQL, SchemaRegistry } from '@objectstack/objectql';
+import { ValidatorPlugin } from '@objectql/plugin-validator';
+import { FormulaPlugin } from '@objectql/plugin-formula';
 import { ObjectRepository } from './repository';
 import { convertIntrospectedSchemaToObjects } from './util';
 import { CompiledHookManager } from './optimizations/CompiledHookManager';
@@ -79,6 +81,14 @@ export class ObjectQL implements IObjectQL {
                     this.use(plugin as any);
                 }
             }
+        }
+        
+        // Ensure default plugins are present
+        if (!this.kernelPlugins.some(p => p.name === 'validator')) {
+            this.use(new ValidatorPlugin());
+        }
+        if (!this.kernelPlugins.some(p => p.name === 'formula')) {
+            this.use(new FormulaPlugin());
         }
         
         // Create the kernel with registered plugins
@@ -415,10 +425,10 @@ export class ObjectQL implements IObjectQL {
              for (const plugin of this.kernelPlugins) {
                  try {
                      if (typeof (plugin as any).init === 'function') {
-                         await (plugin as any).init();
+                         await (plugin as any).init(this.kernel);
                      }
                      if (typeof (plugin as any).start === 'function') {
-                         await (plugin as any).start();
+                         await (plugin as any).start(this.kernel);
                      }
                  } catch (error) {
                      console.error(`Failed to initialize plugin ${(plugin as any).name || 'unknown'}:`, error);

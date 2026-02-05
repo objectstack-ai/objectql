@@ -73,7 +73,8 @@ describe('ValidatorPlugin', () => {
             await pluginWithQuery.install(mockCtx);
             
             // Check that hooks were registered (for query validation)
-            expect(mockKernel.hooks.register).toHaveBeenCalledWith('beforeQuery', expect.any(Function));
+            // Expect wildcard registration
+            expect(mockKernel.hooks.register).toHaveBeenCalledWith('beforeQuery', '*', expect.any(Function));
         });
 
         it('should register mutation validation when enabled', async () => {
@@ -81,8 +82,9 @@ describe('ValidatorPlugin', () => {
             
             await pluginWithMutation.install(mockCtx);
             
-            // Check that hooks were registered (for mutation validation)
-            expect(mockKernel.hooks.register).toHaveBeenCalledWith('beforeMutation', expect.any(Function));
+            // Check that hooks were registered (for mutation validation) with wildcard
+            expect(mockKernel.hooks.register).toHaveBeenCalledWith('beforeCreate', '*', expect.any(Function));
+            expect(mockKernel.hooks.register).toHaveBeenCalledWith('beforeUpdate', '*', expect.any(Function));
         });
 
         it('should not register query validation when disabled', async () => {

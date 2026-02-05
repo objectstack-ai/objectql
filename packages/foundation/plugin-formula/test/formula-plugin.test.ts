@@ -86,7 +86,7 @@ describe('FormulaPlugin', () => {
             await pluginWithAuto.install(mockCtx);
             
             // Check that middleware was registered
-            expect(mockKernel.hooks.register).toHaveBeenCalledWith('afterQuery', expect.any(Function));
+            expect(mockKernel.hooks.register).toHaveBeenCalledWith('afterFind', '*', expect.any(Function));
         });
 
         it('should not register formula middleware when auto-evaluation is disabled', async () => {
@@ -94,11 +94,11 @@ describe('FormulaPlugin', () => {
             
             await pluginNoAuto.install(mockCtx);
             
-            // Should not have registered afterQuery hook
-            const afterQueryCalls = mockKernel.hooks.register.mock.calls.filter(
-                (call: any[]) => call[0] === 'afterQuery'
+            // Should not have registered afterFind hook
+            const afterFindCalls = mockKernel.hooks.register.mock.calls.filter(
+                (call: any[]) => call[0] === 'afterFind'
             );
-            expect(afterQueryCalls.length).toBe(0);
+            expect(afterFindCalls.length).toBe(0);
         });
 
         it('should handle kernel without registerFormulaProvider', async () => {
