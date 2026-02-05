@@ -7,11 +7,9 @@
  */
 
 import { ObjectQLSecurityPlugin } from '@objectql/plugin-security';
-import { ValidatorPlugin } from '@objectql/plugin-validator';
 import { GraphQLPlugin } from '@objectql/protocol-graphql';
 import { ODataV4Plugin } from '@objectql/protocol-odata-v4';
 import { JSONRPCPlugin } from '@objectql/protocol-json-rpc';
-import { RestPlugin } from '@objectql/protocol-rest';
 import { HonoServerPlugin } from '@objectstack/plugin-hono-server';
 import { ObjectQLPlugin } from '@objectql/core';
 import * as fs from 'fs';
@@ -55,12 +53,16 @@ export default {
         }),
         new ObjectQLPlugin({
             enableRepository: true,
-            enableQueryService: true
+            enableQueryService: true,
+            // Validator and Formula plugins are included by default
+            enableValidator: true,
+            enableFormulas: true
         }),
         new ObjectQLSecurityPlugin({
             enableAudit: false
         }),
-        new ValidatorPlugin(),
+        // ValidatorPlugin is managed by ObjectQLPlugin now
+        // new ValidatorPlugin(),
         new GraphQLPlugin({
             basePath: '/graphql',
             introspection: true,
