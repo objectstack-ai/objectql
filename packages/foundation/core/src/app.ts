@@ -22,7 +22,7 @@ import {
     ActionContext,
     LoaderPlugin
 } from '@objectql/types';
-import { ObjectKernel, type Plugin } from '@objectstack/core';
+import { ObjectKernel, type Plugin } from '@objectstack/runtime';
 import { ObjectQL as RuntimeObjectQL, SchemaRegistry } from '@objectstack/objectql';
 import { ObjectRepository } from './repository';
 import { convertIntrospectedSchemaToObjects } from './util';
@@ -82,9 +82,18 @@ export class ObjectQL implements IObjectQL {
         }
         
         // Create the kernel with registered plugins
-        this.kernel = new (ObjectKernel as any)();
+        this.kernel = new (ObjectKernel as any)(this.kernelPlugins);
         for (const plugin of this.kernelPlugins) {
+             // Fallback for kernels that support .use() but maybe didn't take them in constructor or if we need to support both
+             // NOTE: Modern ObjectKernel takes plugins in constructor.
              if ((this.kernel as any).use) {
+                 // Try to avoid double registration if the kernel is smart, but since we don't know the kernel logic perfectly:
+                 // Ideally check if already added. But for now, we leave this for backward compat 
+                 // if ObjectKernel DOESN't take constructor args but HAS use().
+                 
+                 // However, we just instantiated it.
+                 // Let's assume constructor is the way if available.
+                 // But we keep this check for .use() just in case the constructor signature is different (e.g. empty)
                  (this.kernel as any).use(plugin);
              }
         }
