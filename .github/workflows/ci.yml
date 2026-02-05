@@ -3,8 +3,20 @@ name: CI
 on:
   push:
     branches: [ "main" ]
+    paths-ignore:
+      - 'apps/site/**'
+      - 'content/**'
+      - 'docs/**'
+      - '*.md'
+      - '.github/workflows/ci-docs.yml'
   pull_request:
     branches: [ "main" ]
+    paths-ignore:
+      - 'apps/site/**'
+      - 'content/**'
+      - 'docs/**'
+      - '*.md'
+      - '.github/workflows/ci-docs.yml'
 
 jobs:
   build:
@@ -45,14 +57,22 @@ jobs:
         restore-keys: |
           mongodb-binaries-${{ runner.os }}-
 
+    - name: Cache Turbo
+      uses: actions/cache@v4
+      with:
+        path: node_modules/.cache/turbo
+        key: turbo-${{ runner.os }}-${{ github.sha }}
+        restore-keys: |
+          turbo-${{ runner.os }}-
+
     - name: Install dependencies
       run: pnpm install --frozen-lockfile
       timeout-minutes: 2
       
-    - name: Build packages
-      run: pnpm run build
+    - name: Build packages (Core)
+      run: pnpm exec turbo run build --filter=!@objectql/site
       timeout-minutes: 3
 
-    - name: Run tests
+    - name: Run tests (Core)
       run: pnpm run test
       timeout-minutes: 5
