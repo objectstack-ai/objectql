@@ -80,14 +80,29 @@ export class RestPlugin implements RuntimePlugin {
                 } catch (e) {}
             }
 
+            // Parse numeric query params
+            const formattedQuery: any = { ...query };
+            if (formattedQuery.limit) formattedQuery.limit = Number(formattedQuery.limit);
+            if (formattedQuery.skip) formattedQuery.skip = Number(formattedQuery.skip);
+            if (formattedQuery.offset) formattedQuery.offset = Number(formattedQuery.offset);
+
+            // Auto-detect bulk create
+            let actualOp = op;
+            let actualArgs: any = {
+                id,
+                data: body,
+                ...formattedQuery
+            };
+            
+            if (op === 'create' && Array.isArray(body)) {
+                actualOp = 'createMany';
+                actualArgs = body;
+            }
+
             const req: ObjectQLRequest = {
                 object: objectName,
-                op: op as any,
-                args: {
-                    id,
-                    data: body,
-                    ...query
-                },
+                op: actualOp as any,
+                args: actualArgs,
                 user: (c.get('user') || { id: 'anonymous', roles: ['guest'] }) // TODO: Integ auth
             };
 
@@ -97,7 +112,20 @@ export class RestPlugin implements RuntimePlugin {
                 return c.json({ error: response.error }, 400); // Simple error mapping
             }
             
-            return c.json(response.data || { success: true });
+            // Handle lists (find)
+            if (response.items) {
+                return c.json({
+                    data: response.items,
+                    meta: response.meta
+                });
+            }
+
+            // Handle single items (findOne, create, update, delete)
+            if (response.data !== undefined) {
+                 return c.json({ data: response.data });
+            }
+            
+            return c.json({ success: true });
         };
 
         // Define Routes
