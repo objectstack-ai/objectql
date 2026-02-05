@@ -1,5 +1,14 @@
 # @objectql/core
 
+## 4.0.6
+
+### Patch Changes
+
+- Fix CI build and test configuration (mocks for ESM core).
+  - @objectql/plugin-formula@4.0.6
+  - @objectql/plugin-validator@4.0.6
+  - @objectql/types@4.0.6
+
 ## 4.0.5
 
 ### Patch Changes

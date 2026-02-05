@@ -1,5 +1,11 @@
 # @objectql/protocol-json-rpc
 
+## 4.0.6
+
+### Patch Changes
+
+- @objectql/types@4.0.6
+
 ## 4.0.5
 
 ### Patch Changes

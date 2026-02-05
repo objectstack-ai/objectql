@@ -1,5 +1,18 @@
 # @objectql/cli
 
+## 4.0.6
+
+### Patch Changes
+
+- Fix CI build and test configuration (mocks for ESM core).
+- Updated dependencies
+  - @objectql/core@4.0.6
+  - @objectql/platform-node@4.0.6
+  - @objectql/driver-sql@4.0.6
+  - @objectql/plugin-validator@4.0.6
+  - @objectql/types@4.0.6
+  - @objectql/protocol-rest@4.0.7
+
 ## 4.0.5
 
 ### Patch Changes

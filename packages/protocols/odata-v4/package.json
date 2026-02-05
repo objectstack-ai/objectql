@@ -1,6 +1,6 @@
 {
   "name": "@objectql/protocol-odata-v4",
-  "version": "4.0.5",
+  "version": "4.0.6",
   "description": "OData V4 Protocol Plugin for ObjectStack",
   "type": "module",
   "main": "./dist/index.js",

@@ -1,5 +1,11 @@
 # @objectql/server
 
+## 4.0.7
+
+### Patch Changes
+
+- @objectql/types@4.0.6
+
 ## 4.0.6
 
 ### Patch Changes
