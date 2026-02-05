@@ -1,6 +1,6 @@
 {
   "name": "@objectql/plugin-formula",
-  "version": "4.0.6",
+  "version": "4.1.0",
   "description": "Formula engine plugin for ObjectQL - Evaluate JavaScript-style formulas with field references, system variables, and safe sandbox execution",
   "keywords": [
     "objectql",

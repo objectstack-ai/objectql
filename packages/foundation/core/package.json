@@ -1,6 +1,6 @@
 {
   "name": "@objectql/core",
-  "version": "4.0.6",
+  "version": "4.1.0",
   "description": "Universal runtime engine for ObjectQL - AI-native metadata-driven ORM with validation, repository pattern, and driver orchestration",
   "keywords": [
     "objectql",

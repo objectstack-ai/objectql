@@ -1,6 +1,6 @@
 {
   "name": "@objectql/example-excel-demo",
-  "version": "4.0.6",
+  "version": "4.1.0",
   "private": true,
   "description": "Example demonstrating the Excel Driver for ObjectQL",
   "scripts": {

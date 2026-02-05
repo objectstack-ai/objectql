@@ -1,6 +1,6 @@
 {
   "name": "@objectql/driver-tck",
-  "version": "4.0.6",
+  "version": "4.1.0",
   "description": "Technology Compatibility Kit for ObjectQL drivers - Unified test suite",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

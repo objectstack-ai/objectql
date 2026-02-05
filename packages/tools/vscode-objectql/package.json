@@ -2,7 +2,7 @@
   "name": "vscode-objectql",
   "displayName": "ObjectQL",
   "description": "Language support for ObjectQL - The Standard Protocol for AI Software Generation",
-  "version": "4.0.2",
+  "version": "4.1.0",
   "publisher": "ObjectStack",
   "repository": {
     "type": "git",
