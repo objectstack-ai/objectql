@@ -134,7 +134,19 @@ export class ODataV4Plugin implements RuntimePlugin {
         }
 
         // Check if Hono server is available via service injection
-        const httpServer = (ctx as any).getService?.('http-server');
+        // Try getting from local context first, then fallback to kernel engine
+        let httpServer = (ctx as any).getService?.('http-server');
+        
+        if (!httpServer && this.engine && (this.engine as any).getService) {
+            httpServer = (this.engine as any).getService('http-server');
+        }
+
+        // Compatibility fallback: try 'http.server' shim if registered
+        if (!httpServer) {
+             httpServer = (ctx as any).getService?.('http.server') ||
+                          (this.engine as any).getService?.('http.server');
+        }
+
         if (httpServer && httpServer.app) {
              console.log(`[${this.name}] 🔗 Attaching to shared Hono server...`);
              await this.attachToHono(httpServer.app);

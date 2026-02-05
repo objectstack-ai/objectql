@@ -211,6 +211,26 @@ export class JSONRPCPlugin implements RuntimePlugin {
         if (!this.engine) {
             throw new Error('Protocol not initialized. Install hook must be called first.');
         }
+
+        // Check if Hono server is available via service injection
+        // Try getting from local context first, then fallback to kernel engine
+        let httpServer = (ctx as any).getService?.('http-server');
+        
+        if (!httpServer && this.engine && (this.engine as any).getService) {
+            httpServer = (this.engine as any).getService('http-server');
+        }
+
+        // Compatibility fallback: try 'http.server' shim if registered
+        if (!httpServer) {
+             httpServer = (ctx as any).getService?.('http.server') ||
+                          (this.engine as any).getService?.('http.server');
+        }
+
+        if (httpServer && httpServer.app) {
+             console.log(`[${this.name}] 🔗 Attaching to shared Hono server...`);
+             this.attachToHono(httpServer.app);
+             return;
+        }
         
         // Start standalone HTTP server for testing/development
         console.log(`[${this.name}] Starting JSON-RPC server (standalone)...`);
