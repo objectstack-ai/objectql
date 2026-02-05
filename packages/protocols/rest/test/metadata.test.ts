@@ -11,6 +11,11 @@ import { ObjectQL } from '@objectql/core';
 import { IncomingMessage, ServerResponse } from 'http';
 import { EventEmitter } from 'events';
 
+vi.mock('@objectql/core', async () => {
+  const { ObjectQL } = await import('./__mocks__/@objectql/core');
+  return { ObjectQL };
+});
+
 // Mock IncomingMessage
 class MockRequest extends EventEmitter {
     url: string;

@@ -10,6 +10,11 @@ import { generateOpenAPI } from '../src/openapi';
 import { ObjectQL } from '@objectql/core';
 import { ObjectConfig } from '@objectql/types';
 
+vi.mock('@objectql/core', async () => {
+  const { ObjectQL } = await import('./__mocks__/@objectql/core');
+  return { ObjectQL };
+});
+
 describe('OpenAPI Generator', () => {
     let app: ObjectQL;
 

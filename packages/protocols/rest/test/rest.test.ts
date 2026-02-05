@@ -16,25 +16,25 @@ describe('ObjectQLServer', () => {
 
     beforeEach(() => {
         mockRepo = {
-            find: jest.fn(),
-            findOne: jest.fn(),
-            create: jest.fn(),
-            update: jest.fn(),
-            delete: jest.fn(),
-            count: jest.fn()
+            find: vi.fn(),
+            findOne: vi.fn(),
+            create: vi.fn(),
+            update: vi.fn(),
+            delete: vi.fn(),
+            count: vi.fn()
         };
 
         const mockContext = {
-            object: jest.fn().mockReturnValue(mockRepo)
+            object: vi.fn().mockReturnValue(mockRepo)
         };
 
         mockEngine = {
-            createContext: jest.fn().mockReturnValue(mockContext),
-            getObject: jest.fn().mockReturnValue({ name: 'testObject' }), 
+            createContext: vi.fn().mockReturnValue(mockContext),
+            getObject: vi.fn().mockReturnValue({ name: 'testObject' }), 
             metadata: {
-                getTypes: jest.fn().mockReturnValue(['testObject']),
-                list: jest.fn(),
-                get: jest.fn(),
+                getTypes: vi.fn().mockReturnValue(['testObject']),
+                list: vi.fn(),
+                get: vi.fn(),
             } as any
         };
         server = new ObjectQLServer(mockEngine as IObjectQL);

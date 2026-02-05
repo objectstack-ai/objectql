@@ -49,14 +49,14 @@ importers:
         specifier: workspace:*
         version: link:packages/protocols/odata-v4
       '@objectstack/cli':
-        specifier: 1.0.0
-        version: 1.0.0(@objectstack/core@1.0.0)(esbuild@0.27.2)
+        specifier: 1.0.4
+        version: 1.0.4(@objectstack/core@1.0.4)(esbuild@0.27.2)
       '@objectstack/core':
-        specifier: 1.0.0
-        version: 1.0.0
+        specifier: 1.0.4
+        version: 1.0.4
       '@objectstack/plugin-hono-server':
-        specifier: ^1.0.0
-        version: 1.0.0
+        specifier: ^1.0.4
+        version: 1.0.4
       '@types/js-yaml':
         specifier: ^4.0.9
         version: 4.0.9
@@ -334,8 +334,8 @@ importers:
         specifier: workspace:*
         version: link:../../foundation/types
       '@objectstack/spec':
-        specifier: ^1.0.0
-        version: 1.0.0
+        specifier: ^1.0.4
+        version: 1.0.4
       exceljs:
         specifier: ^4.4.0
         version: 4.4.0
@@ -356,8 +356,8 @@ importers:
         specifier: workspace:*
         version: link:../../foundation/types
       '@objectstack/spec':
-        specifier: ^1.0.0
-        version: 1.0.0
+        specifier: ^1.0.4
+        version: 1.0.4
     devDependencies:
       '@types/node':
         specifier: ^20.0.0
@@ -375,8 +375,8 @@ importers:
         specifier: workspace:*
         version: link:../../foundation/types
       '@objectstack/spec':
-        specifier: ^1.0.0
-        version: 1.0.0
+        specifier: ^1.0.4
+        version: 1.0.4
     devDependencies:
       jest-environment-jsdom:
         specifier: ^29.0.0
@@ -391,8 +391,8 @@ importers:
         specifier: workspace:*
         version: link:../../foundation/types
       '@objectstack/spec':
-        specifier: ^1.0.0
-        version: 1.0.0
+        specifier: ^1.0.4
+        version: 1.0.4
       mingo:
         specifier: ^7.1.1
         version: 7.2.0
@@ -407,8 +407,8 @@ importers:
         specifier: workspace:*
         version: link:../../foundation/types
       '@objectstack/spec':
-        specifier: ^1.0.0
-        version: 1.0.0
+        specifier: ^1.0.4
+        version: 1.0.4
       mongodb:
         specifier: ^5.9.2
         version: 5.9.2
@@ -423,8 +423,8 @@ importers:
         specifier: workspace:*
         version: link:../../foundation/types
       '@objectstack/spec':
-        specifier: ^1.0.0
-        version: 1.0.0
+        specifier: ^1.0.4
+        version: 1.0.4
       redis:
         specifier: ^4.6.0
         version: 4.7.1
@@ -442,8 +442,8 @@ importers:
         specifier: workspace:*
         version: link:../../foundation/types
       '@objectstack/spec':
-        specifier: ^1.0.0
-        version: 1.0.0
+        specifier: ^1.0.4
+        version: 1.0.4
     devDependencies:
       typescript:
         specifier: ^5.3.0
@@ -455,8 +455,8 @@ importers:
         specifier: workspace:*
         version: link:../../foundation/types
       '@objectstack/spec':
-        specifier: ^1.0.0
-        version: 1.0.0
+        specifier: ^1.0.4
+        version: 1.0.4
       knex:
         specifier: ^3.1.0
         version: 3.1.0(sqlite3@5.1.7)
@@ -474,8 +474,8 @@ importers:
         specifier: workspace:*
         version: link:../../foundation/types
       '@objectstack/spec':
-        specifier: ^1.0.0
-        version: 1.0.0
+        specifier: ^1.0.4
+        version: 1.0.4
     devDependencies:
       typescript:
         specifier: ^5.3.0
@@ -493,17 +493,17 @@ importers:
         specifier: workspace:*
         version: link:../types
       '@objectstack/core':
-        specifier: ^1.0.0
-        version: 1.0.0
+        specifier: ^1.0.4
+        version: 1.0.4
       '@objectstack/objectql':
-        specifier: ^1.0.0
-        version: 1.0.0
+        specifier: ^1.0.4
+        version: 1.0.4
       '@objectstack/runtime':
-        specifier: ^1.0.0
-        version: 1.0.0
+        specifier: ^1.0.4
+        version: 1.0.4
       '@objectstack/spec':
-        specifier: ^1.0.0
-        version: 1.0.0
+        specifier: ^1.0.4
+        version: 1.0.4
       js-yaml:
         specifier: ^4.1.0
         version: 4.1.1
@@ -524,8 +524,8 @@ importers:
         specifier: workspace:*
         version: link:../types
       '@objectstack/spec':
-        specifier: ^1.0.0
-        version: 1.0.0
+        specifier: ^1.0.4
+        version: 1.0.4
       fast-glob:
         specifier: ^3.3.2
         version: 3.3.3
@@ -543,11 +543,11 @@ importers:
         specifier: workspace:*
         version: link:../types
       '@objectstack/core':
-        specifier: ^1.0.0
-        version: 1.0.0
+        specifier: ^1.0.4
+        version: 1.0.4
       '@objectstack/spec':
-        specifier: ^1.0.0
-        version: 1.0.0
+        specifier: ^1.0.4
+        version: 1.0.4
       zod:
         specifier: ^3.23.8
         version: 3.25.76
@@ -562,11 +562,11 @@ importers:
         specifier: workspace:*
         version: link:../types
       '@objectstack/core':
-        specifier: ^1.0.0
-        version: 1.0.0
+        specifier: ^1.0.4
+        version: 1.0.4
       '@objectstack/spec':
-        specifier: ^1.0.0
-        version: 1.0.0
+        specifier: ^1.0.4
+        version: 1.0.4
       zod:
         specifier: ^3.23.8
         version: 3.25.76
@@ -581,11 +581,11 @@ importers:
         specifier: workspace:*
         version: link:../types
       '@objectstack/core':
-        specifier: ^1.0.0
-        version: 1.0.0
+        specifier: ^1.0.4
+        version: 1.0.4
       '@objectstack/spec':
-        specifier: ^1.0.0
-        version: 1.0.0
+        specifier: ^1.0.4
+        version: 1.0.4
       zod:
         specifier: ^3.23.8
         version: 3.25.76
@@ -597,8 +597,8 @@ importers:
   packages/foundation/types:
     dependencies:
       '@objectstack/spec':
-        specifier: ^1.0.0
-        version: 1.0.0
+        specifier: ^1.0.4
+        version: 1.0.4
     devDependencies:
       ts-json-schema-generator:
         specifier: ^2.4.0
@@ -622,8 +622,8 @@ importers:
         specifier: workspace:*
         version: link:../../foundation/types
       '@objectstack/spec':
-        specifier: ^1.0.0
-        version: 1.0.0
+        specifier: ^1.0.4
+        version: 1.0.4
       cors:
         specifier: ^2.8.5
         version: 2.8.6
@@ -659,8 +659,8 @@ importers:
         specifier: workspace:*
         version: link:../../tools/protocol-tck
       '@objectstack/core':
-        specifier: ^1.0.0
-        version: 1.0.0
+        specifier: ^1.0.4
+        version: 1.0.4
       '@types/cors':
         specifier: ^2.8.17
         version: 2.8.19
@@ -683,8 +683,8 @@ importers:
         specifier: workspace:*
         version: link:../../foundation/types
       '@objectstack/spec':
-        specifier: ^1.0.0
-        version: 1.0.0
+        specifier: ^1.0.4
+        version: 1.0.4
       zod:
         specifier: ^3.23.8
         version: 3.25.76
@@ -696,8 +696,8 @@ importers:
         specifier: workspace:*
         version: link:../../tools/protocol-tck
       '@objectstack/core':
-        specifier: ^1.0.0
-        version: 1.0.0
+        specifier: ^1.0.4
+        version: 1.0.4
       typescript:
         specifier: ^5.3.3
         version: 5.9.3
@@ -711,8 +711,8 @@ importers:
         specifier: workspace:*
         version: link:../../foundation/types
       '@objectstack/spec':
-        specifier: ^1.0.0
-        version: 1.0.0
+        specifier: ^1.0.4
+        version: 1.0.4
       zod:
         specifier: ^3.23.8
         version: 3.25.76
@@ -724,8 +724,8 @@ importers:
         specifier: workspace:*
         version: link:../../tools/protocol-tck
       '@objectstack/core':
-        specifier: ^1.0.0
-        version: 1.0.0
+        specifier: ^1.0.4
+        version: 1.0.4
       typescript:
         specifier: ^5.3.3
         version: 5.9.3
@@ -739,8 +739,8 @@ importers:
         specifier: workspace:*
         version: link:../../foundation/types
       '@objectstack/spec':
-        specifier: ^1.0.0
-        version: 1.0.0
+        specifier: ^1.0.4
+        version: 1.0.4
       js-yaml:
         specifier: ^4.1.1
         version: 4.1.1
@@ -748,9 +748,18 @@ importers:
         specifier: ^3.23.8
         version: 3.25.76
     devDependencies:
+      '@objectql/driver-memory':
+        specifier: workspace:^
+        version: link:../../drivers/memory
       '@objectql/protocol-tck':
         specifier: workspace:*
         version: link:../../tools/protocol-tck
+      '@objectstack/core':
+        specifier: ^1.0.4
+        version: 1.0.4
+      '@objectstack/runtime':
+        specifier: ^1.0.4
+        version: 1.0.4
       '@types/js-yaml':
         specifier: ^4.0.9
         version: 4.0.9
@@ -1978,33 +1987,39 @@ packages:
     engines: {node: '>=10'}
     deprecated: This functionality has been moved to @npmcli/fs
 
-  '@objectstack/cli@1.0.0':
-    resolution: {integrity: sha512-fCTAUxkb4WLykLGNXNYRG1d+S++2voTqoUqrSc7XZwjtNoniYXb1XL9SiscfC0Bo09HSj1iRSJPl949s+RiUxg==}
+  '@objectstack/cli@1.0.4':
+    resolution: {integrity: sha512-/XaHriLSNNOxRZS7G4jtFxgAQG4XVEb//ssMX5UUkOzYdcT5LTztuM5Ovr6VbSd8jeEmI6ohfrR4CzhxkE5dbA==}
     hasBin: true
     peerDependencies:
-      '@objectstack/core': ^1.0.0
+      '@objectstack/core': ^1.0.4
 
-  '@objectstack/core@1.0.0':
-    resolution: {integrity: sha512-Gs8384ZWasrxf1cZUJ3dleobDc3T1n3x0WtP2agKiXskAIqIbe/VG4KON8a2KoxTfFIKrIPg7SqPc9r1zpppmQ==}
+  '@objectstack/core@1.0.4':
+    resolution: {integrity: sha512-koUkutViV4EF7X15bCctwEzjoiSKtnRAA0UorS79TC/K4PBUvAwDg0vpdVHgGCxmVdXugXeViROQryIGs+WYvA==}
 
-  '@objectstack/driver-memory@1.0.0':
-    resolution: {integrity: sha512-8O1Xf6Ksa5R3x57ZdEyRAIWDrztAgr+mNyScGqSONDiOyLqg9ZTIj/BK/XNkGiYwRJBglS/2jeT04TkBrLQS7A==}
+  '@objectstack/driver-memory@1.0.4':
+    resolution: {integrity: sha512-fU87iHiFKCtJkTiLPxjKjQknFMTV7+r4DmwxbI0Z+Knt02h9Dti5D82xI8gqN5zzMV0x4nl2WUeVbPB97DXLVw==}
 
-  '@objectstack/objectql@1.0.0':
-    resolution: {integrity: sha512-zvI2mDlqtwi2vlijEiBVWVCfSL2H3rLKPpdcwVMDyyI8noTTLrQ+eXz8TAxCRoROHEyivZytizcjuRZD/TjG/g==}
+  '@objectstack/hono@1.0.4':
+    resolution: {integrity: sha512-gvpkTcRh1z3oue/wr41aYYPTEoO98SVB96PeItn1ZUqH9GyrtMgMp0SZE/bonC4VO5qUS3A6LMNwq35wjA6F3w==}
+    peerDependencies:
+      '@objectstack/runtime': 1.0.4
+      hono: ^4.0.0
 
-  '@objectstack/plugin-hono-server@1.0.0':
-    resolution: {integrity: sha512-1nco7WILbZsbCDgPNyoFiAHRhhg5Qo65i3Glma3jD7PfYy0MX8SkKjYCPjyaKrcQV0pSgA0lt39c+9doEuFYKQ==}
+  '@objectstack/objectql@1.0.4':
+    resolution: {integrity: sha512-E8EdNZQq8YA/tjI6sMiD7sVWrSJk1koRqsTmXr0Pb7taW5UxzvmFfaXbQ2s86n+NIdSCbKcjEVTGMtk8NFgT+w==}
 
-  '@objectstack/runtime@1.0.0':
-    resolution: {integrity: sha512-WBf0u0EfEXOXbgmZ5lJQFZyiPHzQSuXY/sDqJupcjGAfBAIFLKWzG77SrZ+962EKL7W4vav4fStGvCPUHW+BlQ==}
+  '@objectstack/plugin-hono-server@1.0.4':
+    resolution: {integrity: sha512-A8k2efD8/jycCAZlioi5n/aaNivtS3j2AJJYMHl7BDmDQRs3xGjseGcsvXF8MmsSbZVwdjpx/maeXEBeKrzK8A==}
 
-  '@objectstack/spec@1.0.0':
-    resolution: {integrity: sha512-hiXjFejNLZDGU5vw7KFeRSJKyoGQDb6Rx5o+vO3d42dZFvYe659VM2TAIkZan7rqdwjT2/bXdEoPdZAYjJdHHA==}
+  '@objectstack/runtime@1.0.4':
+    resolution: {integrity: sha512-E9DlUWw5L75t3VSGoT2cu/FZyJ8iMWeZj4i8BpP41iVPvgQnDoP4Zs5Jt1vzEkSPqDVqZBvhe3ghwTqvubCpQQ==}
+
+  '@objectstack/spec@1.0.4':
+    resolution: {integrity: sha512-96wDWStvviQFwfwFsQ6b+RNv7MbhqgFcWYYO7apx5E06HdZMbHkWqu9rPIzzTDk3iQF8k5LqvQXGfLVSfHij8A==}
     engines: {node: '>=18.0.0'}
 
-  '@objectstack/types@1.0.0':
-    resolution: {integrity: sha512-6I8qm3VmbFxTcIWiYPmMePyKEN1Ny/rOTATbzExo6UKV3N7mf9TThcTZP8CkCjOvIheU7SzzT2bHx5wdOuxJ/w==}
+  '@objectstack/types@1.0.4':
+    resolution: {integrity: sha512-lWG+14arM9dpSOFThIgSvlEMhdbhIqvBt/CyztDjig1mr+t+BwB6DGPdsHUL+SHhY8vuThoV7OHsq94KERErKg==}
 
   '@orama/orama@3.1.18':
     resolution: {integrity: sha512-a61ljmRVVyG5MC/698C8/FfFDw5a8LOIvyOLW5fztgUXqUpc1jOfQzOitSCbge657OgXXThmY3Tk8fpiDb4UcA==}
@@ -4582,11 +4597,12 @@ packages:
   glob@11.1.0:
     resolution: {integrity: sha512-vuNwKSaKiqm7g0THUBu2x7ckSs3XJLXE+2ssL7/MfTGPLLcrJQ/4Uq1CjPTtO5cCIiRxqvN6Twy1qOwhL0Xjcw==}
     engines: {node: 20 || >=22}
+    deprecated: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
     hasBin: true
 
   glob@7.2.3:
     resolution: {integrity: sha512-nFR0zLpU2YCaRxwoCJvL6UvCH2JFyFVIvwTLsIf21AuHlMskA1hhTdk+LlYJtOlYt9v6dvszD2BGRqBL+iQK9Q==}
-    deprecated: Glob versions prior to v9 are no longer supported
+    deprecated: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
 
   globals@14.0.0:
     resolution: {integrity: sha512-oahGvuMGQlPw/ivIYBjVSrWAfWLBeku5tpPE2fOPLi+WHffIWbuh2tCjhyQhTBPMf5E9jDEH4FOmTYgYwbKwtQ==}
@@ -8829,14 +8845,14 @@ snapshots:
       rimraf: 3.0.2
     optional: true
 
-  '@objectstack/cli@1.0.0(@objectstack/core@1.0.0)(esbuild@0.27.2)':
+  '@objectstack/cli@1.0.4(@objectstack/core@1.0.4)(esbuild@0.27.2)':
     dependencies:
-      '@objectstack/core': 1.0.0
-      '@objectstack/driver-memory': 1.0.0
-      '@objectstack/objectql': 1.0.0
-      '@objectstack/plugin-hono-server': 1.0.0
-      '@objectstack/runtime': 1.0.0
-      '@objectstack/spec': 1.0.0
+      '@objectstack/core': 1.0.4
+      '@objectstack/driver-memory': 1.0.4
+      '@objectstack/objectql': 1.0.4
+      '@objectstack/plugin-hono-server': 1.0.4
+      '@objectstack/runtime': 1.0.4
+      '@objectstack/spec': 1.0.4
       bundle-require: 5.1.0(esbuild@0.27.2)
       chalk: 5.6.2
       commander: 11.1.0
@@ -8845,45 +8861,52 @@ snapshots:
     transitivePeerDependencies:
       - esbuild
 
-  '@objectstack/core@1.0.0':
+  '@objectstack/core@1.0.4':
     dependencies:
-      '@objectstack/spec': 1.0.0
+      '@objectstack/spec': 1.0.4
       pino: 8.21.0
       pino-pretty: 10.3.1
       zod: 4.3.6
 
-  '@objectstack/driver-memory@1.0.0':
+  '@objectstack/driver-memory@1.0.4':
     dependencies:
-      '@objectstack/core': 1.0.0
-      '@objectstack/spec': 1.0.0
+      '@objectstack/core': 1.0.4
+      '@objectstack/spec': 1.0.4
 
-  '@objectstack/objectql@1.0.0':
+  '@objectstack/hono@1.0.4(@objectstack/runtime@1.0.4)(hono@4.11.7)':
     dependencies:
-      '@objectstack/core': 1.0.0
-      '@objectstack/spec': 1.0.0
-      '@objectstack/types': 1.0.0
-
-  '@objectstack/plugin-hono-server@1.0.0':
-    dependencies:
-      '@hono/node-server': 1.19.9(hono@4.11.7)
-      '@objectstack/core': 1.0.0
-      '@objectstack/spec': 1.0.0
-      '@objectstack/types': 1.0.0
+      '@objectstack/runtime': 1.0.4
       hono: 4.11.7
 
-  '@objectstack/runtime@1.0.0':
+  '@objectstack/objectql@1.0.4':
     dependencies:
-      '@objectstack/core': 1.0.0
-      '@objectstack/spec': 1.0.0
-      '@objectstack/types': 1.0.0
+      '@objectstack/core': 1.0.4
+      '@objectstack/spec': 1.0.4
+      '@objectstack/types': 1.0.4
 
-  '@objectstack/spec@1.0.0':
+  '@objectstack/plugin-hono-server@1.0.4':
+    dependencies:
+      '@hono/node-server': 1.19.9(hono@4.11.7)
+      '@objectstack/core': 1.0.4
+      '@objectstack/hono': 1.0.4(@objectstack/runtime@1.0.4)(hono@4.11.7)
+      '@objectstack/runtime': 1.0.4
+      '@objectstack/spec': 1.0.4
+      '@objectstack/types': 1.0.4
+      hono: 4.11.7
+
+  '@objectstack/runtime@1.0.4':
+    dependencies:
+      '@objectstack/core': 1.0.4
+      '@objectstack/spec': 1.0.4
+      '@objectstack/types': 1.0.4
+
+  '@objectstack/spec@1.0.4':
     dependencies:
       zod: 3.25.76
 
-  '@objectstack/types@1.0.0':
+  '@objectstack/types@1.0.4':
     dependencies:
-      '@objectstack/spec': 1.0.0
+      '@objectstack/spec': 1.0.4
 
   '@orama/orama@3.1.18': {}
 

@@ -23,7 +23,7 @@
   },
   "dependencies": {
     "@objectql/types": "workspace:*",
-    "@objectstack/spec": "^1.0.0",
+    "@objectstack/spec": "^1.0.4",
     "knex": "^3.1.0",
     "nanoid": "^3.3.11"
   },

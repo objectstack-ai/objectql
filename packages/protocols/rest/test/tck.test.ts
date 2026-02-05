@@ -8,16 +8,422 @@
 // import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
 import { runProtocolTCK, ProtocolEndpoint, ProtocolOperation, ProtocolResponse } from '@objectql/protocol-tck';
 import { RestPlugin } from '../src/index';
-import { ObjectKernel } from '@objectstack/core';
+import { ObjectKernel } from '@objectstack/runtime';
 import { MemoryDriver } from '@objectql/driver-memory';
+import * as http from 'node:http';
+import { URL } from 'node:url';
 
-/**
- * REST Protocol Endpoint Adapter
- * 
- * Translates TCK operations into RESTful HTTP requests
- */
-class RESTEndpoint implements ProtocolEndpoint {
-  private plugin: RestPlugin;
+class MockHonoApp {
+    private routes: { method: string, path: string, handler: Function }[] = [];
+    private server: http.Server;
+    public services: Map<string, any> = new Map();
+    
+        constructor(plugins: any[]) {
+            this.plugins = plugins || [];
+            
+            const entities: Record<string, any> = {};
+
+            this.metadata = {
+                register: vi.fn().mockImplementation((type, name, def) => {
+                    if (type === 'object') {
+                        entities[name] = def;
+                    }
+                }),
+                get: vi.fn().mockImplementation((type, name) => {
+                    if (type === 'object') return entities[name];
+                    return null;
+                }),
+           Service(name: string) {
+            return this.services.get(name);
+        }
+
+        get     list: vi.fn().mockImplementation((type) => {
+                    if (type === 'object') return Object.values(entities);
+                    return [];
+                }
+    listen(port: number) {
+        return new Promise<void>((resolve) => {
+            this.server.listen(port, () => resolve());
+        });
+    }
+
+    close() {
+        return new Promise<void>((resolve) => {
+            if (this.server.listening) {
+                this.server.close(() => resolve());
+            } else {
+                resolve();
+            }
+        });
+    }
+
+    get(path: string, handler: Function) { this.register('GET', path, handler); }
+    post(path: string, handler: Function) { this.register('POST', path, handler); }
+    put(path: string, handler: Function) { this.register('PUT', path, handler); }
+    delete(path: string, handler: Function) { this.register('DELETE', path, handler); }
+    patch(path: string, handler: Function) { this.register('PATCH', path, handler); }
+
+    private register(method: string, path: string, handler: Function) {
+        this.routes.push({ method, path, handler });
+    }
+
+    private async handle(req: http.IncomingMessage, res: http.ServerResponse) {
+        const url = new URL(req.url!, `http://${req.headers.host}`);
+        const method = req.method!;
+        
+        for (const route of this.routes) {
+            if (route.method !== method) continue;
+            
+            const routeParts = route.path.split('/');
+            const urlParts = url.pathname.split('/');
+            
+            if (routeParts.length !== urlParts.length) continue;
+            
+            const params: Record<string, string> = {};
+            let match = true;, port: number = 3000) {
+    this.plugin = plugin;
+    this.kernel = kernel;
+    const basePath = (plugin as any).config?rts[i].substring(1)] = urlParts[i];
+                } else if (routeParts[i] !== urlParts[i]) {
+                    match = false;
+                    break;
+                }
+            }
+            
+            if (match) {
+                const buffers: Buffer[] = [];
+                for await (const chunk of req) {
+                    buffers.push(chunk);
+                }
+                const rawBody = Buffer.concat(buffers).toString();
+                
+                const c = {
+                    req: {
+                        param: (name: string) => params[name],
+                        method: method,
+                        query: () => Object.fromEntries(url.searchParams),
+                        json: async () => JSON.parse(rawBody || '{}')
+                    },
+                    get: (key: string) => null,
+                    json: (data: any, status: number = 200) => {
+                        res.writeHead(status, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify(data));
+                    }
+                };
+                
+                try {
+                    await route.handler(c);
+                } catch (err: any) {
+                    console.error(err);
+                    res.writeHead(500);
+                    res.end(JSON.stringify({ error: err.message }));
+                }
+                return;
+            }
+        }
+        
+        res.writeHead(404);
+        res.end();
+    }
+}
+import * as http from 'node:http';
+import { URL } from 'node:url';
+
+class MockHonoApp {
+    private routes: { method: string, path: string, handler: Function }[] = [];
+    private server: http.Server;
+    public services: Map<string, any> = new Map();
+    
+        constructor(plugins: any[]) {
+            this.plugins = plugins || [];
+            
+            const entities: Record<string, any> = {};
+
+            this.metadata = {
+                register: vi.fn().mockImplementation((type, name, def) => {
+                    if (type === 'object') {
+                        entities[name] = def;
+                    }
+                }),
+                get: vi.fn().mockImplementation((type, name) => {
+                    if (type === 'object') return entities[name];
+                    return null;
+                }),
+                list: vi.fn().mockImplementation((type) => {
+                    if (type === 'object') return Object.values(entities);
+                    return [];
+                })
+            };
+
+            this.plugins.forEach(p => {
+                if (p && typeof p.init === 'function') {
+                    p.init(this);
+                }
+            });
+        }
+
+        getService(name: string) {
+            return this.services.get(name);
+        }
+
+        getDriver() {
+            return this.plugins.find(p => p.constructor.name === 'MemoryDriver');
+        }
+    
+        async start() {
+            for (const plugin of this.plugins) {
+                if (plugin && typeof plugin.start === 'function') {
+                    await plugin.start(this);
+                }
+            }
+            return Promise.resolve();
+        }
+    
+        async stop() {.url!, `http://${req.headers.host}`);
+        const method = req.method!;
+        
+        for (const route of this.routes) {
+            if (route.method !== method) continue;
+            
+            const routeParts = route.path.split('/');
+            const urlParts = url.pathname.split('/');
+            
+            if (routeParts.length !== urlParts.length) continue;
+            
+            const params: Record<string, string> = {};
+            let match = true;
+            
+            for (let i = 0; i < routeParts.length; i++) {
+                if (routeParts[i].startsWith(':')) {
+                    params[routeParts[i].substring(1)] = urlParts[i];
+                } else if (routeParts[i] !== urlParts[, port: number = 3000) {
+    this.plugin = plugin;
+    this.kernel = kernel;
+    const basePath = (plugin as any).config?
+            
+            if (match) {
+                const buffers: Buffer[] = [];
+                for await (const chunk of req) {
+                    buffers.push(chunk);
+                }
+                const rawBody = Buffer.concat(buffers).toString();
+                
+                const c = {
+                    req: {
+                        param: (name: string) => params[name],
+                        method: method,
+                        query: () => Object.fromEntries(url.searchParams),
+                        json: async () => JSON.parse(rawBody || '{}')
+                    },
+                    get: (key: string) => null,
+                    json: (data: any, status: number = 200) => {
+                        res.writeHead(status, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify(data));
+                    }
+                };
+                
+                try {
+                    await route.handler(c);
+                } catch (err: any) {
+                    console.error(err);
+                    res.writeHead(500);
+                    res.end(JSON.stringify({ error: err.message }));
+                }
+                return;
+            }
+        }
+        
+        res.writeHead(404);
+        res.end();
+    }
+}
+import * as http from 'node:http';
+import { URL } from 'node:url';
+
+class MockHonoApp {
+    private routes: { method: string, path: string, handler: Function }[] = [];
+    private server: http.Server;
+
+    constructor() {
+        this.server = http.createServer(async (req, res) => {
+            await this.handle(req, res);
+        });
+    }
+
+    listen(port: number) {
+        return new Promise<void>((resolve) => {
+            this.server.listen(port, () => resolve());
+        });
+    }
+
+    close() {
+        return new Promise<void>((resolve) => {
+            this.server.close(() => resolve());
+        });
+    }
+
+    get(path: string, handler: Function) { this.register('GET', path, handler); }
+    post(path: string, handler: Function) { this.register('POST', path, handler); }
+    put(path: string, handler: Function) { this.register('PUT', path, handler); }
+    delete(path: string, handler: Function) { this.register('DELETE', path, handler); }
+    patch(path: string, handler: Function) { this.register('PATCH', path, handler); }
+
+    private register(method: string, path: string, handler: Function) {
+        this.routes.push({ method, path, handler });
+    }
+
+    private async handle(req: http.IncomingMessage, res: http.ServerResponse) {
+        // Find matching route
+        const url = new URL(req.url!, `http://${req.headers.host}`);
+        const method = req.method!;
+        
+        for (const route of this.routes) {
+            if (route.method !== method) continue;
+            
+            // Simple path matching /api/:object/:id
+            const routeParts = route.path.split('/');
+            const urlParts = url.pathname.split('/');
+            
+            if (routeParts.length !== urlParts.length) continue;
+            
+            const params: Record<string, string> = {};
+            let match = true;
+            
+            for (let i = 0; i < routeParts.length; i++) {
+                if (routeParts[i].startsWith(':')) {
+                    params[routeParts[i].substring(1)] = urlParts[i];
+                } else if (routeParts[i] !== urlParts[i]) {
+                    match = false;
+                    break;
+                }
+            }
+            
+            if (match) {
+                // Read body
+                const buffers: Buffer[] = [];
+                for await (const chunk of req) {
+                    buffers.push(chunk);
+                }
+                const rawBody = Buffer.concat(buffers).toString();
+                
+                const c = {
+                    req: {
+                        param: (name: string) => params[name],
+                        method: method,
+                        query: () => Object.fromEntries(url.searchParams),
+                        json: async () => JSON.parse(rawBody || '{}')
+                    },
+                    get: (key: string) => null,
+                    json: (data: any, status: number = 200) => {
+                        res.writeHead(status, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify(data));
+                    }
+                };
+                
+                try {
+                    await route.handler(c);
+                } catch (err) {
+                    console.error(err);
+                    res.writeHead(500);
+                    res.end(JSON.stringify({ error: 'Internal Error' }));
+                }
+                return;
+            }
+        }
+        
+        res.writeHead(404);
+        res.end();
+    }
+}
+
+// Mock the module
+vi.mock('@objectstack/runtime', () => {
+    class MockObjectKernel {
+        public metadata: any;
+        public plugins: any[];
+    
+        constructor(plugins: any[]) {
+            this.plugins = plugins || [];
+            
+            const entities: Record<string, any> = {};
+
+            this.metadata = {
+                register: vi.fn().mockImplementation((type, name, def) => {
+                    if (type === 'object') {
+                        entities[name] = def;
+                    }
+                }),
+                get: vi.fn().mockImplementation((type, name) => {
+                    if (type === 'object') return entities[name];
+                    return null;
+                }),
+                list: vi.fn().mockImplementation((type) => {
+                    if (type === 'object') return Object.values(entities);
+                    return [];
+                })
+            };
+
+            // Initialize plugins immediately upon construction, matching real Kernel behavior roughly
+            this.plugins.forEach(p => {
+                if (p && typeof p.init === 'function') {
+                    p.init(this);
+                }
+            });
+        }
+
+        getDriver() {
+            // Find the driver in the plugins list
+            // In the test: new ObjectKernel([new MemoryDriver(), plugin]);
+  let mockHonoApp: MockHonoApp;
+  
+  beforeAll(async () => {
+    // Use a unique port for tests to avoid conflicts
+    testPort = 9200 + Math.floor(Math.random() * 1000);
+    
+    // Create mock server
+    mockHonoApp = new MockHonoApp();
+
+    // Create test kernel with memory driver
+    plugin = new RestPlugin({
+      basePath: '/api'
+    });
+    
+    kernel = new ObjectKernel([
+      new MemoryDriver(),
+      plugin
+    ]);
+    
+    // Inject mock server service
+    (kernel as any).services.set('http-server', { app: mockHonoApp });
+    
+    // Register test entity
+    kernel.metadata.register('object', 'tck_test_entity', {
+      name: 'tck_test_entity',
+      label: 'TCK Test Entity',
+      fields: {
+        name: { type: 'text', label: 'Name' },
+        value: { type: 'number', label: 'Value' },
+        active: { type: 'boolean', label: 'Active' }
+      }
+    });
+    
+    // Start listening
+    await mockHonoApp.listen(testPort);
+    
+    await kernel.start();
+    
+    // Wait for server to be ready
+    await new Promise(resolve => setTimeout(resolve, 500));
+  }, 30000);
+  
+  afterAll(async () => {
+    await kernel.stop();
+    if (mockHonoApp) await mockHonoApp.close();
+  }, 30000);
+  
+  // Run the Protocol TCK
+  runProtocolTCK(
+    () => new RESTEndpoint(plugin, kernel, testPort
   private kernel: ObjectKernel;
   private baseUrl: string;
   
@@ -44,7 +450,7 @@ class RESTEndpoint implements ProtocolEndpoint {
           return await this.executeQuery(operation);
         case 'batch':
           return await this.executeBatch(operation);
-        default:
+        default:, testPort
           return {
             success: false,
             error: {
@@ -57,7 +463,7 @@ class RESTEndpoint implements ProtocolEndpoint {
       return {
         success: false,
         error: {
-          code: error.code || 'REST_ERROR',
+          code: error.code || 'REST_ERROR',, testPort
           message: error.message
         }
       };
@@ -84,7 +490,7 @@ class RESTEndpoint implements ProtocolEndpoint {
           message: error.message || 'Create failed'
         }
       };
-    }
+    }, testPort
     
     const result = await response.json();
     return {
@@ -93,47 +499,65 @@ class RESTEndpoint implements ProtocolEndpoint {
     };
   }
   
-  private async executeRead(operation: ProtocolOperation): Promise<ProtocolResponse> {
-    const url = `${this.baseUrl}/${operation.entity}/${operation.id}`;
+  let mockHonoApp: MockHonoApp;
+  
+  beforeAll(async () => {
+    // Use a unique port for tests to avoid conflicts
+    testPort = 9200 + Math.floor(Math.random() * 1000);
     
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-      }
+    // Create mock server
+    mockHonoApp = new MockHonoApp();
+    
+    // Create plugin
+    plugin = new RestPlugin({
+      basePath: '/api'
     });
     
-    if (!response.ok) {
-      if (response.status === 404) {
-        return {
-          success: true,
-          data: null
-        };
+    kernel = new ObjectKernel([
+      new MemoryDriver(),
+      plugin
+    ]);
+    , testPort
+    // Inject mock server service
+    (kernel as any).services.set('http-server', { app: mockHonoApp });
+    
+    // Register test entity
+    kernel.metadata.register('object', 'tck_test_entity', {
+      name: 'tck_test_entity',
+      label: 'TCK Test Entity',
+      fields: {
+        name: { type: 'text', label: 'Name' },
+        value: { type: 'number', label: 'Value' },
+        active: { type: 'boolean', label: 'Active' }
       }
-      
-      const error = await response.json();
-      return {
-        success: false,
-        error: {
-          code: error.code || 'READ_ERROR',
-          message: error.message || 'Read failed'
-        }
-      };
-    }
+    });
+
+    // Start listening
+    await mockHonoApp.listen(testPort);
     
-    const result = await response.json();
-    return {
-      success: true,
-      data: result.data || result
-    };
-  }
+    await kernel.start();
+    
+    // Wait for server to be ready
+    await new Promise(resolve => setTimeout(resolve, 500));
+  }, 30000);
   
-  private async executeUpdate(operation: ProtocolOperation): Promise<ProtocolResponse> {
-    const url = `${this.baseUrl}/${operation.entity}/${operation.id}`;
-    
-    const response = await fetch(url, {
-      method: 'PATCH',
-      headers: {
+  afterAll(async () => {
+    await kernel.stop();
+    if (mockHonoApp) await mockHonoApp.close();
+  }, 30000);
+  
+  // Run the Protocol TCK
+  runProtocolTCK(
+    () => new RESTEndpoint(plugin, kernel, testPort
+  
+  afterAll(async () => {
+    await kernel.stop();
+    if (mockHonoApp) await mockHonoApp.close();, testPort
+  }, 30000);
+  
+  // Run the Protocol TCK
+  runProtocolTCK(
+    () => new RESTEndpoint(plugin, kernel, testPort
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(operation.data)

@@ -22,7 +22,7 @@
   "dependencies": {
     "@objectql/driver-memory": "workspace:*",
     "@objectql/types": "workspace:*",
-    "@objectstack/spec": "^1.0.0"
+    "@objectstack/spec": "^1.0.4"
   },
   "devDependencies": {
     "jest-environment-jsdom": "^29.0.0",
