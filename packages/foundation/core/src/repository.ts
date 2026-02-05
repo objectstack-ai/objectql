@@ -149,7 +149,14 @@ export class ObjectRepository {
         await this.app.triggerHook('beforeCount', this.objectName, hookCtx);
 
         // Execute via kernel (delegates to QueryService)
-        const result = await (this.getKernel() as any).count(this.objectName, hookCtx.query || {});
+        let result: number;
+        const kernel = this.getKernel() as any;
+        if (typeof kernel.count === 'function') {
+            result = await kernel.count(this.objectName, hookCtx.query || {});
+        } else {
+            // Fallback to driver if kernel doesn't support count
+            result = await this.getDriver().count(this.objectName, hookCtx.query || {});
+        }
 
         hookCtx.result = result;
         await this.app.triggerHook('afterCount', this.objectName, hookCtx);

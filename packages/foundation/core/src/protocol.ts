@@ -73,6 +73,19 @@ export class ObjectStackProtocolImplementation implements ObjectStackProtocol {
     }
 
     /**
+     * Save Metadata Item
+     */
+    async saveMetaItem(args: { type: string; name: string; item?: any }): Promise<{ success: boolean; message?: string }> {
+        const { type, name, item } = args;
+        if (this.engine.metadata && typeof this.engine.metadata.register === 'function') {
+            const data = { ...(item || {}), name }; // Ensure name is in data
+            this.engine.metadata.register(type, data);
+            return { success: true };
+        }
+        throw new Error('Engine does not support saving metadata');
+    }
+
+    /**
      * Get UI View
      */
     async getUiView(args: { object: string; type: 'list' | 'form' }): Promise<any> {

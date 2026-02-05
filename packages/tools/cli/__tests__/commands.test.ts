@@ -14,6 +14,8 @@ import { syncDatabase } from '../src/commands/sync';
 import { build } from '../src/commands/build';
 import { lint } from '../src/commands/lint';
 import { format } from '../src/commands/format';
+import { test as testCommand } from '../src/commands/test';
+import { doctorCommand } from '../src/commands/doctor';
 import { ObjectQL } from '@objectql/core';
 import { SqlDriver } from '@objectql/driver-sql';
 import * as yaml from 'js-yaml';
@@ -479,8 +481,7 @@ describe('CLI Commands', () => {
             // Mock console.log to capture output
             const consoleSpy = jest.spyOn(console, 'log');
             
-            const { test } = require('../src/commands/test');
-            await test({ dir: testDir });
+            await testCommand({ dir: testDir });
             
             // Should show no test configuration message
             expect(consoleSpy).toHaveBeenCalledWith(
@@ -495,7 +496,6 @@ describe('CLI Commands', () => {
         it('should check Node.js version', async () => {
             const consoleSpy = jest.spyOn(console, 'log');
             
-            const { doctorCommand } = require('../src/commands/doctor');
             await doctorCommand();
             
             // Should print Node.js version
@@ -507,41 +507,31 @@ describe('CLI Commands', () => {
         });
 
         it('should check for package.json', async () => {
-            const originalCwd = process.cwd();
+            // Create a minimal package.json
+            const packageJson = {
+                name: 'test-project',
+                version: '1.0.0',
+                dependencies: {
+                    '@objectql/core': '^4.0.0'
+                }
+            };
             
-            try {
-                // Change to test directory
-                process.chdir(testDir);
-                
-                // Create a minimal package.json
-                const packageJson = {
-                    name: 'test-project',
-                    version: '1.0.0',
-                    dependencies: {
-                        '@objectql/core': '^4.0.0'
-                    }
-                };
-                
-                fs.writeFileSync(
-                    path.join(testDir, 'package.json'),
-                    JSON.stringify(packageJson, null, 2),
-                    'utf-8'
-                );
-                
-                const consoleSpy = jest.spyOn(console, 'log');
-                
-                const { doctorCommand } = require('../src/commands/doctor');
-                await doctorCommand();
-                
-                // Should detect package.json
-                expect(consoleSpy).toHaveBeenCalledWith(
-                    expect.stringContaining('package.json')
-                );
-                
-                consoleSpy.mockRestore();
-            } finally {
-                process.chdir(originalCwd);
-            }
+            fs.writeFileSync(
+                path.join(testDir, 'package.json'),
+                JSON.stringify(packageJson, null, 2),
+                'utf-8'
+            );
+            
+            const consoleSpy = jest.spyOn(console, 'log');
+            
+            await doctorCommand({ cwd: testDir });
+            
+            // Should detect package.json
+            expect(consoleSpy).toHaveBeenCalledWith(
+                expect.stringContaining('package.json')
+            );
+            
+            consoleSpy.mockRestore();
         });
     });
 });

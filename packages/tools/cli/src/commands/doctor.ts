@@ -18,9 +18,15 @@ interface DependencyCheck {
     status: 'ok' | 'missing' | 'outdated' | 'warning';
 }
 
-export async function doctorCommand() {
+interface DoctorOptions {
+    cwd?: string;
+}
+
+export async function doctorCommand(options: DoctorOptions = {}) {
     console.log(chalk.blue('🩺 ObjectQL Doctor'));
     console.log(chalk.gray('Checking environment health...\n'));
+
+    const cwd = options.cwd || process.cwd();
 
     let hasErrors = false;
     let hasWarnings = false;
@@ -77,7 +83,7 @@ export async function doctorCommand() {
     }
 
     // 4. Check package.json
-    const packageJsonPath = path.join(process.cwd(), 'package.json');
+    const packageJsonPath = path.join(cwd, 'package.json');
     if (fs.existsSync(packageJsonPath)) {
         console.log(`${chalk.green('✓')} package.json: ${chalk.green('Found')}`);
         
