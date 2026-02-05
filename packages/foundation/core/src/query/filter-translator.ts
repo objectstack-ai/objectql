@@ -9,7 +9,6 @@
 import type { Filter } from '@objectql/types';
 import { Data } from '@objectstack/spec';
 import { z } from 'zod';
-type FilterCondition = z.infer<typeof Data.FilterConditionSchema>;
 import { ObjectQLError } from '@objectql/types';
 
 /**
@@ -26,7 +25,7 @@ export class FilterTranslator {
     /**
      * Translate filters from ObjectQL format to ObjectStack FilterCondition format
      */
-    translate(filters?: Filter): FilterCondition | undefined {
+    translate(filters?: Filter): Filter | undefined {
         if (!filters) {
             return undefined;
         }
@@ -37,6 +36,6 @@ export class FilterTranslator {
         }
 
         // Both ObjectQL Filter and ObjectStack FilterCondition use the same format now
-        return filters as unknown as FilterCondition;
+        return filters;
     }
 }

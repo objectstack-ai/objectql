@@ -8,23 +8,35 @@
 
 import { Data } from '@objectstack/spec';
 import { z } from 'zod';
-type FilterCondition = z.infer<typeof Data.FilterCondition>;
+
+// Re-export Filter definitions from Spec
+export type Filter = z.infer<typeof Data.FilterCondition>;
+
+// Re-export Sort definitions from Spec
+export type SortNode = z.infer<typeof Data.SortNodeSchema>;
+
+// Re-export Aggregation definitions from Spec
+export type AggregationFunctionType = z.infer<typeof Data.AggregationFunction>;
+export type AggregationNode = z.infer<typeof Data.AggregationNodeSchema>;
 
 /**
- * Modern Query Filter using @objectstack/spec FilterCondition
+ * Unified Query Interface - Standard Protocol Format
  * 
- * Supports MongoDB/Prisma-style object-based syntax:
- * - Implicit equality: { field: value }
- * - Explicit operators: { field: { $eq: value, $gt: 10 } }
- * - Logical operators: { $and: [...], $or: [...] }
- * - String operators: { name: { $contains: "text" } }
- * - Range operators: { age: { $gte: 18, $lte: 65 } }
- * - Set operators: { status: { $in: ["active", "pending"] } }
- * - Null checks: { field: { $null: true } }
- * 
- * Note: $not operator is not supported. Use $ne for field-level negation.
+ * Uses @objectstack/spec QuerySchema inference directly.
+ * We make 'object' optional because in many contexts (like Repository.find), 
+ * the object is implicit.
  */
-export type Filter = FilterCondition;
+type SpecQuery = z.infer<typeof Data.QuerySchema>;
+
+export interface UnifiedQuery extends Omit<SpecQuery, 'object'> {
+    object?: string;
+}
+
+/**
+ * Standard QueryAST definition.
+ * Aliased to UnifiedQuery for backward compatibility and consistency.
+ */
+export type QueryAST = UnifiedQuery;
 
 // Legacy types - Deprecated, kept for temporary compatibility during migration
 /** @deprecated Use AggregationFunctionType instead */
@@ -35,84 +47,4 @@ export interface AggregateOption {
     func: AggregateFunction;
     field: string;
     alias?: string;
-}
-
-/**
- * Sort Node - Standard Protocol Format
- * Represents an "Order By" clause.
- */
-export interface SortNode {
-    /** Field name to sort by */
-    field: string;
-    /** Sort direction - defaults to 'asc' */
-    order: 'asc' | 'desc';
-}
-
-/**
- * Aggregation Function - Standard Protocol Format
- */
-export type AggregationFunctionType = 'count' | 'sum' | 'avg' | 'min' | 'max' | 'count_distinct' | 'array_agg' | 'string_agg';
-
-/**
- * Aggregation Node - Standard Protocol Format
- * Represents an aggregated field with function.
- */
-export interface AggregationNode {
-    /** Aggregation function to apply */
-    function: AggregationFunctionType;
-    /** Field to aggregate (optional for count) */
-    field?: string;
-    /** Alias for the result field */
-    alias: string;
-    /** Apply DISTINCT to the field before aggregation */
-    distinct?: boolean;
-    /** Optional filter condition for this aggregation */
-    filter?: Filter;
-}
-
-/**
- * Unified Query Interface - Standard Protocol Format
- * 
- * Uses @objectstack/spec QueryAST format directly.
- * This is the single source of truth for query structure.
- */
-export interface UnifiedQuery {
-    /** Field selection - specify which fields to return */
-    fields?: string[];
-    
-    /** Filter conditions using standard FilterCondition syntax (was: filters) */
-    where?: Filter;
-    
-    /** Sort order - array of SortNode objects (was: sort as tuples) */
-    orderBy?: SortNode[];
-    
-    /** Pagination - number of records to skip (was: skip) */
-    offset?: number;
-    
-    /** Pagination - maximum number of records to return */
-    limit?: number;
-    
-    /** Relation expansion - load related records */
-    expand?: Record<string, UnifiedQuery>;
-    
-    /** Aggregation - group by fields */
-    groupBy?: string[];
-    
-    /** Aggregation - aggregate functions to apply (was: aggregate with func) */
-    aggregations?: AggregationNode[];
-    
-    /** Filter for aggregated results (HAVING clause) */
-    having?: Filter;
-    
-    /** Enable distinct results */
-    distinct?: boolean;
-}
-
-/**
- * Standard QueryAST definition to resolve type inference issues from spec.
- */
-export interface QueryAST extends UnifiedQuery {
-    object?: string;
-    joins?: any[];
-    [key: string]: any;
 }
