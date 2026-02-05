@@ -1,6 +1,6 @@
 {
   "name": "@objectql/example-multi-protocol-server",
-  "version": "4.0.6",
+  "version": "4.0.7",
   "description": "Example demonstrating multiple protocol plugins running together",
   "private": true,
   "type": "module",

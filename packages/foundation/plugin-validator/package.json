@@ -1,6 +1,6 @@
 {
   "name": "@objectql/plugin-validator",
-  "version": "4.0.6",
+  "version": "4.0.7",
   "description": "Validation engine plugin for ObjectQL - Field-level, cross-field, state machine, business rule, and uniqueness validation",
   "keywords": [
     "objectql",

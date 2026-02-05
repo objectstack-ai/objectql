@@ -1,5 +1,14 @@
 # @objectql/driver-excel
 
+## 4.0.7
+
+### Patch Changes
+
+- Patch release with bug fixes and improvements
+- Updated dependencies
+  - @objectql/driver-memory@4.0.7
+  - @objectql/types@4.0.7
+
 ## 4.0.6
 
 ### Patch Changes

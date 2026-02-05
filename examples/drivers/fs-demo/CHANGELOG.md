@@ -1,5 +1,13 @@
 # fs-demo
 
+## 4.0.7
+
+### Patch Changes
+
+- Updated dependencies
+  - @objectql/core@4.0.7
+  - @objectql/driver-fs@4.0.7
+
 ## 4.0.6
 
 ### Patch Changes

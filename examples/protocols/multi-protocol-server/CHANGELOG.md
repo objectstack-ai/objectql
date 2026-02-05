@@ -1,5 +1,17 @@
 # @objectql/example-multi-protocol-server
 
+## 4.0.7
+
+### Patch Changes
+
+- Updated dependencies
+  - @objectql/core@4.0.7
+  - @objectql/driver-memory@4.0.7
+  - @objectql/protocol-graphql@4.0.7
+  - @objectql/protocol-json-rpc@4.0.7
+  - @objectql/protocol-odata-v4@4.0.7
+  - @objectql/types@4.0.7
+
 ## 4.0.6
 
 ### Patch Changes
