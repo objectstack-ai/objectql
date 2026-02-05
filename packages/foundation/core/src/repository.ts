@@ -11,24 +11,8 @@ import type { ObjectKernel } from '@objectstack/runtime';
 import { Data } from '@objectstack/spec';
 type QueryAST = Data.QueryAST;
 type SortNode = Data.SortNode;
-import { Validator } from '@objectql/plugin-validator';
-import { FormulaEngine } from '@objectql/plugin-formula';
 import { QueryBuilder } from './query';
 import { QueryCompiler } from './optimizations/QueryCompiler';
-
-/**
- * Extended ObjectStack Kernel with optional ObjectQL plugin capabilities.
- * These properties are attached by ValidatorPlugin and FormulaPlugin during installation.
- */
-interface ExtendedKernel extends ObjectKernel {
-    validator?: Validator;
-    formulaEngine?: FormulaEngine;
-    create?: (objectName: string, data: any) => Promise<any>;
-    update?: (objectName: string, id: string, data: any) => Promise<any>;
-    delete?: (objectName: string, id: string) => Promise<any>;
-    find?: (objectName: string, query: any) => Promise<any>;
-    get?: (objectName: string, id: string) => Promise<any>;
-}
 
 export class ObjectRepository {
     private queryBuilder: QueryBuilder;
@@ -43,32 +27,6 @@ export class ObjectRepository {
         this.queryBuilder = new QueryBuilder();
     }
     
-    /**
-     * Get validator instance from kernel (via plugin)
-     * Falls back to creating a new instance if not available
-     */
-    private getValidator(): Validator {
-        const kernel = this.getKernel() as ExtendedKernel;
-        if (kernel.validator) {
-            return kernel.validator;
-        }
-        // Fallback for backward compatibility
-        return new Validator();
-    }
-    
-    /**
-     * Get formula engine instance from kernel (via plugin)
-     * Falls back to creating a new instance if not available
-     */
-    private getFormulaEngine(): FormulaEngine {
-        const kernel = this.getKernel() as ExtendedKernel;
-        if (kernel.formulaEngine) {
-            return kernel.formulaEngine;
-        }
-        // Fallback for backward compatibility
-        return new FormulaEngine();
-    }
-
     private getDriver(): Driver {
         const obj = this.getSchema();
         const datasourceName = obj.datasource || 'default';
@@ -129,148 +87,6 @@ export class ObjectRepository {
         };
     }
 
-    /**
-     * Validates a record against field-level and object-level validation rules.
-     * For updates, only fields present in the update payload are validated at the field level,
-     * while object-level rules use the merged record (previousRecord + updates).
-     */
-    private async validateRecord(
-        operation: 'create' | 'update',
-        record: any,
-        previousRecord?: any
-    ): Promise<void> {
-        const schema = this.getSchema();
-        const allResults: ValidationRuleResult[] = [];
-
-        // 1. Validate field-level rules
-        // For updates, only validate fields that are present in the update payload
-        for (const [fieldName, fieldConfig] of Object.entries(schema.fields)) {
-            // Skip field validation for updates if the field is not in the update payload
-            if (operation === 'update' && !(fieldName in record)) {
-                continue;
-            }
-            
-            const value = record[fieldName];
-            const fieldResults = await this.getValidator().validateField(
-                fieldName,
-                fieldConfig,
-                value,
-                {
-                    record,
-                    previousRecord,
-                    operation,
-                    user: this.getUserFromContext(),
-                    api: this.getHookAPI(),
-                }
-            );
-            allResults.push(...fieldResults);
-        }
-
-        // 2. Validate object-level validation rules
-        if (schema.validation?.rules && schema.validation.rules.length > 0) {
-            // For updates, merge the update data with previous record to get the complete final state
-            const mergedRecord = operation === 'update' && previousRecord
-                ? { ...previousRecord, ...record }
-                : record;
-
-            // Track which fields changed (using shallow comparison for performance)
-            // IMPORTANT: Shallow comparison does not detect changes in nested objects/arrays.
-            // If your validation rules rely on detecting changes in complex nested structures,
-            // you may need to implement custom change tracking in hooks.
-            const changedFields = previousRecord 
-                ? Object.keys(record).filter(key => record[key] !== previousRecord[key])
-                : undefined;
-
-            const validationContext: ValidationContext = {
-                record: mergedRecord,
-                previousRecord,
-                operation,
-                user: this.getUserFromContext(),
-                api: this.getHookAPI(),
-                changedFields,
-            };
-
-            const result = await this.getValidator().validate(schema.validation.rules, validationContext);
-            allResults.push(...result.results);
-        }
-
-        // 3. Collect errors and throw if any
-        const errors = allResults.filter(r => !r.valid && r.severity === 'error');
-        if (errors.length > 0) {
-            const errorMessage = errors.map(e => e.message).join('; ');
-            throw new ValidationError(errorMessage, errors);
-        }
-    }
-
-    /**
-     * Evaluate formula fields for a record
-     * Adds computed formula field values to the record
-     */
-    private evaluateFormulas(record: any): any {
-        const schema = this.getSchema();
-        const now = new Date();
-        
-        // Build formula context
-        const formulaContext: FormulaContext = {
-            record,
-            system: {
-                today: new Date(now.getFullYear(), now.getMonth(), now.getDate()),
-                now: now,
-                year: now.getFullYear(),
-                month: now.getMonth() + 1,
-                day: now.getDate(),
-                hour: now.getHours(),
-                minute: now.getMinutes(),
-                second: now.getSeconds(),
-            },
-            current_user: {
-                id: this.context.userId || '',
-                // TODO: Retrieve actual user name from user object if available
-                name: undefined,
-                email: undefined,
-                role: this.context.roles?.[0],
-            },
-            is_new: false,
-            record_id: record._id || record.id,
-        };
-
-        // Evaluate each formula field
-        for (const [fieldName, fieldConfig] of Object.entries(schema.fields)) {
-            const formulaExpression = fieldConfig.expression;
-            
-            if (fieldConfig.type === 'formula' && formulaExpression) {
-                const result = this.getFormulaEngine().evaluate(
-                    formulaExpression,
-                    formulaContext,
-                    fieldConfig.data_type || 'text',
-                    { strict: true }
-                );
-
-                if (result.success) {
-                    record[fieldName] = result.value;
-                } else {
-                    // In case of error, set to null and log for diagnostics
-                    record[fieldName] = null;
-                    // Formula evaluation should not throw here, but we need observability
-                    // This logging is intentionally minimal and side-effect free
-                     
-                    console.error(
-                        '[ObjectQL][FormulaEngine] Formula evaluation failed',
-                        {
-                            objectName: this.objectName,
-                            fieldName,
-                            recordId: formulaContext.record_id,
-                            expression: formulaExpression,
-                            error: result.error,
-                            stack: result.stack,
-                        }
-                    );
-                }
-            }
-        }
-
-        return record;
-    }
 
     async find(query: UnifiedQuery = {}): Promise<any[]> {
         const hookCtx: RetrievalHookContext = {
@@ -289,10 +105,8 @@ export class ObjectRepository {
         const kernelResult = await (this.getKernel() as any).find(this.objectName, ast);
         const results = kernelResult.value;
         
-        // Evaluate formulas for each result
-        const resultsWithFormulas = results.map((record: any) => this.evaluateFormulas(record));
-        
-        hookCtx.result = resultsWithFormulas;
+        // Formula evaluation moved to FormulaPlugin hook
+        hookCtx.result = results;
         await this.app.triggerHook('afterFind', this.objectName, hookCtx);
 
         return hookCtx.result as any[];
@@ -314,10 +128,8 @@ export class ObjectRepository {
             // Use kernel.get() for direct ID lookup
             const result = await (this.getKernel() as any).get(this.objectName, String(idOrQuery));
 
-            // Evaluate formulas if result exists
-            const resultWithFormulas = result ? this.evaluateFormulas(result) : result;
-
-            hookCtx.result = resultWithFormulas;
+            // Formula evaluation moved to FormulaPlugin hook
+            hookCtx.result = result;
             await this.app.triggerHook('afterFind', this.objectName, hookCtx);
             return hookCtx.result;
         } else {
@@ -380,8 +192,7 @@ export class ObjectRepository {
         if (this.context.userId) finalDoc.created_by = this.context.userId;
         if (this.context.spaceId) finalDoc.space_id = this.context.spaceId;
         
-        // Validate the record before creating
-        await this.validateRecord('create', finalDoc);
+        // Validation moved to ValidatorPlugin hook
         
         // Execute via kernel
         const result = await (this.getKernel() as any).create(this.objectName, finalDoc, this.getOptions());
@@ -407,8 +218,7 @@ export class ObjectRepository {
         };
         await this.app.triggerHook('beforeUpdate', this.objectName, hookCtx);
 
-        // Validate the update
-        await this.validateRecord('update', hookCtx.data, previousData);
+        // Validation moved to ValidatorPlugin hook
 
         // Execute via kernel
         const result = await (this.getKernel() as any).update(this.objectName, String(id), hookCtx.data, this.getOptions());

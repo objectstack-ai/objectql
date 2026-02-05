@@ -1403,6 +1403,16 @@ export class SqlDriver implements Driver {
      * @param options - Execution options
      */
     async execute(command: any, parameters?: any[], options?: any): Promise<any> {
+        // Support ObjectStack Spec: execute(ast: QueryAST | Command)
+        if (typeof command === 'object' && command !== null) {
+            // Check if it's a mutation command
+            if (command.type && ['create', 'update', 'delete', 'bulkCreate', 'bulkUpdate', 'bulkDelete'].includes(command.type)) {
+                return this.executeCommand(command as Command, options || parameters);
+            }
+            // Default to QueryAST execution
+            return this.executeQuery(command as QueryAST, options || parameters);
+        }
+
         const builder = options?.transaction 
             ? this.knex.raw(command, parameters || []).transacting(options.transaction)
             : this.knex.raw(command, parameters || []);

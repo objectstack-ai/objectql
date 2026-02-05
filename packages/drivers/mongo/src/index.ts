@@ -921,6 +921,16 @@ export class MongoDriver implements Driver {
      * @param options - Execution options
      */
     async execute(command: any, parameters?: any[], options?: any): Promise<any> {
+        // Support ObjectStack Spec: execute(ast: QueryAST | Command)
+        if (typeof command === 'object' && command !== null) {
+            // Check if it's a mutation command
+            if (command.type && ['create', 'update', 'delete', 'bulkCreate', 'bulkUpdate', 'bulkDelete'].includes(command.type)) {
+                return this.executeCommand(command as Command, options || parameters);
+            }
+            // Default to QueryAST execution
+            return this.executeQuery(command as QueryAST, options || parameters);
+        }
+
         // MongoDB driver doesn't support raw command execution in the traditional SQL sense
         // Use executeCommand() instead for mutations (create/update/delete)
         // Example: await driver.executeCommand({ type: 'create', object: 'users', data: {...} })

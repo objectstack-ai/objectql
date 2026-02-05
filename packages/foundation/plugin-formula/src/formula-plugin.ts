@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import type { RuntimePlugin, RuntimeContext } from '@objectql/types';
+import type { RuntimePlugin, RuntimeContext, FormulaContext } from '@objectql/types';
 import type { Logger } from '@objectstack/spec/contracts';
 import { createLogger } from '@objectstack/core';
 import { FormulaEngine } from './formula-engine';
@@ -34,6 +34,7 @@ export class FormulaPlugin implements RuntimePlugin {
   private engine: FormulaEngine;
   private config: FormulaPluginConfig;
   private logger: Logger;
+  private kernel: any;
   
   constructor(config: Partial<FormulaPluginConfig> = {}) {
     // Validate and parse configuration using Zod schema
@@ -58,8 +59,9 @@ export class FormulaPlugin implements RuntimePlugin {
    * Install the plugin into the kernel
    * Registers formula evaluation capabilities
    */
-  async install(ctx: RuntimeContext): Promise<void> {
-    const kernel = ctx.engine as KernelWithFormulas;
+  async install(ctx: RuntimeContext | any): Promise<void> {
+    const kernel = (ctx.engine || (ctx.getKernel && ctx.getKernel())) as KernelWithFormulas;
+    this.kernel = kernel;
     
     this.logger.info('Installing formula plugin', {
       config: {
@@ -77,11 +79,22 @@ export class FormulaPlugin implements RuntimePlugin {
     
     // Register formula evaluation middleware if auto-evaluation is enabled
     if (this.config.autoEvaluateOnQuery !== false) {
-      this.registerFormulaMiddleware(kernel);
+      this.registerFormulaMiddleware(kernel, ctx);
     }
     
     this.logger.info('Formula plugin installed successfully');
   }
+
+  // --- Adapter for @objectstack/core compatibility ---
+  async init(ctx: any): Promise<void> {
+    return this.install(ctx);
+  }
+
+  async start(ctx: any): Promise<void> {
+    // Formula plugin doesn't have onStart logic in legacy
+    return Promise.resolve();
+  }
+  // ---------------------------------------------------
   
   /**
    * Register the formula provider with the kernel
@@ -98,6 +111,7 @@ export class FormulaPlugin implements RuntimePlugin {
           return this.engine.evaluate(
             formula,
             context,
+
             'text', // default data type
             {}
           );
@@ -117,28 +131,92 @@ export class FormulaPlugin implements RuntimePlugin {
    * Register formula evaluation middleware
    * @private
    */
-  private registerFormulaMiddleware(kernel: KernelWithFormulas): void {
-    // Check if kernel supports hook registration
-    if (kernel.hooks && typeof kernel.hooks.register === 'function') {
-      // Register middleware to evaluate formulas after queries
-      kernel.hooks.register('afterQuery', async (context: any) => {
-        // Formula evaluation logic would go here
-        // This would automatically compute formula fields after data is retrieved
-        if (context.results && context.metadata?.fields) {
-          // Iterate through fields and evaluate formulas
-          // const formulaFields = Object.entries(context.metadata.fields)
-          //   .filter(([_, fieldConfig]) => (fieldConfig as any).formula);
-          // 
-          // for (const record of context.results) {
-          //   for (const [fieldName, fieldConfig] of formulaFields) {
-          //     const formula = (fieldConfig as any).formula;
-          //     const result = this.engine.evaluate(formula, /* context */, /* dataType */);
-          //     record[fieldName] = result.value;
-          //   }
-          // }
+  private registerFormulaMiddleware(kernel: KernelWithFormulas, ctx: any): void {
+      const registerHook = (name: string, handler: any) => {
+        if (typeof ctx.hook === 'function') {
+            ctx.hook(name, handler);
+        } else if (kernel.hooks && typeof kernel.hooks.register === 'function') {
+            kernel.hooks.register(name, handler);
         }
+      };
+
+      registerHook('afterFind', async (context: any) => {
+          // context is RetrievalHookContext
+          const { objectName, result, user } = context;
+          if (!result) return;
+          
+          // Get schema
+          const schemaItem = this.kernel.metadata.get('object', objectName);
+          const schema = schemaItem?.content || schemaItem;
+          if (!schema || !schema.fields) return;
+          
+          // Identify formula fields
+          const formulaFields: [string, any][] = [];
+          for (const [key, field] of Object.entries(schema.fields) as any[]) {
+              if (field.type === 'formula' && field.expression) {
+                  formulaFields.push([key, field]);
+              }
+          }
+          
+          if (formulaFields.length === 0) return;
+
+          const results = Array.isArray(result) ? result : [result];
+          const now = new Date();
+          const systemInfo = {
+                today: new Date(now.getFullYear(), now.getMonth(), now.getDate()),
+                now: now,
+                year: now.getFullYear(),
+                month: now.getMonth() + 1,
+                day: now.getDate(),
+                hour: now.getHours(),
+                minute: now.getMinutes(),
+                second: now.getSeconds(),
+          };
+
+          for (const record of results) {
+              if (!record) continue;
+              
+              const formulaContext: FormulaContext = {
+                  record,
+                  system: systemInfo,
+                  current_user: {
+                      id: user?.id || '',
+                      name: user?.name,
+                      email: user?.email,
+                      role: user?.roles?.[0]
+                  },
+                  is_new: false,
+                  record_id: record._id || record.id
+              };
+              
+              for (const [fieldName, fieldConfig] of formulaFields) {
+                  const evalResult = this.engine.evaluate(
+                      fieldConfig.expression,
+                      formulaContext,
+                      fieldConfig.data_type || 'text',
+                      { strict: true }
+                  );
+                  
+                  if (evalResult.success) {
+                      record[fieldName] = evalResult.value;
+                  } else {
+                      record[fieldName] = null;
+                      // Log specific error as seen in repository.ts
+                      console.error(
+                        '[ObjectQL][FormulaEngine] Formula evaluation failed',
+                        {
+                            objectName: objectName,
+                            fieldName,
+                            recordId: formulaContext.record_id,
+                            expression: fieldConfig.expression,
+                            error: evalResult.error,
+                            stack: evalResult.stack,
+                        }
+                    );
+                  }
+              }
+          }
       });
-    }
   }
   
   /**
