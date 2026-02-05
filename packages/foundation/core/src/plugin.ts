@@ -171,6 +171,22 @@ export class ObjectQLPlugin implements RuntimePlugin {
       await this.registerAI(kernel);
     }
     
+    // Register system service aliases
+    if (typeof (ctx as any).registerService === 'function') {
+        const registerService = (ctx as any).registerService.bind(ctx);
+        
+        // 1. Metadata service
+        if (kernel.metadata) {
+            registerService('metadata', kernel.metadata);
+            console.log(`[${this.name}] Registered 'metadata' service alias`);
+        }
+        
+        // 2. Data service (prefer QueryService, fallback to kernel)
+        const dataService = kernel.queryService || kernel;
+        registerService('data', dataService);
+        console.log(`[${this.name}] Registered 'data' service alias`);
+    }
+
     console.log(`[${this.name}] Plugin installed successfully`);
   }
   

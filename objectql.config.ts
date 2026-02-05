@@ -65,62 +65,6 @@ export default {
         new HonoServerPlugin({
             port: 5050,
         }),
-        // Compatibility Plugin: Satisfies Runtime system requirements and aliases
-        {
-            name: 'system-compatibility',
-            version: '1.0.0',
-            init: async (ctx: any) => {
-                const kernel = ctx.getKernel();
-                
-                // 1. Alias http.server (for ApiRegistry)
-                ctx.hook('service:registered', (name: string, service: any) => {
-                    if (name === 'http-server') {
-                         ctx.logger.info('Aliasing http-server to http.server for ApiRegistry (via hook)');
-                         ctx.registerService('http.server', service);
-                    }
-                });
-                try {
-                    const existing = ctx.getServices().get('http-server');
-                    if (existing) {
-                         ctx.logger.info('Aliasing http-server to http.server for ApiRegistry (immediate)');
-                         ctx.registerService('http.server', existing);
-                    }
-                } catch (e) { /* ignore */ }
-
-                // 2. Register Metadata service
-                if (!ctx.getServices().has('metadata')) {
-                    const metadata = (kernel as any).metadata || {
-                         // Minimal Metadata Service Mock
-                         objects: {},
-                         get: (type: string, name: string) => null,
-                         list: (type: string) => []
-                    };
-                    ctx.registerService('metadata', metadata);
-                    ctx.logger.info('Registered metadata service (shim)');
-                }
-
-                // 3. Register Data service (alias to ObjectQL engine)
-                if (!ctx.getServices().has('data')) {
-                     // We try to get objectql service, or use kernel as fallback
-                     let engine;
-                     try {
-                        engine = ctx.getServices().get('objectql');
-                     } catch(e) {}
-                     
-                     if (engine || kernel) {
-                        ctx.registerService('data', engine || kernel);
-                        ctx.logger.info('Registered data service');
-                     }
-                }
-
-                // 4. Register Auth service (alias to kernel.security)
-                if (!ctx.getServices().has('auth')) {
-                     const security = (kernel as any).security || { hasPermission: () => true };
-                     ctx.registerService('auth', security);
-                     ctx.logger.info('Registered auth service');
-                }
-            }
-        },
         new ObjectQLPlugin({
             enableRepository: true,
             enableQueryService: true,
