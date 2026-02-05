@@ -246,6 +246,16 @@ export class ObjectQLPlugin implements RuntimePlugin {
     };
 
     kernel.find = async (objectName: string, query: any): Promise<{ value: any[]; count: number }> => {
+      // Use QueryService if available for advanced query processing (AST, optimizations)
+      if ((kernel as any).queryService) {
+        const result = await (kernel as any).queryService.find(objectName, query);
+        return { 
+            value: result.value, 
+            count: result.count !== undefined ? result.count : result.value.length 
+        };
+      }
+
+      // Fallback to direct driver call
       const driver = getDriver(objectName);
       const value = await driver.find(objectName, query);
       const count = value.length;
@@ -253,11 +263,25 @@ export class ObjectQLPlugin implements RuntimePlugin {
     };
 
     kernel.get = async (objectName: string, id: string): Promise<any> => {
+      // Use QueryService if available
+      if ((kernel as any).queryService) {
+          const result = await (kernel as any).queryService.findOne(objectName, id);
+          return result.value;
+      }
+
       const driver = getDriver(objectName);
       return await driver.findOne(objectName, id);
     };
 
     kernel.count = async (objectName: string, filters?: any): Promise<number> => {
+      // Use QueryService if available
+      if ((kernel as any).queryService) {
+          // QueryService.count expects a UnifiedQuery filter or just filter object?
+          // Looking at QueryService.count signature: count(objectName: string, where?: Filter, options?: QueryOptions)
+          const result = await (kernel as any).queryService.count(objectName, filters);
+          return result.value;
+      }
+
       const driver = getDriver(objectName);
       return await driver.count(objectName, filters || {}, {});
     };

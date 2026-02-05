@@ -11,20 +11,14 @@ import type { ObjectKernel } from '@objectstack/runtime';
 import { Data } from '@objectstack/spec';
 type QueryAST = Data.QueryAST;
 type SortNode = Data.SortNode;
-import { QueryBuilder } from './query';
-import { QueryCompiler } from './optimizations/QueryCompiler';
 
 export class ObjectRepository {
-    private queryBuilder: QueryBuilder;
-    // Shared query compiler for caching compiled queries
-    private static queryCompiler = new QueryCompiler(1000);
 
     constructor(
         private objectName: string,
         private context: ObjectQLContext,
         private app: IObjectQL
     ) {
-        this.queryBuilder = new QueryBuilder();
     }
     
     private getDriver(): Driver {
@@ -42,17 +36,6 @@ export class ObjectRepository {
             transaction: this.context.transactionHandle,
             ...extra
         };
-    }
-
-    /**
-     * Translates ObjectQL UnifiedQuery to ObjectStack QueryAST format
-     * Uses query compiler for caching and optimization
-     */
-    private buildQueryAST(query: UnifiedQuery): QueryAST {
-        const ast = this.queryBuilder.build(this.objectName, query);
-        // Use query compiler to cache and optimize the AST
-        const compiled = ObjectRepository.queryCompiler.compile(this.objectName, ast);
-        return compiled.ast;
     }
 
     getSchema(): ObjectConfig {
@@ -100,9 +83,8 @@ export class ObjectRepository {
         };
         await this.app.triggerHook('beforeFind', this.objectName, hookCtx);
 
-        // Build QueryAST and execute via kernel
-        const ast = this.buildQueryAST(hookCtx.query || {});
-        const kernelResult = await (this.getKernel() as any).find(this.objectName, ast);
+        // Execute via kernel (delegates to QueryService)
+        const kernelResult = await (this.getKernel() as any).find(this.objectName, hookCtx.query || {});
         const results = kernelResult.value;
         
         // Formula evaluation moved to FormulaPlugin hook
@@ -166,10 +148,8 @@ export class ObjectRepository {
         };
         await this.app.triggerHook('beforeCount', this.objectName, hookCtx);
 
-        // Build QueryAST and execute via kernel to get count
-        const ast = this.buildQueryAST(hookCtx.query || {});
-        const kernelResult = await (this.getKernel() as any).find(this.objectName, ast);
-        const result = kernelResult.count;
+        // Execute via kernel (delegates to QueryService)
+        const result = await (this.getKernel() as any).count(this.objectName, hookCtx.query || {});
 
         hookCtx.result = result;
         await this.app.triggerHook('afterCount', this.objectName, hookCtx);

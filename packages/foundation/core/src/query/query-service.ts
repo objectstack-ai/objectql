@@ -16,6 +16,7 @@ import type {
 import { Data } from '@objectstack/spec';
 type QueryAST = Data.QueryAST;
 import { QueryBuilder } from './query-builder';
+import { QueryCompiler } from '../optimizations/QueryCompiler';
 
 /**
  * Options for query execution
@@ -101,12 +102,14 @@ export interface QueryProfile {
  */
 export class QueryService {
     private queryBuilder: QueryBuilder;
+    private queryCompiler: QueryCompiler;
     
     constructor(
         private datasources: Record<string, Driver>,
         private metadata: MetadataRegistry
     ) {
         this.queryBuilder = new QueryBuilder();
+        this.queryCompiler = new QueryCompiler(1000);
     }
     
     /**
@@ -142,7 +145,9 @@ export class QueryService {
      * @private
      */
     private buildQueryAST(objectName: string, query: UnifiedQuery): QueryAST {
-        return this.queryBuilder.build(objectName, query);
+        const ast = this.queryBuilder.build(objectName, query);
+        const compiled = this.queryCompiler.compile(objectName, ast);
+        return compiled.ast;
     }
     
     /**
