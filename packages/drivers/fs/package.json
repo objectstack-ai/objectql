@@ -27,7 +27,8 @@
   "dependencies": {
     "@objectql/driver-memory": "workspace:*",
     "@objectql/types": "workspace:*",
-    "@objectstack/spec": "^1.0.4"
+    "@objectstack/spec": "^1.0.5",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

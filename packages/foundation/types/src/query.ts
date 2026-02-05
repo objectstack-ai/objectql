@@ -7,7 +7,8 @@
  */
 
 import { Data } from '@objectstack/spec';
-type FilterCondition = Data.FilterCondition;
+import { z } from 'zod';
+type FilterCondition = z.infer<typeof Data.FilterCondition>;
 
 /**
  * Modern Query Filter using @objectstack/spec FilterCondition

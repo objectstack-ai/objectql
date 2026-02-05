@@ -9,8 +9,9 @@
 import { ObjectQLContext, IObjectQL, ObjectConfig, Driver, UnifiedQuery, ActionContext, HookAPI, RetrievalHookContext, MutationHookContext, UpdateHookContext, ValidationContext, ValidationError, ValidationRuleResult, FormulaContext, Filter } from '@objectql/types';
 import type { ObjectKernel } from '@objectstack/runtime';
 import { Data } from '@objectstack/spec';
-type QueryAST = Data.QueryAST;
-type SortNode = Data.SortNode;
+import { z } from 'zod';
+type QueryAST = z.infer<typeof Data.QueryAST>;
+type SortNode = z.infer<typeof Data.SortNode>;
 
 export class ObjectRepository {
 

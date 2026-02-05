@@ -8,9 +8,11 @@
 
 import type { UnifiedQuery } from '@objectql/types';
 import { Data } from '@objectstack/spec';
+import { z } from 'zod';
 
 // Local QueryAST type extension to include all properties we need
-interface QueryAST extends Data.QueryAST {
+type QueryASTBase = z.infer<typeof Data.QueryAST>;
+interface QueryAST extends QueryASTBase {
     top?: number;
     expand?: Record<string, any>;
     aggregations?: any[];

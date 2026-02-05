@@ -18,7 +18,8 @@
   "license": "MIT",
   "dependencies": {
     "@objectql/types": "workspace:*",
-    "@objectstack/spec": "^1.0.4"
+    "@objectstack/spec": "^1.0.5",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "typescript": "^5.3.0"

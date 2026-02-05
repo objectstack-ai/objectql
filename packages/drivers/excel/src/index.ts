@@ -1,5 +1,6 @@
 import { Data } from '@objectstack/spec';
-type DriverInterface = Data.DriverInterface;
+import { z } from 'zod';
+type DriverInterface = z.infer<typeof Data.DriverInterface>;
 /**
  * ObjectQL
  * Copyright (c) 2026-present ObjectStack Inc.

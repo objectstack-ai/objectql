@@ -8,7 +8,8 @@
 
 // Import protocol types from @objectstack/spec
 import { UI } from '@objectstack/spec';
-type Action = UI.Action;
+import { z } from 'zod';
+type Action = z.infer<typeof UI.ActionSchema>;
 import { FieldConfig } from "./field";
 import { HookAPI } from "./hook"; // Reuse the restricted API interface
 

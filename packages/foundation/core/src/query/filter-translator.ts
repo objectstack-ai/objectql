@@ -8,7 +8,8 @@
 
 import type { Filter } from '@objectql/types';
 import { Data } from '@objectstack/spec';
-type FilterCondition = Data.FilterCondition;
+import { z } from 'zod';
+type FilterCondition = z.infer<typeof Data.FilterCondition>;
 import { ObjectQLError } from '@objectql/types';
 
 /**

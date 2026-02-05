@@ -27,7 +27,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@objectstack/spec": "^1.0.4"
+    "@objectstack/spec": "^1.0.5"
   },
   "devDependencies": {
     "ts-json-schema-generator": "^2.4.0",

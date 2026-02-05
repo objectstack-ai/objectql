@@ -8,9 +8,10 @@
 
 // Import protocol types from @objectstack/spec
 import { Data } from '@objectstack/spec';
-type ProtocolFieldType = Data.FieldType;
-type Field = Data.Field;
-type SpecSelectOption = Data.SelectOption;
+import { z } from 'zod';
+type ProtocolFieldType = z.infer<typeof Data.FieldType>;
+type Field = z.infer<typeof Data.FieldSchema>;
+type SpecSelectOption = z.infer<typeof Data.SelectOption>;
 
 /**
  * Re-export Protocol Types from the Constitution

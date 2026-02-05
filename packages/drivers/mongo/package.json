@@ -21,10 +21,11 @@
   },
   "dependencies": {
     "@objectql/types": "workspace:*",
-    "@objectstack/spec": "^1.0.4",
+    "@objectstack/spec": "^1.0.5",
     "mongodb": "^5.9.2"
   },
   "devDependencies": {
-    "mongodb-memory-server": "^11.0.1"
+    "mongodb-memory-server": "^11.0.1",
+    "zod": "^4.3.6"
   }
 }

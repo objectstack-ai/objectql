@@ -1,7 +1,8 @@
 import { Data, System as SystemSpec } from '@objectstack/spec';
-type QueryAST = Data.QueryAST;
-type SortNode = Data.SortNode;
-type DriverInterface = Data.DriverInterface;
+import { z } from 'zod';
+type QueryAST = z.infer<typeof Data.QueryAST>;
+type SortNode = z.infer<typeof Data.SortNode>;
+type DriverInterface = z.infer<typeof Data.DriverInterface>;
 /**
  * ObjectQL
  * Copyright (c) 2026-present ObjectStack Inc.

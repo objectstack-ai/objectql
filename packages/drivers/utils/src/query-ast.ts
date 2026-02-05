@@ -8,8 +8,9 @@
  */
 
 import { Data } from '@objectstack/spec';
-type QueryAST = Data.QueryAST;
-type SortNode = Data.SortNode;
+import { z } from 'zod';
+type QueryAST = z.infer<typeof Data.QueryAST>;
+type SortNode = typeof Data.SortNode;
 
 /**
  * Normalized query structure for internal driver use

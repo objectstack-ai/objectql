@@ -15,9 +15,10 @@ export type { ObjectStackProtocolImplementation } from '@objectstack/objectql';
 
 // Export ObjectStack spec types for driver development
 import { Data, System } from '@objectstack/spec';
-export type QueryAST = Data.QueryAST;
-export type DriverInterface = Data.DriverInterface;
-export type DriverOptions = Data.DriverOptions;
+import { z } from 'zod';
+export type QueryAST = z.infer<typeof Data.QueryAST>;
+export type DriverInterface = z.infer<typeof Data.DriverInterface>;
+export type DriverOptions = z.infer<typeof Data.DriverOptions>;
 
 export * from './gateway';
 
