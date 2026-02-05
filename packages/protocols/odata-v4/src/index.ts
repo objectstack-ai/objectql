@@ -91,6 +91,27 @@ export class ODataV4Plugin implements RuntimePlugin {
         };
     }
 
+    // --- Adapter for @objectstack/core compatibility ---
+    init = async (kernel: any): Promise<void> => {
+        const ctx: any = {
+             engine: kernel,
+             getKernel: () => kernel
+        };
+        // Ensure getService is available if passed from kernel
+        if (kernel && kernel.context && kernel.context.getService) {
+            ctx.getService = kernel.context.getService;
+        }
+        return this.install(ctx);
+    }
+
+    start = async (kernel: any): Promise<void> => {
+        const ctx: any = {
+            engine: kernel,
+            getKernel: () => kernel
+        };
+        return this.onStart(ctx);
+    }
+
     /**
      * Install hook - called during kernel initialization
      */
@@ -202,14 +223,6 @@ export class ODataV4Plugin implements RuntimePlugin {
         console.log(`[${this.name}] 🚀 OData mounted at ${basePath}`);
     }
 
-    // --- Adapter for @objectstack/core compatibility ---
-    async init(ctx: any): Promise<void> {
-        return this.install(ctx);
-    }
-
-    async start(ctx: any): Promise<void> {
-        return this.onStart(ctx);
-    }
     // ---------------------------------------------------
 
     /**

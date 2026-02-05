@@ -74,6 +74,20 @@ export class ObjectQLSecurityPlugin implements RuntimePlugin {
       format: 'pretty'
     });
   }
+
+  // --- Adapter for @objectstack/core compatibility ---
+  init = async (kernel: any): Promise<void> => {
+      const ctx: any = {
+          engine: kernel,
+          getKernel: () => kernel
+      };
+      return this.install(ctx);
+  }
+
+  start = async (kernel: any): Promise<void> => {
+      // Security plugin doesn't have specific start logic yet
+      return;
+  }
   
   /**
    * Install the plugin into the kernel
@@ -132,14 +146,6 @@ export class ObjectQLSecurityPlugin implements RuntimePlugin {
     this.logger.info('Security plugin started');
   }
 
-  // --- Adapter for @objectstack/core compatibility ---
-  async init(ctx: any): Promise<void> {
-    return this.install(ctx);
-  }
-
-  async start(ctx: any): Promise<void> {
-    return this.onStart(ctx);
-  }
   // ---------------------------------------------------
   
   /**

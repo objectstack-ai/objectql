@@ -107,13 +107,6 @@ export class ObjectQLPlugin implements RuntimePlugin {
   }
   
   /**
-   * Initialize the plugin
-   */
-  async init(ctx: RuntimeContext): Promise<void> {
-    return this.install(ctx);
-  }
-
-  /**
    * Install the plugin into the kernel
    * This is called during kernel initialization
    */
@@ -191,32 +184,6 @@ export class ObjectQLPlugin implements RuntimePlugin {
   }
 
   // --- Adapter for @objectstack/core compatibility ---
-  async init(kernel: any): Promise<void> {
-      // The new core passes the kernel instance directly
-      // We wrap it to match the old RuntimeContext interface
-      const ctx = {
-          engine: kernel,
-          getKernel: () => kernel
-      };
-
-      // Register Protocol Service
-      // If kernel supports service registration (PluginContext or ExtendedKernel with custom registry)
-      if (kernel && typeof kernel.registerService === 'function') {
-          console.log(`[${this.name}] Registering protocol service...`);
-          const protocolShim = new ObjectStackProtocolImplementation(kernel as any);
-          kernel.registerService('protocol', protocolShim);
-      }
-
-      return this.install(ctx);
-  }
-
-  async start(kernel: any): Promise<void> {
-      const ctx = {
-          engine: kernel,
-          getKernel: () => kernel
-      };
-      return this.onStart(ctx);
-  }
   // ---------------------------------------------------
   
   /**
@@ -305,4 +272,36 @@ export class ObjectQLPlugin implements RuntimePlugin {
     // For now, this is a placeholder to establish the structure
     console.log(`[${this.name}] AI integration registered`);
   }
+
+    // --- Adapter for @objectstack/core compatibility ---
+    init = async (kernel: any): Promise<void> => {
+        // The new core passes the kernel instance directly
+        // We wrap it to match the old RuntimeContext interface
+        const ctx: any = {
+            engine: kernel,
+            getKernel: () => kernel
+        };
+
+        // Register Protocol Service
+        // If kernel supports service registration (PluginContext or ExtendedKernel with custom registry)
+        if (kernel && typeof kernel.registerService === 'function') {
+            console.log(`[${this.name}] Registering protocol service...`);
+            const protocolShim = new ObjectStackProtocolImplementation(kernel);
+             kernel.registerService('protocol', protocolShim);
+             
+             // Register 'objectql' service for AppPlugin compatibility
+             kernel.registerService('objectql', this);
+             console.log(`[${this.name}] Registered 'objectql' service`);
+        }
+
+        return this.install(ctx);
+    }
+
+    start = async (kernel: any): Promise<void> => {
+        const ctx: any = {
+            engine: kernel,
+            getKernel: () => kernel
+        };
+        return this.onStart(ctx);
+    }
 }
