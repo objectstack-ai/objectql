@@ -25,6 +25,7 @@ module.exports = {
   transformIgnorePatterns: [
     "/node_modules/(?!(@objectstack|.pnpm))"
   ],
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   collectCoverageFrom: [
     'src/**/*.ts',
     '!src/**/*.d.ts',
