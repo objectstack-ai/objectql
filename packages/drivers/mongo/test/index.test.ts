@@ -8,6 +8,7 @@
 
 import { MongoDriver } from '../src';
 import { MongoClient } from 'mongodb';
+import { vi } from 'vitest';
 
 const mockCollection = {
     find: jest.fn().mockReturnThis(),
@@ -36,7 +37,7 @@ const mockClient = {
     db: jest.fn().mockReturnValue(mockDb)
 };
 
-jest.mock('mongodb', () => {
+vi.mock('mongodb', () => {
     return {
         MongoClient: jest.fn().mockImplementation(() => mockClient),
         ObjectId: jest.fn().mockImplementation((id?: string) => ({

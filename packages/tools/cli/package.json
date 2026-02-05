@@ -28,7 +28,7 @@
     "build": "tsc && pnpm run copy-templates",
     "copy-templates": "rm -rf templates && mkdir -p templates && rsync -av --exclude='node_modules' --exclude='dist' --exclude='__tests__' ../../../examples/quickstart/hello-world templates/ && rsync -av --exclude='node_modules' --exclude='dist' --exclude='__tests__' ../../../examples/showcase/project-tracker/ templates/starter",
     "watch": "tsc -w",
-    "test": "jest"
+    "test": "vitest run"
   },
   "dependencies": {
     "@objectql/types": "workspace:*",

@@ -24,7 +24,7 @@
   "scripts": {
     "build": "tsc",
     "generate:schemas": "node scripts/generate-schemas.js",
-    "test": "jest --passWithNoTests"
+    "test": "vitest run"
   },
   "dependencies": {
     "@objectstack/spec": "^1.0.0"

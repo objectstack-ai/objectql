@@ -5,7 +5,7 @@
  * complies with the Protocol TCK requirements and RESTful principles.
  */
 
-import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
+// import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
 import { runProtocolTCK, ProtocolEndpoint, ProtocolOperation, ProtocolResponse } from '@objectql/protocol-tck';
 import { RestPlugin } from '../src/index';
 import { ObjectKernel } from '@objectstack/core';

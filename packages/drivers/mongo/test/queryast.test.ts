@@ -8,6 +8,7 @@
 
 import { MongoDriver } from '../src';
 import { MongoClient } from 'mongodb';
+import { vi } from 'vitest';
 
 // Mock data
 const products = [
@@ -44,7 +45,7 @@ const mockClient = {
     close: jest.fn().mockResolvedValue(undefined)
 };
 
-jest.mock('mongodb', () => {
+vi.mock('mongodb', () => {
     return {
         MongoClient: jest.fn().mockImplementation(() => mockClient),
         ObjectId: jest.fn(id => id)

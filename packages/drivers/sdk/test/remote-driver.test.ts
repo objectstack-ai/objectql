@@ -7,9 +7,10 @@
  */
 
 import { RemoteDriver } from '../src/index';
+import { vi, Mock } from 'vitest';
 
 // Mock fetch globally
-global.fetch = jest.fn();
+global.fetch = vi.fn();
 
 describe('RemoteDriver', () => {
     let driver: RemoteDriver;
@@ -17,7 +18,7 @@ describe('RemoteDriver', () => {
 
     beforeEach(() => {
         driver = new RemoteDriver(baseUrl);
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     describe('Constructor', () => {
@@ -41,7 +42,7 @@ describe('RemoteDriver', () => {
                 ]
             };
 
-            (global.fetch as jest.Mock).mockResolvedValueOnce({
+            (global.fetch as Mock).mockResolvedValueOnce({
                 json: async () => mockResponse
             });
 
@@ -65,7 +66,7 @@ describe('RemoteDriver', () => {
         it('should handle empty result', async () => {
             const mockResponse = { data: [] };
 
-            (global.fetch as jest.Mock).mockResolvedValueOnce({
+            (global.fetch as Mock).mockResolvedValueOnce({
                 json: async () => mockResponse
             });
 
@@ -78,7 +79,7 @@ describe('RemoteDriver', () => {
                 error: { message: 'Object not found' }
             };
 
-            (global.fetch as jest.Mock).mockResolvedValueOnce({
+            (global.fetch as Mock).mockResolvedValueOnce({
                 json: async () => mockResponse
             });
 
@@ -94,7 +95,7 @@ describe('RemoteDriver', () => {
                 data: { _id: '1', name: 'Alice', email: 'alice@example.com' }
             };
 
-            (global.fetch as jest.Mock).mockResolvedValueOnce({
+            (global.fetch as Mock).mockResolvedValueOnce({
                 json: async () => mockResponse
             });
 
@@ -116,7 +117,7 @@ describe('RemoteDriver', () => {
         it('should return null when record not found', async () => {
             const mockResponse = { data: null };
 
-            (global.fetch as jest.Mock).mockResolvedValueOnce({
+            (global.fetch as Mock).mockResolvedValueOnce({
                 json: async () => mockResponse
             });
 
@@ -129,7 +130,7 @@ describe('RemoteDriver', () => {
                 data: { _id: 123, name: 'Test' }
             };
 
-            (global.fetch as jest.Mock).mockResolvedValueOnce({
+            (global.fetch as Mock).mockResolvedValueOnce({
                 json: async () => mockResponse
             });
 
@@ -156,7 +157,7 @@ describe('RemoteDriver', () => {
                 data: { _id: '3', ...newData }
             };
 
-            (global.fetch as jest.Mock).mockResolvedValueOnce({
+            (global.fetch as Mock).mockResolvedValueOnce({
                 json: async () => mockResponse
             });
 
@@ -181,7 +182,7 @@ describe('RemoteDriver', () => {
                 error: { message: 'Validation failed: email is required' }
             };
 
-            (global.fetch as jest.Mock).mockResolvedValueOnce({
+            (global.fetch as Mock).mockResolvedValueOnce({
                 json: async () => mockResponse
             });
 
@@ -198,7 +199,7 @@ describe('RemoteDriver', () => {
                 data: { _id: '1', name: 'Alice Updated', email: 'alice@example.com' }
             };
 
-            (global.fetch as jest.Mock).mockResolvedValueOnce({
+            (global.fetch as Mock).mockResolvedValueOnce({
                 json: async () => mockResponse
             });
 
@@ -222,7 +223,7 @@ describe('RemoteDriver', () => {
                 error: { message: 'Record not found' }
             };
 
-            (global.fetch as jest.Mock).mockResolvedValueOnce({
+            (global.fetch as Mock).mockResolvedValueOnce({
                 json: async () => mockResponse
             });
 
@@ -236,7 +237,7 @@ describe('RemoteDriver', () => {
                 data: { _id: 123, name: 'Updated' }
             };
 
-            (global.fetch as jest.Mock).mockResolvedValueOnce({
+            (global.fetch as Mock).mockResolvedValueOnce({
                 json: async () => mockResponse
             });
 
@@ -259,7 +260,7 @@ describe('RemoteDriver', () => {
         it('should delete a record', async () => {
             const mockResponse = { data: 1 };
 
-            (global.fetch as jest.Mock).mockResolvedValueOnce({
+            (global.fetch as Mock).mockResolvedValueOnce({
                 json: async () => mockResponse
             });
 
@@ -283,7 +284,7 @@ describe('RemoteDriver', () => {
                 error: { message: 'Record not found' }
             };
 
-            (global.fetch as jest.Mock).mockResolvedValueOnce({
+            (global.fetch as Mock).mockResolvedValueOnce({
                 json: async () => mockResponse
             });
 
@@ -295,7 +296,7 @@ describe('RemoteDriver', () => {
         it('should handle numeric id in delete', async () => {
             const mockResponse = { data: 1 };
 
-            (global.fetch as jest.Mock).mockResolvedValueOnce({
+            (global.fetch as Mock).mockResolvedValueOnce({
                 json: async () => mockResponse
             });
 
@@ -318,7 +319,7 @@ describe('RemoteDriver', () => {
         it('should count records', async () => {
             const mockResponse = { data: 42 };
 
-            (global.fetch as jest.Mock).mockResolvedValueOnce({
+            (global.fetch as Mock).mockResolvedValueOnce({
                 json: async () => mockResponse
             });
 
@@ -340,7 +341,7 @@ describe('RemoteDriver', () => {
         it('should count all records when no filters', async () => {
             const mockResponse = { data: 100 };
 
-            (global.fetch as jest.Mock).mockResolvedValueOnce({
+            (global.fetch as Mock).mockResolvedValueOnce({
                 json: async () => mockResponse
             });
 
@@ -351,7 +352,7 @@ describe('RemoteDriver', () => {
         it('should return 0 for empty collection', async () => {
             const mockResponse = { data: 0 };
 
-            (global.fetch as jest.Mock).mockResolvedValueOnce({
+            (global.fetch as Mock).mockResolvedValueOnce({
                 json: async () => mockResponse
             });
 
@@ -362,7 +363,7 @@ describe('RemoteDriver', () => {
 
     describe('Error Handling', () => {
         it('should handle network errors', async () => {
-            (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('Network error'));
+            (global.fetch as Mock).mockRejectedValueOnce(new Error('Network error'));
 
             await expect(driver.find('user', {}))
                 .rejects
@@ -370,7 +371,7 @@ describe('RemoteDriver', () => {
         });
 
         it('should handle invalid JSON response', async () => {
-            (global.fetch as jest.Mock).mockResolvedValueOnce({
+            (global.fetch as Mock).mockResolvedValueOnce({
                 json: async () => { throw new Error('Invalid JSON'); }
             });
 
@@ -387,7 +388,7 @@ describe('RemoteDriver', () => {
                 }
             };
 
-            (global.fetch as jest.Mock).mockResolvedValueOnce({
+            (global.fetch as Mock).mockResolvedValueOnce({
                 json: async () => mockResponse
             });
 
@@ -402,7 +403,7 @@ describe('RemoteDriver', () => {
             const driverWithSlash = new RemoteDriver('http://example.com/');
             const mockResponse = { data: [] };
 
-            (global.fetch as jest.Mock).mockResolvedValueOnce({
+            (global.fetch as Mock).mockResolvedValueOnce({
                 json: async () => mockResponse
             });
 
@@ -418,7 +419,7 @@ describe('RemoteDriver', () => {
             const httpsDriver = new RemoteDriver('https://secure.example.com');
             const mockResponse = { data: [] };
 
-            (global.fetch as jest.Mock).mockResolvedValueOnce({
+            (global.fetch as Mock).mockResolvedValueOnce({
                 json: async () => mockResponse
             });
 
@@ -434,7 +435,7 @@ describe('RemoteDriver', () => {
             const customPortDriver = new RemoteDriver('http://localhost:8080');
             const mockResponse = { data: [] };
 
-            (global.fetch as jest.Mock).mockResolvedValueOnce({
+            (global.fetch as Mock).mockResolvedValueOnce({
                 json: async () => mockResponse
             });
 
@@ -470,7 +471,7 @@ describe('RemoteDriver', () => {
                 count: 2
             };
 
-            (global.fetch as jest.Mock).mockResolvedValueOnce({
+            (global.fetch as Mock).mockResolvedValueOnce({
                 ok: true,
                 json: async () => mockResponse
             });
@@ -502,7 +503,7 @@ describe('RemoteDriver', () => {
                 fields: ['name']
             };
 
-            (global.fetch as jest.Mock).mockResolvedValueOnce({
+            (global.fetch as Mock).mockResolvedValueOnce({
                 ok: true,
                 json: async () => ({ value: [], count: 0 })
             });
@@ -524,7 +525,7 @@ describe('RemoteDriver', () => {
             const queryAST = { object: 'users' };
 
             // Test data response format
-            (global.fetch as jest.Mock).mockResolvedValueOnce({
+            (global.fetch as Mock).mockResolvedValueOnce({
                 ok: true,
                 json: async () => ({ data: [{ id: 1 }] })
             });
@@ -533,7 +534,7 @@ describe('RemoteDriver', () => {
             expect(result.value).toEqual([{ id: 1 }]);
 
             // Test direct array response
-            (global.fetch as jest.Mock).mockResolvedValueOnce({
+            (global.fetch as Mock).mockResolvedValueOnce({
                 ok: true,
                 json: async () => [{ id: 2 }]
             });
@@ -545,7 +546,7 @@ describe('RemoteDriver', () => {
         it('should handle errors in executeQuery', async () => {
             const queryAST = { object: 'users' };
 
-            (global.fetch as jest.Mock).mockResolvedValueOnce({
+            (global.fetch as Mock).mockResolvedValueOnce({
                 ok: false,
                 status: 404,
                 statusText: 'Not Found',
@@ -577,7 +578,7 @@ describe('RemoteDriver', () => {
                 affected: 1
             };
 
-            (global.fetch as jest.Mock).mockResolvedValueOnce({
+            (global.fetch as Mock).mockResolvedValueOnce({
                 ok: true,
                 json: async () => mockResponse
             });
@@ -612,7 +613,7 @@ describe('RemoteDriver', () => {
                 affected: 2
             };
 
-            (global.fetch as jest.Mock).mockResolvedValueOnce({
+            (global.fetch as Mock).mockResolvedValueOnce({
                 ok: true,
                 json: async () => mockResponse
             });
@@ -630,7 +631,7 @@ describe('RemoteDriver', () => {
                 data: { name: 'Test' }
             };
 
-            (global.fetch as jest.Mock).mockResolvedValueOnce({
+            (global.fetch as Mock).mockResolvedValueOnce({
                 ok: true,
                 json: async () => ({
                     error: {
@@ -653,7 +654,7 @@ describe('RemoteDriver', () => {
                 id: '999'
             };
 
-            (global.fetch as jest.Mock).mockResolvedValueOnce({
+            (global.fetch as Mock).mockResolvedValueOnce({
                 ok: false,
                 status: 404,
                 statusText: 'Not Found',
@@ -682,7 +683,7 @@ describe('RemoteDriver', () => {
                 result: { total: 1000 }
             };
 
-            (global.fetch as jest.Mock).mockResolvedValueOnce({
+            (global.fetch as Mock).mockResolvedValueOnce({
                 ok: true,
                 json: async () => mockResponse
             });
@@ -702,7 +703,7 @@ describe('RemoteDriver', () => {
         it('should use default execute endpoint when not specified', async () => {
             const payload = { action: 'test' };
 
-            (global.fetch as jest.Mock).mockResolvedValueOnce({
+            (global.fetch as Mock).mockResolvedValueOnce({
                 ok: true,
                 json: async () => ({ success: true })
             });
@@ -716,7 +717,7 @@ describe('RemoteDriver', () => {
         });
 
         it('should handle errors in execute', async () => {
-            (global.fetch as jest.Mock).mockResolvedValueOnce({
+            (global.fetch as Mock).mockResolvedValueOnce({
                 ok: false,
                 status: 500,
                 statusText: 'Internal Server Error',
@@ -741,7 +742,7 @@ describe('RemoteDriver', () => {
                 token: 'my-secret-token'
             });
 
-            (global.fetch as jest.Mock).mockResolvedValueOnce({
+            (global.fetch as Mock).mockResolvedValueOnce({
                 ok: true,
                 json: async () => ({ value: [], count: 0 })
             });
@@ -764,7 +765,7 @@ describe('RemoteDriver', () => {
                 apiKey: 'my-api-key'
             });
 
-            (global.fetch as jest.Mock).mockResolvedValueOnce({
+            (global.fetch as Mock).mockResolvedValueOnce({
                 ok: true,
                 json: async () => ({ value: [], count: 0 })
             });
@@ -788,7 +789,7 @@ describe('RemoteDriver', () => {
                 apiKey: 'my-api-key'
             });
 
-            (global.fetch as jest.Mock).mockResolvedValueOnce({
+            (global.fetch as Mock).mockResolvedValueOnce({
                 ok: true,
                 json: async () => ({ value: [], count: 0 })
             });
@@ -809,11 +810,11 @@ describe('RemoteDriver', () => {
 
     describe('Retry Logic', () => {
         beforeEach(() => {
-            jest.useFakeTimers();
+            vi.useFakeTimers();
         });
 
         afterEach(() => {
-            jest.useRealTimers();
+            vi.useRealTimers();
         });
 
         it('should retry on network errors when enabled', async () => {
@@ -824,7 +825,7 @@ describe('RemoteDriver', () => {
             });
 
             // First two attempts fail, third succeeds
-            (global.fetch as jest.Mock)
+            (global.fetch as Mock)
                 .mockRejectedValueOnce(new Error('Network error'))
                 .mockRejectedValueOnce(new Error('Network error'))
                 .mockResolvedValueOnce({
@@ -835,7 +836,10 @@ describe('RemoteDriver', () => {
             const promise = driverWithRetry.executeQuery({ object: 'users' });
             
             // Fast-forward through retries
-            await jest.runAllTimersAsync();
+            // We need to advance time multiple times for each retry
+            for (let i = 0; i < 2; i++) {
+                await vi.runAllTimersAsync();
+            }
             
             const result = await promise;
 
@@ -850,7 +854,7 @@ describe('RemoteDriver', () => {
                 maxRetries: 3
             });
 
-            (global.fetch as jest.Mock).mockResolvedValueOnce({
+            (global.fetch as Mock).mockResolvedValueOnce({
                 ok: false,
                 status: 400,
                 statusText: 'Bad Request',

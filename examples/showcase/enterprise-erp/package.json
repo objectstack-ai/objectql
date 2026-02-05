@@ -28,7 +28,7 @@
     "start": "ts-node src/index.ts",
     "codegen": "objectql types -s src -o src/types",
     "build": "tsc && rsync -a --include '*/' --include '*.yml' --exclude '*' src/ dist/",
-    "test": "jest"
+    "test": "vitest run"
   },
   "peerDependencies": {
     "@objectql/core": "workspace:*",
@@ -43,10 +43,7 @@
     "@objectql/driver-sql": "workspace:*",
     "@objectql/platform-node": "workspace:*",
     "@objectql/types": "workspace:*",
-    "@types/jest": "^30.0.0",
     "@types/node": "^20.0.0",
-    "jest": "^30.2.0",
-    "ts-jest": "^29.4.6",
     "typescript": "^5.3.0"
   }
 }
