@@ -686,7 +686,15 @@ export class GraphQLPlugin implements RuntimePlugin {
     private generateSchema(): string {
         const objectTypes = this.getMetaTypes();
         
-        let typeDefs = `#graphql
+        let typeDefs = `#graphql`;
+
+        if (this.config.enableFederation) {
+            typeDefs += `
+  extend schema @link(url: "https://specs.apollo.dev/federation/v2.3", import: ["@key", "@shareable"])
+`;
+        }
+        
+        typeDefs += `
   # Custom scalars
   """
   Represents arbitrary JSON values. Can be used for dynamic data structures.

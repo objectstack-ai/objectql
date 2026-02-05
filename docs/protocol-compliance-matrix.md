@@ -39,9 +39,9 @@ ObjectQL supports four primary API protocols, each designed for different use ca
 | Specification | REST | GraphQL | OData V4 | JSON-RPC |
 |--------------|------|---------|----------|----------|
 | **Standard** | HTTP/1.1 RFC 7231 | GraphQL 2021 | OData V4.01 | JSON-RPC 2.0 |
-| **Compliance Level** | ✅ 100% | ✅ 95% | ✅ 90% | ✅ 100% |
-| **Missing Features** | None | Federation | Delta Tokens | None |
-| **Custom Extensions** | None | Progress | Transaction Hints | SSE Progress |
+| **Compliance Level** | ✅ 100% | ✅ 100% | ✅ 90% | ✅ 100% |
+| **Missing Features** | None | None | Delta Tokens | None |
+| **Custom Extensions** | None | Progress, Federation 2 | Transaction Hints | SSE Progress |
 
 ### Query Capabilities
 
