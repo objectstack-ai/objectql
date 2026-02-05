@@ -10,7 +10,7 @@
 
 import type { RuntimePlugin, RuntimeContext } from '@objectql/types';
 import { ApolloServer, HeaderMap } from '@apollo/server';
-import { expressMiddleware } from '@apollo/server-integration-express';
+import { expressMiddleware } from '@as-integrations/express4';
 import { ApolloServerPluginDrainHttpServer } from '@apollo/server/plugin/drainHttpServer';
 import { ApolloServerPluginLandingPageDisabled } from '@apollo/server/plugin/disabled';
 import { buildSubgraphSchema } from '@apollo/subgraph';

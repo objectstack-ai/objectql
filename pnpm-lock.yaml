@@ -615,6 +615,9 @@ importers:
       '@apollo/subgraph':
         specifier: ^2.13.0
         version: 2.13.0(graphql@16.12.0)
+      '@as-integrations/express4':
+        specifier: ^1.1.2
+        version: 1.1.2(@apollo/server@5.4.0(graphql@16.12.0))(express@4.22.1)
       '@graphql-tools/schema':
         specifier: ^10.0.2
         version: 10.0.31(graphql@16.12.0)
@@ -1076,6 +1079,13 @@ packages:
   '@apollo/utils.withrequired@3.0.0':
     resolution: {integrity: sha512-aaxeavfJ+RHboh7c2ofO5HHtQobGX4AgUujXP4CXpREHp9fQ9jPi6K9T1jrAKe7HIipoP0OJ1gd6JamSkFIpvA==}
     engines: {node: '>=16'}
+
+  '@as-integrations/express4@1.1.2':
+    resolution: {integrity: sha512-PGeMcwoOKdYnZ4LtsmM7aLNoel3tbK8wKnfyahdRau1qb7wLbuaXB35zg3w34Ov4bm3WJtO3yzd8Bw5jVE+aIQ==}
+    engines: {node: '>=20'}
+    peerDependencies:
+      '@apollo/server': ^4.0.0 || ^5.0.0
+      express: ^4.0.0
 
   '@azu/format-text@1.0.2':
     resolution: {integrity: sha512-Swi4N7Edy1Eqq82GxgEECXSSLyn6GOb5htRFPzBDdUkECGXtlf12ynO5oJSpWKPwCaUssOu7NfhDcCWpIC6Ywg==}
@@ -7964,6 +7974,11 @@ snapshots:
       graphql: 16.12.0
 
   '@apollo/utils.withrequired@3.0.0': {}
+
+  '@as-integrations/express4@1.1.2(@apollo/server@5.4.0(graphql@16.12.0))(express@4.22.1)':
+    dependencies:
+      '@apollo/server': 5.4.0(graphql@16.12.0)
+      express: 4.22.1
 
   '@azu/format-text@1.0.2': {}
 

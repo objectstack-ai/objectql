@@ -18,8 +18,8 @@
   },
   "dependencies": {
     "@apollo/server": "^5.4.0",
-    "@apollo/server-integration-express": "^1.0.0",
     "@apollo/subgraph": "^2.13.0",
+    "@as-integrations/express4": "^1.1.2",
     "@graphql-tools/schema": "^10.0.2",
     "@objectql/types": "workspace:*",
     "@objectstack/spec": "^1.0.4",
