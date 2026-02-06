@@ -66,33 +66,41 @@ Enforce the "Constitution" (`@objectql/types`) rules and clean up layering viola
 | **Analysis** | `@objectql/types` uses `z.infer<typeof Data.XXXSchema>` to derive TypeScript types from `@objectstack/spec` Zod schemas. This is a **compile-time only** operation. The compiled `dist/*.js` contains ZERO references to `@objectstack/spec` or `zod`. The compiled `dist/*.d.ts` contains flattened pure TypeScript interfaces. |
 | **Action Taken** | Moved `@objectstack/spec` from `dependencies` to `devDependencies` in `package.json`. Both `@objectstack/spec` and `zod` are now correctly classified as devDependencies. Updated `.github/copilot-instructions.md` to reflect the "Protocol-Derived Types" architecture. |
 
-### B2 — Unify `DriverConfig` / `DriverCapabilities` Types
+### B2 — Unify `DriverConfig` / `DriverCapabilities` Types ✅
 
 | Field | Value |
 |-------|-------|
+| **Status** | ✅ Completed |
 | **Problem** | Each of the 9 drivers independently defines identical `DriverConfig` and `DriverCapabilities` interfaces. |
-| **Action** | Define canonical types in `@objectql/types`, have all drivers import from there. |
+| **Resolution** | Defined canonical `DriverCapabilities` interface (31 fields aligned with `@objectstack/spec`), `DriverType` enum, `BaseDriverConfig`, and `IsolationLevel` in `@objectql/types`. Removed 6 duplicate method declarations from the `Driver` interface (`aggregate`, `distinct`, `beginTransaction`, `commitTransaction`, `rollbackTransaction`, `disconnect`). |
+| **Files Changed** | `packages/foundation/types/src/driver.ts` |
 
-### B3 — Evaluate `@objectql/driver-utils` (Dead Code)
+### B3 — Remove `@objectql/driver-utils` (Dead Code) ✅
 
 | Field | Value |
 |-------|-------|
+| **Status** | ✅ Completed |
 | **Problem** | 990 lines of utility code (QueryAST, filters, transactions) with zero consumers. |
-| **Action** | Either integrate into drivers or remove. The only test file is an empty placeholder. |
+| **Resolution** | Removed `packages/drivers/utils/` entirely. Zero packages depended on it; all functionality was duplicated from core. |
+| **Files Removed** | `packages/drivers/utils/` (entire directory) |
 
-### B4 — Add `exports` Field to All Packages
+### B4 — Add `exports` Field to All Packages ✅
 
 | Field | Value |
 |-------|-------|
+| **Status** | ✅ Completed |
 | **Problem** | No package defines conditional `exports` — all use legacy `main`/`types` entries. |
-| **Action** | Add proper `exports` map supporting ESM/CJS dual mode. |
+| **Resolution** | Added `"exports": { ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" } }` to 17 packages across foundation, drivers, protocols, and tools layers. |
+| **Files Changed** | 17 `package.json` files |
 
-### B5 — Fix `platform-node` Layer Violation
+### B5 — Fix `platform-node` Layer Violation ✅
 
 | Field | Value |
 |-------|-------|
-| **Problem** | `platform-node`'s `tsconfig.json` references `../../drivers/mongo`, creating a foundation→driver dependency. |
-| **Action** | Remove the cross-layer reference. |
+| **Status** | ✅ Completed |
+| **Problem** | `platform-node`'s `tsconfig.json` references `../../drivers/sql` and `../../drivers/mongo`, creating a foundation→driver cross-layer dependency. |
+| **Resolution** | Removed both cross-layer references from `tsconfig.json`. |
+| **Files Changed** | `packages/foundation/platform-node/tsconfig.json` |
 
 ---
 
@@ -114,9 +122,9 @@ Implement the 2 stubs:
 
 16 commands with only 1 test file. Add at least smoke tests for each command group.
 
-### C4 — `driver-utils` Tests (if retained)
+### C4 — ~~`driver-utils` Tests~~ N/A
 
-If B3 decides to keep the package, write comprehensive unit tests.
+Package removed in B3.
 
 ### C5 — Full CI Verification
 
@@ -155,23 +163,23 @@ Current compliance: 40%. Begin foundational work for:
 | ISS-004 | ✅ Resolved | `runtime/server` | Ghost directory removed |
 | ISS-005 | ✅ Resolved | `types` | Types were present in source, stale `dist/` was the issue |
 | ISS-006 | ✅ Resolved | `types` | `@objectstack/spec` and `zod` correctly moved to devDependencies — compile-time only |
-| ISS-007 | 🟠 High | `driver-utils` | 990 lines of dead code, zero consumers |
+| ISS-007 | ✅ Resolved | `driver-utils` | Package removed entirely (zero consumers) |
 | ISS-008 | 🟡 Medium | `plugin-security` | 1 test for 2,384 LOC |
 | ISS-009 | 🟡 Medium | `plugin-validator` | 2 TODO stubs unimplemented |
 | ISS-010 | 🟡 Medium | `cli` | Source version != package.json version |
 | ISS-011 | 🟡 Medium | `localstorage` | Compression feature flagged but unimplemented |
 | ISS-012 | 🟡 Medium | `protocol-rest` | Missing `"type": "module"` unlike sibling protocols |
-| ISS-013 | 🟢 Low | `platform-node` | tsconfig references driver layer |
-| ISS-014 | 🟢 Low | All packages | No conditional `exports` field |
+| ISS-013 | ✅ Resolved | `platform-node` | Cross-layer tsconfig references removed |
+| ISS-014 | ✅ Resolved | All packages | `exports` field added to 17 packages |
 | ISS-015 | 🟢 Low | `sdk` | Named `@objectql/sdk` instead of `@objectql/driver-sdk` |
 
 ---
 
-## Build & Test Results (2026-02-06)
+## Build & Test Results (2026-02-06, updated after Phase B)
 
 ```
-pnpm build: 30 successful, 30 total ✅
-pnpm test:  29 successful, 1 failed (driver-mongo timeout — CI env issue, not code bug)
+pnpm build: 29 successful, 29 total ✅ (2 ghost packages removed: runtime/server, driver-utils)
+pnpm test:  49 successful, 49 total ✅ (excluding driver-mongo & driver-redis — require running servers)
 ```
 
 ## Success Criteria
