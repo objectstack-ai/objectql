@@ -6,8 +6,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-// Import protocol types from @objectstack/spec
-import { Data } from '@objectstack/spec';
 import { FieldConfig } from './field';
 import { ActionConfig } from './action';
 import { AnyValidationRule } from './validation';

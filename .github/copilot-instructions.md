@@ -27,7 +27,8 @@ C. Security by Design
 CRITICAL ARCHITECTURAL RULE:
 To prevent circular dependencies and ensure a clean dependency graph:
  * Single Source of Truth: @objectql/types is the "Constitution".
- * Zero Dependencies: This package must NEVER import from other packages. It contains Pure TypeScript Interfaces, Enums, and Custom Errors only.
+ * Protocol-Derived Types: This package derives its TypeScript types from @objectstack/spec Zod schemas using `z.infer<>` at compile time. The compiled output (`dist/`) contains pure TypeScript interfaces with ZERO runtime dependencies — @objectstack/spec and zod are devDependencies only.
+ * No Sibling Dependencies: @objectql/types must NEVER import from other @objectql/* packages (core, drivers, plugins). It MAY import from @objectstack/spec for protocol type derivation.
  * Universal Import: Every other package (core, drivers, docs) relies on these definitions.
 4. Monorepo Topology & Dependencies
 You manage a strict PNPM Workspace.

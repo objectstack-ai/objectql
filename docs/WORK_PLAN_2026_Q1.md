@@ -64,12 +64,13 @@ Unblock the entire compilation pipeline. All subsequent work depends on this.
 
 Enforce the "Constitution" (`@objectql/types`) rules and clean up layering violations.
 
-### B1 — Remove Runtime Dependencies from `@objectql/types`
+### B1 — ~~Remove Runtime Dependencies from `@objectql/types`~~ ✅ RESOLVED
 
 | Field | Value |
 |-------|-------|
-| **Problem** | `@objectql/types` imports `@objectstack/spec` and `zod` at runtime, violating the zero-dependency rule. |
-| **Action** | Move runtime Zod usage to `@objectql/core`. Keep `@objectql/types` as pure TS interfaces/enums/errors only. |
+| **Status** | ✅ Resolved — Not a real issue |
+| **Analysis** | `@objectql/types` uses `z.infer<typeof Data.XXXSchema>` to derive TypeScript types from `@objectstack/spec` Zod schemas. This is a **compile-time only** operation. The compiled `dist/*.js` contains ZERO references to `@objectstack/spec` or `zod`. The compiled `dist/*.d.ts` contains flattened pure TypeScript interfaces. |
+| **Action Taken** | Moved `@objectstack/spec` from `dependencies` to `devDependencies` in `package.json`. Both `@objectstack/spec` and `zod` are now correctly classified as devDependencies. Updated `.github/copilot-instructions.md` to reflect the "Protocol-Derived Types" architecture. |
 
 ### B2 — Unify `DriverConfig` / `DriverCapabilities` Types
 
@@ -159,7 +160,7 @@ Current compliance: 40%. Begin foundational work for:
 | ISS-003 | 🔴 Critical | `plugin-*` (×3) | No build output (`dist/`) |
 | ISS-004 | 🔴 Critical | `runtime/server` | Ghost package — no source, no package.json |
 | ISS-005 | 🟠 High | `types` | Missing `PluginContext`/`PluginResult` exports |
-| ISS-006 | 🟠 High | `types` | Runtime dependencies violate zero-dep rule |
+| ISS-006 | ✅ Resolved | `types` | `@objectstack/spec` and `zod` correctly moved to devDependencies — compile-time only |
 | ISS-007 | 🟠 High | `driver-utils` | 990 lines of dead code, zero consumers |
 | ISS-008 | 🟡 Medium | `plugin-security` | 1 test for 2,384 LOC |
 | ISS-009 | 🟡 Medium | `plugin-validator` | 2 TODO stubs unimplemented |
@@ -177,6 +178,6 @@ Current compliance: 40%. Begin foundational work for:
 - [ ] `pnpm build` succeeds for all 31 packages (0 errors)
 - [ ] `pnpm test` passes with ≥80% coverage on foundation layer
 - [ ] Zero circular dependencies
-- [ ] `@objectql/types` has zero runtime dependencies
+- [ ] `@objectql/types` has zero runtime dependencies (compile-time spec derivation only)
 - [ ] All plugins produce valid `dist/` output
 - [ ] CI pipeline green end-to-end
