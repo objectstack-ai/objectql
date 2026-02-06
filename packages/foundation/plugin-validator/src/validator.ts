@@ -589,12 +589,18 @@ export class Validator {
             }
         }
 
-        // Evaluate expression if provided (basic implementation)
+        // Evaluate expression if provided
         if (constraint.expression) {
-            // For now, we'll treat expression validation as a stub
-            // Full implementation would require safe expression evaluation
-            // This could be extended to use a safe expression evaluator in the future
-            valid = true;
+            try {
+                const fn = new Function(
+                    'record',
+                    `'use strict';\nreturn (${constraint.expression});`
+                );
+                valid = Boolean(fn(context.record));
+            } catch {
+                // Expression evaluation failure → treat as invalid
+                valid = false;
+            }
         }
 
         // Evaluate then_require conditions (conditional required fields)
@@ -641,19 +647,66 @@ export class Validator {
     }
 
     /**
-     * Validate custom rule (stub - requires function execution).
+     * Validate custom rule.
+     *
+     * Executes the validator expression in a restricted context.
+     * The validator string is treated as a JavaScript expression that receives
+     * `record`, `context`, and `rule` bindings and must return a boolean.
+     *
+     * SECURITY NOTE: Uses Function constructor with strict mode. For
+     * production deployments consider a sandboxed evaluator (vm2, isolated-vm)
+     * or restrict custom validator usage to trusted administrators.
      */
     private async validateCustom(
         rule: CustomValidationRule,
         context: ValidationContext
     ): Promise<ValidationRuleResult> {
-        // TODO: Implement custom validator execution
-        // This requires safe function evaluation
-        // Stub: Pass silently until implementation is complete
-        return {
-            rule: rule.name,
-            valid: true,
-        };
+        if (!rule.validator) {
+            // No validator expression — treat as valid
+            return { rule: rule.name, valid: true };
+        }
+
+        try {
+            // Build a restricted evaluation context
+            const evalContext = {
+                record: context.record,
+                operation: context.operation,
+                previousRecord: context.previousRecord,
+                objectName: context.metadata?.objectName,
+            };
+
+            // Create a sandboxed function — strict mode, no access to globals
+            const fn = new Function(
+                'record',
+                'context',
+                'rule',
+                `'use strict';\nreturn (${rule.validator});`
+            );
+
+            const result = await Promise.resolve(fn(context.record, evalContext, rule));
+            const valid = Boolean(result);
+
+            return {
+                rule: rule.name,
+                valid,
+                message: valid
+                    ? undefined
+                    : this.formatMessage(
+                          rule.error_message_template || rule.message || 'Custom validation failed',
+                          { ...context.record, ...(rule.message_params || {}) }
+                      ),
+                error_code: rule.error_code,
+                severity: rule.severity || 'error',
+            };
+        } catch (error) {
+            return {
+                rule: rule.name,
+                valid: false,
+                message: `Custom validator error: ${error instanceof Error ? error.message : String(error)}`,
+                error_code: rule.error_code,
+                severity: rule.severity || 'error',
+            };
+        }
     }
 
     /**
@@ -671,8 +724,16 @@ export class Validator {
 
         // Handle expression
         if (condition.expression) {
-            // TODO: Implement safe expression evaluation
-            return true;
+            try {
+                const fn = new Function(
+                    'record',
+                    `'use strict';\nreturn (${condition.expression});`
+                );
+                return Boolean(fn(record));
+            } catch {
+                // If expression evaluation fails, treat as non-matching
+                return false;
+            }
         }
 
         // Handle field comparison

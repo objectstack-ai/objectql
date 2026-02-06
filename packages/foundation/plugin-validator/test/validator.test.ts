@@ -928,4 +928,234 @@ describe('Validator', () => {
             });
         });
     });
+
+    // ----------------------------------------------------------
+    // Custom validation rules (newly implemented)
+    // ----------------------------------------------------------
+    describe('Custom Validation Rules', () => {
+        it('should pass when no validator expression is provided', async () => {
+            const rule: CustomValidationRule = {
+                name: 'no_validator',
+                type: 'custom',
+                field: 'field1',
+                message: 'should not fail',
+            };
+            const context: ValidationContext = {
+                record: { field1: 'value' },
+                operation: 'create',
+            };
+            const result = await validator.validate([rule], context);
+            expect(result.valid).toBe(true);
+        });
+
+        it('should execute validator expression that returns true', async () => {
+            const rule: CustomValidationRule = {
+                name: 'positive_check',
+                type: 'custom',
+                field: 'amount',
+                validator: 'record.amount > 0',
+                message: 'Amount must be positive',
+            };
+            const context: ValidationContext = {
+                record: { amount: 100 },
+                operation: 'create',
+            };
+            const result = await validator.validate([rule], context);
+            expect(result.valid).toBe(true);
+        });
+
+        it('should execute validator expression that returns false', async () => {
+            const rule: CustomValidationRule = {
+                name: 'positive_check',
+                type: 'custom',
+                field: 'amount',
+                validator: 'record.amount > 0',
+                message: 'Amount must be positive',
+            };
+            const context: ValidationContext = {
+                record: { amount: -5 },
+                operation: 'create',
+            };
+            const result = await validator.validate([rule], context);
+            expect(result.valid).toBe(false);
+            expect(result.errors[0].message).toContain('Amount must be positive');
+        });
+
+        it('should support complex validator expressions', async () => {
+            const rule: CustomValidationRule = {
+                name: 'range_check',
+                type: 'custom',
+                field: 'discount',
+                validator: 'record.discount >= 0 && record.discount <= 100',
+                message: 'Discount must be 0-100%',
+            };
+            const context: ValidationContext = {
+                record: { discount: 150 },
+                operation: 'create',
+            };
+            const result = await validator.validate([rule], context);
+            expect(result.valid).toBe(false);
+        });
+
+        it('should handle validator expression errors gracefully', async () => {
+            const rule: CustomValidationRule = {
+                name: 'bad_validator',
+                type: 'custom',
+                field: 'field1',
+                validator: 'this.does.not.exist.method()',
+                message: 'Should not show',
+            };
+            const context: ValidationContext = {
+                record: { field1: 'value' },
+                operation: 'create',
+            };
+            const result = await validator.validate([rule], context);
+            expect(result.valid).toBe(false);
+            expect(result.errors[0].message).toContain('Custom validator error');
+        });
+
+        it('should use error_message_template when provided', async () => {
+            const rule: CustomValidationRule = {
+                name: 'template_check',
+                type: 'custom',
+                field: 'name',
+                validator: 'false',
+                error_message_template: 'Field {{name}} is invalid',
+                message: 'default message',
+            };
+            const context: ValidationContext = {
+                record: { name: 'test' },
+                operation: 'create',
+            };
+            const result = await validator.validate([rule], context);
+            expect(result.valid).toBe(false);
+            expect(result.errors[0].message).toContain('test');
+        });
+
+        it('should have access to context.operation in validator', async () => {
+            const rule: CustomValidationRule = {
+                name: 'op_check',
+                type: 'custom',
+                field: 'field1',
+                validator: 'context.operation === "create"',
+                message: 'Only create allowed',
+            };
+            const passCtx: ValidationContext = {
+                record: {},
+                operation: 'create',
+            };
+            const failCtx: ValidationContext = {
+                record: {},
+                operation: 'update',
+            };
+            const r1 = await validator.validate([rule], passCtx);
+            expect(r1.valid).toBe(true);
+            const r2 = await validator.validate([rule], failCtx);
+            expect(r2.valid).toBe(false);
+        });
+    });
+
+    // ----------------------------------------------------------
+    // Expression evaluation (newly implemented)
+    // ----------------------------------------------------------
+    describe('Expression Evaluation', () => {
+        describe('evaluateCondition with expression', () => {
+            it('should evaluate expression in business rule condition', async () => {
+                const rule: BusinessRuleValidationRule = {
+                    name: 'expr_rule',
+                    type: 'business_rule',
+                    field: 'amount',
+                    message: 'Expression failed',
+                    constraint: {
+                        expression: 'record.amount > 0 && record.amount < 1000',
+                    },
+                };
+                const passCtx: ValidationContext = {
+                    record: { amount: 500 },
+                    operation: 'create',
+                };
+                const failCtx: ValidationContext = {
+                    record: { amount: 2000 },
+                    operation: 'create',
+                };
+                const r1 = await validator.validate([rule], passCtx);
+                expect(r1.valid).toBe(true);
+
+                const r2 = await validator.validate([rule], failCtx);
+                expect(r2.valid).toBe(false);
+            });
+
+            it('should handle invalid expression gracefully', async () => {
+                const rule: BusinessRuleValidationRule = {
+                    name: 'bad_expr',
+                    type: 'business_rule',
+                    field: 'field1',
+                    message: 'Bad expression',
+                    constraint: {
+                        expression: '!@#$%^&*()',
+                    },
+                };
+                const context: ValidationContext = {
+                    record: { field1: 'test' },
+                    operation: 'create',
+                };
+                const result = await validator.validate([rule], context);
+                expect(result.valid).toBe(false);
+            });
+        });
+
+        describe('evaluateCondition with expression in then_require', () => {
+            it('should evaluate expressions in validation conditions', async () => {
+                const rule: BusinessRuleValidationRule = {
+                    name: 'cond_expr',
+                    type: 'business_rule',
+                    field: 'discount',
+                    message: 'Approval required for high discount',
+                    constraint: {
+                        all_of: [
+                            {
+                                expression: 'record.discount <= 50',
+                            },
+                        ],
+                    },
+                };
+                const passCtx: ValidationContext = {
+                    record: { discount: 30 },
+                    operation: 'create',
+                };
+                const failCtx: ValidationContext = {
+                    record: { discount: 80 },
+                    operation: 'create',
+                };
+
+                const r1 = await validator.validate([rule], passCtx);
+                expect(r1.valid).toBe(true);
+
+                const r2 = await validator.validate([rule], failCtx);
+                expect(r2.valid).toBe(false);
+            });
+
+            it('should return false for invalid expression in condition', async () => {
+                const rule: BusinessRuleValidationRule = {
+                    name: 'bad_cond_expr',
+                    type: 'business_rule',
+                    field: 'field1',
+                    message: 'Bad cond expression',
+                    constraint: {
+                        all_of: [
+                            {
+                                expression: 'completely broken code @@##',
+                            },
+                        ],
+                    },
+                };
+                const context: ValidationContext = {
+                    record: { field1: 'test' },
+                    operation: 'create',
+                };
+                const result = await validator.validate([rule], context);
+                expect(result.valid).toBe(false);
+            });
+        });
+    });
 });
