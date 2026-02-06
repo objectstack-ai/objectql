@@ -7,8 +7,6 @@
   "include": ["src/**/*"],
   "references": [
     { "path": "../types" },
-    { "path": "../core" },
-    { "path": "../../drivers/sql" },
-    { "path": "../../drivers/mongo" }
+    { "path": "../core" }
   ]
 }

@@ -62,25 +62,104 @@ export interface IntrospectedSchema {
     tables: Record<string, IntrospectedTable>;
 }
 
+// ============================================================================
+// Driver Capabilities — aligned with @objectstack/spec DriverCapabilitiesSchema
+// ============================================================================
+
+/**
+ * Transaction isolation levels supported by the driver.
+ */
+export type IsolationLevel = 'read-uncommitted' | 'read-committed' | 'repeatable-read' | 'serializable';
+
+/**
+ * Driver Capabilities
+ * 
+ * Declares what features a driver supports. Aligned with the canonical
+ * DriverCapabilitiesSchema from @objectstack/spec.
+ * 
+ * All boolean fields default to `false`. Drivers only set `true` for supported features.
+ */
+export interface DriverCapabilities {
+    // CRUD operations
+    readonly create?: boolean;
+    readonly read?: boolean;
+    readonly update?: boolean;
+    readonly delete?: boolean;
+
+    // Bulk operations
+    readonly bulkCreate?: boolean;
+    readonly bulkUpdate?: boolean;
+    readonly bulkDelete?: boolean;
+
+    // Transaction support
+    readonly transactions?: boolean;
+    readonly savepoints?: boolean;
+    readonly isolationLevels?: readonly IsolationLevel[];
+
+    // Query capabilities
+    readonly queryFilters?: boolean;
+    readonly queryAggregations?: boolean;
+    readonly querySorting?: boolean;
+    readonly queryPagination?: boolean;
+    readonly queryWindowFunctions?: boolean;
+    readonly querySubqueries?: boolean;
+    readonly queryCTE?: boolean;
+
+    // Join & search
+    readonly joins?: boolean;
+    readonly fullTextSearch?: boolean;
+    readonly jsonQuery?: boolean;
+    readonly geospatialQuery?: boolean;
+
+    // Streaming
+    readonly streaming?: boolean;
+
+    // Field type support
+    readonly jsonFields?: boolean;
+    readonly arrayFields?: boolean;
+    readonly vectorSearch?: boolean;
+
+    /** @deprecated Use `geospatialQuery` instead */
+    readonly geoSpatial?: boolean;
+
+    // Schema management
+    readonly schemaSync?: boolean;
+    readonly migrations?: boolean;
+    readonly indexes?: boolean;
+
+    // Infrastructure
+    readonly connectionPooling?: boolean;
+    readonly preparedStatements?: boolean;
+    readonly queryCache?: boolean;
+}
+
+/**
+ * Driver type discriminator — aligned with @objectstack/spec DriverConfigSchema.
+ */
+export type DriverType = 'sql' | 'nosql' | 'cache' | 'search' | 'graph' | 'timeseries';
+
+/**
+ * Base driver configuration common to all drivers.
+ * Individual drivers extend this with driver-specific fields.
+ */
+export interface BaseDriverConfig {
+    /** Driver type discriminator */
+    readonly type?: DriverType;
+}
+
+// ============================================================================
+// Driver Interface
+// ============================================================================
+
 export interface Driver {
-    // Required for DriverInterface compatibility
-    name?: string;
-    version?: string;
-    supports?: {
-        transactions?: boolean;
-        joins?: boolean;
-        fullTextSearch?: boolean;
-        jsonFields?: boolean;
-        arrayFields?: boolean;
-        queryFilters?: boolean;
-        queryAggregations?: boolean;
-        querySorting?: boolean;
-        queryPagination?: boolean;
-        queryWindowFunctions?: boolean;
-        querySubqueries?: boolean;
-    };
+    /** Driver identifier (e.g., 'memory', 'sql', 'mongo') */
+    readonly name?: string;
+    /** Driver version (semver) */
+    readonly version?: string;
+    /** Capabilities declaration — what this driver supports */
+    readonly supports?: DriverCapabilities;
     
-    // Core CRUD methods (existing)
+    // Core CRUD methods
     find(objectName: string, query: any, options?: any): Promise<any[]>;
     findOne(objectName: string, id: string | number, query?: any, options?: any): Promise<any>;
     create(objectName: string, data: any, options?: any): Promise<any>;
@@ -93,71 +172,54 @@ export interface Driver {
     disconnect?(): Promise<void>;
     checkHealth?(): Promise<boolean>;
     
-    // Additional methods for DriverInterface compatibility
+    // Bulk operations
     execute?(command: any, parameters?: any[], options?: any): Promise<any>;
     bulkCreate?(objectName: string, data: any[], options?: any): Promise<any>;
     bulkUpdate?(objectName: string, updates: Array<{id: string | number, data: any}>, options?: any): Promise<any>;
     bulkDelete?(objectName: string, ids: Array<string | number>, options?: any): Promise<any>;
+    
+    // Query extensions
     distinct?(objectName: string, field: string, filters?: any, options?: any): Promise<any[]>;
-    aggregate?(objectName: string, aggregations: any[], filters?: any, options?: any): Promise<any[]>;
+    aggregate?(objectName: string, query: any, options?: any): Promise<any[]>;
     
     // Transaction support
     beginTransaction?(): Promise<any>;
     commitTransaction?(transaction: any): Promise<void>;
     rollbackTransaction?(transaction: any): Promise<void>;
     
-    // Schema / Lifecycle (existing)
+    // Schema / Lifecycle
     init?(objects: any[]): Promise<void>;
     
     /**
      * Introspect the database schema to discover existing tables, columns, and relationships.
-     * This allows connecting to an existing database without defining metadata.
      * @returns Complete schema information including tables, columns, and foreign keys
      */
     introspectSchema?(): Promise<IntrospectedSchema>;
 
-    // Advanced
-    aggregate?(objectName: string, query: any, options?: any): Promise<any>;
-    distinct?(objectName: string, field: string, filters?: any, options?: any): Promise<any[]>;
-    
-    // Bulk / Atomic
+    // Bulk / Atomic (alternative signatures)
     createMany?(objectName: string, data: any[], options?: any): Promise<any>;
     updateMany?(objectName: string, filters: any, data: any, options?: any): Promise<any>;
     deleteMany?(objectName: string, filters: any, options?: any): Promise<any>;
     findOneAndUpdate?(objectName: string, filters: any, update: any, options?: any): Promise<any>;
 
-    // Transaction
-    beginTransaction?(): Promise<any>;
-    commitTransaction?(trx: any): Promise<void>;
-    rollbackTransaction?(trx: any): Promise<void>;
-
-    // Connection
-    disconnect?(): Promise<void>;
-    
-    // DriverInterface v4.0 methods (for new drivers like driver-sql@4.0, driver-memory@4.0)
+    // DriverInterface v4.0 methods
     /**
      * Execute a query using QueryAST format (DriverInterface v4.0)
-     * @param ast - The QueryAST to execute
-     * @param options - Driver-specific options
-     * @returns Query result with value and optional count
      */
     executeQuery?(ast: any, options?: any): Promise<{ value: any[]; count?: number }>;
     
     /**
      * Execute a command using Command format (DriverInterface v4.0)
-     * @param command - The command to execute (create/update/delete/bulk operations)
-     * @param options - Driver-specific options
-     * @returns Command result with success status and affected count
      */
     executeCommand?(command: any, options?: any): Promise<{ success: boolean; data?: any; affected: number }>;
     
     /**
-     * Alternative method names for findOne (some drivers use 'get')
+     * Alternative method name for findOne (some drivers use 'get')
      */
     get?(objectName: string, id: string, options?: any): Promise<any>;
     
     /**
-     * Direct query execution (legacy, some drivers)
+     * Direct query execution (legacy)
      */
     directQuery?(sql: string, params?: any[]): Promise<any[]>;
     query?(sql: string, params?: any[]): Promise<any[]>;
