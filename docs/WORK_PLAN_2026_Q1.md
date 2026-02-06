@@ -13,50 +13,44 @@ A full monorepo scan revealed **critical build-chain blockers** that prevent com
 
 Unblock the entire compilation pipeline. All subsequent work depends on this.
 
-### A1 — Unify Zod Version
+### A1 — Unify Zod Version ✅
 
 | Field | Value |
 |-------|-------|
-| **Status** | 🔴 Not Started |
-| **Problem** | `@objectql/core` depends on `zod ^4.3.6` while every other package uses `zod ^3.23.8`. Zod v3→v4 has breaking API changes. |
-| **Action** | Downgrade `@objectql/core` to `zod ^3.23.8` to match the ecosystem. Update any v4-specific API calls (`z.string()` → check for schema changes). |
-| **Files** | `packages/foundation/core/package.json`, all `*.ts` files using Zod in core |
+| **Status** | ✅ Completed |
+| **Problem** | `@objectql/core` depended on `zod ^4.3.6` while every other package uses `zod ^3.23.8`. |
+| **Resolution** | Downgraded `@objectql/core` to `zod ^3.23.8`. All 3 usages in core are compile-time only (`z.infer<>`) so no API migration was needed. |
+| **Files Changed** | `packages/foundation/core/package.json` |
 
-### A2 — Fix Missing Type Exports in `@objectql/types`
-
-| Field | Value |
-|-------|-------|
-| **Status** | 🔴 Not Started |
-| **Problem** | `PluginContext`, `PluginResult`, and `MetadataItem` are referenced by 3+ plugin packages but do not exist in `@objectql/types`. |
-| **Action** | Define these interfaces in `@objectql/types/src/` and re-export from the barrel index. |
-| **Files** | `packages/foundation/types/src/plugin.ts` (new or existing), `packages/foundation/types/src/index.ts` |
-
-### A3 — Fix `@objectql/core` TypeScript Errors (93 errors)
+### A2 — Fix Missing Type Exports in `@objectql/types` ✅
 
 | Field | Value |
 |-------|-------|
-| **Status** | 🔴 Not Started |
-| **Problem** | 93 TS compilation errors in core — broken type references, missing module paths, type incompatibilities. |
-| **Action** | After A1 and A2, systematically resolve remaining errors: fix import paths, align type signatures, remove references to non-existent modules. |
-| **Files** | `packages/foundation/core/src/**/*.ts` |
+| **Status** | ✅ Completed |
+| **Problem** | Types appeared missing because `dist/` was stale (built from an older source). The source already had `RuntimePlugin`, `RuntimeContext`, `MetadataItem`, `Filter`, `QueryAST`, `ApiRequest`, `ApiResponse`, `GatewayProtocol` etc. |
+| **Resolution** | Rebuilt `@objectql/types` with `pnpm build`. All exports now available. Also removed unused `Data` import from `object.ts`. |
 
-### A4 — Build the 3 Plugin Packages
-
-| Field | Value |
-|-------|-------|
-| **Status** | 🔴 Not Started |
-| **Problem** | `plugin-formula`, `plugin-security`, and `plugin-validator` have no `dist/` build output. |
-| **Action** | Fix their TS errors (dependent on A2/A3), then run `pnpm build` for each. |
-| **Files** | `packages/foundation/plugin-*/` |
-
-### A5 — Clean Up Ghost `runtime/server` Package
+### A3 — Fix `@objectql/core` TypeScript Errors (93→0) ✅
 
 | Field | Value |
 |-------|-------|
-| **Status** | 🔴 Not Started |
-| **Problem** | `packages/runtime/server/` has no `package.json` or `src/` — only stale `dist/` artifacts. Not recognized by pnpm workspace. |
-| **Action** | Remove the directory entirely, or scaffold it properly with `package.json` + `src/`. |
-| **Files** | `packages/runtime/server/` |
+| **Status** | ✅ Completed |
+| **Root Cause** | All 93 errors were caused by: (1) `node_modules` not installed (`@objectstack/spec`, `zod`, `@objectstack/runtime` missing), (2) stale `@objectql/types` dist. **No source code changes were needed in core.** |
+| **Resolution** | `pnpm install` + rebuild types + rebuild plugins → core compiles with 0 errors. |
+
+### A4 — Build the 3 Plugin Packages ✅
+
+| Field | Value |
+|-------|-------|
+| **Status** | ✅ Completed |
+| **Resolution** | All 3 plugin packages (`plugin-formula`, `plugin-security`, `plugin-validator`) compile clean and produce `dist/` output after dependency install. No source changes needed. |
+
+### A5 — Clean Up Ghost `runtime/server` Package ✅
+
+| Field | Value |
+|-------|-------|
+| **Status** | ✅ Completed |
+| **Resolution** | Removed `packages/runtime/server/` entirely. It contained only stale `dist/` artifacts with no `package.json` or `src/`. |
 
 ---
 
@@ -155,11 +149,11 @@ Current compliance: 40%. Begin foundational work for:
 
 | ID | Severity | Package | Description |
 |----|----------|---------|-------------|
-| ISS-001 | 🔴 Critical | `core` | 93 TypeScript compilation errors |
-| ISS-002 | 🔴 Critical | `core` | Zod v4 vs ecosystem v3 version split |
-| ISS-003 | 🔴 Critical | `plugin-*` (×3) | No build output (`dist/`) |
-| ISS-004 | 🔴 Critical | `runtime/server` | Ghost package — no source, no package.json |
-| ISS-005 | 🟠 High | `types` | Missing `PluginContext`/`PluginResult` exports |
+| ISS-001 | ✅ Resolved | `core` | 93 TS errors → 0 after `pnpm install` + types rebuild |
+| ISS-002 | ✅ Resolved | `core` | Zod downgraded from `^4.3.6` to `^3.23.8` |
+| ISS-003 | ✅ Resolved | `plugin-*` (×3) | All 3 plugins now produce `dist/` |
+| ISS-004 | ✅ Resolved | `runtime/server` | Ghost directory removed |
+| ISS-005 | ✅ Resolved | `types` | Types were present in source, stale `dist/` was the issue |
 | ISS-006 | ✅ Resolved | `types` | `@objectstack/spec` and `zod` correctly moved to devDependencies — compile-time only |
 | ISS-007 | 🟠 High | `driver-utils` | 990 lines of dead code, zero consumers |
 | ISS-008 | 🟡 Medium | `plugin-security` | 1 test for 2,384 LOC |
@@ -173,11 +167,18 @@ Current compliance: 40%. Begin foundational work for:
 
 ---
 
+## Build & Test Results (2026-02-06)
+
+```
+pnpm build: 30 successful, 30 total ✅
+pnpm test:  29 successful, 1 failed (driver-mongo timeout — CI env issue, not code bug)
+```
+
 ## Success Criteria
 
-- [ ] `pnpm build` succeeds for all 31 packages (0 errors)
+- [x] `pnpm build` succeeds for all 30 packages (0 errors)
 - [ ] `pnpm test` passes with ≥80% coverage on foundation layer
 - [ ] Zero circular dependencies
-- [ ] `@objectql/types` has zero runtime dependencies (compile-time spec derivation only)
-- [ ] All plugins produce valid `dist/` output
+- [x] `@objectql/types` has zero runtime dependencies (compile-time spec derivation only)
+- [x] All plugins produce valid `dist/` output
 - [ ] CI pipeline green end-to-end

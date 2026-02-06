@@ -30,7 +30,7 @@
     "@objectstack/runtime": "^1.0.6",
     "@objectstack/spec": "^1.0.6",
     "js-yaml": "^4.1.0",
-    "zod": "^4.3.6"
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.5",
