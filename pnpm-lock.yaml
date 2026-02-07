@@ -461,6 +461,43 @@ importers:
         specifier: ^5.1.7
         version: 5.1.7
 
+  packages/drivers/sqlite-wasm:
+    dependencies:
+      '@objectql/driver-sql':
+        specifier: workspace:*
+        version: link:../sql
+      '@objectql/types':
+        specifier: workspace:*
+        version: link:../../foundation/types
+      '@objectstack/spec':
+        specifier: ^1.1.0
+        version: 1.1.0
+      knex:
+        specifier: ^3.1.0
+        version: 3.1.0(sqlite3@5.1.7)
+      nanoid:
+        specifier: ^3.3.11
+        version: 3.3.11
+      wa-sqlite:
+        specifier: ^1.0.0
+        version: 1.0.0
+      zod:
+        specifier: ^3.24.1
+        version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.30
+      sqlite3:
+        specifier: ^5.1.7
+        version: 5.1.7
+      typescript:
+        specifier: ^5.0.0
+        version: 5.9.3
+      vitest:
+        specifier: ^1.0.0
+        version: 1.6.1(@types/node@20.19.30)(@vitest/ui@1.6.1)(lightningcss@1.30.2)
+
   packages/foundation/core:
     dependencies:
       '@objectql/plugin-formula':
@@ -7315,6 +7352,9 @@ packages:
       typescript:
         optional: true
 
+  wa-sqlite@1.0.0:
+    resolution: {integrity: sha512-Kyybo5/BaJp76z7gDWGk2J6Hthl4NIPsE+swgraEjy3IY6r5zIR02wAs1OJH4XtJp1y3puj3Onp5eMGS0z7nUA==}
+
   walker@1.0.8:
     resolution: {integrity: sha512-ts/8E8l5b7kY0vlWLewOkDXMmPdLcVV4GmOQLyxuSswIJsweeFZtAsMF7k1Nszz+TYBQrlYRmzOnr398y1JemQ==}
 
@@ -9734,7 +9774,7 @@ snapshots:
       pathe: 1.1.2
       picocolors: 1.1.1
       sirv: 2.0.4
-      vitest: 1.6.1(@types/node@25.1.0)(@vitest/ui@1.6.1)(lightningcss@1.30.2)
+      vitest: 1.6.1(@types/node@20.19.30)(@vitest/ui@1.6.1)(lightningcss@1.30.2)
 
   '@vitest/utils@1.6.1':
     dependencies:
@@ -14893,6 +14933,8 @@ snapshots:
       '@vue/shared': 3.5.27
     optionalDependencies:
       typescript: 5.9.3
+
+  wa-sqlite@1.0.0: {}
 
   walker@1.0.8:
     dependencies:
