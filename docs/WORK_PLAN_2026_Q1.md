@@ -174,6 +174,34 @@ Package removed in B3.
 
 ---
 
+## Phase E: v1 Release Stabilization (Priority: CRITICAL)
+
+### E1 — CLI Scope Alignment ✅
+
+| Field | Value |
+|-------|-------|
+| **Status** | ✅ Completed |
+| **Decision** | Runtime lifecycle commands are delegated to `@objectstack/cli`. `@objectql/cli` focuses on metadata, DB workflows, i18n, and tooling. |
+| **Files Changed** | `packages/tools/cli/src/register/lifecycle.ts`, `packages/tools/cli/src/register/tools.ts`, `packages/tools/cli/README.md`, `content/docs/getting-started/cli.mdx` |
+
+### E2 — Performance Baseline (Core + Plugins)
+
+| Field | Value |
+|-------|-------|
+| **Status** | ⏳ Planned |
+| **Scope** | Hook execution p95, permission checks p95, query execution p95, memory usage under load |
+| **Artifacts** | `scripts/benchmarks/core-perf.ts`, `docs/perf/BASELINE.md` |
+
+### E3 — Compatibility Hardening
+
+| Field | Value |
+|-------|-------|
+| **Status** | ⏳ Planned |
+| **Scope** | CLI delegation stability, config detection, backward-compatible behaviors |
+| **Artifacts** | Regression tests + docs |
+
+---
+
 ## Known Issues Registry
 
 | ID | Severity | Package | Description |
@@ -187,7 +215,7 @@ Package removed in B3.
 | ISS-007 | ✅ Resolved | `driver-utils` | Package removed entirely (zero consumers) |
 | ISS-008 | ✅ Resolved | `plugin-security` | Test coverage expanded (1→6 files, 13→136 tests) |
 | ISS-009 | ✅ Resolved | `plugin-validator` | TODO stubs implemented with tests |
-| ISS-010 | 🟡 Medium | `cli` | Source version != package.json version |
+| ISS-010 | ✅ Resolved | `cli` | Version sourced from package.json; CLI scope delegated to @objectstack/cli |
 | ISS-011 | 🟡 Medium | `localstorage` | Compression feature flagged but unimplemented |
 | ISS-012 | 🟡 Medium | `protocol-rest` | Missing `"type": "module"` unlike sibling protocols |
 | ISS-013 | ✅ Resolved | `platform-node` | Cross-layer tsconfig references removed |

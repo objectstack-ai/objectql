@@ -18,7 +18,8 @@
     "release": "pnpm run build && changeset publish",
     "check-versions": "node scripts/check-versions.js",
     "analyze-deps": "node scripts/analyze-dependencies.js",
-    "audit-coverage": "node scripts/audit-test-coverage.js"
+    "audit-coverage": "node scripts/audit-test-coverage.js",
+    "bench:core": "tsx scripts/benchmarks/core-perf.ts"
   },
   "devDependencies": {
     "@changesets/cli": "^2.29.8",
