@@ -1,0 +1,483 @@
+---
+title: Multi-Tenancy
+description: Implement automatic tenant isolation in your ObjectQL application
+---
+
+# Multi-Tenancy
+
+The `@objectql/plugin-multitenancy` plugin provides automatic tenant isolation for SaaS applications, ensuring data is automatically scoped to the correct tenant without manual filtering.
+
+## Overview
+
+Multi-tenancy allows a single application instance to serve multiple customers (tenants) while keeping their data completely isolated. The plugin automatically:
+
+- Injects `tenant_id` filters on all queries
+- Sets `tenant_id` on new records
+- Verifies tenant ownership on updates/deletes
+- Prevents cross-tenant data access
+
+## Installation
+
+```bash
+pnpm add @objectql/plugin-multitenancy
+```
+
+## Basic Usage
+
+```typescript
+import { ObjectStackKernel } from '@objectstack/core';
+import { MultiTenancyPlugin } from '@objectql/plugin-multitenancy';
+
+const kernel = new ObjectStackKernel([
+  new MultiTenancyPlugin({
+    tenantField: 'tenant_id',
+    strictMode: true,
+  }),
+]);
+
+await kernel.start();
+```
+
+## How It Works
+
+### Automatic Query Filtering
+
+When a user queries data, the plugin automatically injects the tenant filter:
+
+```typescript
+// Your code
+const accounts = await objectql.find('accounts', { 
+  status: 'active' 
+});
+
+// What actually happens
+// SELECT * FROM accounts 
+// WHERE status = 'active' AND tenant_id = 'current-tenant-id'
+```
+
+### Automatic Tenant ID Assignment
+
+When creating records, the tenant ID is automatically set:
+
+```typescript
+// Your code
+await objectql.create('accounts', {
+  name: 'Acme Corporation',
+  industry: 'Technology'
+});
+
+// Data stored in database
+{
+  id: 1,
+  name: 'Acme Corporation',
+  industry: 'Technology',
+  tenant_id: 'current-tenant-id'
+}
+```
+
+### Cross-Tenant Protection
+
+The plugin prevents accessing or modifying other tenants' data:
+
+```typescript
+// Tenant A tries to update Tenant B's record
+await objectql.update('accounts', tenantBRecordId, {
+  name: 'Hacked Name'
+});
+
+// Throws: TenantIsolationError
+// Cross-tenant update denied: record belongs to tenant-b, 
+// but current tenant is tenant-a
+```
+
+## Configuration
+
+### Basic Configuration
+
+```typescript
+new MultiTenancyPlugin({
+  // Enable/disable the plugin
+  enabled: true,
+  
+  // Field name for tenant identification
+  tenantField: 'tenant_id',
+  
+  // Strict mode prevents cross-tenant queries
+  strictMode: true,
+  
+  // Objects exempt from tenant isolation
+  exemptObjects: ['users', 'tenants'],
+})
+```
+
+### Advanced Configuration
+
+```typescript
+new MultiTenancyPlugin({
+  // Custom tenant resolver
+  tenantResolver: async (context) => {
+    // Extract from JWT token
+    const token = context.headers.authorization;
+    const decoded = await jwt.verify(token, secret);
+    return decoded.organizationId;
+  },
+  
+  // Schema isolation mode
+  schemaIsolation: 'table-prefix', // or 'separate-schema'
+  
+  // Auto-add tenant_id field to schemas
+  autoAddTenantField: true,
+  
+  // Validation options
+  validateTenantContext: true,
+  throwOnMissingTenant: true,
+  
+  // Audit logging
+  enableAudit: true,
+})
+```
+
+## Tenant Context Resolution
+
+The plugin needs to know the current tenant. It resolves the tenant ID in this order:
+
+1. **Explicit context**: `context.tenantId`
+2. **User object**: `context.user.tenantId`
+3. **User object (snake_case)**: `context.user.tenant_id`
+
+### Setting Tenant Context
+
+When making API calls, ensure the tenant context is available:
+
+```typescript
+// In your API middleware
+app.use(async (req, res, next) => {
+  const user = await authenticateUser(req);
+  
+  // Set tenant context for ObjectQL
+  req.context = {
+    user: {
+      id: user.id,
+      tenantId: user.organizationId,
+    },
+  };
+  
+  next();
+});
+```
+
+### Custom Tenant Resolver
+
+For complex scenarios, provide a custom resolver:
+
+```typescript
+new MultiTenancyPlugin({
+  tenantResolver: async (context) => {
+    // Option 1: From subdomain
+    const subdomain = context.request.hostname.split('.')[0];
+    const tenant = await Tenant.findBySubdomain(subdomain);
+    return tenant.id;
+    
+    // Option 2: From database lookup
+    const userId = context.user.id;
+    const membership = await UserTenantMembership.findByUser(userId);
+    return membership.tenantId;
+    
+    // Option 3: From request header
+    return context.headers['x-tenant-id'];
+  },
+})
+```
+
+## Exempt Objects
+
+Some objects should be accessible across all tenants:
+
+```typescript
+new MultiTenancyPlugin({
+  exemptObjects: [
+    'users',        // User accounts span tenants
+    'tenants',      // Tenant metadata itself
+    'subscriptions', // Billing data
+    'audit_logs',   // System-wide logs
+  ],
+})
+```
+
+Objects in this list will NOT have tenant filters applied.
+
+## Schema Isolation Modes
+
+### Mode 1: Shared Tables (Default)
+
+All tenants share the same tables with a `tenant_id` column:
+
+```sql
+CREATE TABLE accounts (
+  id SERIAL PRIMARY KEY,
+  tenant_id VARCHAR(255) NOT NULL,
+  name VARCHAR(255),
+  created_at TIMESTAMP,
+  INDEX idx_tenant (tenant_id)
+);
+```
+
+**Pros**: Simple, cost-effective, easy migrations  
+**Cons**: Requires careful query filtering
+
+### Mode 2: Table Prefix
+
+Each tenant gets separate tables with a prefix:
+
+```typescript
+new MultiTenancyPlugin({
+  schemaIsolation: 'table-prefix',
+})
+```
+
+```sql
+-- Tenant 1
+CREATE TABLE accounts_tenant_abc (...);
+CREATE TABLE contacts_tenant_abc (...);
+
+-- Tenant 2
+CREATE TABLE accounts_tenant_xyz (...);
+CREATE TABLE contacts_tenant_xyz (...);
+```
+
+**Pros**: Physical separation, per-tenant backups  
+**Cons**: More complex migrations, schema sprawl
+
+### Mode 3: Separate Schema
+
+Each tenant gets a separate database schema:
+
+```typescript
+new MultiTenancyPlugin({
+  schemaIsolation: 'separate-schema',
+})
+```
+
+```sql
+-- Tenant 1
+CREATE SCHEMA tenant_abc;
+CREATE TABLE tenant_abc.accounts (...);
+CREATE TABLE tenant_abc.contacts (...);
+
+-- Tenant 2
+CREATE SCHEMA tenant_xyz;
+CREATE TABLE tenant_xyz.accounts (...);
+CREATE TABLE tenant_xyz.contacts (...);
+```
+
+**Pros**: Complete isolation, per-tenant permissions  
+**Cons**: Database-specific, more overhead
+
+## Integration with Security Plugin
+
+Combine multi-tenancy with RBAC for tenant-scoped permissions:
+
+```typescript
+import { SecurityPlugin } from '@objectql/plugin-security';
+import { MultiTenancyPlugin } from '@objectql/plugin-multitenancy';
+
+const kernel = new ObjectStackKernel([
+  // Multi-tenancy provides data isolation
+  new MultiTenancyPlugin({
+    tenantField: 'tenant_id',
+  }),
+  
+  // Security provides role-based access control
+  new SecurityPlugin({
+    enableRowLevelSecurity: true,
+  }),
+]);
+```
+
+Now users are restricted by:
+1. **Tenant**: Can only access their tenant's data
+2. **Role**: Can only perform actions allowed by their role
+3. **Record Rules**: Can only access records matching their criteria
+
+## Error Handling
+
+```typescript
+import { TenantIsolationError } from '@objectql/plugin-multitenancy';
+
+try {
+  await objectql.update('accounts', recordId, { name: 'New Name' });
+} catch (error) {
+  if (error instanceof TenantIsolationError) {
+    // Handle tenant violation
+    console.error('Tenant error:', error.message);
+    console.error('Details:', error.details);
+    // {
+    //   tenantId: 'tenant-123',
+    //   objectName: 'accounts',
+    //   operation: 'update',
+    //   reason: 'CROSS_TENANT_UPDATE'
+    // }
+  }
+}
+```
+
+## Audit Logging
+
+Track all tenant-related operations:
+
+```typescript
+const plugin = new MultiTenancyPlugin({
+  enableAudit: true,
+});
+
+// ... after some operations
+
+const logs = plugin.getAuditLogs(50);
+
+logs.forEach(log => {
+  console.log(`[${new Date(log.timestamp).toISOString()}]`);
+  console.log(`  Tenant: ${log.tenantId}`);
+  console.log(`  User: ${log.userId}`);
+  console.log(`  Operation: ${log.operation} on ${log.objectName}`);
+  console.log(`  Status: ${log.allowed ? 'ALLOWED' : 'DENIED'}`);
+  if (!log.allowed) {
+    console.log(`  Reason: ${log.reason}`);
+  }
+});
+```
+
+## Testing Multi-Tenancy
+
+Verify tenant isolation in your tests:
+
+```typescript
+import { describe, it, expect } from 'vitest';
+
+describe('Tenant Isolation', () => {
+  it('should isolate data by tenant', async () => {
+    // Create record as Tenant A
+    const recordA = await objectql.create('accounts', 
+      { name: 'Account A' },
+      { tenantId: 'tenant-a' }
+    );
+    
+    // Try to find as Tenant B
+    const results = await objectql.find('accounts',
+      { id: recordA.id },
+      { tenantId: 'tenant-b' }
+    );
+    
+    // Should not find Tenant A's record
+    expect(results).toHaveLength(0);
+  });
+  
+  it('should prevent cross-tenant updates', async () => {
+    const recordA = await objectql.create('accounts',
+      { name: 'Account A' },
+      { tenantId: 'tenant-a' }
+    );
+    
+    // Try to update as Tenant B
+    await expect(
+      objectql.update('accounts', recordA.id, 
+        { name: 'Hacked' },
+        { tenantId: 'tenant-b' }
+      )
+    ).rejects.toThrow(TenantIsolationError);
+  });
+});
+```
+
+## Best Practices
+
+### 1. Always Set Tenant Context
+
+Ensure every request has tenant information:
+
+```typescript
+// ❌ Bad: No tenant context
+await objectql.find('accounts', {});
+
+// ✅ Good: Tenant context provided
+await objectql.find('accounts', {}, { 
+  user: { tenantId: 'tenant-123' } 
+});
+```
+
+### 2. Use Exempt Objects Sparingly
+
+Only exempt truly global data:
+
+```typescript
+// ✅ Good: Only system-level objects
+exemptObjects: ['users', 'tenants']
+
+// ❌ Bad: Exempting business objects defeats the purpose
+exemptObjects: ['users', 'accounts', 'contacts', 'invoices']
+```
+
+### 3. Index the Tenant Field
+
+Ensure good query performance:
+
+```sql
+CREATE INDEX idx_accounts_tenant ON accounts(tenant_id);
+CREATE INDEX idx_contacts_tenant ON contacts(tenant_id);
+```
+
+### 4. Test Cross-Tenant Scenarios
+
+Write tests for:
+- Data isolation between tenants
+- Cross-tenant update/delete denial
+- Exempt object access
+- Custom tenant resolver logic
+
+### 5. Monitor Audit Logs
+
+Regularly review audit logs for:
+- Cross-tenant access attempts
+- Missing tenant context errors
+- Unusual access patterns
+
+## Troubleshooting
+
+### Error: "Unable to resolve tenant ID from context"
+
+**Cause**: No tenant information in the request context
+
+**Solution**: Ensure tenant context is set:
+```typescript
+context.tenantId = 'tenant-123';
+// or
+context.user.tenantId = 'tenant-123';
+```
+
+### Error: "Cross-tenant query denied"
+
+**Cause**: Query attempts to access another tenant's data in strict mode
+
+**Solution**: Remove explicit `tenant_id` from queries (plugin injects it automatically)
+
+### Performance Issues with Large Tenant Counts
+
+**Cause**: Too many tenants in shared tables
+
+**Solution**: Consider table-prefix or separate-schema isolation:
+```typescript
+new MultiTenancyPlugin({
+  schemaIsolation: 'table-prefix', // or 'separate-schema'
+})
+```
+
+## Summary
+
+The Multi-Tenancy plugin provides:
+- ✅ Automatic tenant isolation
+- ✅ Zero-intrusion (no code changes required)
+- ✅ Security by default (strict mode)
+- ✅ Flexible configuration
+- ✅ Integration with other plugins
+- ✅ Production-ready audit logging
+
+Deploy multi-tenant SaaS applications with confidence knowing your data is properly isolated.
