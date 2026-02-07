@@ -14,7 +14,6 @@ export default defineConfig({
   resolve: {
     alias: {
       // '@objectql/core': resolve(__dirname, '../../../packages/foundation/core/src/index.ts'),
-      // '@objectql/driver-localstorage': resolve(__dirname, '../../../packages/drivers/localstorage/src/index.ts'),
       // '@objectql/driver-memory': resolve(__dirname, '../../../packages/drivers/memory/src/index.ts'),
       // '@objectql/types': resolve(__dirname, '../../../packages/foundation/types/src/index.ts'),
       // '@objectstack/runtime': resolve(__dirname, '../../../packages/objectstack/runtime/src/index.ts'),
@@ -25,7 +24,6 @@ export default defineConfig({
     include: [
       '@objectql/types',
       '@objectql/core',
-      '@objectql/driver-localstorage',
       '@objectql/driver-memory'
     ]
   },

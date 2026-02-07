@@ -17,7 +17,6 @@
     { "path": "./packages/drivers/fs" },
     { "path": "./packages/drivers/redis" },
     { "path": "./packages/drivers/excel" },
-    { "path": "./packages/drivers/localstorage" },
     
     // Protocols Layer
     { "path": "./packages/protocols/graphql" },

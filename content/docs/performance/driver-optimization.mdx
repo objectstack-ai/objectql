@@ -704,55 +704,6 @@ const app = new ObjectQL({
 });
 
 // Data persists in browser memory until page refresh
-// For persistent storage, use LocalStorage driver
-```
-
----
-
-## LocalStorage Driver
-
-Browser-based persistent storage using localStorage API.
-
-### Configuration
-
-```typescript
-import { LocalStorageDriver } from '@objectql/driver-localstorage';
-
-const driver = new LocalStorageDriver({
-  prefix: 'myapp_',  // Key prefix in localStorage
-  compress: true,    // Compress data (saves space)
-  encrypt: false     // Optional encryption
-});
-```
-
-### Storage Limits
-
-| Browser | Limit |
-|---------|-------|
-| Chrome | 10MB |
-| Firefox | 10MB |
-| Safari | 5MB |
-| Edge | 10MB |
-
-**Check available space**:
-
-```typescript
-const quota = await navigator.storage.estimate();
-console.log(`Used: ${quota.usage}, Available: ${quota.quota}`);
-```
-
-### Performance Tips
-
-1. **Minimize data stored**: Only store essential fields
-2. **Use compression**: Enable `compress: true`
-3. **Batch updates**: Group multiple operations
-4. **Clear old data**: Remove stale records periodically
-
-```typescript
-// Clear old sessions
-await driver.deleteMany('sessions', [
-  ['expires_at', '<', new Date()]
-]);
 ```
 
 ---
@@ -902,7 +853,7 @@ Choose the right driver for your use case:
 | Real-time apps | Redis | In-memory speed, pub/sub |
 | Unit tests | Memory | Fast, no setup, clean slate |
 | Serverless/Edge | Memory | No external dependencies |
-| Browser apps | LocalStorage | Persistent client-side storage |
+| Browser apps | Memory | Client-side storage, no persistence |
 | Mobile apps | SQLite (SQL Driver) | Embedded, reliable |
 | Analytics | PostgreSQL | Advanced aggregations, window functions |
 | Session store | Redis | TTL, fast access |

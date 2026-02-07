@@ -199,48 +199,26 @@
         
         <div class="demo-card">
             <h2>🖥️ Console Output</h2>
-            <div id="output">Initializing ObjectQL with LocalStorage...
+            <div id="output">Initializing ObjectQL with Memory Driver...
 </div>
         </div>
     </div>
     
     <script type="module">
         import { ObjectQL } from '@objectql/core';
-        import { LocalStorageDriver } from '@objectql/driver-localstorage';
         import { MemoryDriver } from '@objectql/driver-memory';
         
         // Global variables
         window.app = null;
         window.driver = null;
         window.noteRepo = null;
-        window.currentDriverType = 'localstorage'; // Default
-
-        window.switchDriver = async function(type) {
-             if (type === window.currentDriverType) return;
-             if (!confirm('Switching drivers will reload the app. Continue?')) {
-                 document.getElementById('driverSelect').value = window.currentDriverType;
-                 return;
-             }
-             window.currentDriverType = type;
-             document.getElementById('noteList').innerHTML = '';
-             document.getElementById('output').textContent = '';
-             await initObjectQL();
-        }
         
         async function initObjectQL() {
             try {
-                if (window.currentDriverType === 'localstorage') {
-                    log('💾 Creating LocalStorage Driver...');
-                    window.driver = new LocalStorageDriver({
-                        namespace: 'objectql-notes-demo',
-                        strictMode: true
-                    });
-                } else {
-                    log('🧠 Creating Memory Driver...');
-                     window.driver = new MemoryDriver();
-                }
+                log('🧠 Creating Memory Driver...');
+                window.driver = new MemoryDriver();
 
-                log(`🚀 Initializing ObjectQL with ${window.currentDriverType}...`);
+                log('🚀 Initializing ObjectQL with Memory Driver...');
                 
                 window.app = new ObjectQL({
                     datasources: { default: window.driver }
@@ -262,16 +240,16 @@
                 });
                 
                 await window.app.init();
-                log('✅ ObjectQL initialized with LocalStorage!');
+                log('✅ ObjectQL initialized with Memory Driver!');
                 
                 const ctx = window.app.createContext({ isSystem: true });
                 window.noteRepo = ctx.object('notes');
                 
-                // Load existing notes from LocalStorage
+                // Load existing notes
                 await loadNotes();
                 updateStorageCount();
                 
-                log('🎉 Ready! Your data persists across page refreshes.');
+                log('🎉 Ready! Add notes using the form above.');
                 
             } catch (error) {
                 log('❌ Error:', error);
@@ -291,7 +269,7 @@
                 log(`➕ Creating note: "${content}"`);
                 const note = await window.noteRepo.create({ content });
                 
-                log('✅ Note created and saved to LocalStorage');
+                log('✅ Note created');
                 document.getElementById('noteContent').value = '';
                 
                 await loadNotes();
@@ -306,7 +284,7 @@
         window.loadNotes = async function() {
             try {
                 const notes = await window.noteRepo.find({});
-                log(`📋 Loaded ${notes.length} notes from LocalStorage`);
+                log(`📋 Loaded ${notes.length} notes`);
                 
                 displayNotes(notes);
                 updateStorageCount();
@@ -345,7 +323,7 @@
             try {
                 log(`🗑 Deleting note ${id}...`);
                 await window.noteRepo.delete(id);
-                log('✅ Note deleted from LocalStorage');
+                log('✅ Note deleted');
                 
                 await loadNotes();
                 updateStorageCount();
@@ -361,7 +339,7 @@
             }
             
             try {
-                log('🗑 Clearing all data from LocalStorage...');
+                log('🗑 Clearing all data...');
                 await window.driver.clear();
                 log('✅ All data cleared');
                 

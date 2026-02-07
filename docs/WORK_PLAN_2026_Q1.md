@@ -216,7 +216,7 @@ Package removed in B3.
 | ISS-008 | ✅ Resolved | `plugin-security` | Test coverage expanded (1→6 files, 13→136 tests) |
 | ISS-009 | ✅ Resolved | `plugin-validator` | TODO stubs implemented with tests |
 | ISS-010 | ✅ Resolved | `cli` | Version sourced from package.json; CLI scope delegated to @objectstack/cli |
-| ISS-011 | 🟡 Medium | `localstorage` | Compression feature flagged but unimplemented |
+| ISS-011 | ✅ Resolved | `localstorage` | Package removed — `driver-memory` sufficient for demos; browser persistence deferred to future `driver-indexeddb` |
 | ISS-012 | ✅ Resolved | `protocol-rest` | Ghost project reference in root `tsconfig.json` caused Vite to fail when parsing projects — removed reference |
 | ISS-013 | ✅ Resolved | `platform-node` | Cross-layer tsconfig references removed |
 | ISS-014 | ✅ Resolved | All packages | `exports` field added to 17 packages |
