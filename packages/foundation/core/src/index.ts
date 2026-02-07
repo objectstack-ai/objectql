@@ -35,3 +35,6 @@ export * from './util';
 
 // Export kernel optimizations
 export * from './optimizations';
+
+// Export AI runtime
+export * from './ai';

@@ -35,3 +35,4 @@ export * from './formula';
 export * from './plugin';
 export * from './gateway';
 export * from './logger';
+export * from './ai';

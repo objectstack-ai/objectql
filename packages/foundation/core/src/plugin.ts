@@ -15,6 +15,7 @@ import { QueryService } from './query/query-service';
 import { QueryAnalyzer } from './query/query-analyzer';
 import { ObjectStackProtocolImplementation } from './protocol';
 import type { Driver } from '@objectql/types';
+import { createDefaultAiRegistry } from './ai';
 
 /**
  * Extended kernel with ObjectQL services
@@ -290,8 +291,9 @@ export class ObjectQLPlugin implements RuntimePlugin {
    * @private
    */
   private async registerAI(kernel: any): Promise<void> {
-    // TODO: Implement AI registration
-    // For now, this is a placeholder to establish the structure
+    if (!(kernel as any).ai) {
+      (kernel as any).ai = createDefaultAiRegistry();
+    }
     this.logger.debug('AI integration registered');
   }
 

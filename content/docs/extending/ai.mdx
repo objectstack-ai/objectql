@@ -1,0 +1,43 @@
+---
+title: AI Integrations (Foundations)
+---
+
+# AI Integrations (Foundations)
+
+This page defines the **runtime-only** AI integration points exposed by ObjectQL.
+These are **not** part of the wire protocol. They are stable extension hooks for:
+
+- Model registry
+- Prompt template registry
+- RAG (retrieval + vector store) integration
+
+## Model Registry
+
+Register model metadata and capabilities without binding to a specific provider SDK.
+
+- `ModelRegistry`
+- `AiModelDefinition`
+- `AiModelCapabilities`
+
+## Prompt Templates
+
+Store versioned prompt templates and retrieve them at runtime.
+
+- `PromptRegistry`
+- `PromptTemplate`
+
+## RAG Integration Points
+
+Provide connectors for embeddings and vector stores.
+
+- `EmbeddingProvider`
+- `VectorStore`
+- `RagDocument`, `RagSearchOptions`, `RagSearchResult`
+
+## Runtime Registry
+
+The runtime exposes a lightweight registry surface:
+
+- `AiRegistry` → `models`, `prompts`, optional `embeddings`, optional `vectorStore`
+
+These are intentionally minimal and adapter-friendly.

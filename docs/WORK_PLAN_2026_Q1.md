@@ -164,12 +164,13 @@ Package removed in B3.
 | **Implemented** | Unified `Logger` usage via `@objectql/types` across core gateway, hook manager, and plugins; removed external `createLogger` dependency in foundation plugins. |
 | **Files Changed** | `packages/foundation/core/src/gateway.ts`, `packages/foundation/core/src/optimizations/CompiledHookManager.ts`, `packages/foundation/core/src/plugin.ts`, `packages/foundation/plugin-security/src/plugin.ts`, `packages/foundation/plugin-security/src/permission-loader.ts`, `packages/foundation/plugin-formula/src/formula-plugin.ts`, `packages/foundation/plugin-validator/src/validator-plugin.ts` |
 
-### D3 — AI Namespace Preparation
+### D3 — AI Namespace Preparation ✅ (Foundational)
 
-Current compliance: 40%. Begin foundational work for:
-- RAG integration points
-- Model Registry interfaces
-- Prompt template system
+| Field | Value |
+|-------|-------|
+| **Status** | ✅ Foundational Complete |
+| **Implemented** | Runtime AI namespace types (`AiRegistry`, `ModelRegistry`, `PromptRegistry`, RAG interfaces) + core in-memory registries + docs. |
+| **Files Changed** | `packages/foundation/types/src/ai.ts`, `packages/foundation/core/src/ai/registry.ts`, `packages/foundation/core/src/plugin.ts`, `content/docs/extending/ai.mdx`, `content/docs/extending/meta.json` |
 
 ---
 
