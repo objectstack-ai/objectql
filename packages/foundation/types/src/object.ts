@@ -6,9 +6,26 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import { Data, Automation } from '@objectstack/spec';
+import { z } from 'zod';
 import { FieldConfig } from './field';
 import { ActionConfig } from './action';
 import { AnyValidationRule } from './validation';
+
+/**
+ * Re-export Protocol Types from @objectstack/spec 1.1.0
+ * State Machine, Object Ownership, and Object Extension types.
+ */
+export type StateMachineConfig = z.infer<typeof Automation.StateMachineSchema>;
+export type StateNodeConfig = z.infer<typeof Automation.StateNodeSchema>;
+export type Transition = z.infer<typeof Automation.TransitionSchema>;
+export type ActionRef = z.infer<typeof Automation.ActionRefSchema>;
+export type ObjectOwnership = z.infer<typeof Data.ObjectOwnershipEnum>;
+export type ObjectExtension = z.infer<typeof Data.ObjectExtensionSchema>;
+export type ServiceObject = z.infer<typeof Data.ObjectSchema>;
+
+/** Re-export Zod schemas for validation */
+export { Data, Automation };
 
 /**
  * RUNTIME-SPECIFIC TYPES
@@ -122,6 +139,20 @@ export interface ObjectConfig {
     /**
      * RUNTIME EXTENSIONS BELOW
      */
+
+    /**
+     * State Machine definition for object lifecycle management.
+     * Follows the @objectstack/spec StateMachineConfig protocol.
+     * Enables declarative state transitions, guards, and entry/exit actions.
+     */
+    stateMachine?: StateMachineConfig;
+
+    /**
+     * Named state machines for multi-field lifecycle.
+     * Each key is a state machine identifier, useful when an object
+     * has multiple independent state fields.
+     */
+    stateMachines?: Record<string, StateMachineConfig>;
     
     /** AI capabilities configuration (RUNTIME ONLY) */
     ai?: ObjectAiConfig;

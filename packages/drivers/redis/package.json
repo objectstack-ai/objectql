@@ -28,7 +28,7 @@
     "@objectql/types": "workspace:*",
     "@objectstack/spec": "^1.1.0",
     "redis": "^4.6.0",
-    "zod": "^4.3.6"
+    "zod": "^3.24.1"
   },
   "devDependencies": {
     "@objectql/driver-tck": "workspace:*",

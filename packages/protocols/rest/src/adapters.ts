@@ -8,8 +8,8 @@
 
 import { IObjectQL, ApiRouteConfig, resolveApiRoutes } from '@objectql/types';
 import { IncomingMessage, ServerResponse } from 'http';
-import { ObjectQLServer } from './server';
-import { ErrorCode } from './types';
+import { ObjectQLServer } from './server.js';
+import { ErrorCode } from './types.js';
 
 /**
  * Read and parse request body as JSON

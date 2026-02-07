@@ -151,22 +151,22 @@ export class ObjectQL implements IObjectQL {
                  }
             },
             unregisterPackage: (packageName: string) => {
+                 // Use the official @objectstack/objectql 1.1.0 API for object cleanup
+                 if (typeof SchemaRegistry.unregisterObjectsByPackage === 'function') {
+                     SchemaRegistry.unregisterObjectsByPackage(packageName);
+                 }
+                 // Also clean up non-object metadata items by package
                  const metadata = (SchemaRegistry as any).metadata;
                  if (metadata && metadata instanceof Map) {
                      for (const [type, collection] of metadata.entries()) {
                          if (collection instanceof Map) {
                              for (const [key, item] of collection.entries()) {
-                                 // console.log(`[App] Check ${type} ${key} pkg=${(item as any).package}`);
                                  if ((item as any).package === packageName) {
                                      collection.delete(key);
                                  }
                              }
                          }
                      }
-                 } else {
-                     console.warn('Metadata is not a Map');
-                     // Note: Using console.warn here because this is inside a metadata shim
-                     // that runs before the logger may be fully initialized
                  }
             }
         };

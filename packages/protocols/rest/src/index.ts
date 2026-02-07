@@ -6,11 +6,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-export * from './types';
-export * from './utils';
-export * from './openapi';
-export * from './server';
-export * from './metadata';
-export * from './plugin';
-export * from './adapters';
-export * from './validation';
+export * from './types.js';
+export * from './utils.js';
+export * from './openapi.js';
+export * from './server.js';
+export * from './metadata.js';
+export * from './plugin.js';
+export * from './adapters.js';
+export * from './validation.js';

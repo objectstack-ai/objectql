@@ -7,7 +7,7 @@
  */
 
 import { z } from 'zod';
-import { ErrorCode } from './types';
+import { ErrorCode } from './types.js';
 
 /**
  * AI Context Schema

@@ -9,16 +9,29 @@
 // Re-export types from @objectstack packages for API compatibility
 export type { ObjectKernel } from '@objectstack/runtime';
 export type { ObjectStackProtocolImplementation } from '@objectstack/objectql';
-// Note: @objectstack/objectql types temporarily commented out due to type incompatibilities
-// in the published package. Will be re-enabled when package is updated.
-// export type { ObjectQL as ObjectQLEngine, SchemaRegistry } from '@objectstack/objectql';
+
+// Re-export new @objectstack/objectql 1.1.0 FQN (Fully Qualified Name) utilities
+export {
+    computeFQN,
+    parseFQN,
+    RESERVED_NAMESPACES,
+    DEFAULT_OWNER_PRIORITY,
+    DEFAULT_EXTENDER_PRIORITY,
+    SchemaRegistry,
+} from '@objectstack/objectql';
+export type { ObjectContributor } from '@objectstack/objectql';
 
 // Export ObjectStack spec types for driver development
-import { Data, System } from '@objectstack/spec';
+import { Data, System, Automation } from '@objectstack/spec';
 import { z } from 'zod';
 export { QueryAST } from '@objectql/types';
 export type DriverInterface = z.infer<typeof Data.DriverInterfaceSchema>;
 export type DriverOptions = z.infer<typeof Data.DriverOptionsSchema>;
+
+// Re-export new @objectstack/spec 1.1.0 types
+export type StateMachineConfig = z.infer<typeof Automation.StateMachineSchema>;
+export type ObjectOwnership = z.infer<typeof Data.ObjectOwnershipEnum>;
+export type ObjectExtension = z.infer<typeof Data.ObjectExtensionSchema>;
 
 export * from './gateway';
 

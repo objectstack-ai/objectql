@@ -7,8 +7,8 @@
  */
 
 import { IObjectQL, ObjectQLContext } from '@objectql/types';
-import { ObjectQLRequest, ObjectQLResponse, ErrorCode } from './types';
-import { validateRequest, validateResponse, ValidationError } from './validation';
+import { ObjectQLRequest, ObjectQLResponse, ErrorCode } from './types.js';
+import { validateRequest, validateResponse, ValidationError } from './validation.js';
 
 export class ObjectQLServer {
     constructor(private app: IObjectQL) {}

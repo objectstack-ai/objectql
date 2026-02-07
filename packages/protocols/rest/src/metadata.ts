@@ -8,8 +8,8 @@
 
 import { IObjectQL, ApiRouteConfig, resolveApiRoutes } from '@objectql/types';
 import { IncomingMessage, ServerResponse } from 'http';
-import { ErrorCode } from './types';
-import { escapeRegexPath } from './utils';
+import { ErrorCode } from './types.js';
+import { escapeRegexPath } from './utils.js';
 
 function readBody(req: IncomingMessage): Promise<any> {
     return new Promise((resolve, reject) => {

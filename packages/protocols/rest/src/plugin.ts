@@ -7,8 +7,8 @@
  */
 
 import { RuntimePlugin, RuntimeContext } from '@objectql/types';
-import { ObjectQLServer } from './server';
-import { ObjectQLRequest } from './types';
+import { ObjectQLServer } from './server.js';
+import { ObjectQLRequest } from './types.js';
 
 export interface RestPluginConfig {
     /**
