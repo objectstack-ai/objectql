@@ -1,5 +1,15 @@
 # @objectql/starter-basic
 
+## 5.0.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @objectql/types@4.2.0
+  - @objectql/core@4.2.0
+  - @objectql/platform-node@4.2.0
+  - @objectql/driver-sql@4.2.0
+
 ## 4.0.6
 
 ### Patch Changes

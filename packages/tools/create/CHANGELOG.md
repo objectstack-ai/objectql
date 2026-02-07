@@ -1,5 +1,17 @@
 # @objectql/create
 
+## 4.2.0
+
+### Minor Changes
+
+- Release v4.2.0
+  - Protocol layer: Added GraphQL, JSON-RPC, and OData v4 protocol adapters
+  - Drivers: Added Excel, filesystem, and Redis drivers
+  - Plugins: Added formula engine, security RBAC, and validator plugins
+  - CLI: Added `objectql create` scaffolding tool
+  - Core: Performance improvements and strict type enforcement
+  - Testing: Added Driver TCK and Protocol TCK conformance suites
+
 ## 4.0.6
 
 ## 4.0.5
