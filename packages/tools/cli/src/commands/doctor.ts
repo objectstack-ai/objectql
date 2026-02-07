@@ -10,6 +10,7 @@ import chalk from 'chalk';
 import * as fs from 'fs';
 import * as path from 'path';
 import { spawn } from 'child_process';
+import { CONFIG_SEARCH_PATHS } from '../utils/config-loader';
 
 interface DependencyCheck {
     name: string;
@@ -61,12 +62,7 @@ export async function doctorCommand(options: DoctorOptions = {}) {
     }
 
     // 3. Check Configuration
-    const configPaths = [
-        'objectql.config.ts',
-        'objectql.config.js',
-        'src/objectql.config.ts',
-        'src/objectql.config.js'
-    ];
+    const configPaths = [...CONFIG_SEARCH_PATHS];
     
     let configFound = false;
     for (const configPath of configPaths) {
@@ -78,7 +74,7 @@ export async function doctorCommand(options: DoctorOptions = {}) {
     }
     
     if (!configFound) {
-        console.log(`${chalk.yellow('⚠')} Configuration: ${chalk.yellow('No objectql.config file found')}`);
+        console.log(`${chalk.yellow('⚠')} Configuration: ${chalk.yellow('No objectstack.config / objectql.config file found')}`);
         hasWarnings = true;
     }
 
@@ -265,9 +261,4 @@ export async function validateCommand(options: { dir?: string }) {
     console.log(chalk.blue('🔍 Validating Metadata...'));
     // This would invoke the core validator
     console.log(chalk.gray('Feature coming soon: Will validate all .object.yml files against schema.'));
-}
-
-async function loadObjectQLInstance(configPath?: string) {
-    // Placeholder for actual loader logic if not exported from elsewhere
-    return {};
 }

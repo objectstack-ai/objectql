@@ -11,6 +11,7 @@ import * as path from 'path';
 import chalk from 'chalk';
 import * as yaml from 'js-yaml';
 import { IntrospectedSchema, IntrospectedTable, IntrospectedColumn, ObjectConfig, IObjectQL, FieldConfig, FieldType } from '@objectql/types';
+import { resolveConfigFile } from '../utils/config-loader';
 
 interface SyncOptions {
     config?: string;
@@ -278,26 +279,7 @@ function formatLabel(name: string): string {
  * Load ObjectQL instance from config file
  */
 async function loadObjectQLInstance(configPath?: string): Promise<IObjectQL> {
-    const cwd = process.cwd();
-    
-    // Try to load from config file
-    let configFile = configPath;
-    if (!configFile) {
-        const potentialFiles = ['objectql.config.ts', 'objectql.config.js'];
-        for (const file of potentialFiles) {
-            if (fs.existsSync(path.join(cwd, file))) {
-                configFile = path.join(cwd, file);
-                break;
-            }
-        }
-    } else if (!path.isAbsolute(configFile)) {
-        // If configPath is provided but relative, make it absolute
-        configFile = path.join(cwd, configFile);
-    }
-
-    if (!configFile) {
-        throw new Error('No configuration file found (objectql.config.ts/js). Please create one with database connection.');
-    }
+    const configFile = resolveConfigFile(configPath);
 
     // Register ts-node for TypeScript support
     if (configFile.endsWith('.ts')) {

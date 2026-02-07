@@ -25,7 +25,7 @@ export function registerLifecycleCommands(program: Command) {
         .description('Start development server (Delegated to @objectstack/cli)')
         .option('-p, --port <number>', 'Port to listen on', '3000')
         .option('-d, --dir <path>', 'Directory containing schema', '.')
-        .option('-c, --config <path>', 'Path to objectql.config.ts/js')
+        .option('-c, --config <path>', 'Path to objectstack.config.ts/js')
         .option('--modules <items>', 'Comma-separated list of modules to load')
         .option('--no-watch', 'Disable file watching')
         .action(async () => {
@@ -54,7 +54,7 @@ export function registerLifecycleCommands(program: Command) {
         .description('Start production server (Delegated to @objectstack/cli)')
         .option('-p, --port <number>', 'Port to listen on', '3000')
         .option('-d, --dir <path>', 'Directory containing schema', '.')
-        .option('-c, --config <path>', 'Path to objectql.config.ts/js')
+        .option('-c, --config <path>', 'Path to objectstack.config.ts/js')
         .action(async () => {
             const args = process.argv.slice(3);
             forwardToObjectStack('serve', args);

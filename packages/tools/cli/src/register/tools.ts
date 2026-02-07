@@ -33,7 +33,7 @@ export function registerToolsCommands(program: Command) {
     program
         .command('repl')
         .description('Start interactive REPL')
-        .option('-c, --config <path>', 'Path to objectql.config.ts')
+        .option('-c, --config <path>', 'Path to objectstack.config.ts')
         .action(async (options) => {
             await startRepl(options.config);
         });

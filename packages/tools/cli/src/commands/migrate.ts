@@ -9,6 +9,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import chalk from 'chalk';
+import { resolveConfigFile } from '../utils/config-loader';
 
 interface MigrateOptions {
     config?: string;
@@ -255,23 +256,7 @@ export async function migrateStatus(options: MigrateStatusOptions) {
 }
 
 async function loadObjectQLInstance(configPath?: string): Promise<any> {
-    const cwd = process.cwd();
-    
-    // Try to load from config file
-    let configFile = configPath;
-    if (!configFile) {
-        const potentialFiles = ['objectql.config.ts', 'objectql.config.js'];
-        for (const file of potentialFiles) {
-            if (fs.existsSync(path.join(cwd, file))) {
-                configFile = file;
-                break;
-            }
-        }
-    }
-
-    if (!configFile) {
-        throw new Error('No configuration file found (objectql.config.ts/js)');
-    }
+    const configFile = resolveConfigFile(configPath);
 
     // Register ts-node for TypeScript support
     try {
@@ -285,7 +270,7 @@ async function loadObjectQLInstance(configPath?: string): Promise<any> {
         // ts-node not available, try to load JS directly
     }
 
-    const configModule = require(path.join(cwd, configFile));
+    const configModule = require(configFile);
     const app = configModule.default || configModule.app || configModule.objectql || configModule.db;
 
     if (!app) {

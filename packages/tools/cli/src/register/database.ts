@@ -30,7 +30,7 @@ export function registerDatabaseCommands(program: Command) {
     dbCmd
         .command('pull')
         .description('Introspect database and generate metadata (Reverse Engineering)')
-        .option('-c, --config <path>', 'Path to objectql.config.ts/js')
+        .option('-c, --config <path>', 'Path to objectstack.config.ts/js')
         .option('-o, --output <path>', 'Output directory', './src/objects')
         .option('-t, --tables <tables...>', 'Specific tables to sync')
         .option('-f, --force', 'Overwrite existing files')
@@ -51,7 +51,7 @@ export function registerDatabaseCommands(program: Command) {
     migrateCmd
         .command('up')
         .description('Run pending migrations')
-        .option('-c, --config <path>', 'Path to objectql.config.ts/js')
+        .option('-c, --config <path>', 'Path to objectstack.config.ts/js')
         .option('-d, --dir <path>', 'Migrations directory', './migrations')
         .action(async (options) => {
             await migrate(options);

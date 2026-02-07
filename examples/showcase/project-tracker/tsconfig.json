@@ -6,6 +6,6 @@
     "resolveJsonModule": true
   },
   "include": ["src/**/*"],
-  "exclude": ["objectql.config.ts"]
+  "exclude": ["objectstack.config.ts"]
 }
 

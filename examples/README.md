@@ -14,7 +14,7 @@ Welcome to the ObjectQL Examples repository. This collection demonstrates everyt
 | **[Basic Script](./starters/basic-script)** | A simple TypeScript script initializing ObjectQL with SQLite. Perfect for testing logic without a web server. | 🟢 Basic |
 
 ### 2. 🧩 Module Architecture
-*Demonstrating the power of the new `modules` system in `objectql.config.ts`. See `examples/scenarios/`.*
+*Demonstrating the power of the new `modules` system in `objectstack.config.ts`. See `examples/scenarios/`.*
 
 | Example | Description | Proficiency |
 | :--- | :--- | :--- |

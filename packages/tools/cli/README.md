@@ -173,14 +173,14 @@ Run pending database migrations.
 objectql migrate
 
 # Specify custom config file
-objectql migrate --config ./config/objectql.config.ts
+objectql migrate --config ./config/objectstack.config.ts
 
 # Custom migrations directory
 objectql migrate --dir ./db/migrations
 ```
 
 **Options:**
-- `-c, --config <path>` - Path to objectql.config.ts/js
+- `-c, --config <path>` - Path to objectstack.config.ts/js
 - `-d, --dir <path>` - Migrations directory [default: "./migrations"]
 
 #### `migrate create <name>`
@@ -207,11 +207,11 @@ Show migration status (pending vs. completed).
 objectql migrate status
 
 # With custom config
-objectql migrate status --config ./config/objectql.config.ts
+objectql migrate status --config ./config/objectstack.config.ts
 ```
 
 **Options:**
-- `-c, --config <path>` - Path to objectql.config.ts/js
+- `-c, --config <path>` - Path to objectstack.config.ts/js
 - `-d, --dir <path>` - Migrations directory [default: "./migrations"]
 
 #### `sync`
@@ -235,11 +235,11 @@ objectql sync --output ./src/metadata/objects
 objectql sync --force
 
 # With custom config file
-objectql sync --config ./config/objectql.config.ts
+objectql sync --config ./config/objectstack.config.ts
 ```
 
 **Options:**
-- `-c, --config <path>` - Path to objectql.config.ts/js
+- `-c, --config <path>` - Path to objectstack.config.ts/js
 - `-o, --output <path>` - Output directory for .object.yml files [default: "./src/objects"]
 - `-t, --tables <tables...>` - Specific tables to sync (default: all tables)
 - `-f, --force` - Overwrite existing .object.yml files
@@ -437,11 +437,11 @@ Start an interactive shell to query your data.
 objectql repl
 
 # Use custom config
-objectql repl --config ./objectql.config.ts
+objectql repl --config ./objectstack.config.ts
 ```
 
 **Options:**
-- `-c, --config <path>` - Path to objectql.config.ts/js
+- `-c, --config <path>` - Path to objectstack.config.ts/js
 
 **Example REPL session:**
 ```javascript
@@ -523,10 +523,10 @@ objectql migrate
 
 ## Configuration File
 
-Most commands expect an `objectql.config.ts` or `objectql.config.js` file in your project root:
+Most commands expect an `objectstack.config.ts` or `objectstack.config.js` file in your project root:
 
 ```typescript
-// objectql.config.ts
+// objectstack.config.ts
 import { ObjectQL } from '@objectql/core';
 import { SqlDriver } from '@objectql/driver-sql';
 import { ObjectLoader } from '@objectql/platform-node';

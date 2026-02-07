@@ -11,6 +11,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { ObjectQL } from '@objectql/core';
 import { register } from 'ts-node';
+import { resolveConfigFile } from '../utils/config-loader';
 
 export async function startRepl(configPath?: string) {
     const cwd = process.cwd();
@@ -24,27 +25,12 @@ export async function startRepl(configPath?: string) {
     });
 
     // 1. Resolve Config File
-    let configFile = configPath;
-    if (!configFile) {
-        const potentialFiles = ['objectql.config.ts', 'objectql.config.js'];
-        for (const file of potentialFiles) {
-            if (fs.existsSync(path.join(cwd, file))) {
-                configFile = file;
-                break;
-            }
-        }
-    }
-
-    if (!configFile) {
-        console.error("❌ No configuration file found (objectql.config.ts/js).");
-        console.log("Please create one that exports an ObjectQL instance.");
-        process.exit(1);
-    }
+    const configFile = resolveConfigFile(configPath, cwd);
 
     console.log(`🚀 Loading configuration from ${configFile}...`);
     
     try {
-        const configModule = require(path.join(cwd, configFile));
+        const configModule = require(configFile);
         // Support default export or named export 'app' or 'objectql' or 'db'
         const app = configModule.default || configModule.app || configModule.objectql || configModule.db;
 

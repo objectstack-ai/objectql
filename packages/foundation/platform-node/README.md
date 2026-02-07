@@ -182,7 +182,7 @@ my-app/
 │   └── permissions/
 │       ├── user.permission.yml
 │       └── project.permission.yml
-└── objectql.config.ts
+└── objectstack.config.ts
 ```
 
 ### Modular Structure
@@ -203,12 +203,12 @@ my-app/
 │   │       │   └── milestone.object.yml
 │   │       └── permissions/
 │   │           └── project.permission.yml
-└── objectql.config.ts
+└── objectstack.config.ts
 ```
 
 ## Complete Example
 
-### objectql.config.ts
+### objectstack.config.ts
 
 ```typescript
 import { ObjectQL } from '@objectql/core';
