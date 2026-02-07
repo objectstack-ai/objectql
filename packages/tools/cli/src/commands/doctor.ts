@@ -205,7 +205,6 @@ async function checkDependencies(packageJson: any): Promise<DependencyCheck[]> {
     const corePackages = [
         '@objectql/core',
         '@objectql/types',
-        '@objectql/server',
         '@objectql/cli'
     ];
     

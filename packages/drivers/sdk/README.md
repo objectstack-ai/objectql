@@ -753,7 +753,7 @@ MIT License - see [LICENSE](../../../LICENSE) file for details.
 
 * **[@objectql/types](../../foundation/types)** - TypeScript type definitions
 * **[@objectql/core](../../foundation/core)** - Core ObjectQL engine
-* **[@objectql/server](../../runtime/server)** - HTTP server implementation
+* **@objectstack/plugin-hono-server** - HTTP server (via ObjectStack Kernel)
 
 ---
 

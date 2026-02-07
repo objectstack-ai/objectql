@@ -46,17 +46,12 @@ ObjectQL is organized as a Monorepo to ensure modularity and universal compatibi
 | **[`@objectql/driver-sql`](./packages/drivers/sql)** | Node.js | SQL database driver (PostgreSQL, MySQL, SQLite, SQL Server) via Knex. |
 | **[`@objectql/driver-mongo`](./packages/drivers/mongo)** | Node.js | MongoDB driver with native aggregation pipeline support. |
 | **[`@objectql/driver-memory`](./packages/drivers/memory)** | Universal | **In-Memory Driver.** Zero dependencies, perfect for testing and browser apps. |
-| **[`@objectql/driver-localstorage`](./packages/drivers/localstorage)** | Browser | **Browser Storage.** Persistent client-side storage using LocalStorage. |
 | **[`@objectql/driver-fs`](./packages/drivers/fs)** | Node.js | File system driver with JSON file-based persistent storage. |
 | **[`@objectql/driver-excel`](./packages/drivers/excel)** | Node.js | Excel file driver for using `.xlsx` spreadsheets as a data source. |
 | **[`@objectql/driver-redis`](./packages/drivers/redis)** | Node.js | Redis driver (example/template implementation for key-value stores). |
 | **[`@objectql/sdk`](./packages/drivers/sdk)** | Universal | **Remote HTTP Driver.** Type-safe client for connecting to ObjectQL servers. |
-
-### Runtime Layer
-
-| Package | Environment | Description |
-| :--- | :--- | :--- |
-| **[`@objectql/server`](./packages/runtime/server)** | Node.js | HTTP server adapter for Node.js, Express, Next.js with REST and metadata APIs. |
+| **[`@objectql/driver-sqlite-wasm`](./packages/drivers/sqlite-wasm)** | Browser | **SQLite WASM Driver.** Browser-native SQL via WebAssembly + OPFS persistence. *(Coming Soon)* |
+| **[`@objectql/driver-pg-wasm`](./packages/drivers/pg-wasm)** | Browser | **PostgreSQL WASM Driver.** Full PG feature set in the browser via PGlite. *(Coming Soon)* |
 
 ### Tools Layer
 
@@ -160,23 +155,30 @@ ObjectQL isolates the "What" (Query) from the "How" (Execution).
 * Perfect for testing, prototyping, and client-side state management
 * See [Browser Demo](./examples/browser-demo/) for live examples
 
-#### LocalStorage Driver (`@objectql/driver-localstorage`)
+#### SQLite WASM Driver (`@objectql/driver-sqlite-wasm`) *(Coming Soon)*
 
-* **Browser-native persistence** - Data survives page refreshes
-* Built on Web Storage API
-* Perfect for offline apps, PWAs, and user preferences
-* See [LocalStorage Demo](./examples/browser-localstorage-demo/) for examples
+* **Browser-native SQL** via WebAssembly (~300KB gzip)
+* **OPFS persistence** — GB-scale storage, data survives page refreshes
+* Reuses the Knex SQLite dialect — same query compilation as `driver-sql`
+* Perfect for offline-first apps and PWAs
+
+#### PostgreSQL WASM Driver (`@objectql/driver-pg-wasm`) *(Coming Soon)*
+
+* **Full PostgreSQL in the browser** via PGlite (~3MB gzip)
+* JSONB, full-text search, arrays, range types
+* IndexedDB/OPFS persistence
+* For apps that need PG-specific features client-side
 
 ### Browser Support 🌐
 
 ObjectQL runs **natively in web browsers** with zero backend required! This makes it perfect for:
 
 - 🚀 **Rapid Prototyping** - Build UIs without server setup
-- 📱 **Offline-First Apps** - PWAs with client-side data
+- 📱 **Offline-First Apps** - PWAs with client-side data via WASM SQL drivers
 - 🎓 **Educational Tools** - Interactive learning experiences
 - 🧪 **Testing** - Browser-based test environments
 
-**Try it now:** Check out our interactive [Browser Demo](./examples/browser-demo/) and [LocalStorage Demo](./examples/browser-localstorage-demo/)!
+**Try it now:** Check out the [Browser Example](./examples/integrations/browser/)!
 
 ```javascript
 // Running ObjectQL in the browser - it's that simple!
@@ -296,9 +298,9 @@ This validation logic runs:
 
 ## 📊 Implementation Status
 
-**Current Version:** 4.0.x  
-**Overall Completion:** ~80%  
-**Protocol Compliance:** 80/100 (see [Protocol Compliance Report](./PROTOCOL_COMPLIANCE_REPORT.md))
+**Current Version:** 4.2.0  
+**Overall Completion:** ~85%  
+**Protocol Compliance:** 85/100 (see [Protocol Compliance Report](./PROTOCOL_COMPLIANCE_REPORT.md))
 
 ### Production-Ready Features ✅
 
@@ -310,10 +312,8 @@ ObjectQL has **mature, production-ready implementations** of core features:
 - ✅ **Action System (100%)** - Custom RPC operations
 - ✅ **Repository Pattern (100%)** - Full CRUD operations
 - ✅ **Security Plugin (100%)** - Comprehensive RBAC, FLS, and RLS with pre-compiled permission checks
-- ✅ **8 Database Drivers (100%)** - SQL, MongoDB, Memory, LocalStorage, FS, Excel, Redis, SDK
+- ✅ **7 Database Drivers (100%)** - SQL, MongoDB, Memory, FS, Excel, Redis, SDK
 - ✅ **3 Protocol Implementations** - GraphQL (85%), OData V4 (80%), JSON-RPC 2.0 (90%)
-- ✅ **AI Agent (100%)** - AI-powered code generation
-- ✅ **Server Runtime (95%)** - REST, GraphQL, Node.js adapters
 - ✅ **CLI Tools (100%)** - Complete development lifecycle
 - ✅ **VSCode Extension (90%)** - IntelliSense and validation
 
@@ -333,9 +333,9 @@ ObjectQL has **mature, production-ready implementations** of core features:
 
 These features have type definitions but require implementation in your application:
 
-- ⚠️ **Workflows** - Build using state machine validation + hooks
-- ⚠️ **Audit Trails** - Use hooks to track changes (or use the security plugin's audit logging for permission checks)
-- ⚠️ **Multi-tenancy** - Filter by tenant ID in hooks
+- 🔜 **Workflows** - `@objectql/plugin-workflow` planned (Q1 Phase 3) — full state machine executor
+- 🔜 **Multi-tenancy** - `@objectql/plugin-multitenancy` planned (Q2) — automatic tenant isolation
+- ⚠️ **Audit Trails** - Use hooks to track changes (or use the security plugin's audit logging)
 - ⚠️ **Reports** - Use query API + external libraries
 
 ### Key Documents
