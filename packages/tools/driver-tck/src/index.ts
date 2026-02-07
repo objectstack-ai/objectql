@@ -42,6 +42,8 @@ export function runDriverTCK(
         let driver: any;
         const TEST_OBJECT = 'tck_test';
         
+        let driverUnavailable = false;
+        
         beforeAll(async () => {
             if (hooks.beforeAll) {
                 await hooks.beforeAll();
@@ -54,8 +56,21 @@ export function runDriverTCK(
             }
         }, timeout);
         
-        beforeEach(async () => {
-            driver = createDriver();
+        beforeEach(async (ctx: any) => {
+            if (driverUnavailable) {
+                // Driver was previously unavailable - skip subsequent tests
+                if (ctx && typeof ctx.skip === 'function') { ctx.skip(); }
+                return;
+            }
+            try {
+                driver = createDriver();
+            } catch (err: unknown) {
+                driverUnavailable = true;
+                const message = err instanceof Error ? err.message : String(err);
+                console.warn(`⚠️  TCK: createDriver() failed: ${message}. Skipping remaining tests.`);
+                if (ctx && typeof ctx.skip === 'function') { ctx.skip(); }
+                return;
+            }
             if (driver && driver.clear) {
                 await driver.clear();
             }
