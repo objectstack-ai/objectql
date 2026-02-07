@@ -7,7 +7,8 @@
  */
 
 import { Command } from 'commander';
-import { doctorCommand, validateCommand } from '../commands/doctor';
+import { validateCommand } from '../commands/doctor';
+import { forwardToObjectStack } from '../utils/objectstack-cli';
 import { startRepl } from '../commands/repl';
 import { test } from '../commands/test';
 import { lint } from '../commands/lint';
@@ -16,9 +17,9 @@ import { format } from '../commands/format';
 export function registerToolsCommands(program: Command) {
     program
         .command('doctor')
-        .description('Check environment and configuration health')
+        .description('Check environment and configuration health (Delegated to @objectstack/cli)')
         .action(async () => {
-            await doctorCommand();
+            forwardToObjectStack('doctor');
         });
 
     program

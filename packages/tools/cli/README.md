@@ -12,174 +12,32 @@ pnpm add -D @objectql/cli
 
 ## Commands
 
-### AI-Powered Features
+### Lifecycle (Delegated to @objectstack/cli)
 
-The `ai` command provides AI-powered application generation and assistance. **By default, it starts in interactive conversational mode** for the best experience.
+The following commands are now delegated to **@objectstack/cli**:
 
-#### Interactive Mode (Default)
+- `objectql init` → `objectstack create`
+- `objectql dev` → `objectstack dev`
+- `objectql start` → `objectstack serve`
+- `objectql doctor` → `objectstack doctor`
 
-Simply type `objectql ai` to start building your application through conversation.
-
-```bash
-# Start interactive conversational builder (most common use case)
-objectql ai
-
-# Specify output directory
-objectql ai ./src/my-app
-```
-
-The interactive mode:
-- Guides you step-by-step through application creation
-- Lets you describe what you want in natural language
-- Generates metadata, TypeScript implementations, and tests
-- Allows iterative refinement through dialogue
-- Provides suggestions for next steps
-
----
-
-#### One-Shot Generation
-
-For quick, non-interactive generation from a single description.
+You can use either `objectstack` or the short alias `os`:
 
 ```bash
-# Generate from a description
-objectql ai generate -d "A task management system with projects and tasks"
-
-# Generate complete enterprise application
-objectql ai generate -d "CRM with customers, contacts, opportunities" -t complete -o ./src
-
-# Generation types: basic, complete, custom (default)
-objectql ai generate -d "Inventory system" -t complete
+npx objectstack dev
+npx os serve
+npx objectstack doctor
+npx objectstack create
 ```
 
-**Options:**
-- `-d, --description <text>` - Application description (required)
-- `-o, --output <path>` - Output directory [default: "./src"]
-- `-t, --type <type>` - Generation type: basic, complete, or custom [default: "custom"]
+### Metadata & Tooling (This CLI)
 
-**Generates:**
-- ObjectQL metadata (objects, forms, views, pages, menus, etc.)
-- TypeScript implementations for actions and hooks
-- Jest test files for business logic validation
+This CLI focuses on metadata scaffolding, type generation, database workflows, i18n, and local tooling:
 
----
+- `generate`, `new`, `db push`, `db pull`, `migrate`
+- `i18n extract`, `i18n init`, `i18n validate`
+- `lint`, `format`, `repl`, `test`, `build`
 
-#### Validation
-
-Validate metadata files using AI for compliance and best practices.
-
-```bash
-# Validate all metadata files
-objectql ai validate ./src
-
-# Validate with detailed output
-objectql ai validate ./src -v
-
-# Validate and auto-fix issues
-objectql ai validate ./src --fix
-```
-
-**Options:**
-- `<path>` - Path to metadata directory (required)
-- `--fix` - Automatically fix issues where possible
-- `-v, --verbose` - Show detailed validation output
-
-**Checks:**
-- YAML syntax validation
-- ObjectQL specification compliance
-- Business logic consistency
-- Data model best practices
-- Security and performance analysis
-- Falls back to basic validation if no API key is set
-
----
-
-#### Chat Assistant
-
-Interactive AI assistant for ObjectQL questions and guidance.
-
-```bash
-# Start chat assistant
-objectql ai chat
-
-# Start with an initial question
-objectql ai chat -p "How do I create a lookup relationship?"
-```
-
-**Options:**
-- `-p, --prompt <text>` - Initial prompt for the AI
-
----
-
-#### Complete Example Workflow
-
-```bash
-# Set your API key
-export OPENAI_API_KEY=sk-your-api-key-here
-
-# Option 1: Interactive (recommended) - Just type this!
-objectql ai
-
-# Option 2: Quick one-shot generation
-objectql ai generate -d "Project management with tasks and milestones" -t complete
-
-# Validate the generated files
-objectql ai validate ./src -v
-
-# Get help with questions
-objectql ai chat -p "How do I add email notifications?"
-```
-
----
-
-### Prerequisites
-
-For AI-powered features, set your OpenAI API key:
-
-```bash
-export OPENAI_API_KEY=sk-your-api-key-here
-```
-
-Without an API key, basic validation (YAML syntax) is still available.
-
----
-
-### Project Initialization
-
-#### `init`
-
-Create a new ObjectQL project from a template.
-
-```bash
-# Interactive mode (prompts for options)
-objectql init
-
-# With options
-objectql init --template basic --name my-project
-
-# Available templates: basic, express-api, enterprise
-objectql init -t express-api -n my-api-server
-
-# Skip automatic dependency installation
-objectql init --skip-install
-
-# Skip git initialization
-objectql init --skip-git
-```
-
-**Options:**
-- `-t, --template <template>` - Template to use (basic, express-api, enterprise) [default: "basic"]
-- `-n, --name <name>` - Project name
-- `-d, --dir <path>` - Target directory
-- `--skip-install` - Skip dependency installation
-- `--skip-git` - Skip git initialization
-
-**Templates:**
-- **basic** - Minimal setup with basic examples
-- **express-api** - Express.js server with REST API
-- **enterprise** - Full-featured enterprise application structure
-
----
 
 ### Metadata Generation
 
@@ -433,53 +291,25 @@ fields:
 
 ### Development Tools
 
-#### `dev` (alias: `d`)
+#### `dev`
 
-Start development server with hot reload support. This is the recommended command for local development.
+Development server is delegated to **@objectstack/cli**:
 
 ```bash
-# Start development server (port 3000)
-objectql dev
-
-# Specify options
-objectql dev --dir ./src --port 8080
-
-# Disable file watching
-objectql dev --no-watch
+npx objectstack dev
+# or
+npx os dev
 ```
-
-The development server provides:
-- **API Docs (Scalar)**: `http://localhost:<port>/docs` - Interactive API documentation
-- **API Endpoint**: `http://localhost:<port>/` - Main API endpoint
-- **OpenAPI Spec**: `http://localhost:<port>/openapi.json` - Machine-readable API spec
-
-**Options:**
-- `-p, --port <number>` - Port to listen on [default: "3000"]
-- `-d, --dir <path>` - Directory containing schema [default: "."]
-- `--no-watch` - Disable file watching (future feature)
 
 #### `start`
 
-Start production server. Loads configuration from `objectql.config.ts/js` if available.
+Production server is delegated to **@objectstack/cli**:
 
 ```bash
-# Start production server
-objectql start
-
-# Specify options
-objectql start --port 8080 --dir ./dist
-
-# Use custom config file
-objectql start --config ./config/production.config.ts
+npx objectstack serve
+# or
+npx os serve
 ```
-
-**Options:**
-- `-p, --port <number>` - Port to listen on [default: "3000"]
-- `-d, --dir <path>` - Directory containing schema [default: "."]
-- `-c, --config <path>` - Path to objectql.config.ts/js
-
-**Environment Variables:**
-- `DATABASE_FILE` - Path to SQLite database file (default: "./objectql.db")
 
 #### `build` (alias: `b`)
 
@@ -587,27 +417,15 @@ objectql format --check
 - Tab width: 2 spaces
 - Single quotes for strings
 
-#### `serve` (alias: `s`)
+#### `serve`
 
-*Note: This is an alias for the `dev` command, kept for backwards compatibility. Use `objectql dev` for new projects.*
-
-Start a lightweight development server with an in-memory database. Perfect for rapid prototyping without setting up a backend project.
+Production server is delegated to **@objectstack/cli**:
 
 ```bash
-# Start server in current directory (port 3000)
-objectql serve
-
-# Specify options
-objectql serve --dir ./src/schema --port 8080
+npx objectstack serve
+# or
+npx os serve
 ```
-
-The server exposes:
-- **Web Console (API Docs)**: `http://localhost:<port>/docs` (GET) - Interactive API explorer
-- **JSON API Endpoint**: `http://localhost:<port>/` (POST)
-- **OpenAPI Spec**: `http://localhost:<port>/openapi.json` (GET)
-
-**Options:**
-- `-p, --port <number>` - Port to listen on [default: "3000"]
 - `-d, --dir <path>` - Directory containing schema [default: "."]
 
 #### `repl` (alias: `r`)
@@ -632,35 +450,13 @@ objectql> await tasks.insert({ name: 'New Task', status: 'open' })
 objectql> await tasks.update({ _id: '123' }, { status: 'completed' })
 ```
 
-#### `studio` (alias: `ui`)
-
-Start the ObjectQL Studio - a web-based admin interface.
-
-```bash
-# Start studio
-objectql studio
-
-# Custom port and directory
-objectql studio --port 8080 --dir ./src
-
-# Don't open browser automatically
-objectql studio --no-open
-```
-
-**Options:**
-- `-p, --port <number>` - Port to listen on [default: "3000"]
-- `-d, --dir <path>` - Directory containing schema [default: "."]
-- `--no-open` - Do not open browser automatically
-
----
-
 ## Typical Workflows
 
 ### Starting a New Project
 
 ```bash
-# 1. Create project from template
-objectql init -t basic -n my-app
+# 1. Create project
+npx objectstack create
 
 # 2. Navigate to project
 cd my-app
@@ -669,7 +465,7 @@ cd my-app
 pnpm install
 
 # 4. Start development
-objectql studio
+npx objectstack dev
 ```
 
 ### Adding New Functionality
@@ -761,7 +557,6 @@ export default app;
 Some commands support environment variables for configuration:
 
 - `OBJECTQL_CONFIG` - Path to config file
-- `OBJECTQL_PORT` - Default port for serve/studio commands
 - `OBJECTQL_DB_URL` - Database connection string
 
 ---
@@ -773,9 +568,12 @@ Some commands support environment variables for configuration:
 objectql --help
 
 # Show help for specific command
-objectql init --help
+objectql generate --help
 objectql i18n extract --help
 objectql migrate --help
+
+# ObjectStack CLI lifecycle help
+objectstack --help
 ```
 
 ---

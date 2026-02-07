@@ -2,7 +2,7 @@
 title: "CLI Guide"
 description: CLI Guide
 ---
-The ObjectQL CLI (`@objectql/cli`) is an essential tool for development, automating tasks like type generation and database migrations.
+The ObjectQL CLI (`@objectql/cli`) focuses on metadata scaffolding, type generation, database workflows, and local tooling. Runtime lifecycle commands are delegated to **@objectstack/cli**.
 
 ## 1. Installation
 
@@ -16,32 +16,14 @@ You can then run it via `npx objectql` or add scripts to your `package.json`.
 
 ## 2. Core Commands
 
-### 2.1 `init` (Create Project)
+### 2.1 `create` (Create Project)
 
-The recommended way to create a new ObjectQL project is using the initialization package.
-
-```bash
-npm create @objectql@latest [name] [options]
-```
-
-**Options:**
-
-| Option | Alias | Default | Description |
-| :--- | :--- | :--- | :--- |
-| `--template <template>` | `-t` | `starter` | Template to use (`starter`, `hello-world`). |
-| `--skip-install` | | `false` | Skip dependency installation. |
-| `--skip-git` | | `false` | Skip git initialization. |
-
-**Example:**
+Project scaffolding is now provided by **@objectstack/cli**.
 
 ```bash
-npm create @objectql@latest my-app -- --template showcase
-```
-
-Alternatively, if you already have the CLI installed globally or in a project, you can use the legacy `init` command:
-
-```bash
-npx objectql init [options]
+npx objectstack create
+# or
+npx os create
 ```
 
 ### 2.2 `generate` (Type Generation)
@@ -94,56 +76,23 @@ npx objectql new object customer
 
 ### 3.1 `dev` (Development Server)
 
-Start the development server with hot-reload support.
-**Alias**: `d`
+Development server is now provided by **@objectstack/cli**:
 
 ```bash
-npx objectql dev [options]
+npx objectstack dev
+# or
+npx os dev
 ```
 
-**Options:**
+### 3.2 `serve` (Production Server)
 
-| Option | Alias | Default | Description |
-| :--- | :--- | :--- | :--- |
-| `--port <number>` | `-p` | `3000` | Port to listen on. |
-| `--dir <path>` | `-d` | `.` | Root module directory (context). |
-| `--config <path>` | `-c` | - | Path to `objectql.config.ts`. |
-| `--modules <items>` | | - | Comma-separated list of modules to load (overrides config). Supports NPM packages (`@org/pkg`) or local paths (`./src/mod`). |
-| `--no-watch` | | `false` | Disable file watching. |
-
-### 3.2 `start` (Production Server)
-
-good Start the server in production mode.
+Production server is now provided by **@objectstack/cli**:
 
 ```bash
-npx objectql start [options]
+npx objectstack serve
+# or
+npx os serve
 ```
-
-**Options:**
-
-| Option | Alias | Default | Description |
-| :--- | :--- | :--- | :--- |
-| `--port <number>` | `-p` | `3000` | Port to listen on. |
-| `--dir <path>` | `-d` | `.` | Root module directory (context). |
-| `--config <path>` | `-c` | - | Path to `objectql.config.ts`. |
-| `--modules <items>` | | - | Comma-separated list of modules to load (overrides config). |
-
-### 3.3 `studio` (Admin UI)
-
-Starts the web-based admin studio to browse data and view schema.
-**Alias**: `ui`
-
-```bash
-npx objectql studio [options]
-```
-
-**Options:**
-
-| Option | Alias | Default | Description |
-| :--- | :--- | :--- | :--- |
-| `--port <number>` | `-p` | `3000` | Port to listen on. |
-| `--dir <path>` | `-d` | `.` | Directory containing schema. |
-| `--no-open` | | `false` | Do not open the browser automatically. |
 
 ### 3.3 `repl` (Interactive Shell)
 
@@ -275,8 +224,8 @@ We recommend adding the CLI commands to your lifecycle scripts.
   "scripts": {
     "codegen": "objectql generate -s ./src -o ./src/generated",
     "build": "npm run codegen && tsc",
-    "dev": "npm run codegen && ts-node src/index.ts",
-    "studio": "objectql studio"
+    "dev": "npx objectstack dev",
+    "serve": "npx objectstack serve"
   }
 }
 ```

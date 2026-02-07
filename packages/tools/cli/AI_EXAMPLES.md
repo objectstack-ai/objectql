@@ -1,5 +1,8 @@
 # ObjectQL AI Command - Examples
 
+> ⚠️ Deprecated: AI commands are no longer part of `@objectql/cli`.
+> This document is preserved for historical reference only.
+
 This document provides comprehensive examples of using ObjectQL's AI-powered features.
 
 ## Quick Reference

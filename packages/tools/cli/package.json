@@ -1,7 +1,7 @@
 {
   "name": "@objectql/cli",
   "version": "4.1.0",
-  "description": "Command-line interface for ObjectQL - Code generation, migrations, REPL, and AI-powered development tools",
+  "description": "Command-line interface for ObjectQL - metadata scaffolding, type generation, DB workflows, and local tooling",
   "keywords": [
     "objectql",
     "cli",
@@ -9,10 +9,8 @@
     "codegen",
     "migration",
     "repl",
-    "ai",
     "tools",
-    "development",
-    "studio"
+    "development"
   ],
   "license": "MIT",
   "main": "dist/index.js",

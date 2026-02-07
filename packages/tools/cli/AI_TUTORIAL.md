@@ -1,5 +1,8 @@
 # AI-Powered Application Generation - Tutorial
 
+> ⚠️ Deprecated: AI commands are no longer part of `@objectql/cli`.
+> This tutorial is preserved for historical reference only.
+
 This tutorial will guide you through using ObjectQL's AI-powered features to generate and validate enterprise applications.
 
 ## Prerequisites

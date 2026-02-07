@@ -22,7 +22,7 @@ const program = new Command();
 
 program
   .name('objectql')
-  .description('ObjectQL CLI tool - The ObjectStack AI Protocol Interface')
+  .description('ObjectQL CLI tool - Metadata, DB workflows, and local tooling (runtime via @objectstack/cli)')
   .version(version);
 
 // Register all command groups
