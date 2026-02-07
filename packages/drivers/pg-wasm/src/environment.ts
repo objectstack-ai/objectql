@@ -35,10 +35,10 @@ export async function checkIndexedDB(): Promise<boolean> {
         
         // Try to open a test database
         return new Promise((resolve) => {
-            const request = indexedDB.open('__opfs_test__', 1);
+            const request = indexedDB.open('__idb_test__', 1);
             request.onsuccess = () => {
                 request.result.close();
-                indexedDB.deleteDatabase('__opfs_test__');
+                indexedDB.deleteDatabase('__idb_test__');
                 resolve(true);
             };
             request.onerror = () => resolve(false);
