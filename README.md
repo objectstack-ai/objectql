@@ -50,8 +50,8 @@ ObjectQL is organized as a Monorepo to ensure modularity and universal compatibi
 | **[`@objectql/driver-excel`](./packages/drivers/excel)** | Node.js | Excel file driver for using `.xlsx` spreadsheets as a data source. |
 | **[`@objectql/driver-redis`](./packages/drivers/redis)** | Node.js | Redis driver (example/template implementation for key-value stores). |
 | **[`@objectql/sdk`](./packages/drivers/sdk)** | Universal | **Remote HTTP Driver.** Type-safe client for connecting to ObjectQL servers. |
-| **[`@objectql/driver-sqlite-wasm`](./packages/drivers/sqlite-wasm)** | Browser | **SQLite WASM Driver.** Browser-native SQL via WebAssembly + OPFS persistence. *(Coming Soon)* |
-| **[`@objectql/driver-pg-wasm`](./packages/drivers/pg-wasm)** | Browser | **PostgreSQL WASM Driver.** Full PG feature set in the browser via PGlite. *(Coming Soon)* |
+| **[`@objectql/driver-sqlite-wasm`](./packages/drivers/sqlite-wasm)** | Browser | **SQLite WASM Driver.** Browser-native SQL via WebAssembly + OPFS persistence. |
+| **[`@objectql/driver-pg-wasm`](./packages/drivers/pg-wasm)** | Browser | **PostgreSQL WASM Driver.** Full PG feature set in the browser via PGlite. |
 
 ### Tools Layer
 
