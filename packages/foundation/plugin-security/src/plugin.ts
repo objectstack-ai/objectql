@@ -11,7 +11,7 @@ import type { Logger } from '@objectstack/spec/contracts';
 import { createLogger } from '@objectstack/core';
 import type { SecurityPluginConfig, SecurityContext, PermissionAuditLog } from './types';
 import { SecurityPluginConfigSchema } from './config.schema';
-import { PermissionLoader } from './permission-loader';
+import { PermissionLoader } from './permission-loader';\nimport type { PermissionLoaderOptions } from './permission-loader';
 import { PermissionGuard } from './permission-guard';
 import { QueryTrimmer } from './query-trimmer';
 import { FieldMasker } from './field-masker';
@@ -53,6 +53,7 @@ export class ObjectQLSecurityPlugin implements RuntimePlugin {
   version = '4.0.5';
   
   private config: SecurityPluginConfig;
+  private loaderOptions?: PermissionLoaderOptions;
   private loader!: PermissionLoader;
   private guard!: PermissionGuard;
   private trimmer!: QueryTrimmer;
@@ -60,12 +61,13 @@ export class ObjectQLSecurityPlugin implements RuntimePlugin {
   private auditLog: PermissionAuditLog[] = [];
   private logger: Logger;
   
-  constructor(config: SecurityPluginConfig = {}) {
+  constructor(config: SecurityPluginConfig = {}, loaderOptions?: PermissionLoaderOptions) {
     // Validate and parse configuration using Zod schema
     const validatedConfig = SecurityPluginConfigSchema.parse(config);
     
     // Set configuration with validated defaults
     this.config = validatedConfig;
+    this.loaderOptions = loaderOptions;
     
     // Initialize structured logger
     this.logger = createLogger({
@@ -109,7 +111,7 @@ export class ObjectQLSecurityPlugin implements RuntimePlugin {
     }
     
     // Initialize security components
-    this.loader = new PermissionLoader(this.config);
+    this.loader = new PermissionLoader(this.config, this.loaderOptions);
     this.guard = new PermissionGuard(
       this.loader,
       this.config.enableCache,

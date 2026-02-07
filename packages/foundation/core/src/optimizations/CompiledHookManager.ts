@@ -6,6 +6,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import { Logger, ConsoleLogger } from '@objectql/types';
+
 /**
  * Hook definition
  */
@@ -30,6 +32,9 @@ export class CompiledHookManager {
     
     // Keep track of all registered hooks for management
     private allHooks = new Map<string, Hook>();
+    
+    // Structured logger
+    private logger: Logger = new ConsoleLogger({ name: '@objectql/hook-manager', level: 'warn' });
 
     /**
      * Expand a pattern like "before*" to all matching events
@@ -136,6 +141,7 @@ export class CompiledHookManager {
                 return Promise.resolve(hook.handler(context));
             } catch (error) {
                 console.error(`Hook execution failed for ${event}:${objectName}`, error);
+                // TODO: migrate to this.logger.error() once all hook manager consumers are updated
                 return Promise.resolve();
             }
         }));

@@ -10,6 +10,8 @@ import type { Logger } from '@objectstack/spec/contracts';
 import { createLogger } from '@objectstack/core';
 import type { PermissionConfig } from '@objectql/types';
 import type { IPermissionStorage, SecurityPluginConfig, CompiledPermissionRule } from './types';
+import { RedisPermissionStorage, type RedisClientFactory } from './storage-redis';
+import { DatabasePermissionStorage, type DatasourceResolver } from './storage-database';
 
 /**
  * Memory-based permission storage
@@ -38,6 +40,17 @@ class MemoryPermissionStorage implements IPermissionStorage {
 }
 
 /**
+ * Optional factory functions for creating storage backends.
+ * Users must provide these when using 'redis' or 'database' storage types.
+ */
+export interface PermissionLoaderOptions {
+  /** Factory for creating a Redis client from a URL */
+  redisClientFactory?: RedisClientFactory;
+  /** Resolver that returns a Driver by datasource name */
+  datasourceResolver?: DatasourceResolver;
+}
+
+/**
  * Permission Loader
  * 
  * Loads permission metadata from various sources (memory, Redis, database, custom)
@@ -49,9 +62,9 @@ export class PermissionLoader {
   private precompileEnabled: boolean;
   private logger: Logger;
   
-  constructor(config: SecurityPluginConfig) {
+  constructor(config: SecurityPluginConfig, options?: PermissionLoaderOptions) {
     // Initialize storage based on configuration
-    this.storage = this.initializeStorage(config);
+    this.storage = this.initializeStorage(config, options);
     this.compiledRules = new Map();
     this.precompileEnabled = config.precompileRules !== false;
     
@@ -66,7 +79,7 @@ export class PermissionLoader {
   /**
    * Initialize the appropriate storage backend
    */
-  private initializeStorage(config: SecurityPluginConfig): IPermissionStorage {
+  private initializeStorage(config: SecurityPluginConfig, options?: PermissionLoaderOptions): IPermissionStorage {
     const storageType = config.storageType || 'memory';
     
     switch (storageType) {
@@ -79,13 +92,25 @@ export class PermissionLoader {
         }
         return config.storage;
       
-      case 'redis':
-        // TODO: Implement Redis storage
-        throw new Error('Redis storage not yet implemented');
+      case 'redis': {
+        if (!options?.redisClientFactory) {
+          throw new Error(
+            'redisClientFactory is required when storageType is "redis". ' +
+            'Pass it via PermissionLoaderOptions or use the plugin config.',
+          );
+        }
+        return new RedisPermissionStorage(config, options.redisClientFactory);
+      }
       
-      case 'database':
-        // TODO: Implement Database storage
-        throw new Error('Database storage not yet implemented');
+      case 'database': {
+        if (!options?.datasourceResolver) {
+          throw new Error(
+            'datasourceResolver is required when storageType is "database". ' +
+            'Pass it via PermissionLoaderOptions.',
+          );
+        }
+        return new DatabasePermissionStorage(config, options.datasourceResolver);
+      }
       
       default:
         throw new Error(`Unknown storage type: ${storageType}`);

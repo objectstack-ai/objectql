@@ -7,6 +7,8 @@
  */
 
 import type { RuntimePlugin, RuntimeContext } from '@objectql/types';
+import { ConsoleLogger } from '@objectql/types';
+import type { Logger } from '@objectql/types';
 import { ValidatorPlugin, ValidatorPluginConfig } from '@objectql/plugin-validator';
 import { FormulaPlugin, FormulaPluginConfig } from '@objectql/plugin-formula';
 import { QueryService } from './query/query-service';
@@ -93,6 +95,7 @@ export interface ObjectQLPluginConfig {
 export class ObjectQLPlugin implements RuntimePlugin {
   name = '@objectql/core';
   version = '4.0.2';
+  private logger: Logger;
   
   constructor(private config: ObjectQLPluginConfig = {}, ql?: any) {
     // Set defaults
@@ -104,6 +107,7 @@ export class ObjectQLPlugin implements RuntimePlugin {
       enableQueryService: true,
       ...config
     };
+    this.logger = new ConsoleLogger({ name: '@objectql/core/plugin', level: 'info' });
   }
   
   /**
@@ -111,7 +115,7 @@ export class ObjectQLPlugin implements RuntimePlugin {
    * This is called during kernel initialization
    */
   async install(ctx: RuntimeContext): Promise<void> {
-    console.log(`[${this.name}] Installing plugin...`);
+    this.logger.info('Installing plugin...');
     
     const kernel = ctx.engine as ExtendedKernel;
     
@@ -147,7 +151,7 @@ export class ObjectQLPlugin implements RuntimePlugin {
       );
       kernel.queryAnalyzer = queryAnalyzer;
       
-      console.log(`[${this.name}] QueryService and QueryAnalyzer registered`);
+      this.logger.info('QueryService and QueryAnalyzer registered');
     }
     
     // Register components based on configuration
@@ -178,16 +182,16 @@ export class ObjectQLPlugin implements RuntimePlugin {
         // 1. Metadata service
         if (kernel.metadata) {
             registerService('metadata', kernel.metadata);
-            console.log(`[${this.name}] Registered 'metadata' service alias`);
+            this.logger.debug('Registered metadata service alias');
         }
         
         // 2. Data service (prefer QueryService, fallback to kernel)
         const dataService = kernel.queryService || kernel;
         registerService('data', dataService);
-        console.log(`[${this.name}] Registered 'data' service alias`);
+        this.logger.debug('Registered data service alias');
     }
 
-    console.log(`[${this.name}] Plugin installed successfully`);
+    this.logger.info('Plugin installed successfully');
   }
   
   /**
@@ -195,7 +199,7 @@ export class ObjectQLPlugin implements RuntimePlugin {
    * This is the initialization phase
    */
   async onStart(ctx: RuntimeContext): Promise<void> {
-    console.log(`[${this.name}] Starting plugin...`);
+    this.logger.debug('Starting plugin...');
     // Additional startup logic can be added here
   }
 
@@ -276,7 +280,7 @@ export class ObjectQLPlugin implements RuntimePlugin {
       return await driver.count(objectName, filters || {}, {});
     };
 
-    console.log(`[${this.name}] Repository pattern registered`);
+    this.logger.info('Repository pattern registered');
   }
   
   /**
@@ -286,7 +290,7 @@ export class ObjectQLPlugin implements RuntimePlugin {
   private async registerAI(kernel: any): Promise<void> {
     // TODO: Implement AI registration
     // For now, this is a placeholder to establish the structure
-    console.log(`[${this.name}] AI integration registered`);
+    this.logger.debug('AI integration registered');
   }
 
     // --- Adapter for @objectstack/core compatibility ---
@@ -301,13 +305,13 @@ export class ObjectQLPlugin implements RuntimePlugin {
         // Register Protocol Service
         // If kernel supports service registration (PluginContext or ExtendedKernel with custom registry)
         if (kernel && typeof kernel.registerService === 'function') {
-            console.log(`[${this.name}] Registering protocol service...`);
+            this.logger.info('Registering protocol service...');
             const protocolShim = new ObjectStackProtocolImplementation(kernel);
              kernel.registerService('protocol', protocolShim);
              
              // Register 'objectql' service for AppPlugin compatibility
              kernel.registerService('objectql', this);
-             console.log(`[${this.name}] Registered 'objectql' service`);
+             this.logger.debug('Registered objectql service');
         }
 
         return this.install(ctx);

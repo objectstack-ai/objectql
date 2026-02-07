@@ -20,7 +20,9 @@ import {
     HookContext,
     ActionHandler,
     ActionContext,
-    LoaderPlugin
+    LoaderPlugin,
+    Logger,
+    ConsoleLogger
 } from '@objectql/types';
 import { ObjectKernel, type Plugin } from '@objectstack/runtime';
 import { ObjectQL as RuntimeObjectQL, SchemaRegistry } from '@objectstack/objectql';
@@ -54,12 +56,16 @@ export class ObjectQL implements IObjectQL {
     private hookManager = new CompiledHookManager();
     private localActions = new Map<string, any>();
     
+    // Structured logger
+    private logger: Logger;
+    
     // Store config for lazy loading in init()
     private config: ObjectQLConfig;
 
     constructor(config: ObjectQLConfig) {
         this.config = config;
         this.datasources = config.datasources || {};
+        this.logger = config.logger ?? new ConsoleLogger({ name: '@objectql/core', level: 'info' });
         
         if (config.connection) {
              throw new Error("Connection strings are not supported in core directly. Use @objectql/platform-node's createDriverFromConnection or pass a driver instance to 'datasources'.");
@@ -159,6 +165,8 @@ export class ObjectQL implements IObjectQL {
                      }
                  } else {
                      console.warn('Metadata is not a Map');
+                     // Note: Using console.warn here because this is inside a metadata shim
+                     // that runs before the logger may be fully initialized
                  }
             }
         };
@@ -385,13 +393,13 @@ export class ObjectQL implements IObjectQL {
             throw new Error(`Driver for datasource '${datasourceName}' does not support schema introspection`);
         }
         
-        console.log(`Introspecting datasource '${datasourceName}'...`);
+        this.logger.info(`Introspecting datasource '${datasourceName}'...`);
         const introspectedSchema = await driver.introspectSchema();
         
         // Convert introspected schema to ObjectQL objects
         const objects = convertIntrospectedSchemaToObjects(introspectedSchema, options);
         
-        console.log(`Discovered ${objects.length} table(s), registering as objects...`);
+        this.logger.info(`Discovered ${objects.length} table(s), registering as objects...`);
         
         // Register each discovered object
         for (const obj of objects) {
@@ -404,14 +412,14 @@ export class ObjectQL implements IObjectQL {
     async close() {
         for (const [name, driver] of Object.entries(this.datasources)) {
             if (driver.disconnect) {
-                console.log(`Closing driver '${name}'...`);
+                this.logger.debug(`Closing driver '${name}'...`);
                 await driver.disconnect();
             }
         }
     }
 
     async init() {
-        console.log('[ObjectQL] Initializing with ObjectKernel...');
+        this.logger.info('Initializing with ObjectKernel...');
         
         // Start the kernel - this will install and start all plugins
         if ((this.kernel as any).start) {
@@ -419,7 +427,7 @@ export class ObjectQL implements IObjectQL {
         } else if ((this.kernel as any).bootstrap) {
             await (this.kernel as any).bootstrap();
         } else {
-             console.warn('ObjectKernel does not have start() or bootstrap() method');
+             this.logger.warn('ObjectKernel does not have start() or bootstrap() method');
              
              // Manually initialize plugins if kernel doesn't support lifecycle
              for (const plugin of this.kernelPlugins) {
@@ -431,7 +439,7 @@ export class ObjectQL implements IObjectQL {
                          await (plugin as any).start(this.kernel);
                      }
                  } catch (error) {
-                     console.error(`Failed to initialize plugin ${(plugin as any).name || 'unknown'}:`, error);
+                     this.logger.error(`Failed to initialize plugin ${(plugin as any).name || 'unknown'}`, error as Error);
                      // Continue with other plugins even if one fails
                  }
              }
@@ -475,7 +483,7 @@ export class ObjectQL implements IObjectQL {
         // Let's pass all objects to all configured drivers.
         for (const [name, driver] of Object.entries(this.datasources)) {
             if (driver.init) {
-                console.log(`Initializing driver '${name}'...`);
+                this.logger.debug(`Initializing driver '${name}'...`);
                 await driver.init(objects);
             }
         }
@@ -483,14 +491,14 @@ export class ObjectQL implements IObjectQL {
         // Process Initial Data
         await this.processInitialData();
         
-        console.log('[ObjectQL] Initialization complete');
+        this.logger.info('Initialization complete');
     }
 
     private async processInitialData() {
         const dataEntries = (this.kernel as any).metadata.list('data');
         if (dataEntries.length === 0) return;
 
-        console.log(`Processing ${dataEntries.length} initial data files...`);
+        this.logger.info(`Processing ${dataEntries.length} initial data files...`);
         
         // We need a system context to write data
         const ctx = this.createContext({ isSystem: true });
@@ -514,7 +522,7 @@ export class ObjectQL implements IObjectQL {
             }
 
             if (!objectName || !records || !Array.isArray(records)) {
-                console.warn(`Skipping invalid data entry:`, entry);
+                this.logger.warn('Skipping invalid data entry', { entry: String(entry) });
                 continue;
             }
 
@@ -531,10 +539,10 @@ export class ObjectQL implements IObjectQL {
                     // But without unique keys defined in data, we can't reliably dedup.
                     // Let's try to 'create' and catch errors.
                     await repo.create(record);
-                    console.log(`Initialized record for ${objectName}`);
+                    this.logger.debug(`Initialized record for ${objectName}`);
                 } catch (e: any) {
                     // Ignore duplicate key errors silently-ish
-                     console.warn(`Failed to insert initial data for ${objectName}: ${e.message}`);
+                     this.logger.warn(`Failed to insert initial data for ${objectName}: ${e.message}`);
                 }
             }
         }

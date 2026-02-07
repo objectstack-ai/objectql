@@ -10,6 +10,7 @@ import { MetadataRegistry } from "./registry";
 import { Driver } from "./driver";
 import { ObjectConfig } from "./object";
 import type { RuntimePlugin } from "./plugin";
+import type { Logger } from "./logger";
 
 export interface ObjectQLConfig {
     registry?: MetadataRegistry;
@@ -48,4 +49,9 @@ export interface ObjectQLConfig {
      * e.g. ["http://user-service:3000", "http://order-service:3000"]
      */
     remotes?: string[];
+    /**
+     * Optional structured logger instance.
+     * If not provided, a ConsoleLogger with level 'info' is used.
+     */
+    logger?: Logger;
 }

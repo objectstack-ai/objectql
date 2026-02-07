@@ -11,9 +11,16 @@ export { ObjectQLSecurityPlugin } from './plugin';
 
 // Core components
 export { PermissionLoader } from './permission-loader';
+export type { PermissionLoaderOptions } from './permission-loader';
 export { PermissionGuard } from './permission-guard';
 export { QueryTrimmer } from './query-trimmer';
 export { FieldMasker } from './field-masker';
+
+// Storage backends
+export { RedisPermissionStorage } from './storage-redis';
+export type { RedisClient, RedisClientFactory } from './storage-redis';
+export { DatabasePermissionStorage } from './storage-database';
+export type { DatasourceResolver } from './storage-database';
 
 // Configuration schema
 export { 

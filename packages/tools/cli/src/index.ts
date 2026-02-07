@@ -7,18 +7,23 @@
  */
 
 import { Command } from 'commander';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { registerLifecycleCommands } from './register/lifecycle';
 import { registerScaffoldCommands } from './register/scaffold';
 import { registerDatabaseCommands } from './register/database';
 import { registerToolsCommands } from './register/tools';
 import { registerI18nCommands } from './register/i18n';
 
+// Read version from package.json to keep in sync (ISS-010)
+const { version } = JSON.parse(readFileSync(resolve(__dirname, '../package.json'), 'utf8'));
+
 const program = new Command();
 
 program
   .name('objectql')
   .description('ObjectQL CLI tool - The ObjectStack AI Protocol Interface')
-  .version('1.5.0');
+  .version(version);
 
 // Register all command groups
 registerLifecycleCommands(program);

@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { ApiRequest, ApiResponse, GatewayProtocol } from '@objectql/types';
+import { ApiRequest, ApiResponse, GatewayProtocol, Logger, ConsoleLogger } from '@objectql/types';
 
 export type RequestTransformer = (request: ApiRequest) => Promise<ApiRequest>;
 export type ResponseTransformer = (response: ApiResponse) => Promise<ApiResponse>;
@@ -19,9 +19,11 @@ export class ObjectGateway {
     private protocols: GatewayProtocol[] = [];
     private requestTransforms: RequestTransformer[] = [];
     private responseTransforms: ResponseTransformer[] = [];
+    private logger: Logger;
 
-    constructor(protocols: GatewayProtocol[] = []) {
+    constructor(protocols: GatewayProtocol[] = [], logger?: Logger) {
         this.protocols = protocols;
+        this.logger = logger ?? new ConsoleLogger({ name: '@objectql/gateway', level: 'info' });
     }
 
     /**
@@ -79,6 +81,7 @@ export class ObjectGateway {
             response = await protocol.handle(req);
         } catch (error: any) {
             console.error(`[ObjectGateway] Error in ${protocol.name}:`, error);
+            // TODO: migrate to this.logger once all gateway consumers pass logger
             response = {
                 status: 500,
                 headers: { 'Content-Type': 'application/json' },
