@@ -131,9 +131,11 @@ export class ObjectQLPlugin implements RuntimePlugin {
           const driverName = driver.name || (index === 0 ? 'default' : `driver_${index + 1}`);
           datasources![driverName] = driver;
         });
-        console.log(`[${this.name}] Using drivers from kernel:`, Object.keys(datasources));
+        this.logger.info('Using drivers from kernel', {
+          drivers: Object.keys(datasources),
+        });
       } else {
-        console.warn(`[${this.name}] No datasources configured and no drivers found in kernel. Repository and QueryService will not be available.`);
+        this.logger.warn('No datasources configured and no drivers found in kernel. Repository and QueryService will not be available.');
       }
     }
     

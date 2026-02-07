@@ -140,8 +140,10 @@ export class CompiledHookManager {
             try {
                 return Promise.resolve(hook.handler(context));
             } catch (error) {
-                console.error(`Hook execution failed for ${event}:${objectName}`, error);
-                // TODO: migrate to this.logger.error() once all hook manager consumers are updated
+                this.logger.error(`Hook execution failed for ${event}:${objectName}`, error as Error, {
+                    event,
+                    objectName,
+                });
                 return Promise.resolve();
             }
         }));

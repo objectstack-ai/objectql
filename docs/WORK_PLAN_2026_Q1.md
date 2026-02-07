@@ -148,15 +148,21 @@ Package removed in B3.
 
 ## Phase D: Roadmap Phase 1 Completion
 
-### D1 — Complete RBAC Storage Backends
+### D1 — Complete RBAC Storage Backends ✅
 
-Implement the TODO stubs in `plugin-security`:
-- Redis storage backend
-- Database storage backend
+| Field | Value |
+|-------|-------|
+| **Status** | ✅ Completed |
+| **Implemented** | `RedisPermissionStorage` and `DatabasePermissionStorage` with ObjectQLError-based validation and deterministic reload behavior. |
+| **Files Changed** | `packages/foundation/plugin-security/src/storage-redis.ts`, `packages/foundation/plugin-security/src/storage-database.ts`, `packages/foundation/plugin-security/src/permission-loader.ts` |
 
-### D2 — Structured Logging Framework
+### D2 — Structured Logging Framework ✅
 
-Integrate structured logging as specified in the v0.9.0 roadmap.
+| Field | Value |
+|-------|-------|
+| **Status** | ✅ Completed |
+| **Implemented** | Unified `Logger` usage via `@objectql/types` across core gateway, hook manager, and plugins; removed external `createLogger` dependency in foundation plugins. |
+| **Files Changed** | `packages/foundation/core/src/gateway.ts`, `packages/foundation/core/src/optimizations/CompiledHookManager.ts`, `packages/foundation/core/src/plugin.ts`, `packages/foundation/plugin-security/src/plugin.ts`, `packages/foundation/plugin-security/src/permission-loader.ts`, `packages/foundation/plugin-formula/src/formula-plugin.ts`, `packages/foundation/plugin-validator/src/validator-plugin.ts` |
 
 ### D3 — AI Namespace Preparation
 
@@ -178,8 +184,8 @@ Current compliance: 40%. Begin foundational work for:
 | ISS-005 | ✅ Resolved | `types` | Types were present in source, stale `dist/` was the issue |
 | ISS-006 | ✅ Resolved | `types` | `@objectstack/spec` and `zod` correctly moved to devDependencies — compile-time only |
 | ISS-007 | ✅ Resolved | `driver-utils` | Package removed entirely (zero consumers) |
-| ISS-008 | 🟡 Medium | `plugin-security` | 1 test for 2,384 LOC |
-| ISS-009 | 🟡 Medium | `plugin-validator` | 2 TODO stubs unimplemented |
+| ISS-008 | ✅ Resolved | `plugin-security` | Test coverage expanded (1→6 files, 13→136 tests) |
+| ISS-009 | ✅ Resolved | `plugin-validator` | TODO stubs implemented with tests |
 | ISS-010 | 🟡 Medium | `cli` | Source version != package.json version |
 | ISS-011 | 🟡 Medium | `localstorage` | Compression feature flagged but unimplemented |
 | ISS-012 | 🟡 Medium | `protocol-rest` | Missing `"type": "module"` unlike sibling protocols |

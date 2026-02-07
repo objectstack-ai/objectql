@@ -6,9 +6,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import type { Logger } from '@objectstack/spec/contracts';
-import { createLogger } from '@objectstack/core';
 import type { PermissionConfig } from '@objectql/types';
+import { ApiErrorCode, ConsoleLogger, ObjectQLError, type Logger } from '@objectql/types';
 import type { IPermissionStorage, SecurityPluginConfig, CompiledPermissionRule } from './types';
 import { RedisPermissionStorage, type RedisClientFactory } from './storage-redis';
 import { DatabasePermissionStorage, type DatasourceResolver } from './storage-database';
@@ -69,10 +68,9 @@ export class PermissionLoader {
     this.precompileEnabled = config.precompileRules !== false;
     
     // Initialize structured logger
-    this.logger = createLogger({
+    this.logger = new ConsoleLogger({
       name: '@objectql/plugin-security/permission-loader',
       level: 'info',
-      format: 'pretty'
     });
   }
   
@@ -88,32 +86,42 @@ export class PermissionLoader {
       
       case 'custom':
         if (!config.storage) {
-          throw new Error('Custom storage implementation required when storageType is "custom"');
+          throw new ObjectQLError({
+            code: ApiErrorCode.INVALID_REQUEST,
+            message: 'Custom storage implementation required when storageType is "custom"',
+          });
         }
         return config.storage;
       
       case 'redis': {
         if (!options?.redisClientFactory) {
-          throw new Error(
-            'redisClientFactory is required when storageType is "redis". ' +
-            'Pass it via PermissionLoaderOptions or use the plugin config.',
-          );
+          throw new ObjectQLError({
+            code: ApiErrorCode.INVALID_REQUEST,
+            message:
+              'redisClientFactory is required when storageType is "redis". ' +
+              'Pass it via PermissionLoaderOptions or use the plugin config.',
+          });
         }
         return new RedisPermissionStorage(config, options.redisClientFactory);
       }
       
       case 'database': {
         if (!options?.datasourceResolver) {
-          throw new Error(
-            'datasourceResolver is required when storageType is "database". ' +
-            'Pass it via PermissionLoaderOptions.',
-          );
+          throw new ObjectQLError({
+            code: ApiErrorCode.INVALID_REQUEST,
+            message:
+              'datasourceResolver is required when storageType is "database". ' +
+              'Pass it via PermissionLoaderOptions.',
+          });
         }
         return new DatabasePermissionStorage(config, options.datasourceResolver);
       }
       
       default:
-        throw new Error(`Unknown storage type: ${storageType}`);
+        throw new ObjectQLError({
+          code: ApiErrorCode.INVALID_REQUEST,
+          message: `Unknown storage type: ${storageType}`,
+        });
     }
   }
   

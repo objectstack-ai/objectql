@@ -13,7 +13,7 @@
  *   objectql:permissions:__index__     →  Set of all object names
  */
 
-import type { PermissionConfig } from '@objectql/types';
+import { ApiErrorCode, ObjectQLError, type PermissionConfig } from '@objectql/types';
 import type { IPermissionStorage, SecurityPluginConfig } from './types';
 
 /**
@@ -61,7 +61,10 @@ export class RedisPermissionStorage implements IPermissionStorage {
 
   constructor(config: SecurityPluginConfig, clientFactory: RedisClientFactory) {
     if (!config.redisUrl) {
-      throw new Error('redisUrl is required for Redis permission storage');
+      throw new ObjectQLError({
+        code: ApiErrorCode.INVALID_REQUEST,
+        message: 'redisUrl is required for Redis permission storage',
+      });
     }
     this.redisUrl = config.redisUrl;
     this.clientFactory = clientFactory;

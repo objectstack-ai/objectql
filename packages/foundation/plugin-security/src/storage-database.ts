@@ -16,7 +16,7 @@
  *     - updated_at   TEXT  (ISO 8601 timestamp)
  */
 
-import type { PermissionConfig, Driver } from '@objectql/types';
+import { ApiErrorCode, ObjectQLError, type PermissionConfig, type Driver } from '@objectql/types';
 import type { IPermissionStorage, SecurityPluginConfig } from './types';
 
 /** Default table name for storing permission metadata */
@@ -52,9 +52,10 @@ export class DatabasePermissionStorage implements IPermissionStorage {
 
   constructor(config: SecurityPluginConfig, resolver: DatasourceResolver) {
     if (!config.databaseConfig?.datasource) {
-      throw new Error(
-        'databaseConfig.datasource is required for database permission storage',
-      );
+      throw new ObjectQLError({
+        code: ApiErrorCode.INVALID_REQUEST,
+        message: 'databaseConfig.datasource is required for database permission storage',
+      });
     }
     this.datasourceName = config.databaseConfig.datasource;
     this.tableName = config.databaseConfig.table ?? DEFAULT_TABLE;

@@ -9,8 +9,7 @@
 import type { RuntimePlugin, RuntimeContext, ValidationRuleResult } from '@objectql/types';
 import { ValidationError } from '@objectql/types';
 import type { ValidationContext } from '@objectql/types';
-import type { Logger } from '@objectstack/spec/contracts';
-import { createLogger } from '@objectstack/core';
+import { ConsoleLogger, type Logger } from '@objectql/types';
 import { Validator, ValidatorOptions } from './validator';
 import { ValidatorPluginConfigSchema, ValidatorPluginConfig } from './config.schema';
 
@@ -43,11 +42,7 @@ export class ValidatorPlugin implements RuntimePlugin {
     this.config = ValidatorPluginConfigSchema.parse(config);
     
     // Initialize structured logger
-    this.logger = createLogger({
-      name: this.name,
-      level: 'info',
-      format: 'pretty'
-    });
+    this.logger = new ConsoleLogger({ name: this.name, level: 'info' });
     
     // Initialize the validator with language options
     this.validator = new Validator({

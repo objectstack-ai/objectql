@@ -7,11 +7,11 @@
  */
 
 import type { RuntimePlugin, RuntimeContext } from '@objectql/types';
-import type { Logger } from '@objectstack/spec/contracts';
-import { createLogger } from '@objectstack/core';
+import { ConsoleLogger, type Logger } from '@objectql/types';
 import type { SecurityPluginConfig, SecurityContext, PermissionAuditLog } from './types';
 import { SecurityPluginConfigSchema } from './config.schema';
-import { PermissionLoader } from './permission-loader';\nimport type { PermissionLoaderOptions } from './permission-loader';
+import { PermissionLoader } from './permission-loader';
+import type { PermissionLoaderOptions } from './permission-loader';
 import { PermissionGuard } from './permission-guard';
 import { QueryTrimmer } from './query-trimmer';
 import { FieldMasker } from './field-masker';
@@ -70,11 +70,7 @@ export class ObjectQLSecurityPlugin implements RuntimePlugin {
     this.loaderOptions = loaderOptions;
     
     // Initialize structured logger
-    this.logger = createLogger({
-      name: this.name,
-      level: 'info',
-      format: 'pretty'
-    });
+    this.logger = new ConsoleLogger({ name: this.name, level: 'info' });
   }
 
   // --- Adapter for @objectstack/core compatibility ---

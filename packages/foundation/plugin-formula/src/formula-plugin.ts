@@ -7,8 +7,7 @@
  */
 
 import type { RuntimePlugin, RuntimeContext, FormulaContext } from '@objectql/types';
-import type { Logger } from '@objectstack/spec/contracts';
-import { createLogger } from '@objectstack/core';
+import { ConsoleLogger, type Logger } from '@objectql/types';
 import { FormulaEngine } from './formula-engine';
 import { FormulaPluginConfigSchema, FormulaPluginConfig } from './config.schema';
 
@@ -41,11 +40,7 @@ export class FormulaPlugin implements RuntimePlugin {
     this.config = FormulaPluginConfigSchema.parse(config);
     
     // Initialize structured logger
-    this.logger = createLogger({
-      name: this.name,
-      level: 'info',
-      format: 'pretty'
-    });
+    this.logger = new ConsoleLogger({ name: this.name, level: 'info' });
     
     // Initialize the formula engine with configuration
     this.engine = new FormulaEngine({
@@ -209,17 +204,14 @@ export class FormulaPlugin implements RuntimePlugin {
                   } else {
                       record[fieldName] = null;
                       // Log specific error as seen in repository.ts
-                      console.error(
-                        '[ObjectQL][FormulaEngine] Formula evaluation failed',
-                        {
-                            objectName: objectName,
-                            fieldName,
-                            recordId: formulaContext.record_id,
-                            expression: fieldConfig.expression,
-                            error: evalResult.error,
-                            stack: evalResult.stack,
-                        }
-                    );
+                        this.logger.error('[ObjectQL][FormulaEngine] Formula evaluation failed', undefined, {
+                          objectName: objectName,
+                          fieldName,
+                          recordId: formulaContext.record_id,
+                          expression: fieldConfig.expression,
+                          error: evalResult.error,
+                          stack: evalResult.stack,
+                        });
                   }
               }
           }

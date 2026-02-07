@@ -80,8 +80,9 @@ export class ObjectGateway {
         try {
             response = await protocol.handle(req);
         } catch (error: any) {
-            console.error(`[ObjectGateway] Error in ${protocol.name}:`, error);
-            // TODO: migrate to this.logger once all gateway consumers pass logger
+            this.logger.error(`Error in ${protocol.name}`, error as Error, {
+                protocol: protocol.name,
+            });
             response = {
                 status: 500,
                 headers: { 'Content-Type': 'application/json' },
