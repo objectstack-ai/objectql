@@ -1,43 +1,172 @@
 ---
-title: AI Integrations (Foundations)
+title: AI Integration
+description: How ObjectQL's metadata-first design enables AI code generation, schema discovery, and intelligent querying
 ---
 
-# AI Integrations (Foundations)
 
-This page defines the **runtime-only** AI integration points exposed by ObjectQL.
-These are **not** part of the wire protocol. They are stable extension hooks for:
+ObjectQL's declarative YAML schemas and JSON AST queries are inherently AI-friendly. This page covers the integration points between ObjectQL and AI systems.
 
-- Model registry
-- Prompt template registry
-- RAG (retrieval + vector store) integration
+## Why ObjectQL + AI?
 
-## Model Registry
+Traditional ORMs use imperative code (classes, decorators, method chains) that AI models struggle to generate reliably. ObjectQL's approach is different:
 
-Register model metadata and capabilities without binding to a specific provider SDK.
+| Aspect | Traditional ORM | ObjectQL |
+|:---|:---|:---|
+| Schema format | TypeScript classes | YAML/JSON — structured, parseable |
+| Query format | Method chains (`db.where().join()`) | JSON AST — deterministic, validatable |
+| Validation | Scattered across code | Declarative rules in schema |
+| API surface | Large, framework-specific | Small, protocol-driven |
 
-- `ModelRegistry`
-- `AiModelDefinition`
-- `AiModelCapabilities`
+This means LLMs can:
+- **Generate schemas** from natural language descriptions
+- **Build queries** as JSON objects (no syntax errors possible)
+- **Discover metadata** via the Metadata API at runtime
+- **Validate outputs** against the schema before execution
 
-## Prompt Templates
+## AI-Readable Metadata
 
-Store versioned prompt templates and retrieve them at runtime.
+Every ObjectQL object definition includes an optional `ai_context` field that provides natural language hints to AI agents:
 
-- `PromptRegistry`
-- `PromptTemplate`
+```yaml
+name: customer
+label: Customer
+ai_context: >
+  Represents business customers. Each customer has a unique email.
+  Status transitions: prospect → active → churned.
+  Revenue is calculated from related invoices.
+fields:
+  name:
+    type: text
+    required: true
+    ai_context: "Full company name, e.g. 'Acme Corp'"
+  email:
+    type: text
+    required: true
+    ai_context: "Primary contact email, must be unique"
+  status:
+    type: select
+    options: [prospect, active, churned]
+    defaultValue: prospect
+    ai_context: "Customer lifecycle stage"
+  revenue:
+    type: formula
+    formula: "SUM(invoices.amount)"
+    return_type: currency
+    ai_context: "Auto-calculated from related invoice amounts"
+```
 
-## RAG Integration Points
+AI agents can retrieve this context via the [Metadata API](/docs/reference/api/metadata) to understand the data model before generating queries.
 
-Provide connectors for embeddings and vector stores.
+## Generating Queries with AI
 
-- `EmbeddingProvider`
-- `VectorStore`
-- `RagDocument`, `RagSearchOptions`, `RagSearchResult`
+Since ObjectQL queries are JSON objects (not SQL strings), AI models can generate them reliably:
 
-## Runtime Registry
+```typescript
+// AI generates this structured query — no SQL injection risk
+const query = {
+  object: 'customer',
+  filters: [
+    ['status', '=', 'active'],
+    ['revenue', '>', 10000]
+  ],
+  fields: ['name', 'email', 'revenue'],
+  sort: [{ field: 'revenue', order: 'desc' }],
+  limit: 20
+};
 
-The runtime exposes a lightweight registry surface:
+// Execute safely through the validated pipeline
+const results = await ctx.object('customer').find(query);
+```
 
-- `AiRegistry` → `models`, `prompts`, optional `embeddings`, optional `vectorStore`
+The engine validates the query against the schema before execution — invalid field names, wrong types, and unauthorized filters are caught automatically.
 
-These are intentionally minimal and adapter-friendly.
+## Schema Discovery for Agents
+
+AI agents can discover the full schema at runtime using the Metadata API:
+
+```bash
+# Get all objects
+GET /api/metadata/objects
+
+# Get specific object schema
+GET /api/metadata/objects/customer
+
+# Get field definitions
+GET /api/metadata/objects/customer/fields
+```
+
+This enables agentic workflows where the AI:
+1. Discovers available objects and their fields
+2. Reads `ai_context` for semantic understanding
+3. Generates valid JSON queries
+4. Executes and interprets results
+
+## Runtime Registries
+
+ObjectQL exposes lightweight registries for AI model and prompt management:
+
+### Model Registry
+
+Register AI model metadata without binding to a specific provider SDK:
+
+```typescript
+app.ai.models.register({
+  name: 'gpt-4',
+  provider: 'openai',
+  capabilities: ['text-generation', 'function-calling'],
+  config: {
+    apiKey: process.env.OPENAI_API_KEY,
+    maxTokens: 4096
+  }
+});
+```
+
+### Prompt Template Registry
+
+Store and version prompt templates:
+
+```typescript
+app.ai.prompts.register({
+  name: 'generate-query',
+  version: '1.0',
+  template: `Given the following ObjectQL schema:
+{{schema}}
+
+Generate a JSON query to: {{user_request}}
+
+Return ONLY the JSON query object.`,
+  variables: ['schema', 'user_request']
+});
+
+// Use at runtime
+const prompt = app.ai.prompts.render('generate-query', {
+  schema: JSON.stringify(metadata),
+  user_request: 'Find all active customers with revenue over 10k'
+});
+```
+
+### RAG Integration Points
+
+Connect embeddings and vector stores for retrieval-augmented generation:
+
+```typescript
+app.ai.embeddings = new OpenAIEmbeddingProvider({
+  model: 'text-embedding-3-small'
+});
+
+app.ai.vectorStore = new PineconeVectorStore({
+  index: 'objectql-docs'
+});
+```
+
+<Callout type="info">
+AI registries are intentionally minimal and adapter-friendly. They define the interface — you bring your own provider SDK.
+</Callout>
+
+## Best Practices
+
+1. **Always set `ai_context`** on objects and fields — it dramatically improves AI query generation accuracy
+2. **Use the Metadata API** for schema discovery instead of hardcoding schema in prompts
+3. **Validate AI-generated queries** through ObjectQL's pipeline (it happens automatically)
+4. **Use JSON queries**, not SQL — structured data is more reliable for AI generation
+5. **Version prompt templates** to track and improve AI interactions over time

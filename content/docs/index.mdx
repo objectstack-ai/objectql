@@ -1,61 +1,117 @@
 ---
 title: Introduction
-description: Welcome to the ObjectQL Documentation
+description: ObjectQL — The Protocol-Driven Database Compiler for Metadata-First Applications
 ---
+
 
 ## What is ObjectQL?
 
-**ObjectStack ObjectQL** is a production-ready protocol and engine for building metadata-driven applications. It decouples **Intent** (Schema & Logic) from **Implementation** (Database & Code).
+**ObjectQL** is a protocol-driven database compiler that turns declarative YAML schemas into type-safe, validated backend APIs. Instead of writing boilerplate CRUD code, you define **what** your data looks like — ObjectQL handles **how** it gets stored, validated, and served.
 
-By defining your data models, validation rules, and business logic in simple standard formats (YAML/JSON), ObjectQL compiles them into a type-safe backend with automatic validation and formula evaluation.
+```yaml
+# Define your data model — ObjectQL does the rest
+name: project
+fields:
+  title:
+    type: text
+    required: true
+  status:
+    type: select
+    options: [planning, active, completed]
+    default: planning
+  owner:
+    type: lookup
+    reference_to: users
+```
 
-### Key Features
+From this single file, ObjectQL automatically generates:
+- **Database tables** with proper types and indexes
+- **Validation** for required fields, select options, and referential integrity
+- **REST, GraphQL, OData, and JSON-RPC APIs** for all CRUD operations
+- **TypeScript types** for complete end-to-end type safety
 
 <Cards>
-  <Card title="Protocol-Driven Code" href="/docs/modeling">
-    Define the structure in Schema or Type first. Logic is secondary.
+  <Card title="Quick Start" href="/docs/getting-started">
+    Get a working project in 5 minutes with the CLI scaffolding tool.
   </Card>
-  <Card title="Compiler, Not ORM" href="/docs/data-access">
-    ObjectQL is not a runtime wrapper. It is a Database Compiler.
+  <Card title="Data Modeling" href="/docs/modeling">
+    Learn the full schema language — field types, relationships, and validation rules.
   </Card>
-  <Card title="Validation by Design" href="/docs/logic">
-    Field, cross-field, and state machine validation automatically enforced by the Core engine.
+  <Card title="Choose a Driver" href="/docs/drivers">
+    Connect to PostgreSQL, MongoDB, SQLite, or 6 other database backends.
   </Card>
 </Cards>
 
-## What's Implemented
+## Why ObjectQL?
 
-ObjectQL has **mature, production-ready** implementations of:
+| Traditional ORM | ObjectQL |
+|:---|:---|
+| Schema defined in code (classes/decorators) | Schema defined in YAML/JSON — readable by humans and AI |
+| Queries are language-specific method chains | Queries are a universal JSON AST — portable across languages |
+| Validation added manually per endpoint | Validation injected automatically by the engine |
+| Database-coupled logic | Driver-agnostic — swap databases without changing business logic |
+| REST API requires separate controller layer | APIs auto-generated from metadata |
 
-- ✅ **Validation System** - Field, cross-field, state machine validation
-- ✅ **Formula Engine** - Computed fields with JavaScript expressions  
-- ✅ **Hook System** - Complete event lifecycle for CRUD operations
-- ✅ **Action System** - Custom RPC operations
-- ✅ **7 Database Drivers** - SQL, MongoDB, Memory, LocalStorage, FS, Excel, Redis
-- ✅ **AI Code Generation** - Generate apps from natural language
-- ✅ **REST/GraphQL/OData APIs** - Auto-generated from metadata with subscriptions and federation support
+## Core Capabilities
 
-> **📋 See [Implementation Status](https://github.com/objectstack-ai/objectql/blob/main/IMPLEMENTATION_STATUS.md) for complete feature matrix**
+### Production-Ready
 
-## Application-Layer Features
+- **7 Database Drivers** — SQL (PostgreSQL, MySQL, SQLite), MongoDB, Memory, LocalStorage, File System, Excel, Redis
+- **4 API Protocols** — REST, GraphQL, OData V4, JSON-RPC — auto-generated from your schema
+- **Validation Engine** — Field-level, cross-field, and state machine validation
+- **Formula Engine** — Computed fields with JavaScript expressions and dependency tracking
+- **Hook System** — Complete lifecycle events: `beforeCreate`, `afterUpdate`, `beforeDelete`, etc.
+- **Action System** — Custom RPC operations callable via any API protocol
 
-These features require implementation in your application code:
+### Developer Experience
 
-- **Permissions/RBAC** - Implement using hooks or middleware
-- **Workflows** - Build using state machine validation + hooks  
-- **Audit Trails** - Track changes using hooks
-- **Reports** - Generate using query API + external libraries
+- **VS Code Extension** — YAML autocomplete, validation, and go-to-definition for `.object.yml` files
+- **CLI Tooling** — `create`, `generate`, `dev`, `build`, `test` commands
+- **Hot Reload** — Schema changes detected and applied automatically during development
+- **AI-Ready** — JSON AST queries can be generated by LLMs and AI agents
 
-## Documentation Structure
+## How It Works
 
-- **[Getting Started](/docs/getting-started)**: Installation, IDE setup, and CLI usage
-- **[Modeling Data](/docs/modeling)**: Define objects, fields, and relationships
-- **[Business Logic](/docs/logic)**: Formulas, Hooks, and Actions (all implemented)
-- **[Data Access](/docs/data-access)**: Query your data using the Repository API
-- **[Server & Deployment](/docs/server)**: Configure REST/GraphQL servers
-- **[AI Integration](/docs/ai)**: AI-powered code generation
-- **[API Reference](/docs/reference)**: Detailed API specifications
+<Steps>
+  <Step>
+    **Define your schema** in `.object.yml` files — fields, relationships, validation rules, and business logic.
+  </Step>
+  <Step>
+    **ObjectQL compiles** the schema into an internal AST, validates it, and registers metadata.
+  </Step>
+  <Step>
+    **At runtime**, the engine intercepts CRUD operations, applies validation and hooks, then delegates to the configured database driver.
+  </Step>
+  <Step>
+    **API protocols** (REST, GraphQL, etc.) are generated automatically from the compiled metadata.
+  </Step>
+</Steps>
+
+## Documentation Guide
+
+| Section | What You'll Learn |
+|:---|:---|
+| [Getting Started](/docs/getting-started) | Installation, project scaffolding, first CRUD operations |
+| [Modeling Data](/docs/modeling) | Object definitions, all field types, relationships, migrations |
+| [Business Logic](/docs/logic) | Formulas, hooks, and custom actions |
+| [Data Access](/docs/data-access) | Query API, filter operators, best practices |
+| [Drivers](/docs/drivers) | Database driver setup, configuration, and comparison |
+| [Server & APIs](/docs/server) | HTTP server integration, authentication, deployment |
+| [Performance](/docs/performance) | Query optimization, caching, connection pooling |
+| [Extending](/docs/extending) | Build custom drivers, plugins, and protocol adapters |
+| [Architecture](/docs/architecture) | Internal design: Types, Core engine, Platform layer |
+| [API Reference](/docs/reference) | Complete REST, GraphQL, OData, JSON-RPC specifications |
 
 ## Next Steps
 
-To get started with ObjectQL, we recommend following the [Getting Started](/docs/getting-started) guide.
+<Cards>
+  <Card title="5-Minute Quick Start" href="/docs/getting-started">
+    Scaffold a project, define a model, and run your first query.
+  </Card>
+  <Card title="API Quick Reference" href="/docs/reference/api/quick-reference">
+    Cheat sheet for all CRUD operations, filters, and aggregations.
+  </Card>
+  <Card title="Protocol Specification" href="https://protocol.objectstack.ai">
+    The formal specification behind ObjectQL's type system and wire protocol.
+  </Card>
+</Cards>

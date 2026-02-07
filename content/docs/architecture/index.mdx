@@ -1,6 +1,6 @@
 ---
-title: Foundation Layer Overview
-description: The core architecture of ObjectQL - Types, Core Engine, and Platform Utilities
+title: Architecture
+description: Internal design of ObjectQL — the Trinity Architecture of Types, Core Engine, and Platform layer
 ---
 
 # Foundation Layer Overview
@@ -39,7 +39,7 @@ The Foundation Layer is the architectural backbone of ObjectQL, consisting of th
 
 ## Core Packages
 
-### [@objectql/types](/docs/reference/foundation/types)
+### [@objectql/types](/docs/architecture/types)
 
 **Role**: The API Contract & Type System Constitution
 
@@ -73,7 +73,7 @@ const project: ObjectConfig = {
 };
 ```
 
-### [@objectql/core](/docs/reference/foundation/core)
+### [@objectql/core](/docs/architecture/core)
 
 **Role**: The Runtime Engine & Business Logic Compiler
 
@@ -111,7 +111,7 @@ const projects = await ctx.object('project').find({
 });
 ```
 
-### [@objectql/platform-node](/docs/reference/foundation/platform-node)
+### [@objectql/platform-node](/docs/architecture/platform-node)
 
 **Role**: The Node.js Bridge
 
@@ -490,16 +490,16 @@ src/
 
 ## Related Documentation
 
-- **[Types Reference](/docs/reference/foundation/types)** - Complete type system documentation
-- **[Core Reference](/docs/reference/foundation/core)** - Runtime engine and APIs
-- **[Platform Node Reference](/docs/reference/foundation/platform-node)** - File system and plugin utilities
-- **[Driver Development](/docs/guides/drivers/extensibility)** - Building custom drivers
-- **[Validation Guide](/docs/guides/validation)** - Metadata-driven validation
+- **[Types Reference](/docs/architecture/types)** - Complete type system documentation
+- **[Core Reference](/docs/architecture/core)** - Runtime engine and APIs
+- **[Platform Node Reference](/docs/architecture/platform-node)** - File system and plugin utilities
+- **[Driver Development](/docs/extending/custom-drivers)** - Building custom drivers
+- **[Validation Guide](/docs/logic)** - Metadata-driven validation
 
 ## Next Steps
 
-1. **Understand the Types** → Read the [Types Reference](/docs/reference/foundation/types)
-2. **Build with Core** → Explore the [Core Reference](/docs/reference/foundation/core)
-3. **Load Metadata** → Learn about [Platform Node](/docs/reference/foundation/platform-node)
-4. **Choose a Driver** → Review [Drivers Overview](/docs/reference/drivers)
-5. **Deploy** → Check the [Deployment Guide](/docs/guides/deployment)
+1. **Understand the Types** → Read the [Types Reference](/docs/architecture/types)
+2. **Build with Core** → Explore the [Core Reference](/docs/architecture/core)
+3. **Load Metadata** → Learn about [Platform Node](/docs/architecture/platform-node)
+4. **Choose a Driver** → Review [Drivers Overview](/docs/drivers)
+5. **Deploy** → Check the [Deployment Guide](/docs/server)

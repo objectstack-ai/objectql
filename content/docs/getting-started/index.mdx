@@ -1,98 +1,137 @@
 ---
-title: "Getting Started with ObjectQL"
-description: Getting Started with ObjectQL
+title: Quick Start
+description: Get a working ObjectQL project in 5 minutes
 ---
-**ObjectQL** is a universal, metadata-driven ORM designed for building dynamic business applications. Unlike traditional ORMs where you define schema in class files (like TypeORM entities), ObjectQL uses a **Metadata-First** approach.
 
-## Why ObjectQL?
 
-1.  **Metadata-Driven**: Define your data models in JSON or YAML. Perfect for low-code platforms where schema changes at runtime.
-2.  **Universal Protocol**: The query language is a JSON AST, making it easy for frontends or AI agents to generate queries.
-3.  **Action & Hook System**: Built-in support for "Button Actions" (RPC) and "Triggers" (Hooks), allowing you to model **Behavior** alongside **Data**.
+This guide walks you through creating your first ObjectQL project — from scaffolding to your first database query.
 
-## Quick Start
+## Prerequisites
 
-The fastest way to get started is using the CLI to scaffold a project.
+- **Node.js** 18+ ([download](https://nodejs.org))
+- **npm**, **pnpm**, or **yarn** package manager
 
-### 1. Create a New Project
+## Create a Project
 
-The easiest way to start is using the generator.
+<Steps>
+  <Step>
+    ### Scaffold with the CLI
 
-```bash
-# Standard Setup (Recommended) - Full Project Tracker Demo
-npm create @objectql@latest my-app -- --template starter
+    <Tabs items={['npm', 'pnpm', 'yarn']}>
+      <Tab value="npm">
+        ```bash
+        npm create @objectql@latest my-app -- --template starter
+        ```
+      </Tab>
+      <Tab value="pnpm">
+        ```bash
+        pnpm create @objectql my-app --template starter
+        ```
+      </Tab>
+      <Tab value="yarn">
+        ```bash
+        yarn create @objectql my-app --template starter
+        ```
+      </Tab>
+    </Tabs>
 
-# Minimal Setup - Single File
-npm create @objectql@latest my-app -- --template hello-world
-```
+    This creates a project with SQLite (zero-config), example models, and a dev server.
 
-This will create a new project with all necessary dependencies.
+    For a minimal single-file setup:
 
-### 2. Install VS Code Extension (Recommended) 🚨
+    ```bash
+    npm create @objectql@latest my-app -- --template hello-world
+    ```
+  </Step>
 
-To treat your metadata like code (with validation and autocomplete), install the **Standard ObjectStack AI Extension**.
+  <Step>
+    ### Install dependencies and start
 
-1.  Open Visual Studio Code.
-2.  Go to the **Extensions** view (`Cmd+Shift+X`).
-3.  Search for `ObjectQL` and install.
-4.  Alternatively, when you open the created project, VS Code will prompt you to install recommended extensions.
+    ```bash
+    cd my-app
+    npm install
+    npm run dev
+    ```
 
-> **Why?** The extension understands your `*.object.yml` files, validating field types and relationships in real-time, just like TypeScript.
+    ObjectQL detects your `.object.yml` files, generates database tables, and starts a local server.
+  </Step>
 
-### 3. Define the Protocol (Your Meta-Schema)
+  <Step>
+    ### Define your first object
 
-Instead of passing objects to a constructor, we define them in YAML. This is the "AI-Native" way—separate the **Instruction** (YAML) from the **Execution** (Runtime).
+    Create `src/objects/todo.object.yml`:
 
-Create a file `src/objects/todo.object.yml`:
+    ```yaml
+    name: todo
+    label: Task
+    fields:
+      title:
+        type: text
+        required: true
+        searchable: true
+      completed:
+        type: boolean
+        defaultValue: false
+      priority:
+        type: select
+        options: [low, medium, high]
+        defaultValue: medium
+    ```
 
-```yaml
-name: todo
-label: Task
-fields:
-  title: 
-    type: text
-    required: true
-    searchable: true
-  completed: 
-    type: boolean
-    defaultValue: false
-  priority:
-    type: select
-    options: [low, medium, high]
-    defaultValue: medium
-```
+    Save the file — the dev server hot-reloads and creates the `todo` table automatically.
+  </Step>
 
-### 4. Run the Project
+  <Step>
+    ### Query your data
 
-```bash
-npm run dev
-```
+    Open another terminal and use the REST API:
 
-ObjectQL will detect the new file, generate the necessary database tables (in SQLite by default), and start the server.
+    ```bash
+    # Create a task
+    curl -X POST http://localhost:3000/api/todo \
+      -H "Content-Type: application/json" \
+      -d '{"title": "Learn ObjectQL", "priority": "high"}'
 
-### 5. Manual Setup (Programmatic API)
+    # List all tasks
+    curl http://localhost:3000/api/todo
+    ```
 
-If you are integrating ObjectQL into an existing specialized backend (like a Lambda function or a custom script), you can use the Programmatic API.
+    Or use the programmatic API in your code:
+
+    ```typescript
+    const ctx = app.createContext({ isSystem: true });
+    const todos = ctx.object('todo');
+
+    await todos.create({ title: 'Learn ObjectQL', priority: 'high' });
+
+    const results = await todos.find({
+      filters: { completed: false }
+    });
+    console.log(results);
+    ```
+  </Step>
+</Steps>
+
+## Programmatic Setup
+
+If you're integrating ObjectQL into an existing backend (Express, Lambda, custom scripts), use the programmatic API directly:
 
 ```typescript
 import { ObjectQL } from '@objectql/core';
 import { SqlDriver } from '@objectql/driver-sql';
 
 async function main() {
-  // 1. Initialize Driver (In-Memory SQLite)
   const driver = new SqlDriver({
     client: 'sqlite3',
-    connection: { filename: ':memory:' }, 
+    connection: { filename: ':memory:' },
     useNullAsDefault: true
   });
 
-  // 2. Initialize Engine
   const app = new ObjectQL({
     datasources: { default: driver }
   });
 
-  // 3. Define Metadata Inline (Code as Configuration)
-  // Note: We recommend YAML for scalability, but this works for scripts.
+  // Register objects inline (YAML files recommended for real projects)
   app.registerObject({
     name: 'todo',
     fields: {
@@ -103,104 +142,108 @@ async function main() {
 
   await app.init();
 
-  // 4. Run Business Logic
-  // We use a system context here for simplicity
+  // CRUD operations
   const ctx = app.createContext({ isSystem: true });
   const repo = ctx.object('todo');
 
-  await repo.create({ title: 'Build the Future' });
-  
-  const results = await repo.find();
-  console.log('Todos:', results);
+  const task = await repo.create({ title: 'Build something great' });
+  console.log('Created:', task);
+
+  const all = await repo.find();
+  console.log('All todos:', all);
 }
 
 main();
 ```
 
-## Scaling Up: The Metadata Approach
+## Add Business Logic
 
-Once you are comfortable with the basics, notice that standard projects use file-based modules configuration.
+ObjectQL supports three types of business logic that run automatically:
 
-```typescript
-import { ObjectQL } from '@objectql/core';
-import * as path from 'path';
+### Hooks — Lifecycle Triggers
 
-async function main() {
-    const db = new ObjectQL({
-        // 1. Connection String (Protocol://Path)
-        // Detects 'sqlite', 'postgres', 'mongodb' automatically
-        connection: 'sqlite://data.db', 
-        
-        // 2. Load Modules
-        // Load schema from local directories OR npm packages
-        modules: [
-            'src/objects',           // Local Module
-            '@objectql/module-auth'  // External Module (NPM)
-        ]
-    });
-
-    await db.init();
-    
-    // ...
-    
-    // 3. Create Data (CRUD)
-    // Create a context (representing a user request)
-    const ctx = db.createContext({}); 
-    const todoRepo = ctx.object('todo');
-
-    const newTask = await todoRepo.create({
-        title: 'Learn ObjectQL',
-        completed: false
-    });
-    console.log('Created:', newTask);
-
-    // 4. Query Data
-    const tasks = await todoRepo.find({
-        filters: { completed: false }
-    });
-    console.log('Pending Tasks:', tasks);
-}
-
-main();
-```
-
-## Adding Business Logic
-
-ObjectQL shines when you need to add logic.
-
-### Adding a Hook
-
-Triggers logic automatically when data changes.
+React to data changes before or after they happen:
 
 ```typescript
 app.on('before:create', 'todo', async (ctx) => {
-    if (ctx.data.title === 'Sleep') {
-        throw new Error("Cannot sleep yet!");
-    }
-    // Auto-tagging
-    ctx.data.title = `[Task] ${ctx.data.title}`;
+  // Auto-tag new tasks
+  ctx.data.title = `[Task] ${ctx.data.title}`;
+});
+
+app.on('after:update', 'todo', async (ctx) => {
+  if (ctx.data.completed) {
+    console.log(`Task completed: ${ctx.data.title}`);
+  }
 });
 ```
 
-### Adding an Action
+### Actions — Custom Operations
 
-Defines a custom operation (RPC) that frontends can call.
+Define RPC endpoints that frontends can call:
 
 ```typescript
-// Define protocol
 app.registerAction('todo', 'mark_done', async (ctx) => {
-    const { id } = ctx;
-    await ctx.object('todo').update(id, { completed: true });
-    return { message: 'Good job!' };
+  const { id } = ctx;
+  await ctx.object('todo').update(id, { completed: true });
+  return { message: 'Task completed!' };
 });
-
-// Invocation
-await ctx.object('todo').execute('mark_done', 'id_123', {});
 ```
+
+### Formulas — Computed Fields
+
+Add computed fields that auto-update:
+
+```yaml
+name: todo
+fields:
+  title:
+    type: text
+    required: true
+  completed:
+    type: boolean
+    defaultValue: false
+  display_name:
+    type: formula
+    formula: "'[' + (completed ? '✓' : ' ') + '] ' + title"
+    return_type: text
+```
+
+<Callout type="info">
+Learn more in the [Business Logic](/docs/logic) section — covering [Formulas](/docs/logic/formulas), [Hooks](/docs/logic/hooks), and [Actions](/docs/logic/actions) in detail.
+</Callout>
+
+## Choose a Database Driver
+
+ObjectQL ships with 7 drivers. The default `starter` template uses SQLite, but switching is a one-line config change:
+
+| Driver | Best For | Package |
+|:---|:---|:---|
+| **SQL** (PostgreSQL, MySQL, SQLite) | Production apps | `@objectql/driver-sql` |
+| **MongoDB** | Document-oriented data | `@objectql/driver-mongo` |
+| **Memory** | Testing, prototyping | `@objectql/driver-memory` |
+| **LocalStorage** | Browser/offline apps | `@objectql/driver-localstorage` |
+| **File System** | Embedded/config storage | `@objectql/driver-fs` |
+| **Excel** | Data import/export | `@objectql/driver-excel` |
+| **Redis** | Caching layer | `@objectql/driver-redis` |
+
+```typescript
+// Switch to PostgreSQL
+import { SqlDriver } from '@objectql/driver-sql';
+
+const driver = new SqlDriver({
+  client: 'pg',
+  connection: 'postgresql://user:pass@localhost:5432/mydb'
+});
+```
+
+See the [Drivers Guide](/docs/drivers) for detailed setup instructions for each database.
 
 ## Next Steps
 
-*   **[Database Drivers](./drivers/index.md)**: Connect to PostgreSQL, MongoDB, etc.
-*   **[Data Modeling](./data-modeling.md)**: Learn about all field types (Select, Lookup, Date, etc.)
-*   **[API Reference](../api/index.md)**: Explore the full API.
-*   **[Hooks](./logic-hooks.md)**: Deep dive into the event system.
+| What to Learn | Where to Go |
+|:---|:---|
+| Full schema language (all field types, relationships) | [Modeling Data](/docs/modeling) |
+| PROJECT file organization and conventions | [Project Structure](/docs/getting-started/project-structure) |
+| CLI commands for development workflow | [CLI Reference](/docs/getting-started/cli) |
+| Editor setup (VS Code, JetBrains) | [IDE Setup](/docs/getting-started/ide-setup) |
+| Server setup and framework integration | [Server & APIs](/docs/server) |

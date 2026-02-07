@@ -3,17 +3,20 @@
   "pages": [
     "index",
     "quick-reference",
-    "authentication",
+    "---Protocols---",
     "rest",
     "graphql",
     "odata-v4",
     "json-rpc",
-    "websocket",
+    "---Features---",
+    "authentication",
+    "error-handling",
     "attachments",
     "custom-routes",
     "metadata",
-    "error-handling",
+    "client-sdk",
     "rate-limiting",
-    "examples"
+    "examples",
+    "websocket"
   ]
 }

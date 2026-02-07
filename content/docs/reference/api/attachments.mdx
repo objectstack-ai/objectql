@@ -6,11 +6,6 @@ description: Attachment API Specification
 
 This document specifies how to handle file uploads, image uploads, and attachment field types in ObjectQL APIs.
 
-> **💡 Quick Guides:**
-> - **How to upload multiple files to one field?** → [Multiple File Upload Guide (中文)](../examples/multiple-file-upload-guide-cn.md) ⭐
-> - **How to associate attachments with records?** → [Attachment Association Guide (中文)](../examples/attachment-association-guide-cn.md)
-> - **How to integrate S3 storage?** → [S3 Integration Guide (中文)](../examples/s3-integration-guide-cn.md)
-
 ## Table of Contents
 
 1. [Overview](#overview)
@@ -1181,9 +1176,7 @@ const fileStorage = new S3FileStorage();
 const handler = createNodeHandler(app, { fileStorage });
 ```
 
-**For detailed S3 integration guide with complete implementation code, see:**
-- [S3 Integration Guide (中文)](../examples/s3-integration-guide-cn.md) - Comprehensive Chinese guide
-- [S3 Storage Implementation](../examples/s3-storage-implementation.ts) - Production-ready TypeScript code
+**For S3 integration, implement a custom `FileStorage` class following the pattern above.**
 
 ### API Endpoints
 
@@ -1237,10 +1230,10 @@ Configure file storage behavior using environment variables:
 
 ## Related Documentation
 
-- [Object Definition Specification](../spec/object.md) - Field type definitions
-- [API Reference](./README.md) - Complete API documentation
-- [Validation Rules](../spec/validation.md) - File validation configuration
-- [Server Integration](../guide/server-integration.md) - Setting up file storage
+- [Object Definition Specification](/docs/modeling) - Field type definitions
+- [API Reference](/docs/reference) - Complete API documentation
+- [Validation Rules](/docs/logic) - File validation configuration
+- [Server Integration](/docs/server/integration) - Setting up file storage
 
 ---
 

@@ -19,19 +19,15 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     children: [...tree.children]
   };
 
-  // Find 'Reference' to insert before
-  const refIndex = modifiedTree.children.findIndex(n => n.name === 'Reference');
+  // Insert Protocol Specs link before the Reference section
+  const refIndex = modifiedTree.children.findIndex(
+    n => n.name === 'API Reference' || n.name === 'Reference'
+  );
   
   if (refIndex !== -1) {
     modifiedTree.children.splice(refIndex, 0, protocolLink as any);
   } else {
-    // If not found, try to find 'Ai' or 'AI'
-    const aiIndex = modifiedTree.children.findIndex(n => n.name === 'Ai' || n.name === 'AI');
-    if (aiIndex !== -1) {
-       modifiedTree.children.splice(aiIndex + 1, 0, protocolLink as any);
-    } else {
-       modifiedTree.children.push(protocolLink as any);
-    }
+    modifiedTree.children.push(protocolLink as any);
   }
 
   return (

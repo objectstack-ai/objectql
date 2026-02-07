@@ -1,7 +1,10 @@
 {
-  "index": "Overview",
-  "custom-drivers": "Custom Drivers",
-  "ai": "AI Integrations",
-  "plugins": "Plugin Development",
-  "protocol-tck": "Protocol TCK"
+  "title": "Extending",
+  "pages": [
+    "index",
+    "custom-drivers",
+    "plugins",
+    "protocol-tck",
+    "ai"
+  ]
 }

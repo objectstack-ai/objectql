@@ -1,62 +1,52 @@
 ---
 title: Drivers Overview
-description: Complete guide to ObjectQL drivers - choose the right data storage solution for your application
+description: Choose the right database driver — ObjectQL supports SQL, MongoDB, Memory, and 5 more backends
 ---
 
-# Drivers Overview
 
-ObjectQL drivers are pluggable data storage adapters that allow you to connect to different databases and storage systems using a unified API. Each driver implements the standard `DriverInterface` from `@objectstack/spec`, ensuring consistent behavior across all storage backends.
+ObjectQL drivers are pluggable storage adapters that let you connect to any database using a unified API. Each driver implements the standard `DriverInterface`, so your business logic works identically across all backends.
 
 ## Available Drivers
 
-ObjectQL provides eight production-ready drivers for different use cases:
-
-### Production Drivers
-
-| Driver | Use Case | Persistence | Environment | Best For |
-|--------|----------|-------------|-------------|----------|
-| [SQL](/docs/reference/drivers/sql) | Relational databases | ✅ Yes | Server | Production apps, complex queries |
-| [MongoDB](/docs/reference/drivers/mongodb) | Document database | ✅ Yes | Server | Production apps, flexible schemas |
-| [File System](/docs/reference/drivers/fs) | JSON files | ✅ Yes | Server | Development, small datasets |
-| [Excel](/docs/reference/drivers/excel) | Excel spreadsheets | ✅ Yes | Server/Browser | Data import/export, prototyping |
-
-### Development & Testing Drivers
-
-| Driver | Use Case | Persistence | Environment | Best For |
-|--------|----------|-------------|-------------|----------|
-| [Memory](/docs/reference/drivers/memory) | In-memory storage | ❌ No | Universal | Testing, edge runtimes, prototyping |
-| [LocalStorage](/docs/reference/drivers/localstorage) | Browser storage | ✅ Yes | Browser | PWAs, offline apps, client-side state |
-| [Redis](/docs/reference/drivers/redis) | Key-value cache | ✅ Yes | Server | Caching, sessions, example implementation |
-| [SDK/Remote](/docs/reference/drivers/sdk) | HTTP API client | N/A | Universal | Client applications, microservices |
+<Cards>
+  <Card title="SQL (PostgreSQL, MySQL, SQLite)" href="/docs/drivers/sql">
+    Production-grade relational database support via Knex.js. Full transactions, migrations, and indexing.
+  </Card>
+  <Card title="MongoDB" href="/docs/drivers/mongodb">
+    Document database with Atlas support. Smart ID mapping, geospatial queries, and full-text search.
+  </Card>
+  <Card title="Memory" href="/docs/drivers/memory">
+    Zero-config in-memory driver powered by Mingo. Perfect for testing, prototyping, and edge runtimes.
+  </Card>
+  <Card title="LocalStorage" href="/docs/drivers/localstorage">
+    Browser-native storage for PWAs and offline-first apps. Namespace isolation and quota management.
+  </Card>
+  <Card title="File System" href="/docs/drivers/fs">
+    JSON file storage with atomic writes. Great for embedded apps, config management, and small datasets.
+  </Card>
+  <Card title="Excel" href="/docs/drivers/excel">
+    Read and write Excel spreadsheets as data sources. Ideal for data import/export workflows.
+  </Card>
+  <Card title="Redis" href="/docs/drivers/redis">
+    Key-value caching layer. Example/template driver for building custom storage adapters.
+  </Card>
+  <Card title="SDK (Remote)" href="/docs/drivers/sdk">
+    HTTP client driver for connecting to remote ObjectQL servers. Enables client-server and microservice architectures.
+  </Card>
+</Cards>
 
 ## Quick Comparison
 
-### By Use Case
-
-#### Production Applications
-- **High traffic**: [SQL Driver](/docs/reference/drivers/sql) (PostgreSQL, MySQL)
-- **Flexible schemas**: [MongoDB Driver](/docs/reference/drivers/mongodb)
-- **Mixed workload**: SQL for writes, Redis for caching
-
-#### Development & Prototyping
-- **Rapid iteration**: [Memory Driver](/docs/reference/drivers/memory)
-- **With persistence**: [File System Driver](/docs/reference/drivers/fs)
-- **Data import**: [Excel Driver](/docs/reference/drivers/excel)
-
-#### Client Applications
-- **Browser apps**: [LocalStorage Driver](/docs/reference/drivers/localstorage)
-- **Mobile apps**: [SDK Driver](/docs/reference/drivers/sdk)
-- **Offline-first**: LocalStorage + SDK with sync
-
-#### Testing & CI/CD
-- **Unit tests**: [Memory Driver](/docs/reference/drivers/memory)
-- **Integration tests**: SQL or MongoDB (in Docker)
-- **No infrastructure**: Memory or File System
-
-### By Performance
-
-| Driver | Read Speed | Write Speed | Query Support | Storage Limit |
-|--------|-----------|-------------|---------------|---------------|
+| Driver | Persistence | Environment | Max Data Size | Best For |
+|:---|:---:|:---:|:---:|:---|
+| **SQL** | ✅ | Server | Large | Production apps, complex queries |
+| **MongoDB** | ✅ | Server | Large | Flexible schemas, document data |
+| **Memory** | ❌ | Universal | RAM | Testing, prototyping, edge |
+| **LocalStorage** | ✅ | Browser | ~5-10 MB | PWAs, offline apps |
+| **File System** | ✅ | Server | Medium | Dev, embedded, config |
+| **Excel** | ✅ | Server | ~100K rows | Import/export workflows |
+| **Redis** | ✅ | Server | RAM | Caching, sessions |
+| **SDK** | N/A | Universal | Server-dep. | Client apps, microservices |
 | Memory | ⚡⚡⚡ | ⚡⚡⚡ | Full | RAM |
 | LocalStorage | ⚡⚡ | ⚡⚡ | Full | ~5-10MB |
 | File System | ⚡ | ⚡ | Full | Disk |
@@ -128,7 +118,7 @@ interface DriverInterface {
    - > 100K records → SQL, MongoDB
 
 4. **Do you need remote access?**
-   - Yes → Use SQL/MongoDB with [SDK Driver](/docs/reference/drivers/sdk)
+   - Yes → Use SQL/MongoDB with [SDK Driver](/docs/drivers/sdk)
    - No → Use any local driver
 
 ### Decision Tree
@@ -310,13 +300,7 @@ for (const task of localData) {
 
 ## Next Steps
 
-- Choose your driver from the list above
-- Follow the specific driver guide for detailed setup
-- Check the [Driver Extensibility Guide](/docs/guides/drivers/extensibility) to create custom drivers
-- Review the [Query Guide](/docs/guides/querying) for advanced query patterns
-
-## Support
-
-- 📖 [API Reference](/docs/api)
-- 💬 [GitHub Discussions](https://github.com/objectstack-ai/objectql/discussions)
-- 🐛 [Report Issues](https://github.com/objectstack-ai/objectql/issues)
+- Pick a driver from the guides above for detailed configuration
+- [Build a custom driver](/docs/extending/custom-drivers) for unsupported databases
+- [Query guide](/docs/data-access/querying) for advanced query patterns
+- [Performance optimization](/docs/performance/driver-optimization) per-driver tuning

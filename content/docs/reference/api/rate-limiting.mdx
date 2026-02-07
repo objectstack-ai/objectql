@@ -1,30 +1,60 @@
 ---
 title: "Rate Limiting"
-description: Rate Limiting
+description: Configure rate limiting to protect your ObjectQL API from abuse
 ---
-ObjectQL supports configurable rate limiting to prevent abuse.
+
+
+Rate limiting protects your ObjectQL server from abuse and ensures fair resource usage across clients. Rate limiting is an **application-layer concern** — ObjectQL provides the hooks and middleware patterns, but you implement the strategy.
+
+## Configuration
+
+Add rate limiting via server configuration:
+
+```typescript
+import { ObjectQL } from '@objectql/core';
+import { createNodeHandler } from '@objectql/platform-node';
+
+const app = new ObjectQL({ /* ... */ });
+await app.init();
+
+const handler = createNodeHandler(app, {
+  rateLimit: {
+    enabled: true,
+    windowMs: 60 * 1000,   // 1 minute window
+    maxRequests: 100,       // per window
+    keyGenerator: (req) => req.headers['x-api-key'] || req.ip,
+  }
+});
+```
 
 ## Default Limits
 
-| Tier | Requests/Minute | Requests/Hour |
-|------|-----------------|---------------|
-| Anonymous | 20 | 100 |
-| Authenticated | 100 | 1000 |
-| Premium | 500 | 10000 |
+| Tier | Requests/Minute | Requests/Hour | How to Identify |
+|:---|:---:|:---:|:---|
+| Anonymous | 20 | 100 | No auth header |
+| Authenticated | 100 | 1,000 | Valid JWT or API key |
+| Premium | 500 | 10,000 | Custom tier claim in JWT |
 
 ## Rate Limit Headers
 
-All responses include rate limit information:
+All API responses include rate limit information:
 
-```
+```http
+HTTP/1.1 200 OK
 X-RateLimit-Limit: 100
 X-RateLimit-Remaining: 95
 X-RateLimit-Reset: 1642258800
 ```
 
+| Header | Description |
+|:---|:---|
+| `X-RateLimit-Limit` | Maximum requests allowed in the current window |
+| `X-RateLimit-Remaining` | Requests remaining in the current window |
+| `X-RateLimit-Reset` | Unix timestamp when the window resets |
+
 ## Rate Limit Exceeded
 
-When rate limit is exceeded:
+When the limit is exceeded, the server responds with `429 Too Many Requests`:
 
 ```json
 {
@@ -38,4 +68,58 @@ When rate limit is exceeded:
 }
 ```
 
-**HTTP Status**: `429 Too Many Requests`
+## Implementation with Hooks
+
+For fine-grained control, implement rate limiting as a hook:
+
+```typescript
+const rateLimitStore = new Map<string, { count: number; resetAt: number }>();
+
+app.on('before:find', '*', async (ctx) => {
+  const key = ctx.userId || ctx.ip || 'anonymous';
+  const now = Date.now();
+  const window = rateLimitStore.get(key);
+
+  if (window && window.resetAt > now) {
+    if (window.count >= 100) {
+      throw new ObjectQLError({
+        code: 'RATE_LIMIT_EXCEEDED',
+        message: 'Too many requests',
+      });
+    }
+    window.count++;
+  } else {
+    rateLimitStore.set(key, { count: 1, resetAt: now + 60000 });
+  }
+});
+```
+
+## Integration with Express Middleware
+
+For Express-based servers, use popular rate limiting libraries:
+
+```typescript
+import rateLimit from 'express-rate-limit';
+
+const limiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => req.headers['x-api-key'] || req.ip,
+});
+
+app.use('/api', limiter);
+```
+
+<Callout type="info">
+For production deployments with multiple server instances, use a Redis-backed rate limiter to share state across processes.
+</Callout>
+
+## Best Practices
+
+1. **Use different limits per endpoint** — read operations can tolerate higher limits than writes
+2. **Identify clients by API key**, not just IP — NAT and proxies share IPs
+3. **Return `Retry-After` header** — helps well-behaved clients back off correctly
+4. **Log rate limit hits** — monitor for abuse patterns
+5. **Use sliding windows** — more fair than fixed windows for burst traffic

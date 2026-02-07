@@ -2,14 +2,20 @@
   "title": "ObjectQL",
   "pages": [
     "index",
+    "---Guides---",
     "getting-started",
     "modeling",
     "logic",
     "data-access",
+    "---Infrastructure---",
+    "drivers",
     "server",
     "performance",
-    "tools",
+    "---Advanced---",
     "extending",
+    "tools",
+    "---Reference---",
+    "architecture",
     "reference"
   ]
 }

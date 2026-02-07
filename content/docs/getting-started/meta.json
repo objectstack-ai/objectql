@@ -2,7 +2,8 @@
   "title": "Getting Started",
   "pages": [
     "index",
-    "ide-setup",
-    "cli"
+    "project-structure",
+    "cli",
+    "ide-setup"
   ]
 }

@@ -1,61 +1,78 @@
 ---
-title: "API Documentation"
-description: API Documentation
+title: "API Reference"
+description: Complete API reference for ObjectQL — REST, GraphQL, OData V4, and JSON-RPC protocols
 ---
-Welcome to the ObjectQL API Reference.
 
-ObjectQL provides a **unified query protocol** that can be exposed through multiple API styles. All styles share the same underlying metadata, validation rules, and permissions system.
 
-## Design Principles
+ObjectQL auto-generates APIs from your schema through multiple protocol adapters. All protocols share the same underlying metadata, validation rules, and hook system.
 
-1. **Protocol-First**: All APIs accept/return structured JSON, never raw SQL.
-2. **Type-Safe**: Full TypeScript definitions for all requests/responses.
-3. **AI-Friendly**: Queries include optional `ai_context` for explainability, designed for LLM generation.
-4. **Secure**: Built-in validation, permission checks, SQL injection prevention.
-5. **Universal**: Same query works across MongoDB, PostgreSQL, SQLite.
+## Protocols
 
-## Unified ID Field
+<Cards>
+  <Card title="REST" href="/docs/reference/api/rest">
+    Standard CRUD endpoints at `/api/data/:object`. Best for traditional web and mobile apps.
+  </Card>
+  <Card title="GraphQL" href="/docs/reference/api/graphql">
+    Full query language at `/api/graphql` with subscriptions and federation support.
+  </Card>
+  <Card title="OData V4" href="/docs/reference/api/odata-v4">
+    Enterprise-grade at `/odata/:entity` with `$filter`, `$expand`, `$batch`.
+  </Card>
+  <Card title="JSON-RPC" href="/docs/reference/api/json-rpc">
+    Universal RPC at `POST /api/objectql`. Ideal for AI agents and microservices.
+  </Card>
+</Cards>
 
-ObjectQL uses a **unified `id` field** as the primary key across all database drivers:
+## Protocol Comparison
 
-- **Consistent Naming**: Always use `id` in API requests and responses.
-- **Database Agnostic**: The driver handles mapping (e.g. to `_id` in Mongo) automatically.
-- **String Based**: IDs are always strings to ensure JSON compatibility.
+| Feature | REST | GraphQL | OData V4 | JSON-RPC |
+|:---|:---:|:---:|:---:|:---:|
+| CRUD operations | ✅ | ✅ | ✅ | ✅ |
+| Filtering | Query params | Arguments | `$filter` | JSON filters |
+| Field selection | `?fields=` | Native | `$select` | `fields` array |
+| Nested relations | Limited | Native | `$expand` | `expand` |
+| Batch operations | ❌ | ✅ | `$batch` | ✅ |
+| Subscriptions | ❌ | ✅ | ❌ | ❌ |
+| AI-friendly | Medium | Medium | Low | **High** |
+| Learning curve | Low | Medium | Medium | Low |
 
-## API Styles Overview
+## Common Concepts
 
-| API Style | Use Case | Endpoint Pattern | Docs |
-|-----------|----------|------------------|------|
-| **JSON-RPC** | Universal client, AI agents, microservices | `POST /api/objectql` | [Read Guide](./json-rpc.md) |
-| **REST** | Traditional web apps, mobile apps | `/api/data/:object` | [Read Guide](./rest.md) |
-| **GraphQL** | Modern frontends with complex data requirements, real-time subscriptions | `POST /api/graphql` | [Read Guide](./graphql.md) |
-| **OData V4** | Enterprise applications, standardized queries with $filter/$expand | `/odata/:entity` | [Read Guide](./odata-v4.md) |
-| **Metadata** | Admin interfaces, schema discovery | `/api/metadata/*` | [Read Guide](./metadata.md) |
+### Unified ID Field
 
-> **🚀 Want to optimize your queries?**  
-> Check out the [Query Best Practices Guide](../guide/query-best-practices.md) for performance optimization strategies, detailed comparisons, and recommendations to help you choose the best approach for your use case.
+All APIs use a consistent `id` field as the primary key. Database-specific mappings (e.g., MongoDB's `_id`) are handled automatically by the driver.
 
-## Quick Links
+### Authentication
 
-### Core Concepts
-- [Custom API Routes](./custom-routes.md) ⭐ **NEW**
-- [Authentication & Security](./authentication.md)
-- [Error Handling](./error-handling.md)
-- [Rate Limiting](./rate-limiting.md)
-- [Unified API Response Format](./error-handling.md#response-format)
+All protocols support the same authentication methods:
 
-### Advanced Features
-- [File & Attachments API](./attachments.md)
-- [Realtime / WebSocket API](./websocket.md)
-- [Examples Collection](./examples.md)
+```http
+Authorization: Bearer <jwt_token>
+X-API-Key: <api_key>
+```
 
----
+See [Authentication](/docs/reference/api/authentication) for details.
+
+### Error Format
+
+All protocols return errors in a consistent format:
+
+```json
+{
+  "error": {
+    "code": "VALIDATION_FAIL",
+    "message": "Field 'email' is required",
+    "details": { "field": "email", "rule": "required" }
+  }
+}
+```
+
+See [Error Handling](/docs/reference/api/error-handling) for the complete error code reference.
 
 ## Quick Start
 
-### Basic Query (JSON-RPC)
-
 ```bash
+# JSON-RPC — query all active users
 curl -X POST http://localhost:3000/api/objectql \
   -H "Content-Type: application/json" \
   -d '{
@@ -69,25 +86,19 @@ curl -X POST http://localhost:3000/api/objectql \
   }'
 ```
 
-### Create Record
+## Additional References
 
-```bash
-curl -X POST http://localhost:3000/api/objectql \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
-  -d '{
-    "op": "create",
-    "object": "tasks",
-    "args": {
-      "name": "Complete documentation",
-      "priority": "high",
-      "due_date": "2024-01-20"
-    }
-  }'
-```
-
-### Auto-Generated Specs
-
-For automated tool ingestion, use the following endpoints:
-- **OpenAPI / Swagger**: `/openapi.json` (Used by `/docs` UI)
-- **GraphQL Schema**: `/api/graphql/schema`
+<Cards>
+  <Card title="Quick Reference" href="/docs/reference/api/quick-reference">
+    Cheat sheet with all CRUD operations, filters, and aggregation patterns.
+  </Card>
+  <Card title="Client SDK" href="/docs/reference/api/client-sdk">
+    TypeScript SDK for browser and Node.js with React/Vue hooks.
+  </Card>
+  <Card title="Attachments" href="/docs/reference/api/attachments">
+    File upload, image processing, and storage backend configuration.
+  </Card>
+  <Card title="Custom Routes" href="/docs/reference/api/custom-routes">
+    API versioning, multi-tenancy, and custom endpoint patterns.
+  </Card>
+</Cards>
