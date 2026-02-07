@@ -29,7 +29,6 @@
     "@objectql/core": "workspace:*",
     "@objectql/driver-sql": "workspace:*",
     "@objectql/platform-node": "workspace:*",
-    "@objectql/protocol-rest": "workspace:*",
     "sqlite3": "^5.1.7"
   },
   "devDependencies": {

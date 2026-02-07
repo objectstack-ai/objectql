@@ -9,7 +9,6 @@
     { "path": "../../foundation/types" },
     { "path": "../../foundation/plugin-validator" },
     { "path": "../../foundation/core" },
-    { "path": "../../protocols/rest" },
     { "path": "../../foundation/platform-node" },
     { "path": "../../drivers/sql" }
   ]

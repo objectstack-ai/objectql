@@ -11,9 +11,6 @@ importers:
       '@objectql/protocol-json-rpc':
         specifier: workspace:*
         version: link:packages/protocols/json-rpc
-      '@objectql/protocol-rest':
-        specifier: workspace:*
-        version: link:packages/protocols/rest
       build:
         specifier: ^0.1.4
         version: 0.1.4
@@ -238,9 +235,6 @@ importers:
       '@objectql/platform-node':
         specifier: workspace:*
         version: link:../../../packages/foundation/platform-node
-      '@objectql/protocol-rest':
-        specifier: workspace:*
-        version: link:../../../packages/protocols/rest
       sqlite3:
         specifier: ^5.1.7
         version: 5.1.7
@@ -749,43 +743,6 @@ importers:
         specifier: ^1.0.4
         version: 1.6.1(@types/node@25.1.0)(@vitest/ui@1.6.1)(jsdom@20.0.3)(lightningcss@1.30.2)
 
-  packages/protocols/rest:
-    dependencies:
-      '@objectql/types':
-        specifier: workspace:*
-        version: link:../../foundation/types
-      '@objectstack/spec':
-        specifier: ^1.1.0
-        version: 1.1.0
-      js-yaml:
-        specifier: ^4.1.1
-        version: 4.1.1
-      zod:
-        specifier: ^3.23.8
-        version: 3.25.76
-    devDependencies:
-      '@objectql/driver-memory':
-        specifier: workspace:^
-        version: link:../../drivers/memory
-      '@objectql/protocol-tck':
-        specifier: workspace:*
-        version: link:../../tools/protocol-tck
-      '@objectstack/core':
-        specifier: ^1.1.0
-        version: 1.1.0
-      '@objectstack/runtime':
-        specifier: ^1.1.0
-        version: 1.1.0
-      '@types/js-yaml':
-        specifier: ^4.0.9
-        version: 4.0.9
-      '@types/node':
-        specifier: ^20.10.0
-        version: 20.19.30
-      typescript:
-        specifier: ^5.3.0
-        version: 5.9.3
-
   packages/tools/cli:
     dependencies:
       '@objectql/core':
@@ -800,9 +757,6 @@ importers:
       '@objectql/plugin-validator':
         specifier: workspace:*
         version: link:../../foundation/plugin-validator
-      '@objectql/protocol-rest':
-        specifier: workspace:*
-        version: link:../../protocols/rest
       '@objectql/types':
         specifier: workspace:*
         version: link:../../foundation/types

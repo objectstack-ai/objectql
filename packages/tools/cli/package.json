@@ -32,7 +32,6 @@
     "@objectql/types": "workspace:*",
     "@objectql/core": "workspace:*",
     "@objectql/plugin-validator": "workspace:*",
-    "@objectql/protocol-rest": "workspace:*",
     "@objectql/driver-sql": "workspace:*",
     "@objectql/platform-node": "workspace:*",
     "sqlite3": "^5.1.7",

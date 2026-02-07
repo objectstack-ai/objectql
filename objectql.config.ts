@@ -92,9 +92,6 @@ export default {
             basePath: '/rpc',
             enableIntrospection: true,
             enableSessions: true
-        }),
-        // new RestPlugin({
-        //     basePath: '/api'
-        // })
+        })
     ]
 };
