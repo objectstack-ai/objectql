@@ -1,0 +1,620 @@
+---
+title: "Workflow and State Machine Engine"
+description: "State machine-based workflow automation with guards, actions, and compound states"
+---
+
+The **Workflow Plugin** (`@objectql/plugin-workflow`) provides a powerful state machine engine for managing complex business workflows. It implements full XState-level state machine execution with guards, entry/exit actions, and compound states.
+
+## Table of Contents
+
+1. [Overview](#overview)
+2. [Basic State Machine](#basic-state-machine)
+3. [Guards (Conditions)](#guards-conditions)
+4. [Actions](#actions)
+5. [Compound States](#compound-states)
+6. [Audit Trail](#audit-trail)
+7. [API Reference](#api-reference)
+8. [Examples](#examples)
+
+## Overview
+
+The Workflow Plugin operates at the **Hook/Validation layer**, intercepting state field changes via `beforeUpdate` hooks. It evaluates guards, executes actions, and either allows or denies state transitions—without modifying SQL generation.
+
+### Key Features
+
+- **XState-Compatible**: Follows XState state machine patterns
+- **Guard Conditions**: Control which transitions are allowed
+- **Entry/Exit Actions**: Execute side effects during transitions
+- **Compound States**: Hierarchical state nesting with automatic resolution
+- **Audit Trail**: Optional persistence of all state transitions
+- **Type-Safe**: Full TypeScript support with protocol-derived types
+
+### Architecture
+
+```
+┌──────────────────────────────┐
+│  plugin-workflow             │  ← beforeUpdate hook: evaluate guards, execute actions
+│  (State Machine Executor)    │
+├──────────────────────────────┤
+│  plugin-validator            │  ← field/cross-field/uniqueness validation
+├──────────────────────────────┤
+│  QueryService → QueryAST     │  ← Core: abstract query building
+├──────────────────────────────┤
+│  Driver → Knex → SQL         │  ← Driver: SQL generation (UNTOUCHED)
+└──────────────────────────────┘
+```
+
+## Basic State Machine
+
+Define a simple state machine in your object metadata:
+
+```yaml
+# project.object.yml
+name: project
+fields:
+  status:
+    type: select
+    options: [draft, active, done]
+    default: draft
+
+stateMachine:
+  initial: draft
+  states:
+    draft:
+      on:
+        submit:
+          target: active
+    active:
+      on:
+        complete:
+          target: done
+    done:
+      type: final
+```
+
+### TypeScript Configuration
+
+```typescript
+import { ObjectConfig } from '@objectql/types';
+
+const projectConfig: ObjectConfig = {
+  name: 'project',
+  fields: {
+    status: {
+      type: 'select',
+      options: ['draft', 'active', 'done'],
+      default: 'draft',
+    },
+  },
+  stateMachine: {
+    initial: 'draft',
+    states: {
+      draft: {
+        on: {
+          submit: { target: 'active' },
+        },
+      },
+      active: {
+        on: {
+          complete: { target: 'done' },
+        },
+      },
+      done: {
+        type: 'final',
+      },
+    },
+  },
+};
+```
+
+### What Happens
+
+1. User updates `status` from `draft` to `active`
+2. Plugin intercepts the update via `beforeUpdate` hook
+3. Engine checks if transition `draft → active` exists
+4. If allowed, update proceeds; if denied, throws `ObjectQLError({ code: 'TRANSITION_DENIED' })`
+
+## Guards (Conditions)
+
+Guards control whether a transition is allowed. They are evaluated **before** the transition occurs.
+
+### Inline Condition Guards
+
+```yaml
+stateMachine:
+  initial: draft
+  states:
+    draft:
+      on:
+        submit:
+          target: pending_approval
+          cond:
+            field: complete
+            operator: equals
+            value: true
+```
+
+### Built-In Guard References
+
+```yaml
+stateMachine:
+  states:
+    pending_approval:
+      on:
+        approve:
+          target: approved
+          cond: hasRole:approver  # User must have 'approver' role
+        reject:
+          target: rejected
+```
+
+### Available Built-In Guards
+
+| Guard Pattern | Description | Example |
+|---------------|-------------|---------|
+| `hasRole:roleName` | User has specific role | `hasRole:admin` |
+| `hasPermission:perm` | User has permission | `hasPermission:approve:project` |
+| `isOwner` | User owns the record | `isOwner` |
+| `isCreator` | User created the record | `isCreator` |
+| `field:expr` | Field expression | `field:amount>1000` |
+
+### Multiple Guards (AND Logic)
+
+```yaml
+submit:
+  target: active
+  cond:
+    - field: approved
+      operator: equals
+      value: true
+    - field: amount
+      operator: greater_than
+      value: 0
+```
+
+All guards must pass for the transition to be allowed.
+
+### Condition Operators
+
+```yaml
+# Equality
+operator: equals          # field = value
+operator: not_equals      # field != value
+
+# Comparison
+operator: greater_than    # field > value
+operator: less_than       # field < value
+operator: greater_than_or_equal
+operator: less_than_or_equal
+
+# String
+operator: contains
+operator: starts_with
+operator: ends_with
+
+# Null checks
+operator: is_null
+operator: is_not_null
+
+# Arrays
+operator: in              # value in [list]
+operator: not_in
+```
+
+### Nested Conditions (AND/OR)
+
+```yaml
+cond:
+  all_of:
+    - field: type
+      operator: equals
+      value: premium
+    - any_of:
+        - field: amount
+          operator: greater_than
+          value: 1000
+        - hasRole:vip
+```
+
+## Actions
+
+Actions are side effects executed during state transitions.
+
+### Entry and Exit Actions
+
+```yaml
+stateMachine:
+  states:
+    draft:
+      exit:
+        - onExitDraft              # Executed when leaving draft
+    active:
+      entry:
+        - onEnterActive            # Executed when entering active
+        - notifyStakeholders
+```
+
+### Transition Actions
+
+```yaml
+states:
+  draft:
+    on:
+      submit:
+        target: active
+        actions:
+          - validateData
+          - notifyApprover
+```
+
+### Built-In Action Patterns
+
+```yaml
+actions:
+  - setField:approved_at=$now           # Set field to current timestamp
+  - setField:status=approved            # Set field to static value
+  - increment:retry_count               # Increment numeric field
+  - decrement:remaining_attempts
+  - clearField:error_message            # Set field to null
+  - timestamp:submitted_at              # Set timestamp field
+  - log:Project submitted for approval  # Console log
+```
+
+### Custom Action Executor
+
+```typescript
+import { WorkflowPlugin } from '@objectql/plugin-workflow';
+
+const workflowPlugin = new WorkflowPlugin({
+  actionExecutor: async (actionRef: string, context) => {
+    if (actionRef === 'notifyApprover') {
+      // Send email, trigger webhook, etc.
+      await sendEmail({
+        to: context.record.approver_email,
+        subject: 'New approval request',
+        body: `Project ${context.record.name} needs approval`,
+      });
+    }
+  },
+});
+```
+
+## Compound States
+
+Compound states are hierarchical states with nested children.
+
+```yaml
+stateMachine:
+  initial: editing
+  states:
+    editing:
+      initial: draft        # Default child state
+      states:
+        draft:
+          on:
+            review:
+              target: editing.review
+        review:
+          on:
+            approve:
+              target: editing.approved
+        approved: {}
+      on:
+        publish:
+          target: published  # Exit compound state
+    published:
+      type: final
+```
+
+### Automatic State Resolution
+
+When transitioning to a compound state, the engine automatically resolves to the `initial` child:
+
+```typescript
+// Transition to "editing"
+{ status: 'editing' }
+
+// Engine resolves to:
+{ status: 'editing.draft' }
+```
+
+### Entry/Exit Actions in Hierarchy
+
+Entry and exit actions execute in correct order:
+
+- **Entry**: Parent → Child (outermost to innermost)
+- **Exit**: Child → Parent (innermost to outermost)
+
+## Audit Trail
+
+Enable audit trail to track all state transitions:
+
+```typescript
+import { WorkflowPlugin } from '@objectql/plugin-workflow';
+
+const workflowPlugin = new WorkflowPlugin({
+  enableAuditTrail: true,
+});
+
+// Query audit trail
+const trail = workflowPlugin.getAuditTrail({
+  objectName: 'project',
+  recordId: 'p123',
+});
+
+console.log(trail);
+// [
+//   {
+//     id: '...',
+//     objectName: 'project',
+//     recordId: 'p123',
+//     stateMachineName: 'default',
+//     currentState: 'active',
+//     previousState: 'draft',
+//     timestamp: '2026-02-07T...',
+//     userId: 'user1',
+//     actionsExecuted: ['onExitDraft', 'onEnterActive'],
+//   },
+//   ...
+// ]
+```
+
+## API Reference
+
+### WorkflowPlugin
+
+```typescript
+import { WorkflowPlugin, WorkflowPluginConfig } from '@objectql/plugin-workflow';
+
+interface WorkflowPluginConfig {
+  /** Enable audit trail persistence. Default: false */
+  enableAuditTrail?: boolean;
+
+  /** Custom guard resolver */
+  guardResolver?: (guardRef: string, context: ExecutionContext) => Promise<boolean>;
+
+  /** Custom action executor */
+  actionExecutor?: (actionRef: string, context: ExecutionContext) => Promise<void>;
+}
+
+const plugin = new WorkflowPlugin(config);
+```
+
+### StateMachineEngine
+
+```typescript
+import { StateMachineEngine } from '@objectql/plugin-workflow';
+
+const engine = new StateMachineEngine(
+  config,
+  guardEvaluator,
+  actionExecutor
+);
+
+// Attempt a transition
+const result = await engine.transition(
+  'draft',     // currentState
+  'active',    // targetState
+  context      // ExecutionContext
+);
+
+if (result.allowed) {
+  console.log('Transition allowed:', result.targetState);
+} else {
+  console.error('Transition denied:', result.error);
+}
+```
+
+### GuardEvaluator
+
+```typescript
+import { GuardEvaluator } from '@objectql/plugin-workflow';
+
+const evaluator = new GuardEvaluator(customResolver);
+
+// Evaluate a single guard
+const result = await evaluator.evaluate(
+  { field: 'approved', operator: 'equals', value: true },
+  context
+);
+
+console.log(result.passed); // true or false
+```
+
+### ActionExecutor
+
+```typescript
+import { ActionExecutor } from '@objectql/plugin-workflow';
+
+const executor = new ActionExecutor(customExecutor);
+
+// Execute an action
+await executor.execute('notifyApprover', context);
+
+// Execute multiple actions
+await executor.executeMultiple(['action1', 'action2'], context);
+```
+
+## Examples
+
+### Approval Workflow
+
+```yaml
+name: expense_report
+fields:
+  status:
+    type: select
+    options: [draft, pending, approved, rejected, paid]
+  amount:
+    type: number
+  approved_by:
+    type: lookup
+    reference_to: users
+
+stateMachine:
+  initial: draft
+  states:
+    draft:
+      exit:
+        - timestamp:submitted_at
+      on:
+        submit:
+          target: pending
+          cond:
+            field: amount
+            operator: greater_than
+            value: 0
+    
+    pending:
+      entry:
+        - notifyApprover
+      on:
+        approve:
+          target: approved
+          cond: hasRole:approver
+          actions:
+            - setField:approved_by=$user.id
+            - timestamp:approved_at
+        reject:
+          target: rejected
+          actions:
+            - notifySubmitter
+    
+    approved:
+      on:
+        pay:
+          target: paid
+          cond: hasPermission:process_payment
+    
+    rejected:
+      on:
+        resubmit:
+          target: draft
+          actions:
+            - clearField:submitted_at
+    
+    paid:
+      type: final
+      entry:
+        - notifySubmitter
+        - archiveReport
+```
+
+### Project Lifecycle
+
+```yaml
+name: project
+fields:
+  state:
+    type: select
+    options: [planning, active, on_hold, completed, cancelled]
+
+stateMachine:
+  initial: planning
+  states:
+    planning:
+      on:
+        start:
+          target: active
+          cond:
+            all_of:
+              - field: team_assigned
+                operator: equals
+                value: true
+              - field: budget_approved
+                operator: equals
+                value: true
+    
+    active:
+      entry:
+        - setField:started_at=$now
+        - notifyTeam
+      on:
+        pause:
+          target: on_hold
+        complete:
+          target: completed
+          cond:
+            field: progress
+            operator: equals
+            value: 100
+        cancel:
+          target: cancelled
+    
+    on_hold:
+      on:
+        resume:
+          target: active
+        cancel:
+          target: cancelled
+    
+    completed:
+      type: final
+      entry:
+        - setField:completed_at=$now
+        - generateReport
+    
+    cancelled:
+      type: final
+      entry:
+        - setField:cancelled_at=$now
+```
+
+## Best Practices
+
+1. **Keep State Machines Simple**: Start with simple linear flows, add complexity only when needed
+2. **Use Meaningful State Names**: `pending_approval` is better than `state2`
+3. **Validate Guards Early**: Test guard conditions thoroughly before deploying
+4. **Log Important Transitions**: Use `log:` actions for debugging
+5. **Enable Audit Trail in Production**: Essential for compliance and debugging
+6. **Handle Final States**: Mark terminal states with `type: 'final'`
+7. **Test Compound States**: Ensure proper resolution of nested states
+8. **Document Complex Workflows**: Add comments in YAML configuration
+
+## Error Handling
+
+When a transition is denied, the plugin throws `ObjectQLError`:
+
+```typescript
+try {
+  await api.update('project', projectId, { status: 'done' });
+} catch (error) {
+  if (error instanceof ObjectQLError && error.code === 'TRANSITION_DENIED') {
+    console.error('Invalid state transition:', error.message);
+    console.error('Metadata:', error.details);
+  }
+}
+```
+
+## Testing
+
+```typescript
+import { describe, it, expect } from 'vitest';
+import { WorkflowPlugin } from '@objectql/plugin-workflow';
+
+describe('Project Workflow', () => {
+  it('should allow valid state transitions', async () => {
+    const plugin = new WorkflowPlugin({ enableAuditTrail: true });
+    
+    // Test setup...
+    
+    const result = await engine.transition('draft', 'active', context);
+    expect(result.allowed).toBe(true);
+  });
+});
+```
+
+## Integration with Plugin-Validator
+
+The Workflow Plugin works alongside `@objectql/plugin-validator`. Both plugins register `beforeUpdate` hooks:
+
+1. **Plugin-Validator**: Checks field-level, cross-field, and uniqueness rules
+2. **Plugin-Workflow**: Checks state machine transitions
+
+Both must pass for an update to succeed.
+
+## Next Steps
+
+- [Validation Rules](./validation.mdx) - Learn about validation patterns
+- [Hooks](./hooks.mdx) - Understand the hook lifecycle
+- [Actions](./actions.mdx) - Create custom actions
