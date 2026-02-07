@@ -80,16 +80,16 @@ describe('PermissionLoader', () => {
       ).toThrow('Custom storage implementation required');
     });
 
-    it('should throw for redis storage (not yet implemented)', () => {
+    it('should throw for redis storage when redisClientFactory missing', () => {
       expect(
         () => new PermissionLoader(loaderConfig({ storageType: 'redis' }))
-      ).toThrow('not yet implemented');
+      ).toThrow('redisClientFactory is required');
     });
 
-    it('should throw for database storage (not yet implemented)', () => {
+    it('should throw for database storage when datasourceResolver missing', () => {
       expect(
         () => new PermissionLoader(loaderConfig({ storageType: 'database' }))
-      ).toThrow('not yet implemented');
+      ).toThrow('datasourceResolver is required');
     });
 
     it('should throw for unknown storage type', () => {

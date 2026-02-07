@@ -23,7 +23,6 @@
     { "path": "./packages/protocols/graphql" },
     { "path": "./packages/protocols/json-rpc" },
     { "path": "./packages/protocols/odata-v4" },
-    { "path": "./packages/protocols/rest" },
     
     // Tools Layer
     { "path": "./packages/tools/cli" },

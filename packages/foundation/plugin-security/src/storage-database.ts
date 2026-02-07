@@ -151,7 +151,8 @@ export class DatabasePermissionStorage implements IPermissionStorage {
     // Delete all existing rows
     try {
       const rows = await driver.find(this.tableName, {});
-      const items = Array.isArray(rows) ? rows : [];
+      // Create a shallow copy to avoid issues when deleting during iteration
+      const items = Array.isArray(rows) ? [...rows] : [];
       for (const row of items) {
         if (row._id || row.id || row.object_name) {
           await driver.delete(this.tableName, row._id ?? row.id ?? row.object_name, {});
