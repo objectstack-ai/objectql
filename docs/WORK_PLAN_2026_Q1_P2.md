@@ -344,6 +344,8 @@ export class MultiTenancyPlugin implements RuntimePlugin {
 ## Q3 — Edge Runtime & Offline Sync
 
 > Status: **Planned** | Target: 2026-07 — 2026-09
+> 📄 **Detailed Work Plan: [WORK_PLAN_2026_Q3.md](./WORK_PLAN_2026_Q3.md)**
+> 🧩 **Type Contracts Defined:** `@objectql/types` — `sync.ts`, `edge.ts`
 
 ### Part A: Edge Runtime Support (4 weeks)
 

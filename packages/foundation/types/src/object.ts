@@ -11,6 +11,7 @@ import { z } from 'zod';
 import { FieldConfig } from './field';
 import { ActionConfig } from './action';
 import { AnyValidationRule } from './validation';
+import { SyncConfig } from './sync';
 
 /**
  * Re-export Protocol Types from @objectstack/spec 1.1.0
@@ -170,6 +171,20 @@ export interface ObjectConfig {
             validation_strategy?: string;
         };
     };
+
+    /**
+     * Offline-First Sync configuration (RUNTIME ONLY).
+     * Opt-in per object. See {@link SyncConfig} for details.
+     *
+     * @example
+     * ```yaml
+     * sync:
+     *   enabled: true
+     *   strategy: last-write-wins
+     *   conflict_fields: [status]
+     * ```
+     */
+    sync?: SyncConfig;
 }
 
 /**
