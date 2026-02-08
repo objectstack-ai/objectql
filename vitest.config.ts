@@ -25,9 +25,12 @@ export default defineConfig({
       '@objectql/plugin-validator': path.resolve(__dirname, './packages/foundation/plugin-validator/src'),
       '@objectql/plugin-formula': path.resolve(__dirname, './packages/foundation/plugin-formula/src'),
       '@objectql/plugin-security': path.resolve(__dirname, './packages/foundation/plugin-security/src'),
+      '@objectql/plugin-sync': path.resolve(__dirname, './packages/foundation/plugin-sync/src'),
+      '@objectql/edge-adapter': path.resolve(__dirname, './packages/foundation/edge-adapter/src'),
       '@objectql/protocol-graphql': path.resolve(__dirname, './packages/protocols/graphql/src'),
       '@objectql/protocol-odata-v4': path.resolve(__dirname, './packages/protocols/odata-v4/src'),
       '@objectql/protocol-json-rpc': path.resolve(__dirname, './packages/protocols/json-rpc/src'),
+      '@objectql/protocol-sync': path.resolve(__dirname, './packages/protocols/sync/src'),
       // Drivers
       '@objectql/driver-memory': path.resolve(__dirname, './packages/drivers/memory/src'),
       '@objectql/driver-mongo': path.resolve(__dirname, './packages/drivers/mongo/src'),
