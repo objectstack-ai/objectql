@@ -1,0 +1,324 @@
+---
+title: "Offline Sync"
+description: Offline-First Sync
+---
+
+ObjectQL provides a complete offline-first sync solution. The client-side `@objectql/plugin-sync` package records mutations locally, while the server-side `@objectql/protocol-sync` package handles conflict detection, version tracking, and delta computation.
+
+## 1. Architecture Overview
+
+```
+┌─────────────────────────────────┐      ┌──────────────────────────────────┐
+│         Client (Edge/Browser)   │      │           Server                 │
+│                                 │      │                                  │
+│  ┌────────────┐  ┌───────────┐ │      │  ┌─────────────┐  ┌───────────┐ │
+│  │ Mutation    │  │  Sync     │ │ HTTP │  │  Sync       │  │  Change   │ │
+│  │ Logger     │──│  Engine   │─┼──────┼──│  Handler    │──│  Log      │ │
+│  └────────────┘  └───────────┘ │      │  └─────────────┘  └───────────┘ │
+│                  ┌───────────┐ │      │  ┌─────────────┐                │
+│                  │ Conflict  │ │      │  │  Version    │                │
+│                  │ Resolver  │ │      │  │  Store      │                │
+│                  └───────────┘ │      │  └─────────────┘                │
+└─────────────────────────────────┘      └──────────────────────────────────┘
+```
+
+## 2. Client-Side Setup
+
+Install the sync plugin and register it with your kernel.
+
+```bash
+pnpm add @objectql/plugin-sync
+```
+
+```typescript
+import { SyncPlugin } from '@objectql/plugin-sync';
+import { createKernel } from '@objectstack/runtime';
+
+const transport = {
+  async push(request) {
+    const res = await fetch('/api/sync/push', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(request),
+    });
+    return res.json();
+  },
+};
+
+const kernel = createKernel({
+  plugins: [
+    new SyncPlugin({
+      clientId: 'device-abc-123',
+      transport,
+      defaultConfig: {
+        enabled: true,
+        strategy: 'last-write-wins',
+        direction: 'bidirectional',
+        debounce_ms: 2000,
+        batch_size: 50,
+      },
+    })
+  ]
+});
+
+await kernel.start();
+```
+
+## 3. Server-Side Setup
+
+Install the sync protocol and register the server-side handler.
+
+```bash
+pnpm add @objectql/protocol-sync
+```
+
+```typescript
+import { SyncProtocolPlugin, type RecordResolver } from '@objectql/protocol-sync';
+import { createKernel } from '@objectstack/runtime';
+
+const kernel = createKernel({
+  plugins: [
+    new SyncProtocolPlugin({
+      endpoint: {
+        enabled: true,
+        path: '/api/sync',
+        maxMutationsPerRequest: 100,
+        changeLogRetentionDays: 30,
+      },
+      conflictFields: new Map([
+        ['task', ['title', 'status', 'assignee']],
+        ['project', ['name', 'budget']],
+      ]),
+    })
+  ]
+});
+
+await kernel.start();
+```
+
+Expose the sync endpoint in your HTTP handler:
+
+```typescript
+import { SyncHandler, type RecordResolver } from '@objectql/protocol-sync';
+
+const resolver: RecordResolver = {
+  async getRecord(objectName, recordId) {
+    return db.find(objectName, recordId);
+  },
+  async applyMutation(mutation, serverVersion) {
+    if (mutation.operation === 'create') {
+      await db.create(mutation.objectName, {
+        ...mutation.data,
+        _id: mutation.recordId,
+        _version: serverVersion,
+      });
+    } else if (mutation.operation === 'update') {
+      await db.update(mutation.objectName, mutation.recordId, {
+        ...mutation.data,
+        _version: serverVersion,
+      });
+    } else if (mutation.operation === 'delete') {
+      await db.delete(mutation.objectName, mutation.recordId);
+    }
+  },
+};
+
+// In your route handler:
+app.post('/api/sync/push', async (req, res) => {
+  const handler = kernel.syncProtocol.handler;
+  const response = await handler.handlePush(req.body, resolver);
+  res.json(response);
+});
+```
+
+## 4. Conflict Resolution Strategies
+
+Configure conflict resolution per object or globally via `SyncConfig.strategy`.
+
+### Last-Write-Wins (LWW)
+
+The default strategy. Compares client and server timestamps — the most recent mutation wins.
+
+```typescript
+{
+  strategy: 'last-write-wins'
+}
+```
+
+### CRDT (Field-Level Merge)
+
+Performs field-level LWW-Register merge. Non-conflicting fields from the client are merged with the server record. Conflicting fields retain the server value.
+
+```typescript
+{
+  strategy: 'crdt'
+}
+```
+
+### Manual Resolution
+
+Flags conflicts for manual resolution. Provide a callback to resolve or defer.
+
+```typescript
+import { SyncEngine } from '@objectql/plugin-sync';
+
+const engine = new SyncEngine({
+  clientId: 'device-abc-123',
+  transport,
+  config: { enabled: true, strategy: 'manual' },
+  onConflict(conflict) {
+    // Return merged data to resolve
+    return {
+      ...conflict.serverRecord,
+      ...conflict.clientMutation.data,
+    };
+    // Or return undefined to keep as unresolved conflict
+  },
+});
+```
+
+## 5. MutationLogger
+
+The `MutationLogger` is the client-side append-only log that records all mutations while offline.
+
+```typescript
+import { MutationLogger } from '@objectql/plugin-sync';
+
+const logger = new MutationLogger('device-abc-123');
+
+// Record mutations
+logger.append({
+  objectName: 'task',
+  recordId: 'task-1',
+  operation: 'create',
+  data: { title: 'New task', status: 'pending' },
+  baseVersion: null,
+});
+
+logger.append({
+  objectName: 'task',
+  recordId: 'task-1',
+  operation: 'update',
+  data: { status: 'in_progress' },
+  baseVersion: 1,
+});
+
+// Query pending mutations
+const pending = logger.getPending();           // All pending
+const taskPending = logger.getPendingForObject('task'); // Per-object
+
+// Acknowledge after sync
+logger.acknowledge(['mutation-id-1', 'mutation-id-2']);
+```
+
+## 6. Sync Configuration in object.yml
+
+Enable per-object sync in your YAML metadata:
+
+```yaml
+name: task
+fields:
+  title:
+    type: string
+  status:
+    type: select
+    options: [pending, in_progress, completed]
+  assignee:
+    type: lookup
+    reference_to: users
+
+sync:
+  enabled: true
+  strategy: crdt
+  direction: bidirectional
+  debounce_ms: 2000
+  batch_size: 25
+```
+
+Server-side conflict fields can also be declared:
+
+```yaml
+name: task
+sync:
+  enabled: true
+  conflict_fields:
+    - title
+    - status
+    - assignee
+```
+
+## 7. End-to-End Sync Flow
+
+A complete example demonstrating client mutation, sync, and server-side processing.
+
+```typescript
+// --- Client Side ---
+import { SyncPlugin } from '@objectql/plugin-sync';
+
+const syncPlugin = new SyncPlugin({
+  clientId: 'mobile-device-42',
+  transport: {
+    async push(request) {
+      const res = await fetch('https://api.example.com/sync/push', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(request),
+      });
+      return res.json();
+    },
+  },
+  defaultConfig: {
+    enabled: true,
+    strategy: 'last-write-wins',
+    direction: 'bidirectional',
+    debounce_ms: 3000,
+    batch_size: 50,
+  },
+  listeners: [{
+    onSyncStart() {
+      console.log('⏳ Sync started...');
+    },
+    onSyncComplete(response) {
+      console.log('✅ Sync complete. Checkpoint:', response.checkpoint);
+    },
+    onSyncError(error) {
+      console.error('❌ Sync failed:', error.message);
+    },
+    onConflict(conflicts) {
+      console.warn(`⚠️ ${conflicts.length} conflict(s) detected`);
+    },
+    onServerChanges(changes) {
+      console.log(`📥 ${changes.length} server change(s) received`);
+      // Apply server changes to local store
+    },
+  }],
+});
+
+// Get the sync engine for 'task' object
+const taskEngine = syncPlugin.getEngine('task');
+
+// Record offline mutations
+taskEngine.recordMutation({
+  objectName: 'task',
+  recordId: 'task-100',
+  operation: 'update',
+  data: { status: 'completed', completed_at: new Date().toISOString() },
+  baseVersion: 3,
+});
+
+// When back online, trigger sync
+await taskEngine.sync();
+```
+
+## 8. Sync Event Listeners
+
+| Event              | Payload                      | Description                        |
+|--------------------|------------------------------|------------------------------------|
+| `onSyncStart`      | —                            | Sync cycle has begun               |
+| `onSyncComplete`   | `SyncPushResponse`           | Sync cycle completed successfully  |
+| `onSyncError`      | `Error`                      | Sync cycle failed                  |
+| `onConflict`       | `readonly SyncConflict[]`    | Conflicts detected during sync     |
+| `onServerChanges`  | `readonly SyncServerChange[]`| Server-side changes since last sync|

@@ -1,0 +1,214 @@
+---
+title: "Edge Runtime"
+description: Edge Runtime Support
+---
+
+ObjectQL runs natively on edge runtimes. The `@objectql/edge-adapter` package provides runtime detection, capability validation, and automatic driver binding resolution for serverless edge environments.
+
+## 1. Supported Runtimes
+
+| Runtime              | Detection Signal                          | Default Driver                  |
+|----------------------|-------------------------------------------|---------------------------------|
+| Cloudflare Workers   | `globalThis.caches` + `WebSocketPair`     | `@objectql/driver-sqlite-wasm`  |
+| Deno Deploy          | `globalThis.Deno`                         | `@objectql/driver-pg-wasm`      |
+| Vercel Edge          | `globalThis.EdgeRuntime`                  | `@objectql/driver-memory`       |
+| Bun                  | `globalThis.Bun`                          | `@objectql/driver-sqlite-wasm`  |
+| Node.js              | Default fallback                          | `@objectql/driver-sql`          |
+
+## 2. Installation
+
+```bash
+pnpm add @objectql/edge-adapter
+```
+
+## 3. Basic Configuration
+
+Register the `EdgeAdapterPlugin` in your kernel. It auto-detects the runtime and resolves driver bindings.
+
+```typescript
+import { EdgeAdapterPlugin } from '@objectql/edge-adapter';
+import { createKernel } from '@objectstack/runtime';
+
+const kernel = createKernel({
+  plugins: [
+    new EdgeAdapterPlugin()
+  ]
+});
+
+await kernel.start();
+```
+
+## 4. Runtime Detection
+
+The adapter inspects `globalThis` to detect the active runtime. Detection checks run in order from most specific to least specific, preventing false positives.
+
+```typescript
+import { detectRuntime } from '@objectql/edge-adapter';
+
+const runtime = detectRuntime();
+// => 'cloudflare-workers' | 'deno-deploy' | 'vercel-edge' | 'bun' | 'node'
+```
+
+You can override auto-detection by passing an explicit runtime:
+
+```typescript
+new EdgeAdapterPlugin({
+  runtime: 'cloudflare-workers',
+});
+```
+
+## 5. Capability Validation
+
+Before initializing drivers, validate that the runtime meets your requirements. The plugin throws on startup if validation fails.
+
+```typescript
+import { EdgeAdapterPlugin } from '@objectql/edge-adapter';
+
+new EdgeAdapterPlugin({
+  requirements: {
+    wasm: true,
+    persistentStorage: true,
+    webSocket: true,
+    minExecutionTime: 30000,
+  },
+});
+```
+
+You can also validate programmatically:
+
+```typescript
+import { detectRuntime, validateCapabilities } from '@objectql/edge-adapter';
+
+const runtime = detectRuntime();
+const result = validateCapabilities(runtime, {
+  wasm: true,
+  persistentStorage: true,
+});
+
+if (!result.valid) {
+  console.error('Missing:', result.missing);
+}
+```
+
+## 6. Driver Bindings
+
+Each runtime has a recommended default driver. Override bindings for custom datasource configurations.
+
+```typescript
+new EdgeAdapterPlugin({
+  bindings: {
+    default: {
+      driver: '@objectql/driver-sqlite-wasm',
+      binding: 'DB',
+      config: { pragma: { journal_mode: 'WAL' } },
+    },
+    analytics: {
+      driver: '@objectql/driver-memory',
+      config: { maxSize: 5000 },
+    },
+  },
+});
+```
+
+When no explicit bindings are provided, the adapter generates a `default` binding using the recommended driver for the detected runtime.
+
+## 7. Platform Examples
+
+### Cloudflare Workers
+
+```typescript
+import { EdgeAdapterPlugin } from '@objectql/edge-adapter';
+import { createKernel } from '@objectstack/runtime';
+
+const kernel = createKernel({
+  plugins: [
+    new EdgeAdapterPlugin({
+      runtime: 'cloudflare-workers',
+      bindings: {
+        default: {
+          driver: '@objectql/driver-sqlite-wasm',
+          binding: 'DB', // Cloudflare D1 binding name
+          config: {},
+        },
+      },
+      requirements: {
+        wasm: true,
+        persistentStorage: true,
+      },
+    })
+  ]
+});
+
+export default {
+  async fetch(request: Request, env: Record<string, unknown>) {
+    await kernel.start();
+    // Handle request...
+    return new Response('OK');
+  },
+};
+```
+
+### Deno Deploy
+
+```typescript
+import { EdgeAdapterPlugin } from '@objectql/edge-adapter';
+import { createKernel } from '@objectstack/runtime';
+
+const kernel = createKernel({
+  plugins: [
+    new EdgeAdapterPlugin({
+      runtime: 'deno-deploy',
+      bindings: {
+        default: {
+          driver: '@objectql/driver-pg-wasm',
+          config: {
+            connectionString: Deno.env.get('DATABASE_URL'),
+          },
+        },
+      },
+    })
+  ]
+});
+
+await kernel.start();
+
+Deno.serve(async (request: Request) => {
+  // Handle request...
+  return new Response('OK');
+});
+```
+
+### Vercel Edge
+
+```typescript
+import { EdgeAdapterPlugin } from '@objectql/edge-adapter';
+import { createKernel } from '@objectstack/runtime';
+
+export const config = { runtime: 'edge' };
+
+const kernel = createKernel({
+  plugins: [
+    new EdgeAdapterPlugin({
+      runtime: 'vercel-edge',
+      maxExecutionTime: 25000,
+      requestScoped: true,
+    })
+  ]
+});
+
+export default async function handler(request: Request) {
+  await kernel.start();
+  // Handle request...
+  return new Response('OK');
+}
+```
+
+## 8. Plugin Options
+
+| Option            | Type                    | Default        | Description                               |
+|-------------------|-------------------------|----------------|-------------------------------------------|
+| `runtime`         | `EdgeRuntime`           | Auto-detected  | Override the detected runtime              |
+| `bindings`        | `Record<string, ...>`   | Default driver | Explicit driver bindings per datasource    |
+| `maxExecutionTime`| `number`                | From runtime   | Override max execution time (ms)           |
+| `requestScoped`   | `boolean`               | `true`         | Enable request-scoped connections          |
+| `requirements`    | `CapabilityRequirement` | `undefined`    | Capability requirements to validate        |
