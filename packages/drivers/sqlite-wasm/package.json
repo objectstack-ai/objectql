@@ -1,0 +1,49 @@
+{
+  "name": "@objectql/driver-sqlite-wasm",
+  "version": "4.2.0",
+  "description": "SQLite WASM driver for ObjectQL - Browser-native SQL database with OPFS persistence",
+  "keywords": [
+    "objectql",
+    "driver",
+    "sqlite",
+    "wasm",
+    "webassembly",
+    "browser",
+    "opfs",
+    "database",
+    "adapter"
+  ],
+  "license": "MIT",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@objectql/driver-sql": "workspace:*",
+    "@objectql/types": "workspace:*",
+    "@objectstack/spec": "^1.1.0",
+    "knex": "^3.1.0",
+    "nanoid": "^3.3.11",
+    "wa-sqlite": "^1.0.0",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "sqlite3": "^5.1.7",
+    "typescript": "^5.0.0",
+    "vitest": "^1.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/objectstack-ai/objectql.git",
+    "directory": "packages/drivers/sqlite-wasm"
+  }
+}

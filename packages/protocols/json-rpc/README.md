@@ -167,13 +167,82 @@ Delete a record.
 
 Count records matching filters.
 
-**Request:**
+**Request (no filter - count all):**
 ```json
 {
   "jsonrpc": "2.0",
   "method": "object.count",
-  "params": ["users", {"active": true}],
+  "params": ["users"],
   "id": 6
+}
+```
+
+**Response:**
+```json
+{
+  "jsonrpc": "2.0",
+  "result": 42,
+  "id": 6
+}
+```
+
+**Request (with filter):**
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "object.count",
+  "params": ["users", {
+    "type": "comparison",
+    "field": "active",
+    "operator": "=",
+    "value": true
+  }],
+  "id": 7
+}
+```
+
+**Response:**
+```json
+{
+  "jsonrpc": "2.0",
+  "result": 28,
+  "id": 7
+}
+```
+
+**Request (with complex filter):**
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "object.count",
+  "params": ["users", {
+    "type": "logical",
+    "operator": "and",
+    "conditions": [
+      {
+        "type": "comparison",
+        "field": "active",
+        "operator": "=",
+        "value": true
+      },
+      {
+        "type": "comparison",
+        "field": "role",
+        "operator": "=",
+        "value": "admin"
+      }
+    ]
+  }],
+  "id": 8
+}
+```
+
+**Response:**
+```json
+{
+  "jsonrpc": "2.0",
+  "result": 5,
+  "id": 8
 }
 ```
 
@@ -245,6 +314,59 @@ Execute a custom action.
 }
 ```
 
+**Response:**
+```json
+{
+  "jsonrpc": "2.0",
+  "result": {
+    "success": true,
+    "messageId": "msg_1234567890",
+    "to": "user@example.com",
+    "subject": "Hello"
+  },
+  "id": 10
+}
+```
+
+**Example: Calculate Discount**
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "action.execute",
+  "params": ["calculateDiscount", {
+    "amount": 100,
+    "percentage": 20
+  }],
+  "id": 11
+}
+```
+
+**Response:**
+```json
+{
+  "jsonrpc": "2.0",
+  "result": {
+    "originalAmount": 100,
+    "discountPercentage": 20,
+    "discountAmount": 20,
+    "finalAmount": 80
+  },
+  "id": 11
+}
+```
+
+**Error Response (action not found):**
+```json
+{
+  "jsonrpc": "2.0",
+  "error": {
+    "code": -32603,
+    "message": "Action not found: unknownAction"
+  },
+  "id": 12
+}
+```
+
 #### action.list
 
 List all available actions.
@@ -254,7 +376,21 @@ List all available actions.
 {
   "jsonrpc": "2.0",
   "method": "action.list",
-  "id": 11
+  "id": 13
+}
+```
+
+**Response:**
+```json
+{
+  "jsonrpc": "2.0",
+  "result": [
+    "sendEmail",
+    "calculateDiscount",
+    "processPayment",
+    "generateReport"
+  ],
+  "id": 13
 }
 ```
 
@@ -320,9 +456,11 @@ Get method signature and description.
 
 ## Advanced Features
 
-### Batch Requests
+### Batch Requests (JSON-RPC 2.0 §6)
 
-Execute multiple RPC calls in a single HTTP request.
+Execute multiple RPC calls in a single HTTP request. Per JSON-RPC 2.0 specification section 6, batch requests allow you to send an array of request objects and receive an array of response objects.
+
+#### Basic Batch Request
 
 **Request:**
 ```json
@@ -337,6 +475,12 @@ Execute multiple RPC calls in a single HTTP request.
     "method": "object.find",
     "params": ["users", {}],
     "id": 2
+  },
+  {
+    "jsonrpc": "2.0",
+    "method": "object.count",
+    "params": ["users"],
+    "id": 3
   }
 ]
 ```
@@ -351,8 +495,158 @@ Execute multiple RPC calls in a single HTTP request.
   },
   {
     "jsonrpc": "2.0",
-    "result": {"value": [...], "count": 10},
+    "result": [
+      {"id": "1", "name": "Alice"},
+      {"id": "2", "name": "Bob"}
+    ],
     "id": 2
+  },
+  {
+    "jsonrpc": "2.0",
+    "result": 2,
+    "id": 3
+  }
+]
+```
+
+#### Batch with Mixed Operations
+
+Execute CRUD operations, counts, and actions in a single batch:
+
+**Request:**
+```json
+[
+  {
+    "jsonrpc": "2.0",
+    "method": "object.create",
+    "params": ["products", {"name": "Laptop", "price": 999}],
+    "id": 1
+  },
+  {
+    "jsonrpc": "2.0",
+    "method": "object.count",
+    "params": ["products"],
+    "id": 2
+  },
+  {
+    "jsonrpc": "2.0",
+    "method": "action.execute",
+    "params": ["sendEmail", {"to": "admin@example.com", "subject": "New Product"}],
+    "id": 3
+  }
+]
+```
+
+**Response:**
+```json
+[
+  {
+    "jsonrpc": "2.0",
+    "result": {"id": "prod-123", "name": "Laptop", "price": 999},
+    "id": 1
+  },
+  {
+    "jsonrpc": "2.0",
+    "result": 42,
+    "id": 2
+  },
+  {
+    "jsonrpc": "2.0",
+    "result": {"success": true, "messageId": "msg_123"},
+    "id": 3
+  }
+]
+```
+
+#### Batch with Notifications
+
+Requests without an `id` are notifications and don't return responses:
+
+**Request:**
+```json
+[
+  {
+    "jsonrpc": "2.0",
+    "method": "object.count",
+    "params": ["users"],
+    "id": 1
+  },
+  {
+    "jsonrpc": "2.0",
+    "method": "action.execute",
+    "params": ["logEvent", {"event": "user_login"}]
+    // No id - this is a notification
+  },
+  {
+    "jsonrpc": "2.0",
+    "method": "metadata.list",
+    "id": 2
+  }
+]
+```
+
+**Response:**
+```json
+[
+  {
+    "jsonrpc": "2.0",
+    "result": 100,
+    "id": 1
+  },
+  {
+    "jsonrpc": "2.0",
+    "result": ["users", "products"],
+    "id": 2
+  }
+]
+```
+
+Note: Only 2 responses because the notification (no `id`) doesn't return a response.
+
+#### Batch with Partial Errors
+
+Individual requests can fail without affecting other requests in the batch:
+
+**Request:**
+```json
+[
+  {
+    "jsonrpc": "2.0",
+    "method": "object.count",
+    "params": ["users"],
+    "id": 1
+  },
+  {
+    "jsonrpc": "2.0",
+    "method": "object.get",
+    "params": ["users", "non-existent-id"],
+    "id": 2
+  },
+  {
+    "jsonrpc": "2.0",
+    "method": "metadata.list",
+    "id": 3
+  }
+]
+```
+
+**Response:**
+```json
+[
+  {
+    "jsonrpc": "2.0",
+    "result": 100,
+    "id": 1
+  },
+  {
+    "jsonrpc": "2.0",
+    "result": null,
+    "id": 2
+  },
+  {
+    "jsonrpc": "2.0",
+    "result": ["users", "products"],
+    "id": 3
   }
 ]
 ```

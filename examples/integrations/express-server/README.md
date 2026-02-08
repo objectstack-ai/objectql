@@ -66,9 +66,7 @@ await kernel.start();
 
 ## Current Status
 
-**Note**: This example currently demonstrates the pattern conceptually. The actual runtime execution requires @objectstack/runtime@0.7.1 to be fixed (currently has a bug where package.json main points to src/index.ts instead of dist).
-
-When the package is fixed, uncomment the ObjectKernel initialization in index.ts.
+✅ **Migration Complete** - This example now uses the modern @objectstack/runtime pattern with the ObjectStackKernel.
 
 ## Run
 
