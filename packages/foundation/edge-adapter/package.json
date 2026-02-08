@@ -1,0 +1,37 @@
+{
+  "name": "@objectql/edge-adapter",
+  "version": "4.2.0",
+  "description": "Edge runtime adapter for ObjectQL - runtime detection, capability validation, and driver binding resolution",
+  "keywords": [
+    "objectql",
+    "edge",
+    "runtime",
+    "cloudflare",
+    "deno",
+    "vercel",
+    "adapter"
+  ],
+  "license": "MIT",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@objectql/types": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0",
+    "vitest": "^1.0.4"
+  }
+}
