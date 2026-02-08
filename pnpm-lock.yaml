@@ -856,6 +856,19 @@ importers:
         specifier: ^1.0.4
         version: 1.6.1(@types/node@25.1.0)(@vitest/ui@1.6.1)(lightningcss@1.30.2)
 
+  packages/protocols/sync:
+    dependencies:
+      '@objectql/types':
+        specifier: workspace:*
+        version: link:../../foundation/types
+    devDependencies:
+      typescript:
+        specifier: ^5.3.3
+        version: 5.9.3
+      vitest:
+        specifier: ^1.0.4
+        version: 1.6.1(@types/node@25.1.0)(@vitest/ui@1.6.1)(lightningcss@1.30.2)
+
   packages/tools/cli:
     dependencies:
       '@objectql/core':
@@ -9893,7 +9906,7 @@ snapshots:
       pathe: 1.1.2
       picocolors: 1.1.1
       sirv: 2.0.4
-      vitest: 1.6.1(@types/node@25.1.0)(@vitest/ui@1.6.1)(lightningcss@1.30.2)
+      vitest: 1.6.1(@types/node@20.19.30)(@vitest/ui@1.6.1)(lightningcss@1.30.2)
 
   '@vitest/utils@1.6.1':
     dependencies:
