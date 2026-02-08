@@ -1,0 +1,27 @@
+{
+  "name": "@objectql/plugin-sync",
+  "version": "4.2.0",
+  "description": "Offline-first sync plugin for ObjectQL - mutation logging, sync engine, and conflict resolution",
+  "keywords": ["objectql", "sync", "offline", "conflict-resolution", "crdt", "mutation-log"],
+  "license": "MIT",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@objectql/types": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0",
+    "vitest": "^1.0.4"
+  }
+}

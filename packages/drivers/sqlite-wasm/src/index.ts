@@ -73,7 +73,9 @@ export class SqliteWasmDriver implements Driver {
         indexes: true,
         connectionPooling: false,
         preparedStatements: true,
-        queryCache: false
+        queryCache: false,
+        mutationLog: true,
+        changeTracking: true
     };
 
     private config: SqliteWasmDriverConfig;
