@@ -131,6 +131,12 @@ export interface DriverCapabilities {
     readonly connectionPooling?: boolean;
     readonly preparedStatements?: boolean;
     readonly queryCache?: boolean;
+
+    // Sync support (Q3 — Offline-First Sync Protocol)
+    /** Driver can record mutations to an append-only log for offline sync */
+    readonly mutationLog?: boolean;
+    /** Driver supports checkpoint-based change tracking */
+    readonly changeTracking?: boolean;
 }
 
 /**
