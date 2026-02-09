@@ -161,10 +161,7 @@ export class QueryTrimmer {
           return filter;
         }
       } catch (error: any) {
-        console.warn(
-          `Failed to convert formula condition to filter: ${error.message}. ` +
-          'Formula will be evaluated in-memory, which may affect performance.'
-        );
+        // Formula will be evaluated in-memory (fallback)
       }
       
       // If we can't convert to a filter, return empty object
@@ -180,10 +177,7 @@ export class QueryTrimmer {
           return filter;
         }
       } catch (error: any) {
-        console.warn(
-          `Failed to convert lookup condition to filter: ${error.message}. ` +
-          'Lookup will be evaluated in-memory, which may affect performance.'
-        );
+        // Lookup will be evaluated in-memory (fallback)
       }
       
       // If we can't convert to a filter, return empty object

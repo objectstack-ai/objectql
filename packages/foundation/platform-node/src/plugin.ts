@@ -74,7 +74,6 @@ export function loadPlugin(packageName: string): PluginDefinition {
         (instance as any)._packageName = packageName;
         return instance;
     } else {
-        console.error(`[PluginLoader] Failed to find plugin in '${packageName}'. Exports:`, Object.keys(mod));
         throw new ObjectQLError({ code: 'CONFIG_ERROR', message: `Plugin '${packageName}' must export a PluginDefinition with lifecycle hooks (onEnable, onDisable, etc.).` });
     }
 }

@@ -150,10 +150,8 @@ export class ActionExecutor {
       return;
     }
 
-    // Log action: "log:message"
+    // Log action: "log:message" — silently consumed by the engine
     if (action.startsWith('log:')) {
-      const message = action.substring(4);
-      console.log(`[WorkflowAction] ${message}`, { record });
       return;
     }
 
