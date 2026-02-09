@@ -178,7 +178,7 @@ async function createTsImplementation(type: 'action' | 'hook', name: string, dir
 export async function action_${name}(context: ActionContext) {
     const { record, user } = context;
     
-    // TODO: Implement action logic
+    // Add your action logic here
     console.log('Action ${name} triggered for record:', record._id);
     
     return {
@@ -193,7 +193,7 @@ export async function action_${name}(context: ActionContext) {
 export async function beforeInsert(context: HookContext) {
     const { doc } = context;
     
-    // TODO: Implement before insert logic
+    // Add your before insert validation or transformation logic here
     console.log('Before insert hook for ${name}');
     
     // Modify doc as needed
@@ -203,7 +203,7 @@ export async function beforeInsert(context: HookContext) {
 export async function afterInsert(context: HookContext) {
     const { doc } = context;
     
-    // TODO: Implement after insert logic
+    // Add your after insert side-effect logic here
     console.log('After insert hook for ${name}');
 }
 `;

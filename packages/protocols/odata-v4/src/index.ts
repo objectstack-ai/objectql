@@ -1425,28 +1425,56 @@ export class ODataV4Plugin implements RuntimePlugin {
     private async processChangeset(requests: any[]): Promise<string[]> {
         const responses: string[] = [];
         const operations: Array<{ type: string; entitySet: string; key?: string; data?: any }> = [];
+        const rollbackState: Array<{ type: string; entitySet: string; createdId?: string; previousData?: any }> = [];
         const tempResults: any[] = [];
         
         try {
             // First pass: Execute all operations and collect results
             for (let i = 0; i < requests.length; i++) {
                 const request = requests[i];
-                const response = await this.processBatchRequest(request);
                 
                 // Parse the operation details for potential rollback
+                let entitySet: string | undefined;
+                let key: string | undefined;
                 if (request.method && request.url) {
                     const urlParts = request.url.replace(this.config.basePath, '').split('/').filter((p: string) => p);
-                    const entitySet = urlParts[0]?.split('(')[0];
+                    entitySet = urlParts[0]?.split('(')[0];
                     const keyMatch = request.url.match(/\(([^)]+)\)/);
-                    const key = keyMatch ? keyMatch[1].replace(/'/g, '') : undefined;
+                    key = keyMatch ? keyMatch[1].replace(/'/g, '') : undefined;
                     
-                    operations.push({
-                        type: request.method,
-                        entitySet,
-                        key,
-                        data: request.body ? JSON.parse(request.body) : undefined
-                    });
+                    if (entitySet) {
+                        operations.push({
+                            type: request.method,
+                            entitySet,
+                            key,
+                            data: request.body ? JSON.parse(request.body) : undefined
+                        });
+                    }
                 }
+
+                // Store previous state before destructive operations for rollback
+                const state: { type: string; entitySet: string; createdId?: string; previousData?: any } = {
+                    type: request.method || '',
+                    entitySet: entitySet || ''
+                };
+                if (entitySet && key && (request.method === 'DELETE' || request.method === 'PATCH' || request.method === 'PUT')) {
+                    state.previousData = await this.getData(entitySet, key);
+                }
+
+                const response = await this.processBatchRequest(request);
+                
+                // For POST operations, extract the created record ID from the response
+                if (request.method === 'POST' && entitySet) {
+                    const bodyMatch = response.match(/\r\n\r\n(.+)$/s);
+                    if (bodyMatch) {
+                        try {
+                            const created = JSON.parse(bodyMatch[1]);
+                            state.createdId = created._id || created.id;
+                        } catch { /* non-JSON response */ }
+                    }
+                }
+
+                rollbackState.push(state);
                 
                 // Check if any request failed
                 if (response.includes('HTTP/1.1 4') || response.includes('HTTP/1.1 5')) {
@@ -1470,7 +1498,7 @@ export class ODataV4Plugin implements RuntimePlugin {
             // Note: This is a best-effort rollback since we don't have true database transactions
             // In a production system, this would use database transaction support
             try {
-                await this.rollbackChangeset(operations, tempResults.length);
+                await this.rollbackChangeset(rollbackState, tempResults.length);
             } catch (rollbackError) {
                 // Error silently ignored
             }
@@ -1495,46 +1523,45 @@ export class ODataV4Plugin implements RuntimePlugin {
     }
 
     /**
-     * Attempt to rollback completed changeset operations
+     * Attempt to rollback completed changeset operations via compensating transactions.
      * 
-     * ⚠️ IMPORTANT: This is a DEMONSTRATION-ONLY implementation.
-     * DO NOT use in production without proper database transaction support!
+     * ⚠️ IMPORTANT: This is a best-effort compensating transaction implementation.
+     * For true atomicity in production, use database-level transaction support
+     * (BEGIN TRANSACTION / ROLLBACK).
      * 
-     * This method only LOGS rollback intentions but does NOT actually reverse operations.
+     * Rollback strategy (executed in reverse order):
+     * - POST operations: deletes the created record using the stored ID
+     * - DELETE operations: re-inserts the record using pre-fetched data
+     * - PATCH/PUT operations: restores the record to its pre-fetched values
      * 
-     * For production use, you must implement ONE of the following:
-     * 1. Database transaction support (BEGIN TRANSACTION / ROLLBACK)
-     * 2. Compensating transaction pattern with state storage
-     * 3. Event sourcing with operation replay capability
-     * 
-     * Current limitations:
-     * - Does not actually reverse operations (logs intentions only)
-     * - Requires storing created IDs, deleted records, and previous values
-     * - No guaranteed atomicity without database transaction support
-     * 
-     * Implementation requirements for true rollback:
-     * - Store created IDs during POST operations for deletion
-     * - Store deleted records before DELETE operations for restoration
-     * - Store previous values before PATCH/PUT operations for reversion
+     * Individual rollback failures are silently ignored to allow remaining
+     * operations to proceed on a best-effort basis.
      */
-    private async rollbackChangeset(operations: Array<{ type: string; entitySet: string; key?: string; data?: any }>, completedCount: number): Promise<void> {
+    private async rollbackChangeset(rollbackState: Array<{ type: string; entitySet: string; createdId?: string; previousData?: any }>, completedCount: number): Promise<void> {
         // Rollback in reverse order
         for (let i = completedCount - 1; i >= 0; i--) {
-            const op = operations[i];
+            const state = rollbackState[i];
             try {
                 // Reverse the operation
-                if (op.type === 'POST') {
-                    // Created record - try to delete it
-                    // TODO: Need to extract and store the created ID from the response
-                } else if (op.type === 'DELETE') {
-                    // Deleted record - try to restore it
-                    // TODO: Need to store the deleted record data before deletion
-                } else if (op.type === 'PATCH' || op.type === 'PUT') {
-                    // Updated record - try to restore previous values
-                    // TODO: Need to fetch and store previous values before update
+                if (state.type === 'POST') {
+                    // Created record — delete it using the stored ID
+                    if (state.createdId) {
+                        await this.deleteData(state.entitySet, state.createdId);
+                    }
+                } else if (state.type === 'DELETE') {
+                    // Deleted record — re-insert it using the stored record data
+                    if (state.previousData) {
+                        await this.createData(state.entitySet, state.previousData);
+                    }
+                } else if (state.type === 'PATCH' || state.type === 'PUT') {
+                    // Updated record — restore previous values
+                    if (state.previousData && (state.previousData._id || state.previousData.id)) {
+                        const id = state.previousData._id || state.previousData.id;
+                        await this.updateData(state.entitySet, id, state.previousData);
+                    }
                 }
             } catch (error) {
-                // Error silently ignored
+                // Best-effort rollback — continue with remaining operations
             }
         }
     }

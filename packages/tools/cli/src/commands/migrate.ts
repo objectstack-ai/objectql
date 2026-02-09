@@ -34,29 +34,13 @@ const MIGRATION_TEMPLATE = `import { ObjectQL } from '@objectql/core';
  * Created: {{timestamp}}
  */
 export async function up(app: ObjectQL) {
-    // TODO: Implement migration logic
-    console.log('Running migration: {{name}}');
-    
-    // Example: Add a new field to an object
-    // const tasks = app.getObject('tasks');
-    // await tasks.updateSchema({
-    //     fields: {
-    //         new_field: { type: 'text', label: 'New Field' }
-    //     }
-    // });
+    // Add your migration logic here
+    // Example: app.getObject('tasks').updateSchema({ fields: { new_field: { type: 'text' } } });
 }
 
 export async function down(app: ObjectQL) {
-    // TODO: Implement rollback logic
-    console.log('Rolling back migration: {{name}}');
-    
-    // Example: Remove the field
-    // const tasks = app.getObject('tasks');
-    // await tasks.updateSchema({
-    //     fields: {
-    //         new_field: undefined
-    //     }
-    // });
+    // Add your rollback logic here
+    // Example: app.getObject('tasks').updateSchema({ fields: { new_field: undefined } });
 }
 `;
 
