@@ -190,12 +190,10 @@ export class RedisDriver implements Driver {
                 reconnectStrategy: (retries: number) => {
                     // Implement exponential backoff for reconnection
                     if (retries > (this.config.retry?.maxAttempts ?? 10)) {
-                        console.error('[RedisDriver] Max reconnection attempts reached');
                         return new Error('Max reconnection attempts reached');
                     }
                     
                     const delay = this.calculateRetryDelay(retries);
-                    console.log(`[RedisDriver] Reconnecting in ${delay}ms (attempt ${retries})`);
                     return delay;
                 }
             },
@@ -203,22 +201,17 @@ export class RedisDriver implements Driver {
         }) as RedisClientType;
         
         // Handle connection errors with enhanced logging
-        this.client.on('error', (err: Error) => {
-            console.error('[RedisDriver] Connection error:', err.message);
-            if (err.stack) {
-                console.debug('[RedisDriver] Error stack:', err.stack);
-            }
+        this.client.on('error', (_err: Error) => {
+            // Error silently ignored
         });
         
         // Handle successful reconnection
         this.client.on('reconnecting', () => {
             this.reconnecting = true;
-            console.log('[RedisDriver] Attempting to reconnect...');
         });
         
         this.client.on('ready', () => {
             if (this.reconnecting) {
-                console.log('[RedisDriver] Successfully reconnected');
                 this.reconnecting = false;
             }
         });
@@ -250,15 +243,12 @@ export class RedisDriver implements Driver {
         for (let attempt = 1; attempt <= maxAttempts; attempt++) {
             try {
                 await this.client.connect();
-                console.log('[RedisDriver] Successfully connected to Redis');
                 return;
             } catch (error) {
                 lastError = error as Error;
-                console.error(`[RedisDriver] Connection attempt ${attempt}/${maxAttempts} failed:`, error);
                 
                 if (attempt < maxAttempts) {
                     const delay = this.calculateRetryDelay(attempt);
-                    console.log(`[RedisDriver] Retrying in ${delay}ms...`);
                     await new Promise(resolve => setTimeout(resolve, delay));
                 }
             }
@@ -280,10 +270,8 @@ export class RedisDriver implements Driver {
             await this.client.ping();
             const latency = Date.now() - start;
             
-            console.debug(`[RedisDriver] Health check passed (latency: ${latency}ms)`);
             return true;
         } catch (error) {
-            console.error('[RedisDriver] Health check failed:', error);
             return false;
         }
     }
@@ -313,11 +301,10 @@ export class RedisDriver implements Driver {
                     const doc = JSON.parse(data);
                     results.push(doc);
                 } catch (error) {
-                    console.warn(`[RedisDriver] Failed to parse document at key ${key}:`, error);
+                    // Error silently ignored
                 }
             }
         }
-        
         // Apply filters (in-memory)
         if (normalizedQuery.filters) {
             results = this.applyFilters(results, normalizedQuery.filters);
@@ -362,7 +349,7 @@ export class RedisDriver implements Driver {
             try {
                 return JSON.parse(data);
             } catch (error) {
-                console.warn(`[RedisDriver] Failed to parse document at key ${key}:`, error);
+                // Error silently ignored
                 return null;
             }
         }
@@ -490,7 +477,7 @@ export class RedisDriver implements Driver {
                         count++;
                     }
                 } catch (error) {
-                    console.warn(`[RedisDriver] Failed to parse document at key ${key}:`, error);
+                    // Error silently ignored
                 }
             }
         }
@@ -566,7 +553,7 @@ export class RedisDriver implements Driver {
                         }
                     }
                 } catch (error) {
-                    console.warn(`[RedisDriver] Failed to parse document at key ${key}:`, error);
+                    // Error silently ignored
                 }
             }
         }
@@ -627,7 +614,7 @@ export class RedisDriver implements Driver {
                     const doc = JSON.parse(data);
                     records.push(doc);
                 } catch (error) {
-                    console.warn(`[RedisDriver] Failed to parse document at key ${key}:`, error);
+                    // Error silently ignored
                 }
             }
         }
@@ -671,7 +658,7 @@ export class RedisDriver implements Driver {
                     break;
                     
                 default:
-                    console.warn(`[RedisDriver] Unsupported aggregation stage: ${stageName}`);
+                    break;
             }
         }
         
@@ -1013,7 +1000,6 @@ export class RedisDriver implements Driver {
                 return result.length > 0 ? result : undefined;
             } else if (condition.type === 'not') {
                 // Handle NOT filter: { type: 'not', child: {...} }
-                console.warn('[RedisDriver] NOT operator in filters is not fully supported in legacy format');
                 if (condition.child) {
                     return this.convertFilterConditionToArray(condition.child);
                 }
@@ -1048,7 +1034,6 @@ export class RedisDriver implements Driver {
                 }
             } else if (key === '$not' && typeof value === 'object') {
                 // Handle $not: { condition }
-                console.warn('[RedisDriver] NOT operator in filters is not fully supported in legacy format');
                 const converted = this.convertFilterConditionToArray(value);
                 if (converted) {
                     result.push(...converted);
@@ -1256,7 +1241,6 @@ export class RedisDriver implements Driver {
             case 'contains':
                 return String(fieldValue).toLowerCase().includes(String(compareValue).toLowerCase());
             default:
-                console.warn(`[RedisDriver] Unsupported operator: ${operator}`);
                 return false;
         }
     }
@@ -1427,7 +1411,6 @@ export class RedisDriver implements Driver {
                 });
                 
             default:
-                console.warn(`[RedisDriver] Unsupported aggregation operator: ${operator}`);
                 return null;
         }
     }
