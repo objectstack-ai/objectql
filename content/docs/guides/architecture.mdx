@@ -1,0 +1,159 @@
+---
+title: "Architecture Overview"
+description: "Understanding ObjectQL's layered architecture — Types, Core, Platform, Drivers, and Protocols"
+---
+
+# Architecture Overview
+
+ObjectQL follows a strict **layered architecture** that enforces unidirectional dependencies, prevents circular imports, and keeps the type system as the single source of truth. Every package belongs to one of four layers.
+
+## High-Level Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        Tools & DX                               │
+│          CLI · VSCode Extension · create-objectql               │
+└──────────────────────────┬──────────────────────────────────────┘
+                           │ uses
+┌──────────────────────────▼──────────────────────────────────────┐
+│                       Protocols                                 │
+│      GraphQL · OData V4 · JSON-RPC · Sync Protocol              │
+└──────────────────────────┬──────────────────────────────────────┘
+                           │ uses
+┌──────────────────────────▼──────────────────────────────────────┐
+│                        Drivers                                  │
+│  SQL · MongoDB · Redis · Memory · Excel · FS · PG-WASM · SQLite │
+└──────────────────────────┬──────────────────────────────────────┘
+                           │ implements
+┌──────────────────────────▼──────────────────────────────────────┐
+│                   Foundation Layer                               │
+│                                                                 │
+│  ┌─────────────┐   ┌─────────────┐   ┌──────────────────────┐  │
+│  │    Types     │◄──│    Core      │◄──│   Platform-Node      │  │
+│  │ (Zero Deps) │   │  (Engine)   │   │  (Node.js Bridge)    │  │
+│  └─────────────┘   └─────────────┘   └──────────────────────┘  │
+│                                                                 │
+│  Plugins: Formula · Validator · Security · Multitenancy · Sync  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+## Layer 1: Foundation
+
+The Foundation layer is the architectural core, following the **Trinity Architecture** pattern.
+
+### @objectql/types — "The Constitution"
+
+The single source of truth for all TypeScript interfaces, enums, and custom errors. This package has **zero production dependencies** and must never import from any sibling `@objectql/*` package.
+
+Key exports include object/field definitions, query and filter types, driver abstractions, validation rules, hook interfaces, and the `ObjectQLError` class.
+
+```typescript
+import { ObjectConfig, FieldConfig, ValidationRule } from '@objectql/types';
+```
+
+### @objectql/core — "The Runtime Engine"
+
+Implements the ORM kernel: `ObjectQL` class, `Validator`, `ObjectRepository`, formula engine, metadata registry, and query compilation. The core is **platform-agnostic** — it contains no Node.js native modules.
+
+```typescript
+import { ObjectQL, Validator, SchemaRegistry } from '@objectql/core';
+```
+
+### @objectql/platform-node — "The Node.js Bridge"
+
+Bridges the platform-agnostic core to Node.js via file system access (`fs`, `path`, `glob`), YAML loading, and plugin discovery. Use this package only in Node.js server environments.
+
+```typescript
+import { ObjectLoader } from '@objectql/platform-node';
+```
+
+### Foundation Plugins
+
+Core behavior is extended through plugins that depend only on `@objectql/types` and `@objectql/core`:
+
+| Plugin | Purpose |
+|--------|---------|
+| `plugin-formula` | Computed fields and dynamic formulas |
+| `plugin-validator` | Metadata-driven validation engine |
+| `plugin-security` | RBAC, field masking, row-level security |
+| `plugin-multitenancy` | Tenant isolation and routing |
+| `plugin-sync` | Offline-first mutation logging and conflict resolution |
+
+## Layer 2: Drivers
+
+Drivers implement the `DriverInterface` defined in `@objectql/types`. Each driver translates abstract query ASTs into database-specific operations. Drivers depend on **types only** — never on core.
+
+| Driver | Backend | Environment |
+|--------|---------|-------------|
+| `driver-sql` | PostgreSQL, MySQL, SQLite via Knex | Node.js |
+| `driver-mongo` | MongoDB | Node.js |
+| `driver-redis` | Redis | Node.js |
+| `driver-memory` | In-memory (Mingo) | Universal |
+| `driver-excel` | XLSX files | Node.js |
+| `driver-fs` | JSON/YAML files | Node.js |
+| `driver-pg-wasm` | PostgreSQL via WASM | Browser |
+| `driver-sqlite-wasm` | SQLite via WASM | Browser |
+
+## Layer 3: Protocols
+
+Protocols expose ObjectQL operations over network transports. They depend on **types + core**.
+
+| Protocol | Transport | Compliance |
+|----------|-----------|------------|
+| `protocol-graphql` | HTTP (Query/Mutation) | 85% |
+| `protocol-odata-v4` | HTTP (REST) | 80% |
+| `protocol-json-rpc` | HTTP / WebSocket | 90% |
+| `protocol-sync` | HTTP / WebSocket | Sync protocol |
+
+## Layer 4: Tools & DX
+
+Developer-facing tools that consume all lower layers:
+
+- **`@objectql/cli`** — Project scaffolding, code generation, migrations, REPL
+- **`@objectql/create`** — `npm create objectql` initializer
+- **`vscode-objectql`** — Schema validation, IntelliSense, snippets
+
+## Dependency Flow
+
+Dependencies flow strictly **downward**. No package may import from a package in the same or higher layer.
+
+```
+Types ← Core ← Platform-Node
+  ↑       ↑
+  │       └──── Protocols
+  │
+  └──────────── Drivers
+```
+
+| Package | May Import From |
+|---------|-----------------|
+| `@objectql/types` | Nothing (`@objectstack/spec` for type derivation only) |
+| `@objectql/core` | `@objectql/types`, `@objectstack/*` runtime packages |
+| Drivers | `@objectql/types` |
+| Protocols | `@objectql/types`, `@objectql/core` |
+| Platform-Node | `@objectql/types`, `@objectql/core` |
+| Tools | Any lower layer |
+
+## ObjectStack Kernel Integration
+
+ObjectQL plugs into the broader **ObjectStack** ecosystem through the kernel pattern. The `ObjectStackKernel` boots applications, plugins, and drivers from declarative configuration manifests:
+
+```typescript
+import { ObjectStackKernel } from '@objectstack/runtime';
+import { InMemoryDriver } from '@objectstack/driver-memory';
+
+const kernel = new ObjectStackKernel([
+  AppManifest,
+  new InMemoryDriver(),
+]);
+
+await kernel.start();
+```
+
+The kernel handles lifecycle management, dependency injection, and plugin coordination — keeping ObjectQL's core engine focused purely on data operations.
+
+## Next Steps
+
+- **[Foundation Deep Dive](/docs/architecture)** — Trinity Architecture details and code examples
+- **[Error Handling Guide](/docs/guides/error-handling)** — `ObjectQLError` patterns and error codes
+- **[Driver Development](/docs/extending/custom-drivers)** — Implementing a custom driver

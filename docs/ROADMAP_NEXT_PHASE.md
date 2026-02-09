@@ -1,6 +1,6 @@
 # ObjectQL — Next Phase Optimization & Improvement Roadmap
 
-> Created: 2026-02-09 | Status: **In Progress — Phases 1, 3, 4 (Wave 1-2), 5A, 6 (partial), 7 (partial) Complete**
+> Created: 2026-02-09 | Status: **In Progress — Phases 1A, 3, 4 (All Waves), 5A, 6, 7 (partial) Complete**
 > Current Version: **4.2.0** | @objectstack Platform: **v2.0.1**
 > Scope: Code quality, type safety, error handling, testing, performance, and DX improvements
 
@@ -456,6 +456,10 @@ Phase 5 (TODO/Protocol)  ────────┘
 Phase 6 (Documentation)  ────────┐  Depends on Phase 5 (protocol work)
 Phase 7 (Performance)    ────────┘  Independent, can start earlier
 ```
+
+> ✅ **Completed**: Phases 1A, 3, 4 (all waves), 5A, 6 (error-handling + architecture guides)
+> ✅ **Completed (partial)**: Phase 2 (create tests), Phase 7 (sideEffects)
+> ⏳ **Remaining**: Phase 1B (any reduction), Phase 5B (protocol refinement), Phase 7 (benchmarks)
 
 ### E. Risk Assessment
 
