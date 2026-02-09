@@ -1,0 +1,184 @@
+---
+title: "Error Handling"
+description: "Structured error handling with ObjectQLError — error codes, patterns, and best practices"
+---
+
+ObjectQL uses a structured error handling pattern built around the `ObjectQLError` class. All packages in the ecosystem throw `ObjectQLError` instead of plain `Error` objects, providing consistent error codes, messages, and optional details across every layer.
+
+---
+
+## ObjectQLError Class
+
+```typescript
+import { ObjectQLError, ApiErrorCode } from '@objectql/types';
+
+throw new ObjectQLError({
+  code: ApiErrorCode.NOT_FOUND,
+  message: 'Object "orders" not found in metadata registry',
+  details: { field: 'objectName', reason: 'Object not registered' }
+});
+```
+
+### Constructor
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `code` | `ApiErrorCode \| string` | ✅ | Semantic error code (see taxonomy below) |
+| `message` | `string` | ✅ | Human-readable error description |
+| `details` | `ApiErrorDetails` | ❌ | Structured metadata (field, reason, etc.) |
+
+### Properties
+
+- **`code`** — The error code string (e.g., `'NOT_FOUND'`, `'DRIVER_QUERY_FAILED'`)
+- **`message`** — Human-readable error message (inherited from `Error`)
+- **`details`** — Optional structured metadata for programmatic error inspection
+- **`name`** — Always `'ObjectQLError'` (useful for `instanceof` checks)
+- **`stack`** — Stack trace (inherited from `Error`)
+
+---
+
+## Error Code Taxonomy
+
+### Core Error Codes (`ApiErrorCode` enum)
+
+| Code | When to Use |
+|------|------------|
+| `INVALID_REQUEST` | Malformed request parameters or missing required fields |
+| `VALIDATION_ERROR` | Field validation failure (type mismatch, constraint violation) |
+| `UNAUTHORIZED` | Missing or invalid authentication credentials |
+| `FORBIDDEN` | Authenticated but insufficient permissions (RBAC violation) |
+| `NOT_FOUND` | Object, record, or resource does not exist |
+| `CONFLICT` | Duplicate key, optimistic concurrency conflict |
+| `INTERNAL_ERROR` | Unexpected internal error (catch-all) |
+| `DATABASE_ERROR` | Generic database-level error |
+| `RATE_LIMIT_EXCEEDED` | Too many requests |
+
+### Driver Error Codes
+
+| Code | When to Use |
+|------|------------|
+| `DRIVER_ERROR` | Generic driver error |
+| `DRIVER_CONNECTION_FAILED` | Failed to connect to the database |
+| `DRIVER_QUERY_FAILED` | Query execution failed (validation, constraint, etc.) |
+| `DRIVER_TRANSACTION_FAILED` | Transaction begin/commit/rollback failed |
+| `DRIVER_UNSUPPORTED_OPERATION` | Operation not supported by this driver |
+
+### Protocol Error Codes
+
+| Code | When to Use |
+|------|------------|
+| `PROTOCOL_ERROR` | Generic protocol error |
+| `PROTOCOL_INVALID_REQUEST` | Invalid protocol request format |
+| `PROTOCOL_METHOD_NOT_FOUND` | Unknown method/endpoint in the protocol |
+| `PROTOCOL_BATCH_ERROR` | Batch operation failure |
+
+### Plugin Error Codes
+
+| Code | When to Use |
+|------|------------|
+| `TENANT_ISOLATION_VIOLATION` | Cross-tenant data access attempt |
+| `TENANT_NOT_FOUND` | Tenant context missing or invalid |
+| `WORKFLOW_TRANSITION_DENIED` | Invalid state machine transition |
+| `FORMULA_EVALUATION_ERROR` | Formula expression evaluation failed |
+
+### Tool/CLI Error Codes
+
+| Code | When to Use |
+|------|------------|
+| `CONFIG_ERROR` | Configuration file missing or invalid |
+| `SCAFFOLD_ERROR` | Project scaffolding failure |
+| `MIGRATION_ERROR` | Migration execution failure |
+
+---
+
+## Error Handling Patterns
+
+### Catching ObjectQLError
+
+```typescript
+import { ObjectQLError } from '@objectql/types';
+
+try {
+  const record = await repo.findOne(id);
+} catch (error) {
+  if (error instanceof ObjectQLError) {
+    // Structured error — inspect code and details
+    switch (error.code) {
+      case 'NOT_FOUND':
+        return { status: 404, message: error.message };
+      case 'VALIDATION_ERROR':
+        return { status: 400, fields: error.details?.fields };
+      case 'FORBIDDEN':
+        return { status: 403, permission: error.details?.required_permission };
+      default:
+        return { status: 500, message: 'Internal server error' };
+    }
+  }
+  // Unknown error — re-throw
+  throw error;
+}
+```
+
+### Throwing in Drivers
+
+```typescript
+import { ObjectQLError } from '@objectql/types';
+
+async find(objectName: string, query: UnifiedQuery) {
+  try {
+    return await this.db.collection(objectName).find(query.filter).toArray();
+  } catch (error: any) {
+    throw new ObjectQLError({
+      code: 'DRIVER_QUERY_FAILED',
+      message: `MongoDB query failed on "${objectName}": ${error.message}`,
+      details: { field: 'query', reason: error.code }
+    });
+  }
+}
+```
+
+### Throwing in Hooks
+
+```typescript
+import { ObjectQLError, ApiErrorCode } from '@objectql/types';
+
+export async function beforeInsert(context: HookContext) {
+  const { doc } = context;
+  
+  if (!doc.email?.includes('@')) {
+    throw new ObjectQLError({
+      code: ApiErrorCode.VALIDATION_ERROR,
+      message: 'Invalid email address',
+      details: { field: 'email', reason: 'Must contain @ symbol' }
+    });
+  }
+}
+```
+
+---
+
+## ApiErrorDetails Reference
+
+The `details` object supports these common fields:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `field` | `string` | The field that caused the error |
+| `reason` | `string` | Human-readable reason for the error |
+| `fields` | `Record<string, string>` | Multiple field errors (for bulk validation) |
+| `required_permission` | `string` | The permission needed (for FORBIDDEN errors) |
+| `user_roles` | `string[]` | Current user's roles (for FORBIDDEN errors) |
+| `retry_after` | `number` | Seconds to wait before retrying (for RATE_LIMIT_EXCEEDED) |
+
+Additional custom fields can be added via the index signature `[key: string]: unknown`.
+
+---
+
+## Best Practices
+
+1. **Always use `ObjectQLError`** — Never `throw new Error()` in packages
+2. **Choose specific error codes** — Use `DRIVER_QUERY_FAILED` over generic `INTERNAL_ERROR`
+3. **Include context in messages** — Include the object name, field name, or operation
+4. **Use `details` for machine-readable info** — Error messages are for humans, details are for code
+5. **Preserve original error info** — Include `error.message` in your ObjectQLError message
+6. **Check with `instanceof`** — Use `error instanceof ObjectQLError` for type-safe handling

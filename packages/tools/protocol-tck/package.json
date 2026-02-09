@@ -4,6 +4,7 @@
   "description": "Technology Compatibility Kit for ObjectQL protocols - Unified test suite",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "sideEffects": false,
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
