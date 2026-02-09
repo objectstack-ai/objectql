@@ -17,10 +17,10 @@ describe('Multi-Tenancy E2E Demo', () => {
     });
     
     // Simulate kernel installation
-    const mockHooks = new Map<string, Function[]>();
+    const mockHooks = new Map<string, ((...args: any[]) => any)[]>();
     const mockKernel = {
       hooks: {
-        register: (name: string, handler: Function) => {
+        register: (name: string, handler: (...args: any[]) => any) => {
           if (!mockHooks.has(name)) {
             mockHooks.set(name, []);
           }
@@ -31,7 +31,7 @@ describe('Multi-Tenancy E2E Demo', () => {
     
     await plugin.install({
       engine: mockKernel,
-      hook: (name: string, handler: Function) => {
+      hook: (name: string, handler: (...args: any[]) => any) => {
         if (!mockHooks.has(name)) {
           mockHooks.set(name, []);
         }

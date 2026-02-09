@@ -65,7 +65,7 @@ const createTestKernel = () => {
     };
     
     // Mock action registry
-    const actions = new Map<string, Function>();
+    const actions = new Map<string, (...args: any[]) => any>();
     actions.set('sendEmail', async (params: any) => {
         return {
             success: true,

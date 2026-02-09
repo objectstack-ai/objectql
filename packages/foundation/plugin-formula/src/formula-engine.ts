@@ -210,7 +210,7 @@ export class FormulaEngine {
 
       // Create and execute function
        
-      const func = new Function(...paramNames, wrappedExpression);
+      const func = new Function(...paramNames, wrappedExpression) as (...args: any[]) => unknown;
       
       // Execute with timeout protection
       const result = this.executeWithTimeout(func, paramValues, timeout);
@@ -289,7 +289,7 @@ export class FormulaEngine {
    * runtime; instead, formulas must be written to be fast and side-effect free.
    */
   private executeWithTimeout(
-    func: Function,
+    func: (...args: any[]) => unknown,
     args: any[],
     timeout: number
   ): unknown {

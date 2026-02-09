@@ -97,7 +97,7 @@ export class ObjectQLError extends Error {
         this.details = error.details;
         
         // Preserve proper stack traces in Node.js environments
-        const ErrorConstructor = Error as unknown as { captureStackTrace?: (target: object, constructor: Function) => void };
+        const ErrorConstructor = Error as unknown as { captureStackTrace?: (target: object, constructor: new (...args: any[]) => any) => void };
         if (typeof ErrorConstructor.captureStackTrace === 'function') {
             ErrorConstructor.captureStackTrace(this, ObjectQLError);
         }

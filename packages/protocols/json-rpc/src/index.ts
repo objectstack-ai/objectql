@@ -146,7 +146,7 @@ export class JSONRPCPlugin implements RuntimePlugin {
     
     private engine?: any;
     private config: Required<JSONRPCPluginConfig>;
-    private methods: Map<string, Function>;
+    private methods: Map<string, (...args: any[]) => any>;
     private methodSignatures: Map<string, MethodSignature>;
     private sessions: Map<string, Session> = new Map();
     private progressClients: Map<string, Set<(data: string) => void>> = new Map();

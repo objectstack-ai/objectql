@@ -36,10 +36,10 @@ const ACCOUNTS_PERM: PermissionConfig = {
 };
 
 function createMockKernel() {
-  const hooks: Record<string, Function[]> = {};
+  const hooks: Record<string, ((...args: any[]) => any)[]> = {};
   return {
     security: undefined as any,
-    use: jest.fn((hookName: string, handler: Function) => {
+    use: jest.fn((hookName: string, handler: (...args: any[]) => any) => {
       if (!hooks[hookName]) hooks[hookName] = [];
       hooks[hookName].push(handler);
     }),
