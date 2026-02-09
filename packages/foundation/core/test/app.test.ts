@@ -440,9 +440,9 @@ describe('ObjectQL App', () => {
 
             const ctx = app.createContext({ userId: 'user1', isSystem: true });
             
-            let trxCtx: any;
+            let _trxCtx: any;
             await ctx.transaction(async (txCtx) => {
-                trxCtx = txCtx;
+                _trxCtx = txCtx;
                 expect(txCtx.transactionHandle).toBe('trx-handle');
             });
 

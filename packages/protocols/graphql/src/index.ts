@@ -24,7 +24,6 @@ import { PubSub } from 'graphql-subscriptions';
 import DataLoader from 'dataloader';
 import express from 'express';
 import cors from 'cors';
-import { mapErrorToGraphQLError } from './validation.js';
 
 // Re-export validation utilities
 export * from './validation.js';
@@ -176,7 +175,7 @@ export class GraphQLPlugin implements RuntimePlugin {
      * Start hook - called when kernel starts
      * This is where we start the GraphQL server with WebSocket support
      */
-    async onStart(ctx: RuntimeContext): Promise<void> {
+    async onStart(_ctx: RuntimeContext): Promise<void> {
         if (!this.engine) {
             throw new ObjectQLError({ code: 'PROTOCOL_ERROR', message: 'Protocol not initialized. Install hook must be called first.' });
         }
@@ -234,7 +233,7 @@ export class GraphQLPlugin implements RuntimePlugin {
             });
 
             // Setup GraphQL WS server
-            const serverCleanup = useServer(
+            const _serverCleanup = useServer(
                 {
                     schema,
                     context: async () => ({
@@ -271,7 +270,7 @@ export class GraphQLPlugin implements RuntimePlugin {
             introspection: this.config.introspection,
             plugins,
             includeStacktraceInErrorResponses: process.env.NODE_ENV !== 'production',
-            formatError: (formattedError, error) => {
+            formatError: (formattedError, _error) => {
                 return {
                     message: formattedError.message,
                     locations: formattedError.locations,
@@ -384,7 +383,7 @@ export class GraphQLPlugin implements RuntimePlugin {
     /**
      * Stop hook - called when kernel stops
      */
-    async onStop(ctx: RuntimeContext): Promise<void> {
+    async onStop(_ctx: RuntimeContext): Promise<void> {
         if (this.server) {
             await this.server.stop();
             this.server = undefined;
@@ -454,7 +453,7 @@ export class GraphQLPlugin implements RuntimePlugin {
             try {
                 const objects = this.engine.metadata.list('object');
                 return objects.map((obj: any) => obj.content?.name ?? obj.name ?? obj.id).filter(Boolean);
-            } catch (e) {
+            } catch (_e) {
                 return [];
             }
         }
@@ -1122,7 +1121,7 @@ export class GraphQLPlugin implements RuntimePlugin {
                     // Decode cursor to get offset
                     try {
                         offset = parseInt(Buffer.from(args.after, 'base64').toString('utf-8')) + 1;
-                    } catch (e) {
+                    } catch (_e) {
                         offset = 0;
                     }
                 }
@@ -1132,7 +1131,7 @@ export class GraphQLPlugin implements RuntimePlugin {
                     try {
                         const beforeOffset = parseInt(Buffer.from(args.before, 'base64').toString('utf-8'));
                         offset = Math.max(0, beforeOffset - limit);
-                    } catch (e) {
+                    } catch (_e) {
                         offset = 0;
                     }
                 }
@@ -1141,7 +1140,7 @@ export class GraphQLPlugin implements RuntimePlugin {
                 query.offset = offset;
                 
                 const results = await this.findData(objectName, query);
-                const totalCount = results.length; // Ideally this should be a separate count query
+                const _totalCount = results.length; // Ideally this should be a separate count query
                 
                 const hasMore = results.length > limit;
                 const items = hasMore ? results.slice(0, limit) : results;

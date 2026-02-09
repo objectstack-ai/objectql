@@ -7,7 +7,6 @@
  */
 
 import { SqlDriver } from '../src';
-import { IntrospectedSchema } from '@objectql/types';
 
 describe('SqlDriver Schema Introspection (SQLite)', () => {
     let driver: SqlDriver;

@@ -134,7 +134,7 @@ describe('SqlDriver Schema Sync (SQLite)', () => {
 
         await driver.init(objects);
 
-        const columns = await knexInstance('multi_test').columnInfo();
+        const _columns = await knexInstance('multi_test').columnInfo();
         // Types in SQLite might be generic, but verifying we can insert/read array is best.
         
         // Try inserting array data

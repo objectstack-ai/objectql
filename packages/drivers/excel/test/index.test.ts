@@ -715,7 +715,7 @@ describe('ExcelDriver', () => {
             it('should execute bulkDelete command', async () => {
                 const user1 = await driver.create(TEST_OBJECT, { name: 'Alice' });
                 const user2 = await driver.create(TEST_OBJECT, { name: 'Bob' });
-                const user3 = await driver.create(TEST_OBJECT, { name: 'Charlie' });
+                const _user3 = await driver.create(TEST_OBJECT, { name: 'Charlie' });
 
                 const result = await driver.executeCommand({
                     type: 'bulkDelete',

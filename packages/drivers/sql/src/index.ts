@@ -1,7 +1,7 @@
-import { Data, System as SystemSpec } from '@objectstack/spec';
+import { Data, System as _SystemSpec } from '@objectstack/spec';
 import { z } from 'zod';
-import { QueryAST, SortNode } from '@objectql/types';
-type DriverInterface = z.infer<typeof Data.DriverInterface>;
+import { QueryAST } from '@objectql/types';
+type _DriverInterface = z.infer<typeof Data.DriverInterface>;
 /**
  * ObjectQL
  * Copyright (c) 2026-present ObjectStack Inc.
@@ -914,7 +914,7 @@ export class SqlDriver implements Driver {
                     if (data[field] !== undefined && typeof data[field] === 'string') {
                         try {
                             data[field] = JSON.parse(data[field]);
-                        } catch (e) {
+                        } catch (_e) {
                             // ignore parse error, keep as string
                         }
                     }
@@ -1118,7 +1118,7 @@ export class SqlDriver implements Driver {
                     });
                 }
             }
-        } catch (error) {
+        } catch (_error) {
             // Error silently ignored
         }
         
@@ -1177,7 +1177,7 @@ export class SqlDriver implements Driver {
                     }
                 }
             }
-        } catch (error) {
+        } catch (_error) {
             // Error silently ignored
         }
         
@@ -1243,7 +1243,7 @@ export class SqlDriver implements Driver {
                     }
                 }
             }
-        } catch (error) {
+        } catch (_error) {
             // Error silently ignored
         }
         
@@ -1267,7 +1267,7 @@ export class SqlDriver implements Driver {
         try {
             await this.knex.raw('SELECT 1');
             return true;
-        } catch (error) {
+        } catch (_error) {
             return false;
         }
     }

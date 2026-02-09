@@ -18,7 +18,6 @@ import {
     createSuccessResponse,
     JSONRPCValidationError,
     JSONRPCErrorCode,
-    JSONRPC_VERSION
 } from './validation.js';
 
 // Re-export validation utilities
@@ -72,7 +71,7 @@ interface ProgressNotification {
 /**
  * JSON-RPC 2.0 Request
  */
-interface JSONRPCRequest {
+interface _JSONRPCRequest {
     jsonrpc: '2.0';
     method: string;
     params?: any[] | Record<string, any>;
@@ -252,7 +251,7 @@ export class JSONRPCPlugin implements RuntimePlugin {
     /**
      * Stop hook - called when kernel stops
      */
-    async onStop(ctx: RuntimeContext): Promise<void> {
+    async onStop(_ctx: RuntimeContext): Promise<void> {
         // Stop the HTTP server
         if (this.server) {
             await new Promise<void>((resolve) => {
@@ -424,7 +423,7 @@ export class JSONRPCPlugin implements RuntimePlugin {
                         return c.body(null, 204);
                     }
                 }
-            } catch (error) {
+            } catch (_error) {
                 const errorResponse = createErrorResponse(null, JSONRPCErrorCode.PARSE_ERROR, 'Parse error');
                 return c.json(errorResponse);
             }
@@ -460,7 +459,7 @@ export class JSONRPCPlugin implements RuntimePlugin {
                     const heartbeat = setInterval(async () => {
                         try {
                             await stream.write(`: heartbeat\n\n`);
-                        } catch (e) {
+                        } catch (_e) {
                             clearInterval(heartbeat);
                         }
                     }, 30000); // 30 seconds
@@ -499,7 +498,7 @@ export class JSONRPCPlugin implements RuntimePlugin {
             try {
                 const objects = this.engine.metadata.list('object');
                 return objects.map((obj: any) => obj.name || obj.id).filter(Boolean);
-            } catch (e) {
+            } catch (_e) {
                 return [];
             }
         }
@@ -529,7 +528,7 @@ export class JSONRPCPlugin implements RuntimePlugin {
         if (typeof this.engine.metadata.list === 'function') {
             try {
                 return this.engine.metadata.list(type);
-            } catch (e) {
+            } catch (_e) {
                 return [];
             }
         }
@@ -948,7 +947,7 @@ export class JSONRPCPlugin implements RuntimePlugin {
                     const signature = this.methodSignatures.get(validatedRequest.method);
                     if (signature && signature.params.length > 0) {
                         // Map named params to positional array
-                        const positionalParams = signature.params.map((paramName, index) => {
+                        const positionalParams = signature.params.map((paramName, _index) => {
                             const value = (validatedRequest.params as Record<string, any>)[paramName];
                             // Note: undefined values are allowed - the method will handle validation
                             // If you need stricter validation, check required params here
@@ -1118,7 +1117,7 @@ export class JSONRPCPlugin implements RuntimePlugin {
         clients.forEach(callback => {
             try {
                 callback(message);
-            } catch (error) {
+            } catch (_error) {
                 // Error silently ignored
             }
         });

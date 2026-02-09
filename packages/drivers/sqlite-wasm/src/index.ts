@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { Driver, DriverCapabilities, ObjectQLError } from '@objectql/types';
+import { Driver, DriverCapabilities } from '@objectql/types';
 import { SqlDriver } from '@objectql/driver-sql';
 import { checkWebAssembly, checkOPFS } from './environment';
 

@@ -15,7 +15,7 @@ const createTestKernel = () => {
     
     // Mock metadata
     const metadata = {
-        register: (type: string, name: string, item: any) => {
+        register: (_type: string, _name: string, _item: any) => {
             // mock register
         },
         list: (type: string) => {
@@ -352,7 +352,7 @@ describe('GraphQL Protocol Integration Tests', () => {
     describe('Complex Queries', () => {
         beforeEach(async () => {
             // Create related data
-            const alice = await kernel.repository.create('users', {
+            const _alice = await kernel.repository.create('users', {
                 id: 'alice',
                 name: 'Alice',
                 email: 'alice@example.com',
@@ -360,7 +360,7 @@ describe('GraphQL Protocol Integration Tests', () => {
                 age: 30
             });
             
-            const bob = await kernel.repository.create('users', {
+            const _bob = await kernel.repository.create('users', {
                 id: 'bob',
                 name: 'Bob',
                 email: 'bob@example.com',

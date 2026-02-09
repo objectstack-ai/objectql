@@ -1,7 +1,7 @@
-import { Data, System as SystemSpec } from '@objectstack/spec';
+import { Data, System as _SystemSpec } from '@objectstack/spec';
 import { z } from 'zod';
 import { QueryAST, SortNode } from '@objectql/types';
-type DriverInterface = z.infer<typeof Data.DriverInterface>;
+type _DriverInterface = z.infer<typeof Data.DriverInterface>;
 /**
  * ObjectQL
  * Copyright (c) 2026-present ObjectStack Inc.
@@ -268,10 +268,10 @@ export class RedisDriver implements Driver {
             // Perform ping to verify connection is alive
             const start = Date.now();
             await this.client.ping();
-            const latency = Date.now() - start;
+            const _latency = Date.now() - start;
             
             return true;
-        } catch (error) {
+        } catch (_error) {
             return false;
         }
     }
@@ -282,7 +282,7 @@ export class RedisDriver implements Driver {
      * Supports both legacy filter format and QueryAST format.
      * For optimal performance with large datasets, use filters to limit results.
      */
-    async find(objectName: string, query: any = {}, options?: any): Promise<any[]> {
+    async find(objectName: string, query: any = {}, _options?: any): Promise<any[]> {
         await this.connected;
         
         // Normalize query to support both legacy and QueryAST formats
@@ -300,7 +300,7 @@ export class RedisDriver implements Driver {
                 try {
                     const doc = JSON.parse(data);
                     results.push(doc);
-                } catch (error) {
+                } catch (_error) {
                     // Error silently ignored
                 }
             }
@@ -348,7 +348,7 @@ export class RedisDriver implements Driver {
             
             try {
                 return JSON.parse(data);
-            } catch (error) {
+            } catch (_error) {
                 // Error silently ignored
                 return null;
             }
@@ -366,7 +366,7 @@ export class RedisDriver implements Driver {
     /**
      * Create a new record.
      */
-    async create(objectName: string, data: any, options?: any): Promise<any> {
+    async create(objectName: string, data: any, _options?: any): Promise<any> {
         await this.connected;
         
         // Generate ID if not provided
@@ -395,7 +395,7 @@ export class RedisDriver implements Driver {
     /**
      * Update an existing record.
      */
-    async update(objectName: string, id: string | number, data: any, options?: any): Promise<any> {
+    async update(objectName: string, id: string | number, data: any, _options?: any): Promise<any> {
         await this.connected;
         
         const key = this.generateRedisKey(objectName, id);
@@ -422,7 +422,7 @@ export class RedisDriver implements Driver {
     /**
      * Delete a record.
      */
-    async delete(objectName: string, id: string | number, options?: any): Promise<any> {
+    async delete(objectName: string, id: string | number, _options?: any): Promise<any> {
         await this.connected;
         
         const key = this.generateRedisKey(objectName, id);
@@ -437,7 +437,7 @@ export class RedisDriver implements Driver {
      * Returns the number of records that match the specified filter criteria.
      * If no filters are provided, returns the total count of all records.
      */
-    async count(objectName: string, filters: any, options?: any): Promise<number> {
+    async count(objectName: string, filters: any, _options?: any): Promise<number> {
         await this.connected;
         
         const pattern = `${objectName}:*`;
@@ -476,7 +476,7 @@ export class RedisDriver implements Driver {
                     if (this.matchesFilters(doc, actualFilters)) {
                         count++;
                     }
-                } catch (error) {
+                } catch (_error) {
                     // Error silently ignored
                 }
             }
@@ -509,7 +509,7 @@ export class RedisDriver implements Driver {
      *   value: 'active'
      * });
      */
-    async distinct(objectName: string, field: string, filters?: any, options?: any): Promise<any[]> {
+    async distinct(objectName: string, field: string, filters?: any, _options?: any): Promise<any[]> {
         await this.connected;
         
         const pattern = `${objectName}:*`;
@@ -552,7 +552,7 @@ export class RedisDriver implements Driver {
                             }
                         }
                     }
-                } catch (error) {
+                } catch (_error) {
                     // Error silently ignored
                 }
             }
@@ -599,7 +599,7 @@ export class RedisDriver implements Driver {
      * Note: For production use with large datasets, consider using RedisJSON with
      * RediSearch module for native aggregation support.
      */
-    async aggregate(objectName: string, pipeline: any[], options?: any): Promise<any[]> {
+    async aggregate(objectName: string, pipeline: any[], _options?: any): Promise<any[]> {
         await this.connected;
         
         const pattern = `${objectName}:*`;
@@ -613,7 +613,7 @@ export class RedisDriver implements Driver {
                 try {
                     const doc = JSON.parse(data);
                     records.push(doc);
-                } catch (error) {
+                } catch (_error) {
                     // Error silently ignored
                 }
             }

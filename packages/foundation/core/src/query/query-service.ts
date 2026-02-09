@@ -369,7 +369,7 @@ export class QueryService {
         const driver = this.getDriver(objectName);
         const startTime = options.profile ? Date.now() : 0;
         
-        const driverOptions = {
+        const _driverOptions = {
             transaction: options.transaction,
             ...options.driverOptions
         };

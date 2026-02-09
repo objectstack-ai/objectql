@@ -7,7 +7,7 @@
  */
 
 import { ObjectQLError } from '@objectql/types';
-import type { PermissionConfig, RecordRuleCondition } from '@objectql/types';
+import type { RecordRuleCondition } from '@objectql/types';
 import type { SecurityContext } from './types';
 import { PermissionLoader } from './permission-loader';
 

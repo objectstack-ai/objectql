@@ -9,7 +9,6 @@
 import type { RuntimePlugin, RuntimeContext } from '@objectql/types';
 import { ObjectQLError } from '@objectql/types';
 import { IncomingMessage, ServerResponse, createServer, Server } from 'http';
-import { mapErrorToODataError } from './validation.js';
 
 // Re-export validation utilities
 export * from './validation.js';
@@ -231,7 +230,7 @@ export class ODataV4Plugin implements RuntimePlugin {
     /**
      * Stop hook - called when kernel stops
      */
-    async onStop(ctx: RuntimeContext): Promise<void> {
+    async onStop(_ctx: RuntimeContext): Promise<void> {
         if (this.server) {
             await new Promise<void>((resolve, reject) => {
                 this.server!.close((err) => {
@@ -261,7 +260,7 @@ export class ODataV4Plugin implements RuntimePlugin {
             try {
                 const objects = this.engine.metadata.list('object');
                 return objects.map((obj: any) => obj.name || obj.id).filter(Boolean);
-            } catch (e) {
+            } catch (_e) {
                 return [];
             }
         }
@@ -1499,7 +1498,7 @@ export class ODataV4Plugin implements RuntimePlugin {
             // In a production system, this would use database transaction support
             try {
                 await this.rollbackChangeset(rollbackState, tempResults.length);
-            } catch (rollbackError) {
+            } catch (_rollbackError) {
                 // Error silently ignored
             }
             
@@ -1560,7 +1559,7 @@ export class ODataV4Plugin implements RuntimePlugin {
                         await this.updateData(state.entitySet, id, state.previousData);
                     }
                 }
-            } catch (error) {
+            } catch (_error) {
                 // Best-effort rollback — continue with remaining operations
             }
         }
@@ -1577,7 +1576,7 @@ export class ODataV4Plugin implements RuntimePlugin {
                 if (!body) return resolve({});
                 try {
                     resolve(JSON.parse(body));
-                } catch (e) {
+                } catch (_e) {
                     reject(new Error('Invalid JSON'));
                 }
             });

@@ -186,7 +186,7 @@ export class ObjectLoader {
             delete require.cache[entryPath];
             const packageDir = path.dirname(entryPath);
             this.load(packageDir, packageName);
-        } catch (e) {
+        } catch (_e) {
             // fallback to directory
             this.load(packageName, packageName);
         }

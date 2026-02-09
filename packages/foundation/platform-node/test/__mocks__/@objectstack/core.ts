@@ -5,7 +5,7 @@
 
 export * from './runtime';
 
-export const createLogger = (options: any) => ({
+export const createLogger = (_options: any) => ({
     info: console.log,
     warn: console.warn,
     error: console.error,

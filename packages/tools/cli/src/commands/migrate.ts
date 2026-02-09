@@ -83,7 +83,7 @@ export async function migrate(options: MigrateOptions) {
                 sort: [['created_at', 'asc']]
             });
             runMigrations = result.records.map((r: any) => r.name);
-        } catch (err) {
+        } catch (_err) {
             // Migrations table doesn't exist yet, create it
             console.log(chalk.gray('Creating migrations tracking table...'));
             await createMigrationsTable(app);
@@ -210,7 +210,7 @@ export async function migrateStatus(options: MigrateStatusOptions) {
                 sort: [['run_at', 'asc']]
             });
             runMigrations = result.records.map((r: any) => r.name);
-        } catch (err) {
+        } catch (_err) {
             // Migrations table doesn't exist
             runMigrations = [];
         }
@@ -251,7 +251,7 @@ async function loadObjectQLInstance(configPath?: string): Promise<any> {
                 module: 'commonjs'
             }
         });
-    } catch (err) {
+    } catch (_err) {
         // ts-node not available, try to load JS directly
     }
 

@@ -421,7 +421,7 @@ describe('GraphQL Protocol TCK', () => {
     
     // Mock metadata for TCK test entity
     const metadata = {
-      register: (type: string, name: string, item: any) => {
+      register: (_type: string, _name: string, _item: any) => {
         // mock register
       },
       list: (type: string) => {

@@ -4,7 +4,7 @@
  * This demo shows the plugin in action with a real-world scenario
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { MultiTenancyPlugin, TenantIsolationError } from '../src';
 
 describe('Multi-Tenancy E2E Demo', () => {

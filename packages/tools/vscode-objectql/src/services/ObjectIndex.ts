@@ -7,8 +7,8 @@
  */
 
 import * as vscode from 'vscode';
-import * as path from 'path';
-import * as fs from 'fs';
+import * as _path from 'path';
+import * as _fs from 'fs';
 import * as yaml from 'js-yaml';
 
 export interface ObjectDefinition {
@@ -54,7 +54,7 @@ export class ObjectIndex {
                         uri: uri
                     });
                 }
-            } catch (e) {
+            } catch (_e) {
                 // YAML parse error, fall back to regex or ignore
                 const nameMatch = /^name:\s*([a-zA-Z0-9_]+)/m.exec(text);
                 if (nameMatch) {

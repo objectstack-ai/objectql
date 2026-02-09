@@ -1,7 +1,7 @@
-import { Data, System as SystemSpec } from '@objectstack/spec';
+import { Data, System as _SystemSpec } from '@objectstack/spec';
 import { z } from 'zod';
-import { QueryAST, SortNode } from '@objectql/types';
-type DriverInterface = z.infer<typeof Data.DriverInterface>;
+import { QueryAST } from '@objectql/types';
+type _DriverInterface = z.infer<typeof Data.DriverInterface>;
 /**
  * ObjectQL
  * Copyright (c) 2026-present ObjectStack Inc.
@@ -358,7 +358,7 @@ export class RemoteDriver implements Driver {
                 })
             });
             return res.ok;
-        } catch (error) {
+        } catch (_error) {
             return false;
         }
     }
@@ -389,7 +389,7 @@ export class RemoteDriver implements Driver {
      * });
      * ```
      */
-    async executeQuery(ast: QueryAST, options?: any): Promise<{ value: any[]; count?: number }> {
+    async executeQuery(ast: QueryAST, _options?: any): Promise<{ value: any[]; count?: number }> {
         return this.retryWithBackoff(async () => {
             const endpoint = this.buildEndpoint(this.queryPath);
             this.log('executeQuery', { endpoint, ast });
@@ -478,7 +478,7 @@ export class RemoteDriver implements Driver {
      * });
      * ```
      */
-    async executeCommand(command: Command, options?: any): Promise<CommandResult> {
+    async executeCommand(command: Command, _options?: any): Promise<CommandResult> {
         return this.retryWithBackoff(async () => {
             const endpoint = this.buildEndpoint(this.commandPath);
             this.log('executeCommand', { endpoint, command });
@@ -557,7 +557,7 @@ export class RemoteDriver implements Driver {
      * });
      * ```
      */
-    async execute(endpoint?: string, payload?: any, options?: any): Promise<any> {
+    async execute(endpoint?: string, payload?: any, _options?: any): Promise<any> {
         return this.retryWithBackoff(async () => {
             const targetEndpoint = endpoint 
                 ? this.buildEndpoint(endpoint)
@@ -630,40 +630,40 @@ export class RemoteDriver implements Driver {
      * QueryAST format uses 'top' for limit, while UnifiedQuery uses 'limit'.
      * QueryAST sort is array of {field, order}, while UnifiedQuery is array of [field, order].
      */
-    async find(objectName: string, query: any, options?: any): Promise<any[]> {
+    async find(objectName: string, query: any, _options?: any): Promise<any[]> {
         return this.request('find', objectName, query);
     }
 
-    async findOne(objectName: string, id: string | number, query?: any, options?: any): Promise<any> {
+    async findOne(objectName: string, id: string | number, query?: any, _options?: any): Promise<any> {
         return this.request('findOne', objectName, { id, query });
     }
 
-    async create(objectName: string, data: any, options?: any): Promise<any> {
+    async create(objectName: string, data: any, _options?: any): Promise<any> {
         return this.request('create', objectName, data);
     }
 
-    async update(objectName: string, id: string | number, data: any, options?: any): Promise<any> {
+    async update(objectName: string, id: string | number, data: any, _options?: any): Promise<any> {
         // args for update: { id, data } based on server code: repo.update(req.args.id, req.args.data)
         return this.request('update', objectName, { id, data });
     }
 
-    async delete(objectName: string, id: string | number, options?: any): Promise<any> {
+    async delete(objectName: string, id: string | number, _options?: any): Promise<any> {
         return this.request('delete', objectName, { id });
     }
 
-    async count(objectName: string, filters: any, options?: any): Promise<number> {
+    async count(objectName: string, filters: any, _options?: any): Promise<number> {
         return this.request('count', objectName, filters);
     }
 
-    async createMany(objectName: string, data: any[], options?: any): Promise<any> {
+    async createMany(objectName: string, data: any[], _options?: any): Promise<any> {
         return this.request('createMany', objectName, data);
     }
 
-    async updateMany(objectName: string, filters: any, data: any, options?: any): Promise<any> {
+    async updateMany(objectName: string, filters: any, data: any, _options?: any): Promise<any> {
         return this.request('updateMany', objectName, { filters, data });
     }
 
-    async deleteMany(objectName: string, filters: any, options?: any): Promise<any> {
+    async deleteMany(objectName: string, filters: any, _options?: any): Promise<any> {
         return this.request('deleteMany', objectName, { filters });
     }
 }

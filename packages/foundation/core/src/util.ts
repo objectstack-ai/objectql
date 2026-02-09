@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { ObjectConfig, FieldConfig, FieldType, IntrospectedSchema, IntrospectedColumn, IntrospectedTable } from '@objectql/types';
+import { ObjectConfig, FieldConfig, FieldType, IntrospectedSchema } from '@objectql/types';
 
 export function toTitleCase(str: string): string {
     return str

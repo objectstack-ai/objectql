@@ -6,11 +6,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { ObjectQLContext, IObjectQL, ObjectConfig, Driver, UnifiedQuery, ActionContext, HookAPI, RetrievalHookContext, MutationHookContext, UpdateHookContext, ValidationContext, ValidationError, ValidationRuleResult, FormulaContext, Filter, QueryAST, ObjectQLError } from '@objectql/types';
+import { ObjectQLContext, IObjectQL, ObjectConfig, Driver, UnifiedQuery, ActionContext, HookAPI, RetrievalHookContext, MutationHookContext, UpdateHookContext, ObjectQLError } from '@objectql/types';
 import type { ObjectKernel } from '@objectstack/runtime';
 import { Data } from '@objectstack/spec';
 import { z } from 'zod';
-type SortNode = z.infer<typeof Data.SortNodeSchema>;
+type _SortNode = z.infer<typeof Data.SortNodeSchema>;
 
 export class ObjectRepository {
 
@@ -189,7 +189,7 @@ export class ObjectRepository {
         return hookCtx.result;
     }
 
-    async update(id: string | number, doc: any, options?: any): Promise<any> {
+    async update(id: string | number, doc: any, _options?: any): Promise<any> {
         const previousData = await this.findOne(id);
         const hookCtx: UpdateHookContext = {
             ...this.context,
@@ -258,7 +258,7 @@ export class ObjectRepository {
     }
 
     async createMany(data: any[]): Promise<any> {
-        const driver = this.getDriver();
+        const _driver = this.getDriver();
         
         // Always use fallback to ensure validation and hooks are executed
         // This maintains ObjectQL's metadata-driven architecture where

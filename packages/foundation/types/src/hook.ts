@@ -6,7 +6,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { UnifiedQuery } from "./query";
 
 /**
  * Standard CRUD operations supported by hooks.
@@ -35,7 +34,7 @@ export interface HookAPI {
 /**
  * Base context available in all hooks.
  */
-export interface BaseHookContext<T = any> {
+export interface BaseHookContext<_T = any> {
     /** The name of the object (entity) being acted upon. */
     objectName: string;
     

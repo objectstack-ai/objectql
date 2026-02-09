@@ -180,7 +180,7 @@ export class FormulaEngine {
     expression: string,
     context: Record<string, any>,
     timeout: number,
-    options: FormulaEvaluationOptions
+    _options: FormulaEvaluationOptions
   ): FormulaValue {
     // Check for blocked operations
     // NOTE: This is a basic check using string matching. It will have false positives

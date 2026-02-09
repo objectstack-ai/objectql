@@ -143,7 +143,7 @@ export async function syncDatabase(options: SyncOptions) {
 /**
  * Generate ObjectQL object definition from introspected table
  */
-function generateObjectDefinition(table: IntrospectedTable, schema: IntrospectedSchema): ObjectConfig {
+function generateObjectDefinition(table: IntrospectedTable, _schema: IntrospectedSchema): ObjectConfig {
     const obj: ObjectConfig = {
         name: table.name,
         label: formatLabel(table.name),
@@ -214,7 +214,7 @@ function generateObjectDefinition(table: IntrospectedTable, schema: Introspected
 /**
  * Map SQL native type to ObjectQL field type
  */
-function mapSqlTypeToObjectQL(sqlType: string, column: IntrospectedColumn): FieldType {
+function mapSqlTypeToObjectQL(sqlType: string, _column: IntrospectedColumn): FieldType {
     const type = sqlType.toLowerCase();
     
     // Integer types - map to 'number'
@@ -290,7 +290,7 @@ async function loadObjectQLInstance(configPath?: string): Promise<IObjectQL> {
                     module: 'commonjs'
                 }
             });
-        } catch (err) {
+        } catch (_err) {
             throw new ObjectQLError({ code: 'CONFIG_ERROR', message: 'TypeScript config file detected but ts-node is not installed. Please run: npm install --save-dev ts-node' });
         }
     }
@@ -301,7 +301,7 @@ async function loadObjectQLInstance(configPath?: string): Promise<IObjectQL> {
     try {
         const resolvedPath = require.resolve(configFile);
         delete require.cache[resolvedPath];
-    } catch (e) {
+    } catch (_e) {
         // Ignore resolution errors
     }
 

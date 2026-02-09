@@ -199,7 +199,7 @@ export class PermissionLoader {
     
     // Pre-compile record-level rules
     if (config.record_rules) {
-      config.record_rules.forEach((rule: any, index: number) => {
+      config.record_rules.forEach((rule: any, _index: number) => {
         const roleLookup = new Map<string, Set<string>>();
         let permissionBitmask = 0;
         

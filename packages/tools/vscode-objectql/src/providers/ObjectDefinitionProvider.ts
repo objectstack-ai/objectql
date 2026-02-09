@@ -12,14 +12,14 @@ import { ObjectIndex } from '../services/ObjectIndex';
 export class ObjectDefinitionProvider implements vscode.DefinitionProvider {
     constructor(private objectIndex: ObjectIndex) {}
 
-    public navigateTo(objectName: string) {
+    public navigateTo(_objectName: string) {
         // ...
     }
 
     public async provideDefinition(
         document: vscode.TextDocument,
         position: vscode.Position,
-        token: vscode.CancellationToken
+        _token: vscode.CancellationToken
     ): Promise<vscode.Definition | undefined> {
         const line = document.lineAt(position);
         const text = line.text;

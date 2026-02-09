@@ -484,7 +484,7 @@ describe('MemoryDriver', () => {
                 if (fs.existsSync(testFilePath)) {
                     fs.unlinkSync(testFilePath);
                 }
-            } catch (e) {
+            } catch (_e) {
                 // Ignore errors
             }
         });

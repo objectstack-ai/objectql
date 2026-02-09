@@ -51,7 +51,7 @@ export function loadPlugin(packageName: string): PluginDefinition {
                     if (isPlugin(inst)) {
                         return inst;
                     }
-                } catch (e) {
+                } catch (_e) {
                     // Not a constructor or instantiation failed
                 }
             }

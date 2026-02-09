@@ -43,7 +43,7 @@ export type ActionInputDefinition = Record<string, FieldConfig>;
  * 
  * RUNTIME TYPE: Used during action execution.
  */
-export interface ActionContext<BaseT = any, InputT = any> {
+export interface ActionContext<_BaseT = any, InputT = any> {
     /** The object this action belongs to. */
     objectName: string;
     

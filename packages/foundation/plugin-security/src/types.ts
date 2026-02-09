@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import type { PermissionConfig, PermissionCheckContext, PermissionCheckResult } from '@objectql/types';
+import type { PermissionConfig, PermissionCheckResult } from '@objectql/types';
 import type { Identity } from '@objectstack/spec';
 
 // Extract Role type from Identity namespace

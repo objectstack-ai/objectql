@@ -7,7 +7,7 @@
  */
 
 import { convertIntrospectedSchemaToObjects } from '../src/util';
-import { IntrospectedSchema, ObjectConfig } from '@objectql/types';
+import { IntrospectedSchema } from '@objectql/types';
 
 describe('convertIntrospectedSchemaToObjects', () => {
     it('should convert simple table to object config', () => {

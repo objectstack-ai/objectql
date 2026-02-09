@@ -234,7 +234,7 @@ class ODataEndpoint implements ProtocolEndpoint {
         const error = await response.json();
         errorCode = error.error?.code || 'QUERY_ERROR';
         errorMessage = error.error?.message || 'Query failed';
-      } catch (e) {
+      } catch (_e) {
         errorMessage = `HTTP ${response.status}: ${await response.text().catch(() => 'No error message')}`;
       }
       return {
@@ -375,7 +375,7 @@ class ODataEndpoint implements ProtocolEndpoint {
       jsonMatches.forEach(match => {
         try {
           results.push(JSON.parse(match));
-        } catch (e) {
+        } catch (_e) {
           // Skip invalid JSON
         }
       });

@@ -7,7 +7,6 @@
  */
 
 import { MongoDriver } from '../src';
-import { MongoClient } from 'mongodb';
 import { vi } from 'vitest';
 
 const mockCollection = {

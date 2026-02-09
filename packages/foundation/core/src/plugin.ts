@@ -98,7 +98,7 @@ export class ObjectQLPlugin implements RuntimePlugin {
   version = '4.0.2';
   private logger: Logger;
   
-  constructor(private config: ObjectQLPluginConfig = {}, ql?: any) {
+  constructor(private config: ObjectQLPluginConfig = {}, _ql?: any) {
     // Set defaults
     this.config = {
       enableRepository: true,
@@ -207,7 +207,7 @@ export class ObjectQLPlugin implements RuntimePlugin {
    * Called when the kernel starts
    * This is the initialization phase
    */
-  async onStart(ctx: RuntimeContext): Promise<void> {
+  async onStart(_ctx: RuntimeContext): Promise<void> {
     this.logger.debug('Starting plugin...');
     // Additional startup logic can be added here
   }

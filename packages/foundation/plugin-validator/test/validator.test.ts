@@ -15,7 +15,6 @@ import {
     BusinessRuleValidationRule,
     CustomValidationRule,
     FieldConfig,
-    AnyValidationRule,
 } from '@objectql/types';
 
 describe('Validator', () => {

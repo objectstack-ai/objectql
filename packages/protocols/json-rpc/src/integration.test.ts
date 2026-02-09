@@ -14,7 +14,7 @@ const createTestKernel = () => {
     const driver = new MemoryDriver();
     
     const metadata = {
-        register: (type: string, name: string, item: any) => {},
+        register: (_type: string, _name: string, _item: any) => {},
         list: (type: string) => {
             if (type === 'object') {
                 return [
@@ -263,7 +263,7 @@ describe('JSON-RPC 2.0 Protocol Integration Tests', () => {
             });
             
             // Update
-            const updated = await kernel.repository.update('tasks', created.id, {
+            const _updated = await kernel.repository.update('tasks', created.id, {
                 priority: 'high'
             });
             

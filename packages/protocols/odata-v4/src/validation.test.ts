@@ -14,14 +14,12 @@ import {
     validateBatchRequest,
     createODataError,
     mapErrorToODataError,
-    QueryOptionsSchema,
     TopParamSchema,
     SkipParamSchema,
     SelectParamSchema,
     ExpandParamSchema,
     FilterParamSchema,
     OrderByParamSchema,
-    BatchRequestSchema
 } from './validation';
 
 describe('OData V4 Protocol Validation', () => {

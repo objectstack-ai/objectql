@@ -1,7 +1,7 @@
-import { Data, System as SystemSpec } from '@objectstack/spec';
+import { Data, System as _SystemSpec } from '@objectstack/spec';
 import { z } from 'zod';
-import { QueryAST, SortNode } from '@objectql/types';
-type DriverInterface = z.infer<typeof Data.DriverInterface>;
+import { QueryAST } from '@objectql/types';
+type _DriverInterface = z.infer<typeof Data.DriverInterface>;
 /**
  * ObjectQL
  * Copyright (c) 2026-present ObjectStack Inc.
@@ -119,7 +119,7 @@ export class MongoDriver implements Driver {
             if (!this.db) return false;
             await this.db.admin().ping();
             return true;
-        } catch (error) {
+        } catch (_error) {
             return false;
         }
     }
@@ -336,7 +336,7 @@ export class MongoDriver implements Driver {
      * QueryAST sort is array of {field, order}, while UnifiedQuery is array of [field, order].
      * QueryAST uses 'aggregations', while legacy uses 'aggregate'.
      */
-    async find(objectName: string, query: any, options?: any): Promise<any[]> {
+    async find(objectName: string, query: any, _options?: any): Promise<any[]> {
         const collection = await this.getCollection(objectName);
         
         // Handle both new format (where) and legacy format (filters)
@@ -486,7 +486,7 @@ export class MongoDriver implements Driver {
         return result.deletedCount;
     }
 
-    async count(objectName: string, filters: any, options?: any): Promise<number> {
+    async count(objectName: string, filters: any, _options?: any): Promise<number> {
         const collection = await this.getCollection(objectName);
         // Handle both filter objects and query objects
         let actualFilters = filters;
@@ -524,7 +524,7 @@ export class MongoDriver implements Driver {
         const filter = this.mapFilters(filters);
         
         // Remove 'id' field from update data as it shouldn't be updated
-        const { id: idToIgnore, ...updateData } = data;
+        const { id: _idToIgnore, ...updateData } = data;
         
         const isAtomic = Object.keys(updateData).some(k => k.startsWith('$'));
         const update = isAtomic ? updateData : { $set: updateData };
@@ -548,7 +548,7 @@ export class MongoDriver implements Driver {
         return { deletedCount: result.deletedCount };
     }
 
-    async aggregate(objectName: string, pipeline: any[], options?: any): Promise<any[]> {
+    async aggregate(objectName: string, pipeline: any[], _options?: any): Promise<any[]> {
         const collection = await this.getCollection(objectName);
         const results = await collection.aggregate(pipeline).toArray();
         // Map MongoDB documents to API format (convert _id to id)
@@ -563,7 +563,7 @@ export class MongoDriver implements Driver {
      * @param options - Optional query options
      * @returns Array of distinct values
      */
-    async distinct(objectName: string, field: string, filters?: any, options?: any): Promise<any[]> {
+    async distinct(objectName: string, field: string, filters?: any, _options?: any): Promise<any[]> {
         const collection = await this.getCollection(objectName);
         
         // Convert ObjectQL filters to MongoDB query format
@@ -689,7 +689,7 @@ export class MongoDriver implements Driver {
 
     async disconnect() {
         // Close all active change streams
-        for (const [streamId, stream] of this.changeStreams.entries()) {
+        for (const [_streamId, stream] of this.changeStreams.entries()) {
             await stream.close();
         }
         this.changeStreams.clear();
@@ -755,7 +755,7 @@ export class MongoDriver implements Driver {
         changeStream.on('change', async (change) => {
             try {
                 await handler(change);
-            } catch (error) {
+            } catch (_error) {
                 // Error silently ignored
             }
         });

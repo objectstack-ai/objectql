@@ -14,8 +14,7 @@
  */
 
 import { FormulaEngine } from '../src/formula-engine';
-import { Repository } from '../src/repository';
-import type { ObjectConfig, FormulaContext } from '@objectql/types';
+import type { FormulaContext } from '@objectql/types';
 
 describe('Formula Specification Compliance', () => {
   let engine: FormulaEngine;

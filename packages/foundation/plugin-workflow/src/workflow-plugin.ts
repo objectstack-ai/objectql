@@ -100,7 +100,7 @@ export class WorkflowPlugin implements RuntimePlugin {
     return this.install(ctx);
   }
 
-  async start(ctx: any): Promise<void> {
+  async start(_ctx: any): Promise<void> {
     return Promise.resolve();
   }
 

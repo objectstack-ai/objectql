@@ -424,20 +424,20 @@ export function runProtocolTCK(
  * Export individual test categories for custom test composition
  */
 export const ProtocolTCK = {
-    runCRUDTests: (endpoint: ProtocolEndpoint, entity: string, timeout: number) => {
+    runCRUDTests: (_endpoint: ProtocolEndpoint, _entity: string, _timeout: number) => {
         // Individual CRUD test implementation
         // Can be used for custom test composition
     },
     
-    runQueryTests: (endpoint: ProtocolEndpoint, entity: string, timeout: number) => {
+    runQueryTests: (_endpoint: ProtocolEndpoint, _entity: string, _timeout: number) => {
         // Individual query test implementation
     },
     
-    runMetadataTests: (endpoint: ProtocolEndpoint, timeout: number) => {
+    runMetadataTests: (_endpoint: ProtocolEndpoint, _timeout: number) => {
         // Individual metadata test implementation
     },
     
-    runErrorHandlingTests: (endpoint: ProtocolEndpoint, entity: string, timeout: number) => {
+    runErrorHandlingTests: (_endpoint: ProtocolEndpoint, _entity: string, _timeout: number) => {
         // Individual error handling test implementation
     }
 };

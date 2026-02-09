@@ -8,7 +8,6 @@
 
 import { 
     MetadataRegistry,
-    MetadataItem,
     Driver, 
     ObjectConfig, 
     ObjectQLContext, 
@@ -20,7 +19,6 @@ import {
     HookContext,
     ActionHandler,
     ActionContext,
-    LoaderPlugin,
     Logger,
     ConsoleLogger,
     ObjectQLError
@@ -159,7 +157,7 @@ export class ObjectQL implements IObjectQL {
                  // Also clean up non-object metadata items by package
                  const metadata = (SchemaRegistry as any).metadata;
                  if (metadata && metadata instanceof Map) {
-                     for (const [type, collection] of metadata.entries()) {
+                     for (const [_type, collection] of metadata.entries()) {
                          if (collection instanceof Map) {
                              for (const [key, item] of collection.entries()) {
                                  if ((item as any).package === packageName) {
@@ -467,7 +465,7 @@ export class ObjectQL implements IObjectQL {
 
         // Load In-Memory Objects (Dynamic Layer)
         if (this.config.objects) {
-            for (const [key, obj] of Object.entries(this.config.objects)) {
+            for (const [_key, obj] of Object.entries(this.config.objects)) {
                 this.registerObject(obj);
             }
         }

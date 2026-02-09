@@ -16,7 +16,7 @@ const createTestKernel = () => {
     const driver = new MemoryDriver();
     
     const metadata = {
-        register: (type: string, name: string, item: any) => {},
+        register: (_type: string, _name: string, _item: any) => {},
         list: (type: string) => {
             if (type === 'object') {
                 return [

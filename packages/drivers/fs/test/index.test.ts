@@ -319,7 +319,7 @@ describe('FileSystemDriver', () => {
         });
 
         test('should handle _id field', async () => {
-            const result = await driver.create('docs', {
+            const _result = await driver.create('docs', {
                 _id: 'mongo-style-id',
                 title: 'Document'
             });
@@ -591,7 +591,7 @@ describe('FileSystemDriver', () => {
             test('should execute bulkDelete command', async () => {
                 const user1 = await driver.create('users', { name: 'Alice' });
                 const user2 = await driver.create('users', { name: 'Bob' });
-                const user3 = await driver.create('users', { name: 'Charlie' });
+                const _user3 = await driver.create('users', { name: 'Charlie' });
 
                 const result = await driver.executeCommand({
                     type: 'bulkDelete',

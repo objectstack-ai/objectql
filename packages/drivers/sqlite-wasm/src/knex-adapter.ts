@@ -6,7 +6,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { Knex } from 'knex';
 import { ObjectQLError } from '@objectql/types';
 
 /**
@@ -120,7 +119,7 @@ export class KnexWaSqliteClient {
         return this.client;
     }
 
-    async releaseConnection(connection: WaSqliteClient): Promise<void> {
+    async releaseConnection(_connection: WaSqliteClient): Promise<void> {
         // No-op for single connection
     }
 
@@ -128,14 +127,14 @@ export class KnexWaSqliteClient {
         await this.client.close();
     }
 
-    processResponse(obj: any, runner: any): any {
+    processResponse(obj: any, _runner: any): any {
         if (obj && obj.rows) {
             return obj.rows;
         }
         return obj;
     }
 
-    _stream(connection: any, obj: any, stream: any, options: any): any {
+    _stream(_connection: any, _obj: any, _stream: any, _options: any): any {
         throw new ObjectQLError({ code: 'DRIVER_UNSUPPORTED_OPERATION', message: 'Streaming is not supported in wa-sqlite adapter' });
     }
 

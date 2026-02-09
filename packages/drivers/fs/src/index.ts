@@ -1,7 +1,6 @@
-import { Data, System as SystemSpec } from '@objectstack/spec';
+import { Data, System as _SystemSpec } from '@objectstack/spec';
 import { z } from 'zod';
-import { QueryAST, SortNode } from '@objectql/types';
-type DriverInterface = z.infer<typeof Data.DriverInterface>;
+type _DriverInterface = z.infer<typeof Data.DriverInterface>;
 /**
  * ObjectQL
  * Copyright (c) 2026-present ObjectStack Inc.
@@ -160,7 +159,7 @@ export class FileSystemDriver extends MemoryDriver {
                 return [];
             }
             return JSON.parse(content);
-        } catch (error) {
+        } catch (_error) {
             throw new ObjectQLError({
                 code: 'INVALID_JSON_FORMAT',
                 message: `Failed to parse ${filePath}: invalid JSON format`

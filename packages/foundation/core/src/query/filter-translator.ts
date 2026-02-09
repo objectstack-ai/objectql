@@ -7,9 +7,6 @@
  */
 
 import type { Filter } from '@objectql/types';
-import { Data } from '@objectstack/spec';
-import { z } from 'zod';
-import { ObjectQLError } from '@objectql/types';
 
 /**
  * Filter Translator

@@ -131,7 +131,7 @@ export interface PaginationMeta {
 /**
  * Base response structure for Data API operations
  */
-export interface DataApiResponse<T = unknown> {
+export interface DataApiResponse<_T = unknown> {
     /** Error information if the operation failed */
     error?: ApiError;
     /** Additional response fields for successful operations */
@@ -252,7 +252,7 @@ export interface DataApiDeleteResponse extends DataApiResponse {
 /**
  * Base response structure for Metadata API operations
  */
-export interface MetadataApiResponse<T = unknown> {
+export interface MetadataApiResponse<_T = unknown> {
     /** Error information if the operation failed */
     error?: ApiError;
     /** Additional response fields */

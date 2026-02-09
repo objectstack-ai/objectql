@@ -43,7 +43,7 @@ class MockMetadataRegistry {
     
     unregisterPackage(packageName: string): void {
         // Simple implementation - in real runtime this would filter by package
-        for (const [type, typeMap] of this.store.entries()) {
+        for (const [_type, typeMap] of this.store.entries()) {
             const toDelete: string[] = [];
             for (const [id, item] of typeMap.entries()) {
                 if (item.packageName === packageName || item.package === packageName) {
@@ -233,11 +233,11 @@ export class ObjectKernel {
         return true;
     }
     
-    getMetadata(objectName: string): any {
+    getMetadata(_objectName: string): any {
         return {};
     }
     
-    getView(objectName: string, viewType?: 'list' | 'form'): any {
+    getView(_objectName: string, _viewType?: 'list' | 'form'): any {
         return null;
     }
 }

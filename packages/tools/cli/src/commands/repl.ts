@@ -7,8 +7,8 @@
  */
 
 import * as repl from 'repl';
-import * as path from 'path';
-import * as fs from 'fs';
+import * as _path from 'path';
+import * as _fs from 'fs';
 import { ObjectQL } from '@objectql/core';
 import { register } from 'ts-node';
 import { resolveConfigFile } from '../utils/config-loader';

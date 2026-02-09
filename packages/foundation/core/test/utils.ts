@@ -20,22 +20,22 @@ export class MockDriver implements Driver {
         return this.data[objectName];
     }
 
-    async find(objectName: string, query: any, options?: any): Promise<any[]> {
+    async find(objectName: string, _query: any, _options?: any): Promise<any[]> {
         return this.getData(objectName);
     }
 
-    async findOne(objectName: string, id: string | number, query?: any, options?: any): Promise<any> {
+    async findOne(objectName: string, id: string | number, _query?: any, _options?: any): Promise<any> {
         return this.getData(objectName).find(item => item.id == id);
     }
 
-    async create(objectName: string, data: any, options?: any): Promise<any> {
+    async create(objectName: string, data: any, _options?: any): Promise<any> {
         const list = this.getData(objectName);
         if (!data.id) data.id = list.length + 1;
         list.push(data);
         return data;
     }
 
-    async update(objectName: string, id: string | number, data: any, options?: any): Promise<any> {
+    async update(objectName: string, id: string | number, data: any, _options?: any): Promise<any> {
         const list = this.getData(objectName);
         const idx = list.findIndex(item => item.id == id);
         if (idx >= 0) {
@@ -45,7 +45,7 @@ export class MockDriver implements Driver {
         return null;
     }
 
-    async delete(objectName: string, id: string | number, options?: any): Promise<any> {
+    async delete(objectName: string, id: string | number, _options?: any): Promise<any> {
         const list = this.getData(objectName);
         const idx = list.findIndex(item => item.id == id);
         if (idx >= 0) {
@@ -56,7 +56,7 @@ export class MockDriver implements Driver {
         return null;
     }
 
-    async count(objectName: string, filters: any, options?: any): Promise<number> {
+    async count(objectName: string, _filters: any, _options?: any): Promise<number> {
         return this.getData(objectName).length;
     }
 }

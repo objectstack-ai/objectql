@@ -13,7 +13,7 @@ import * as yaml from 'js-yaml';
 import glob from 'fast-glob';
 
 // Naming convention regex
-const VALID_NAME_REGEX = /^[a-z][a-z0-9_]*$/;
+const _VALID_NAME_REGEX = /^[a-z][a-z0-9_]*$/;
 
 interface FormatOptions {
     dir?: string;
@@ -35,7 +35,7 @@ export async function format(options: FormatOptions) {
     let prettier: any;
     try {
         prettier = await import('prettier');
-    } catch (e) {
+    } catch (_e) {
         console.error(chalk.red('❌ Prettier is not installed. Install it with: npm install --save-dev prettier'));
         process.exit(1);
     }

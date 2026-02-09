@@ -1,6 +1,6 @@
 import { Data } from '@objectstack/spec';
 import { z } from 'zod';
-type DriverInterface = z.infer<typeof Data.DriverInterface>;
+type _DriverInterface = z.infer<typeof Data.DriverInterface>;
 /**
  * ObjectQL
  * Copyright (c) 2026-present ObjectStack Inc.
@@ -258,7 +258,7 @@ export class ExcelDriver extends MemoryDriver {
                     await workbook.xlsx.readFile(filePath);
                     this.workbooks.set(objectName, workbook);
                     this.loadDataFromWorkbookForObject(workbook, objectName);
-                } catch (error) {
+                } catch (_error) {
                     // Error silently ignored
                 }
                 this.releaseLock(filePath);

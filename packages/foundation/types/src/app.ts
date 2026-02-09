@@ -11,7 +11,6 @@ import { Driver } from "./driver";
 import { MetadataRegistry } from "./registry";
 import { HookName, HookHandler, HookContext } from "./hook";
 import { ActionHandler, ActionContext } from "./action";
-import { LoaderPlugin } from "./loader";
 
 export interface IObjectQL {
     getObject(name: string): ObjectConfig | undefined;
