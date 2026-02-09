@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { Driver, DriverCapabilities, ObjectQLError } from '@objectql/types';
+import { Driver, DriverCapabilities } from '@objectql/types';
 import { SqlDriver } from '@objectql/driver-sql';
 import { checkWebAssembly, checkOPFS } from './environment';
 
@@ -105,7 +105,6 @@ export class SqliteWasmDriver implements Driver {
         if (this.config.storage === 'opfs') {
             const hasOPFS = await checkOPFS();
             if (!hasOPFS) {
-                console.warn('[SqliteWasmDriver] OPFS not available, falling back to memory storage');
                 this.config.storage = 'memory';
             }
         }

@@ -7,7 +7,7 @@
  */
 
 import type { UnifiedQuery, ObjectConfig, MetadataRegistry } from '@objectql/types';
-import { QueryAST } from '@objectql/types';
+import { QueryAST, ObjectQLError } from '@objectql/types';
 import { QueryService, QueryOptions } from './query-service';
 
 /**
@@ -273,7 +273,7 @@ export class QueryAnalyzer {
     private getSchema(objectName: string): ObjectConfig {
         const obj = this.metadata.get('object', objectName);
         if (!obj) {
-            throw new Error(`Object '${objectName}' not found`);
+            throw new ObjectQLError({ code: 'NOT_FOUND', message: `Object '${objectName}' not found` });
         }
         return obj;
     }

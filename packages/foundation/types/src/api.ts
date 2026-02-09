@@ -34,7 +34,31 @@ export enum ApiErrorCode {
     CONFLICT = 'CONFLICT',
     INTERNAL_ERROR = 'INTERNAL_ERROR',
     DATABASE_ERROR = 'DATABASE_ERROR',
-    RATE_LIMIT_EXCEEDED = 'RATE_LIMIT_EXCEEDED'
+    RATE_LIMIT_EXCEEDED = 'RATE_LIMIT_EXCEEDED',
+
+    // Driver error codes
+    DRIVER_ERROR = 'DRIVER_ERROR',
+    DRIVER_CONNECTION_FAILED = 'DRIVER_CONNECTION_FAILED',
+    DRIVER_QUERY_FAILED = 'DRIVER_QUERY_FAILED',
+    DRIVER_TRANSACTION_FAILED = 'DRIVER_TRANSACTION_FAILED',
+    DRIVER_UNSUPPORTED_OPERATION = 'DRIVER_UNSUPPORTED_OPERATION',
+
+    // Protocol error codes
+    PROTOCOL_ERROR = 'PROTOCOL_ERROR',
+    PROTOCOL_INVALID_REQUEST = 'PROTOCOL_INVALID_REQUEST',
+    PROTOCOL_METHOD_NOT_FOUND = 'PROTOCOL_METHOD_NOT_FOUND',
+    PROTOCOL_BATCH_ERROR = 'PROTOCOL_BATCH_ERROR',
+
+    // Plugin error codes
+    TENANT_ISOLATION_VIOLATION = 'TENANT_ISOLATION_VIOLATION',
+    TENANT_NOT_FOUND = 'TENANT_NOT_FOUND',
+    WORKFLOW_TRANSITION_DENIED = 'WORKFLOW_TRANSITION_DENIED',
+    FORMULA_EVALUATION_ERROR = 'FORMULA_EVALUATION_ERROR',
+
+    // CLI/Tool error codes
+    CONFIG_ERROR = 'CONFIG_ERROR',
+    SCAFFOLD_ERROR = 'SCAFFOLD_ERROR',
+    MIGRATION_ERROR = 'MIGRATION_ERROR'
 }
 
 /**
@@ -73,7 +97,7 @@ export class ObjectQLError extends Error {
         this.details = error.details;
         
         // Preserve proper stack traces in Node.js environments
-        const ErrorConstructor = Error as unknown as { captureStackTrace?: (target: object, constructor: Function) => void };
+        const ErrorConstructor = Error as unknown as { captureStackTrace?: (target: object, constructor: new (...args: any[]) => any) => void };
         if (typeof ErrorConstructor.captureStackTrace === 'function') {
             ErrorConstructor.captureStackTrace(this, ObjectQLError);
         }
@@ -107,7 +131,7 @@ export interface PaginationMeta {
 /**
  * Base response structure for Data API operations
  */
-export interface DataApiResponse<T = unknown> {
+export interface DataApiResponse<_T = unknown> {
     /** Error information if the operation failed */
     error?: ApiError;
     /** Additional response fields for successful operations */
@@ -228,7 +252,7 @@ export interface DataApiDeleteResponse extends DataApiResponse {
 /**
  * Base response structure for Metadata API operations
  */
-export interface MetadataApiResponse<T = unknown> {
+export interface MetadataApiResponse<_T = unknown> {
     /** Error information if the operation failed */
     error?: ApiError;
     /** Additional response fields */

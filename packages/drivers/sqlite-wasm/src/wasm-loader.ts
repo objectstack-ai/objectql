@@ -11,6 +11,8 @@
  * Handles lazy loading and initialization of the SQLite WASM module
  */
 
+import { ObjectQLError } from '@objectql/types';
+
 let wasmModule: any = null;
 let sqlite3: any = null;
 
@@ -38,7 +40,7 @@ export async function loadWasmModule(): Promise<any> {
  */
 export function getSqlite3(): any {
     if (!sqlite3) {
-        throw new Error('SQLite WASM module not loaded. Call loadWasmModule() first.');
+        throw new ObjectQLError({ code: 'DRIVER_ERROR', message: 'SQLite WASM module not loaded. Call loadWasmModule() first.' });
     }
     return sqlite3;
 }

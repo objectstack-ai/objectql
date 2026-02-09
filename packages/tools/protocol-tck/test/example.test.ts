@@ -4,7 +4,7 @@
  * Demonstrates how to use the Protocol TCK with a mock protocol endpoint
  */
 
-import { describe, expect, test, beforeEach } from 'vitest';
+import { describe } from 'vitest';
 import { runProtocolTCK, ProtocolEndpoint, ProtocolOperation, ProtocolResponse } from '../src/index';
 
 /**

@@ -35,12 +35,12 @@ describe('RedisDriver', () => {
             // Verify connection by attempting a simple operation
             await d.count('_test_connection', []);
             driver = d;
-        } catch (error) {
+        } catch (_error) {
             console.warn('Redis not available, skipping tests');
             if (d) {
                 try {
                     await d.disconnect();
-                } catch (e) {
+                } catch (_e) {
                     // Ignore disconnect error
                 }
             }
@@ -58,7 +58,7 @@ describe('RedisDriver', () => {
                 for (const record of results) {
                     await driver.delete(TEST_OBJECT, record.id);
                 }
-            } catch (error) {
+            } catch (_error) {
                 // Ignore cleanup errors
             }
             
@@ -74,7 +74,7 @@ describe('RedisDriver', () => {
                 for (const record of results) {
                     await driver.delete(TEST_OBJECT, record.id);
                 }
-            } catch (error) {
+            } catch (_error) {
                 // Ignore cleanup errors
             }
         }

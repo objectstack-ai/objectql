@@ -101,7 +101,7 @@ export interface SimpleCondition {
     /** Comparison operator */
     operator: PermissionOperator;
     /** Value to compare against (can include variables like $current_user.id) */
-    value: any;
+    value: unknown;
 }
 
 /**
@@ -110,7 +110,7 @@ export interface SimpleCondition {
 export interface ConditionElement {
     field: string;
     operator: PermissionOperator;
-    value: any;
+    value: unknown;
 }
 
 /**
@@ -266,7 +266,7 @@ export interface ActionCondition {
     /** Comparison operator */
     operator: PermissionOperator;
     /** Value to compare */
-    value: any;
+    value: unknown;
 }
 
 /**
@@ -458,7 +458,7 @@ export interface PermissionCheckContext {
         roles?: string[];
         department_id?: string;
         team_id?: string;
-        [key: string]: any;
+        [key: string]: unknown;
     };
     /** Object name */
     object: string;
@@ -469,7 +469,7 @@ export interface PermissionCheckContext {
     /** Field name (for field-level checks) */
     field?: string;
     /** Record data (for condition evaluation) */
-    record?: any;
+    record?: Record<string, unknown>;
 }
 
 /**

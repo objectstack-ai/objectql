@@ -43,7 +43,7 @@ export type ActionInputDefinition = Record<string, FieldConfig>;
  * 
  * RUNTIME TYPE: Used during action execution.
  */
-export interface ActionContext<BaseT = any, InputT = any> {
+export interface ActionContext<_BaseT = Record<string, unknown>, InputT = Record<string, unknown>> {
     /** The object this action belongs to. */
     objectName: string;
     
@@ -71,7 +71,7 @@ export interface ActionContext<BaseT = any, InputT = any> {
      */
     user?: {
         id: string | number;
-        [key: string]: any;
+        [key: string]: unknown;
     };
 }
 
@@ -122,11 +122,11 @@ export interface ActionConfig {
  * 
  * RUNTIME TYPE: Includes the handler function for execution.
  */
-export interface ActionDefinition<BaseT = any, InputT = any, ReturnT = any> extends ActionConfig {
+export interface ActionDefinition<BaseT = Record<string, unknown>, InputT = Record<string, unknown>, ReturnT = unknown> extends ActionConfig {
     /**
      * The business logic implementation.
      */
     handler: (ctx: ActionContext<BaseT, InputT>) => Promise<ReturnT>;
 }
 
-export type ActionHandler<BaseT = any, InputT = any, ReturnT = any> = (ctx: ActionContext<BaseT, InputT>) => Promise<ReturnT>;
+export type ActionHandler<BaseT = Record<string, unknown>, InputT = Record<string, unknown>, ReturnT = unknown> = (ctx: ActionContext<BaseT, InputT>) => Promise<ReturnT>;

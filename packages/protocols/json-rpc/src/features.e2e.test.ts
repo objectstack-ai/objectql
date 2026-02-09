@@ -16,7 +16,7 @@ const createTestKernel = () => {
     const driver = new MemoryDriver();
     
     const metadata = {
-        register: (type: string, name: string, item: any) => {},
+        register: (_type: string, _name: string, _item: any) => {},
         list: (type: string) => {
             if (type === 'object') {
                 return [
@@ -65,7 +65,7 @@ const createTestKernel = () => {
     };
     
     // Mock action registry
-    const actions = new Map<string, Function>();
+    const actions = new Map<string, (...args: any[]) => any>();
     actions.set('sendEmail', async (params: any) => {
         return {
             success: true,

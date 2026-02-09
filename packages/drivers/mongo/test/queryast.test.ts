@@ -7,7 +7,6 @@
  */
 
 import { MongoDriver } from '../src';
-import { MongoClient } from 'mongodb';
 import { vi } from 'vitest';
 
 // Mock data
@@ -289,7 +288,7 @@ describe('MongoDriver (QueryAST Format)', () => {
                 filters: [['id', '=', '1']],
                 fields: ['id', 'name']
             };
-            const results = await driver.find('products', query);
+            const _results = await driver.find('products', query);
             
             expect(mockCollection.find).toHaveBeenCalledWith(
                 { _id: '1' },

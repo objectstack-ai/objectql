@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { Driver } from '@objectql/types';
+import { Driver, ObjectQLError } from '@objectql/types';
 
 export function createDriverFromConnection(connection: string): Driver {
     let driverPackage = '';
@@ -45,7 +45,7 @@ export function createDriverFromConnection(connection: string): Driver {
         };
     }
     else {
-        throw new Error(`Unsupported connection protocol: ${connection}`);
+        throw new ObjectQLError({ code: 'DRIVER_UNSUPPORTED_OPERATION', message: `Unsupported connection protocol: ${connection}` });
     }
 
     try {
@@ -53,10 +53,10 @@ export function createDriverFromConnection(connection: string): Driver {
         const pkg = require(driverPackage);
         const DriverClass = pkg[driverClass];
         if (!DriverClass) {
-            throw new Error(`${driverClass} not found in ${driverPackage}`);
+            throw new ObjectQLError({ code: 'DRIVER_ERROR', message: `${driverClass} not found in ${driverPackage}` });
         }
         return new DriverClass(driverConfig);
     } catch (e: any) {
-        throw new Error(`Failed to load driver ${driverPackage}. Please install it: npm install ${driverPackage}. Error: ${e.message}`);
+        throw new ObjectQLError({ code: 'DRIVER_ERROR', message: `Failed to load driver ${driverPackage}. Please install it: npm install ${driverPackage}. Error: ${e.message}` });
     }
 }

@@ -6,7 +6,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import type { PermissionConfig, RecordRuleCondition } from '@objectql/types';
+import { ObjectQLError } from '@objectql/types';
+import type { RecordRuleCondition } from '@objectql/types';
 import type { SecurityContext } from './types';
 import { PermissionLoader } from './permission-loader';
 
@@ -159,11 +160,8 @@ export class QueryTrimmer {
         if (filter && Object.keys(filter).length > 0) {
           return filter;
         }
-      } catch (error: any) {
-        console.warn(
-          `Failed to convert formula condition to filter: ${error.message}. ` +
-          'Formula will be evaluated in-memory, which may affect performance.'
-        );
+      } catch (_error: any) {
+        // Formula will be evaluated in-memory (fallback)
       }
       
       // If we can't convert to a filter, return empty object
@@ -178,11 +176,8 @@ export class QueryTrimmer {
         if (filter && Object.keys(filter).length > 0) {
           return filter;
         }
-      } catch (error: any) {
-        console.warn(
-          `Failed to convert lookup condition to filter: ${error.message}. ` +
-          'Lookup will be evaluated in-memory, which may affect performance.'
-        );
+      } catch (_error: any) {
+        // Lookup will be evaluated in-memory (fallback)
       }
       
       // If we can't convert to a filter, return empty object
@@ -279,7 +274,7 @@ export class QueryTrimmer {
     }
     
     // Unable to convert formula to filter
-    throw new Error(`Unsupported formula pattern: ${formula}`);
+    throw new ObjectQLError({ code: 'INTERNAL_ERROR', message: `Unsupported formula pattern: ${formula}` });
   }
   
   /**
@@ -353,7 +348,7 @@ export class QueryTrimmer {
     const nestedFilter = this.conditionToFilter(nestedCondition, user);
     
     if (Object.keys(nestedFilter).length === 0) {
-      throw new Error('Unable to convert nested lookup condition');
+      throw new ObjectQLError({ code: 'INTERNAL_ERROR', message: 'Unable to convert nested lookup condition' });
     }
     
     // Create a lookup filter

@@ -16,15 +16,15 @@ export interface ApiRequest {
     path: string;
     method: ApiMethod;
     headers: Record<string, string | string[] | undefined>;
-    query: Record<string, any>;
-    body?: any;
+    query: Record<string, unknown>;
+    body?: unknown;
     protocol?: string; // e.g. 'rest', 'graphql'
 }
 
 export interface ApiResponse {
     status: number;
     headers?: Record<string, string | string[]>;
-    body: any;
+    body: unknown;
 }
 
 export interface GatewayProtocol {

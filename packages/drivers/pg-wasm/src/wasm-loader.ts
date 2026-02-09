@@ -11,6 +11,8 @@
  * Handles lazy loading and initialization of the PostgreSQL WASM module
  */
 
+import { ObjectQLError } from '@objectql/types';
+
 let pgliteModule: any = null;
 
 /**
@@ -34,7 +36,7 @@ export async function loadWasmModule(): Promise<any> {
  */
 export function getPGlite(): any {
     if (!pgliteModule) {
-        throw new Error('PGlite WASM module not loaded. Call loadWasmModule() first.');
+        throw new ObjectQLError({ code: 'DRIVER_ERROR', message: 'PGlite WASM module not loaded. Call loadWasmModule() first.' });
     }
     return pgliteModule;
 }

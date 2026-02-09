@@ -125,7 +125,7 @@ export class Validator {
         fieldName: string,
         fieldConfig: FieldConfig,
         value: any,
-        context: ValidationContext
+        _context: ValidationContext
     ): Promise<ValidationRuleResult[]> {
         const results: ValidationRuleResult[] = [];
 
@@ -203,7 +203,7 @@ export class Validator {
                             fields: [fieldName],
                         });
                     }
-                } catch (error) {
+                } catch (_error) {
                     results.push({
                         rule: `${fieldName}_pattern`,
                         valid: false,

@@ -6,7 +6,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { UnifiedQuery } from "./query";
 
 /**
  * Standard CRUD operations supported by hooks.
@@ -22,20 +21,18 @@ export type HookTiming = 'before' | 'after';
  * Minimal API surface exposed to hooks for performing side-effects or checks.
  */
 export interface HookAPI {
-    // We use 'any' here to avoid circular dependencies with core/ObjectQL
-    // In practice, this is the ObjectQL instance.
-    find(objectName: string, query?: any): Promise<any[]>;
-    findOne(objectName: string, id: string | number): Promise<any>;
-    count(objectName: string, query?: any): Promise<number>;
-    create(objectName: string, data: any): Promise<any>;
-    update(objectName: string, id: string | number, data: any): Promise<any>;
-    delete(objectName: string, id: string | number): Promise<any>;
+    find(objectName: string, query?: Record<string, unknown>): Promise<Record<string, unknown>[]>;
+    findOne(objectName: string, id: string | number): Promise<Record<string, unknown> | null>;
+    count(objectName: string, query?: Record<string, unknown>): Promise<number>;
+    create(objectName: string, data: Record<string, unknown>): Promise<Record<string, unknown>>;
+    update(objectName: string, id: string | number, data: Record<string, unknown>): Promise<Record<string, unknown>>;
+    delete(objectName: string, id: string | number): Promise<Record<string, unknown>>;
 }
 
 /**
  * Base context available in all hooks.
  */
-export interface BaseHookContext<T = any> {
+export interface BaseHookContext<_T = Record<string, unknown>> {
     /** The name of the object (entity) being acted upon. */
     objectName: string;
     
@@ -48,24 +45,28 @@ export interface BaseHookContext<T = any> {
     /** User/Session context (Authentication info). */
     user?: {
         id: string | number;
-        [key: string]: any;
+        [key: string]: unknown;
     };
 
     /** 
      * Shared state for passing data between matching 'before' and 'after' hooks.
      * e.g. Calculate a diff in 'beforeUpdate' and read it in 'afterUpdate'.
      */
-    state: Record<string, any>;
+    state: Record<string, unknown>;
 }
 
 /**
  * Context for Retrieval operations (Find, Count).
  */
-export interface RetrievalHookContext<T = any> extends BaseHookContext<T> {
+export interface RetrievalHookContext<T = Record<string, unknown>> extends BaseHookContext<T> {
     operation: 'find' | 'count';
     
-    /** The query criteria being executed. Modifiable in 'before' hooks. */
-    query: any;
+    /** 
+     * The query criteria being executed. Modifiable in 'before' hooks.
+     * Typed as `object` (not `Record<string, unknown>`) because named interfaces
+     * like UnifiedQuery lack index signatures and aren't assignable to Record types.
+     */
+    query: object;
     
     /** The result of the query. Only available in 'after' hooks. */
     result?: T[] | number;
@@ -74,7 +75,7 @@ export interface RetrievalHookContext<T = any> extends BaseHookContext<T> {
 /**
  * Context for Modification operations (Create, Update, Delete).
  */
-export interface MutationHookContext<T = any> extends BaseHookContext<T> {
+export interface MutationHookContext<T = Record<string, unknown>> extends BaseHookContext<T> {
     operation: 'create' | 'update' | 'delete';
     
     /** The record ID. Undefined for 'create'. */
@@ -104,7 +105,7 @@ export interface MutationHookContext<T = any> extends BaseHookContext<T> {
 /**
  * Specialized context for Updates, including change tracking.
  */
-export interface UpdateHookContext<T = any> extends MutationHookContext<T> {
+export interface UpdateHookContext<T = Record<string, unknown>> extends MutationHookContext<T> {
     operation: 'update';
     
     /**
@@ -117,7 +118,7 @@ export interface UpdateHookContext<T = any> extends MutationHookContext<T> {
 /**
  * Definition interface for a set of hooks for a specific object.
  */
-export interface ObjectHookDefinition<T = any> {
+export interface ObjectHookDefinition<T = Record<string, unknown>> {
     beforeFind?: (ctx: RetrievalHookContext<T>) => Promise<void> | void;
     afterFind?: (ctx: RetrievalHookContext<T>) => Promise<void> | void;
     
@@ -135,5 +136,5 @@ export interface ObjectHookDefinition<T = any> {
 }
 
 export type HookName = keyof ObjectHookDefinition;
-export type HookContext<T = any> = RetrievalHookContext<T> | MutationHookContext<T> | UpdateHookContext<T>;
-export type HookHandler<T = any> = (ctx: HookContext<T>) => Promise<void> | void;
+export type HookContext<T = Record<string, unknown>> = RetrievalHookContext<T> | MutationHookContext<T> | UpdateHookContext<T>;
+export type HookHandler<T = Record<string, unknown>> = (ctx: HookContext<T>) => Promise<void> | void;

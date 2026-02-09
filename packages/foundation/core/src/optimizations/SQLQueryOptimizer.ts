@@ -272,10 +272,11 @@ export class SQLQueryOptimizer {
                             case '$lte':
                                 conditions.push(`${key} <= '${val}'`);
                                 break;
-                            case '$in':
+                            case '$in': {
                                 const inValues = (val as any[]).map(v => `'${v}'`).join(', ');
                                 conditions.push(`${key} IN (${inValues})`);
                                 break;
+                            }
                         }
                     }
                 } else {

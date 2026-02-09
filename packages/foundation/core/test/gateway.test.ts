@@ -7,7 +7,7 @@
  */
 
 import { ObjectGateway } from '../src/gateway';
-import { ApiRequest, ApiResponse, GatewayProtocol } from '@objectql/types';
+import { ApiRequest, GatewayProtocol } from '@objectql/types';
 
 describe('ObjectGateway', () => {
     let gateway: ObjectGateway;

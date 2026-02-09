@@ -62,8 +62,8 @@ export interface ValidationAiContext {
     external_dependency?: string;
     /** Examples of valid/invalid data */
     examples?: {
-        valid?: any[];
-        invalid?: any[];
+        valid?: unknown[];
+        invalid?: unknown[];
     };
     /** Algorithm description for complex validation */
     algorithm?: string;
@@ -86,7 +86,7 @@ export interface ValidationCondition {
     /** Comparison operator */
     operator?: ValidationOperator;
     /** Value to compare against */
-    value?: any;
+    value?: unknown;
     /** Field name to compare against (for cross-field validation) */
     compare_to?: string;
     /** Expression to evaluate */
@@ -225,7 +225,7 @@ export interface CrossFieldValidationRule extends ValidationRule {
     /** Shorthand: Comparison operator (alternative to using rule property) */
     operator?: ValidationOperator;
     /** Shorthand: Value to compare against (mutually exclusive with compare_to) */
-    value?: any;
+    value?: unknown;
     /** Shorthand: Field name to compare against for cross-field validation (mutually exclusive with value) */
     compare_to?: string;
 }
@@ -251,7 +251,7 @@ export interface StateMachineValidationRule extends ValidationRule {
     /** Initial states */
     initial_states?: string[];
     /** Transition conditions */
-    transition_conditions?: Record<string, any>;
+    transition_conditions?: Record<string, unknown>;
 }
 
 /**
@@ -297,7 +297,7 @@ export interface CustomValidationRule extends ValidationRule {
     /** Error message template */
     error_message_template?: string;
     /** Message parameters */
-    message_params?: Record<string, any>;
+    message_params?: Record<string, unknown>;
 }
 
 /**
@@ -355,18 +355,18 @@ export interface ValidationContext {
     /** Previous record data (for updates) */
     previousRecord?: ObjectDoc;
     /** Current user */
-    user?: any;
+    user?: unknown;
     /** API access for queries */
-    api?: any;
+    api?: unknown;
     /** HTTP client for external calls */
-    http?: any;
+    http?: unknown;
     /** Operation type */
     operation: ValidationTrigger;
     /** Additional metadata */
     metadata?: {
         objectName: string;
         ruleName: string;
-        [key: string]: any;
+        [key: string]: unknown;
     };
     /** Changed fields (for updates) */
     changedFields?: string[];
@@ -389,7 +389,7 @@ export interface ValidationRuleResult {
     /** Field(s) that failed validation */
     fields?: string[];
     /** Additional context */
-    context?: any;
+    context?: unknown;
 }
 
 /**

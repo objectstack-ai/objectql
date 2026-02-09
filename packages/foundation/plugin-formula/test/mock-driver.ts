@@ -25,7 +25,7 @@ export class MockDriver implements Driver {
         return this.data[objectName];
     }
 
-    async find(objectName: string, query: any, options?: any): Promise<any[]> {
+    async find(objectName: string, query: any, _options?: any): Promise<any[]> {
         const items = this.getData(objectName);
         // Very basic filter implementation for testing
         if (query.filters) {
@@ -42,12 +42,12 @@ export class MockDriver implements Driver {
         return items;
     }
 
-    async findOne(objectName: string, id: string | number, query?: any, options?: any): Promise<any> {
+    async findOne(objectName: string, id: string | number, _query?: any, _options?: any): Promise<any> {
         const items = this.getData(objectName);
         return items.find((item: any) => item._id === id);
     }
 
-    async create(objectName: string, data: any, options?: any): Promise<any> {
+    async create(objectName: string, data: any, _options?: any): Promise<any> {
         const items = this.getData(objectName);
         const newItem = {
             ...data,
@@ -57,7 +57,7 @@ export class MockDriver implements Driver {
         return newItem;
     }
 
-    async update(objectName: string, id: string | number, data: any, options?: any): Promise<any> {
+    async update(objectName: string, id: string | number, data: any, _options?: any): Promise<any> {
         const items = this.getData(objectName);
         const index = items.findIndex((item: any) => item._id === id);
         if (index > -1) {
@@ -67,7 +67,7 @@ export class MockDriver implements Driver {
         throw new Error('Not found');
     }
 
-    async delete(objectName: string, id: string | number, options?: any): Promise<any> {
+    async delete(objectName: string, id: string | number, _options?: any): Promise<any> {
         const items = this.getData(objectName);
         const index = items.findIndex((item: any) => item._id === id);
         if (index > -1) {

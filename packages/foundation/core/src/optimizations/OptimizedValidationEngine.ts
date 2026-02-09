@@ -6,6 +6,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import { ObjectQLError } from '@objectql/types';
+
 /**
  * Compiled validator function type
  */
@@ -133,7 +135,7 @@ export class OptimizedValidationEngine {
     validate(objectName: string, data: any): { valid: boolean; errors?: string[] } {
         const validator = this.validators.get(objectName);
         if (!validator) {
-            throw new Error(`No validator compiled for object: ${objectName}`);
+            throw new ObjectQLError({ code: 'VALIDATION_ERROR', message: `No validator compiled for object: ${objectName}` });
         }
 
         const result = validator(data);

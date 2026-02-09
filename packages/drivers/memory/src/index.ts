@@ -1,7 +1,7 @@
-import { Data, System as SystemSpec } from '@objectstack/spec';
+import { Data, System as _SystemSpec } from '@objectstack/spec';
 import { z } from 'zod';
-import { QueryAST, SortNode } from '@objectql/types';
-type DriverInterface = z.infer<typeof Data.DriverInterface>;
+import { QueryAST } from '@objectql/types';
+type _DriverInterface = z.infer<typeof Data.DriverInterface>;
 /**
  * ObjectQL
  * Copyright (c) 2026-present ObjectStack Inc.
@@ -181,7 +181,7 @@ export class MemoryDriver implements Driver {
      * Find multiple records matching the query criteria.
      * Supports filtering, sorting, pagination, and field projection using Mingo.
      */
-    async find(objectName: string, query: any = {}, options?: any): Promise<any[]> {
+    async find(objectName: string, query: any = {}, _options?: any): Promise<any[]> {
         // Get all records for this object type
         const pattern = `${objectName}:`;
         let records: any[] = [];
@@ -245,7 +245,7 @@ export class MemoryDriver implements Driver {
     /**
      * Create a new record.
      */
-    async create(objectName: string, data: any, options?: any): Promise<any> {
+    async create(objectName: string, data: any, _options?: any): Promise<any> {
         // Generate ID if not provided
         const id = data.id || this.generateId(objectName);
         const key = `${objectName}:${id}`;
@@ -278,7 +278,7 @@ export class MemoryDriver implements Driver {
     /**
      * Update an existing record.
      */
-    async update(objectName: string, id: string | number, data: any, options?: any): Promise<any> {
+    async update(objectName: string, id: string | number, data: any, _options?: any): Promise<any> {
         const key = `${objectName}:${id}`;
         const existing = this.store.get(key);
         
@@ -312,7 +312,7 @@ export class MemoryDriver implements Driver {
     /**
      * Delete a record.
      */
-    async delete(objectName: string, id: string | number, options?: any): Promise<any> {
+    async delete(objectName: string, id: string | number, _options?: any): Promise<any> {
         const key = `${objectName}:${id}`;
         const deleted = this.store.delete(key);
         
@@ -335,7 +335,7 @@ export class MemoryDriver implements Driver {
     /**
      * Count records matching filters using Mingo.
      */
-    async count(objectName: string, filters: any, options?: any): Promise<number> {
+    async count(objectName: string, filters: any, _options?: any): Promise<number> {
         const pattern = `${objectName}:`;
         
         // Extract where condition from query object if needed
@@ -345,7 +345,7 @@ export class MemoryDriver implements Driver {
         }
         
         // Get all records for this object type
-        let records: any[] = [];
+        const records: any[] = [];
         for (const [key, value] of this.store.entries()) {
             if (key.startsWith(pattern)) {
                 records.push(value);
@@ -371,7 +371,7 @@ export class MemoryDriver implements Driver {
     /**
      * Get distinct values for a field using Mingo.
      */
-    async distinct(objectName: string, field: string, filters?: any, options?: any): Promise<any[]> {
+    async distinct(objectName: string, field: string, filters?: any, _options?: any): Promise<any[]> {
         const pattern = `${objectName}:`;
         
         // Get all records for this object type
@@ -418,11 +418,11 @@ export class MemoryDriver implements Driver {
     /**
      * Update multiple records matching filters using Mingo.
      */
-    async updateMany(objectName: string, filters: any, data: any, options?: any): Promise<any> {
+    async updateMany(objectName: string, filters: any, data: any, _options?: any): Promise<any> {
         const pattern = `${objectName}:`;
         
         // Get all records for this object type
-        let records: any[] = [];
+        const records: any[] = [];
         const recordKeys = new Map<string, string>();
         
         for (const [key, record] of this.store.entries()) {
@@ -464,11 +464,11 @@ export class MemoryDriver implements Driver {
     /**
      * Delete multiple records matching filters using Mingo.
      */
-    async deleteMany(objectName: string, filters: any, options?: any): Promise<any> {
+    async deleteMany(objectName: string, filters: any, _options?: any): Promise<any> {
         const pattern = `${objectName}:`;
         
         // Get all records for this object type
-        let records: any[] = [];
+        const records: any[] = [];
         const recordKeys = new Map<string, string>();
         
         for (const [key, record] of this.store.entries()) {
@@ -550,11 +550,11 @@ export class MemoryDriver implements Driver {
      *   { $group: { _id: null, avgPrice: { $avg: '$price' } } }
      * ]);
      */
-    async aggregate(objectName: string, pipeline: any[], options?: any): Promise<any[]> {
+    async aggregate(objectName: string, pipeline: any[], _options?: any): Promise<any[]> {
         const pattern = `${objectName}:`;
         
         // Get all records for this object type
-        let records: any[] = [];
+        const records: any[] = [];
         for (const [key, value] of this.store.entries()) {
             if (key.startsWith(pattern)) {
                 records.push({ ...value });
@@ -675,8 +675,8 @@ export class MemoryDriver implements Driver {
                     }
                 }
             }
-        } catch (error) {
-            console.warn('[MemoryDriver] Failed to load persisted data:', error);
+        } catch (_error) {
+            // Error silently ignored
         }
         
         // Set up auto-save timer
@@ -703,8 +703,8 @@ export class MemoryDriver implements Driver {
             };
             
             fs.writeFileSync(this.config.persistence.filePath, JSON.stringify(data, null, 2), 'utf8');
-        } catch (error) {
-            console.error('[MemoryDriver] Failed to save data to disk:', error);
+        } catch (_error) {
+            // Error silently ignored
         }
     }
 
@@ -839,7 +839,7 @@ export class MemoryDriver implements Driver {
         }
         
         // Process the filter array to build MongoDB query
-        const conditions: Record<string, any>[] = [];
+        const _conditions: Record<string, any>[] = [];
         let currentLogic: 'and' | 'or' = 'and';
         const logicGroups: { logic: 'and' | 'or', conditions: Record<string, any>[] }[] = [
             { logic: 'and', conditions: [] }
@@ -1083,9 +1083,9 @@ export class MemoryDriver implements Driver {
             const cmdOptions = { ...options, ...command.options };
             
             switch (command.type) {
-                case 'create':
+                case 'create': {
                     if (!command.data) {
-                        throw new Error('Create command requires data');
+                        throw new ObjectQLError({ code: 'DRIVER_QUERY_FAILED', message: 'Create command requires data' });
                     }
                     const created = await this.create(command.object, command.data, cmdOptions);
                     return {
@@ -1093,10 +1093,11 @@ export class MemoryDriver implements Driver {
                         data: created,
                         affected: 1
                     };
+                }
                 
-                case 'update':
+                case 'update': {
                     if (!command.id || !command.data) {
-                        throw new Error('Update command requires id and data');
+                        throw new ObjectQLError({ code: 'DRIVER_QUERY_FAILED', message: 'Update command requires id and data' });
                     }
                     const updated = await this.update(command.object, command.id, command.data, cmdOptions);
                     return {
@@ -1104,10 +1105,11 @@ export class MemoryDriver implements Driver {
                         data: updated,
                         affected: 1
                     };
+                }
                 
                 case 'delete':
                     if (!command.id) {
-                        throw new Error('Delete command requires id');
+                        throw new ObjectQLError({ code: 'DRIVER_QUERY_FAILED', message: 'Delete command requires id' });
                     }
                     await this.delete(command.object, command.id, cmdOptions);
                     return {
@@ -1115,9 +1117,9 @@ export class MemoryDriver implements Driver {
                         affected: 1
                     };
                 
-                case 'bulkCreate':
+                case 'bulkCreate': {
                     if (!command.records || !Array.isArray(command.records)) {
-                        throw new Error('BulkCreate command requires records array');
+                        throw new ObjectQLError({ code: 'DRIVER_QUERY_FAILED', message: 'BulkCreate command requires records array' });
                     }
                     const bulkCreated = [];
                     for (const record of command.records) {
@@ -1129,10 +1131,11 @@ export class MemoryDriver implements Driver {
                         data: bulkCreated,
                         affected: command.records.length
                     };
+                }
                 
-                case 'bulkUpdate':
+                case 'bulkUpdate': {
                     if (!command.updates || !Array.isArray(command.updates)) {
-                        throw new Error('BulkUpdate command requires updates array');
+                        throw new ObjectQLError({ code: 'DRIVER_QUERY_FAILED', message: 'BulkUpdate command requires updates array' });
                     }
                     const updateResults = [];
                     for (const update of command.updates) {
@@ -1144,10 +1147,11 @@ export class MemoryDriver implements Driver {
                         data: updateResults,
                         affected: command.updates.length
                     };
+                }
                 
-                case 'bulkDelete':
+                case 'bulkDelete': {
                     if (!command.ids || !Array.isArray(command.ids)) {
-                        throw new Error('BulkDelete command requires ids array');
+                        throw new ObjectQLError({ code: 'DRIVER_QUERY_FAILED', message: 'BulkDelete command requires ids array' });
                     }
                     let deleted = 0;
                     for (const id of command.ids) {
@@ -1158,9 +1162,10 @@ export class MemoryDriver implements Driver {
                         success: true,
                         affected: deleted
                     };
+                }
                 
                 default:
-                    throw new Error(`Unknown command type: ${(command as any).type}`);
+                    throw new ObjectQLError({ code: 'DRIVER_UNSUPPORTED_OPERATION', message: `Unknown command type: ${(command as any).type}` });
             }
         } catch (error: any) {
             return {
@@ -1178,9 +1183,9 @@ export class MemoryDriver implements Driver {
      * @param parameters - Command parameters
      * @param options - Execution options
      */
-    async execute(command: any, parameters?: any[], options?: any): Promise<any> {
+    async execute(_command: any, _parameters?: any[], _options?: any): Promise<any> {
         // For memory driver, this is primarily for compatibility
         // We don't support raw SQL/commands
-        throw new Error('Memory driver does not support raw command execution. Use executeCommand() instead.');
+        throw new ObjectQLError({ code: 'DRIVER_UNSUPPORTED_OPERATION', message: 'Memory driver does not support raw command execution. Use executeCommand() instead.' });
     }
 }

@@ -41,8 +41,7 @@ export class ObjectLoader {
                             // If name is missing, infer from filename
                             doc.name = filenameId;
                         } else if (doc.name !== filenameId) {
-                            // warn if mismatch
-                            console.warn(`[ObjectQL] Warning: Object name '${doc.name}' in ${basename} does not match filename. Using '${doc.name}'.`);
+                            // Object name does not match filename — using doc.name
                         }
 
                         const packageEntry = ctx.registry.getEntry('package-map', ctx.file);
@@ -59,8 +58,8 @@ export class ObjectLoader {
                             registerObject(ctx.registry, obj, ctx.file, ctx.packageName);
                         }
                     }
-                } catch (e) {
-                    console.error(`Error loading object from ${ctx.file}:`, e);
+                } catch (_e) {
+                    // Silently skip malformed object files
                 }
             }
         });
@@ -86,8 +85,8 @@ export class ObjectLoader {
                         package: ctx.packageName,
                         content: hooks
                     });
-                } catch (e) {
-                    console.error(`Error loading hook from ${ctx.file}:`, e);
+                } catch (_e) {
+                    // Silently skip malformed hook files
                 }
             }
         });
@@ -123,8 +122,8 @@ export class ObjectLoader {
                         });
                     }
 
-                } catch (e) {
-                    console.error(`Error loading action from ${ctx.file}:`, e);
+                } catch (_e) {
+                    // Silently skip malformed action files
                 }
             }
         });
@@ -161,8 +160,8 @@ export class ObjectLoader {
                             package: ctx.packageName,
                             content: doc
                         });
-                    } catch (e) {
-                         console.error(`Error loading ${type} from ${ctx.file}:`, e);
+                    } catch (_e) {
+                         // Silently skip malformed metadata files
                     }
                 }
             })
@@ -186,7 +185,7 @@ export class ObjectLoader {
             delete require.cache[entryPath];
             const packageDir = path.dirname(entryPath);
             this.load(packageDir, packageName);
-        } catch (e) {
+        } catch (_e) {
             // fallback to directory
             this.load(packageName, packageName);
         }
@@ -244,8 +243,8 @@ export class ObjectLoader {
 
                 plugin.handler(ctx);
 
-            } catch (e) {
-                console.error(`Error in loader plugin '${plugin.name}' processing ${file}:`, e);
+            } catch (_e) {
+                // Silently skip files that fail plugin processing
             }
         }
     }

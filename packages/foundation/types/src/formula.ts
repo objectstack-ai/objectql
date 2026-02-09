@@ -16,7 +16,7 @@
  * @see docs/spec/formula.md for complete specification
  */
 
-import { ObjectQLError, ApiErrorCode } from './api';
+import { ObjectQLError } from './api';
 
 /**
  * Data types that formula expressions can return

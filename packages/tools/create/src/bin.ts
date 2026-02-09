@@ -98,7 +98,7 @@ program
     // 5. Initialize Git
     try {
         await fs.writeFile(path.join(root, '.gitignore'), `node_modules/\ndist/\n*.log\n.DS_Store\n*.sqlite3\n.env\n.env.local\n`);
-    } catch {}
+    } catch (_e) { /* .gitignore write failure is non-critical */ }
 
     console.log(chalk.green('\n✅ Done! Now run:\n'));
     console.log(chalk.cyan(`  cd ${targetDir}`));

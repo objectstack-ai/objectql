@@ -9,6 +9,7 @@
  */
 
 import type { RuntimePlugin, RuntimeContext } from '@objectql/types';
+import { ObjectQLError } from '@objectql/types';
 import { ApolloServer, HeaderMap } from '@apollo/server';
 import { expressMiddleware } from '@as-integrations/express4';
 import { ApolloServerPluginDrainHttpServer } from '@apollo/server/plugin/drainHttpServer';
@@ -23,7 +24,6 @@ import { PubSub } from 'graphql-subscriptions';
 import DataLoader from 'dataloader';
 import express from 'express';
 import cors from 'cors';
-import { mapErrorToGraphQLError } from './validation.js';
 
 // Re-export validation utilities
 export * from './validation.js';
@@ -165,22 +165,19 @@ export class GraphQLPlugin implements RuntimePlugin {
      * Install hook - called during kernel initialization
      */
     async install(ctx: RuntimeContext): Promise<void> {
-        console.log(`[${this.name}] Installing GraphQL protocol plugin...`);
         this.ctx = ctx;
         
         // Store reference to the engine for later use
         this.engine = ctx.engine || (ctx as any).getKernel?.();
-        
-        console.log(`[${this.name}] Protocol bridge initialized`);
     }
 
     /**
      * Start hook - called when kernel starts
      * This is where we start the GraphQL server with WebSocket support
      */
-    async onStart(ctx: RuntimeContext): Promise<void> {
+    async onStart(_ctx: RuntimeContext): Promise<void> {
         if (!this.engine) {
-            throw new Error('Protocol not initialized. Install hook must be called first.');
+            throw new ObjectQLError({ code: 'PROTOCOL_ERROR', message: 'Protocol not initialized. Install hook must be called first.' });
         }
 
         // Check for Hono server service
@@ -197,12 +194,9 @@ export class GraphQLPlugin implements RuntimePlugin {
         }
 
         if (httpServer && httpServer.app) {
-            console.log(`[${this.name}] Attaching to existing Hono server...`);
             await this.attachToHono(httpServer.app);
             return;
         }
-
-        console.log(`[${this.name}] Starting GraphQL server with subscriptions (Standalone)...`);
 
         // Generate schema from metadata
         const typeDefs = this.generateSchema();
@@ -219,7 +213,6 @@ export class GraphQLPlugin implements RuntimePlugin {
                     resolvers
                 }
             ]);
-            console.log(`[${this.name}] 🔗 Apollo Federation enabled - service: ${this.config.federationServiceName}`);
         } else {
             // Build standard GraphQL schema
             schema = makeExecutableSchema({
@@ -240,7 +233,7 @@ export class GraphQLPlugin implements RuntimePlugin {
             });
 
             // Setup GraphQL WS server
-            const serverCleanup = useServer(
+            const _serverCleanup = useServer(
                 {
                     schema,
                     context: async () => ({
@@ -277,7 +270,7 @@ export class GraphQLPlugin implements RuntimePlugin {
             introspection: this.config.introspection,
             plugins,
             includeStacktraceInErrorResponses: process.env.NODE_ENV !== 'production',
-            formatError: (formattedError, error) => {
+            formatError: (formattedError, _error) => {
                 return {
                     message: formattedError.message,
                     locations: formattedError.locations,
@@ -309,13 +302,6 @@ export class GraphQLPlugin implements RuntimePlugin {
         // Start HTTP server
         await new Promise<void>((resolve) => {
             this.httpServer.listen(this.config.port, () => {
-                console.log(`[${this.name}] 🚀 GraphQL server ready at: http://localhost:${this.config.port}/graphql`);
-                if (this.config.introspection) {
-                    console.log(`[${this.name}] 📊 Apollo Sandbox available at: http://localhost:${this.config.port}/graphql`);
-                }
-                if (this.config.enableSubscriptions) {
-                    console.log(`[${this.name}] 🔌 WebSocket subscriptions ready at: ws://localhost:${this.config.port}/graphql`);
-                }
                 resolve();
             });
         });
@@ -392,18 +378,12 @@ export class GraphQLPlugin implements RuntimePlugin {
             }
         });
         
-        console.log(`[${this.name}] 🚀 GraphQL mounted at /graphql`);
-        if (this.config.introspection) {
-            console.log(`[${this.name}] 📊 Apollo Sandbox available at /graphql`);
-        }
     }
 
     /**
      * Stop hook - called when kernel stops
      */
-    async onStop(ctx: RuntimeContext): Promise<void> {
-        console.log(`[${this.name}] Stopping GraphQL server...`);
-        
+    async onStop(_ctx: RuntimeContext): Promise<void> {
         if (this.server) {
             await this.server.stop();
             this.server = undefined;
@@ -473,7 +453,7 @@ export class GraphQLPlugin implements RuntimePlugin {
             try {
                 const objects = this.engine.metadata.list('object');
                 return objects.map((obj: any) => obj.content?.name ?? obj.name ?? obj.id).filter(Boolean);
-            } catch (e) {
+            } catch (_e) {
                 return [];
             }
         }
@@ -1134,14 +1114,14 @@ export class GraphQLPlugin implements RuntimePlugin {
                 }
                 
                 // Handle cursor-based pagination
-                let limit = args.first || args.last || 20;
+                const limit = args.first || args.last || 20;
                 let offset = 0;
                 
                 if (args.after) {
                     // Decode cursor to get offset
                     try {
                         offset = parseInt(Buffer.from(args.after, 'base64').toString('utf-8')) + 1;
-                    } catch (e) {
+                    } catch (_e) {
                         offset = 0;
                     }
                 }
@@ -1151,7 +1131,7 @@ export class GraphQLPlugin implements RuntimePlugin {
                     try {
                         const beforeOffset = parseInt(Buffer.from(args.before, 'base64').toString('utf-8'));
                         offset = Math.max(0, beforeOffset - limit);
-                    } catch (e) {
+                    } catch (_e) {
                         offset = 0;
                     }
                 }
@@ -1160,7 +1140,7 @@ export class GraphQLPlugin implements RuntimePlugin {
                 query.offset = offset;
                 
                 const results = await this.findData(objectName, query);
-                const totalCount = results.length; // Ideally this should be a separate count query
+                const _totalCount = results.length; // Ideally this should be a separate count query
                 
                 const hasMore = results.length > limit;
                 const items = hasMore ? results.slice(0, limit) : results;
@@ -1253,7 +1233,7 @@ export class GraphQLPlugin implements RuntimePlugin {
                 resolvers.Subscription[`${camelCaseName}Created`] = {
                     subscribe: (_: any, args: { where?: any }, context: any) => {
                         if (!context?.pubsub) {
-                            throw new Error('PubSub not available');
+                            throw new ObjectQLError({ code: 'INTERNAL_ERROR', message: 'PubSub not available' });
                         }
                         return context.pubsub.asyncIterator([`${pascalCaseName}_CREATED`]);
                     },
@@ -1270,7 +1250,7 @@ export class GraphQLPlugin implements RuntimePlugin {
                 resolvers.Subscription[`${camelCaseName}Updated`] = {
                     subscribe: (_: any, args: { where?: any }, context: any) => {
                         if (!context?.pubsub) {
-                            throw new Error('PubSub not available');
+                            throw new ObjectQLError({ code: 'INTERNAL_ERROR', message: 'PubSub not available' });
                         }
                         return context.pubsub.asyncIterator([`${pascalCaseName}_UPDATED`]);
                     },
@@ -1286,7 +1266,7 @@ export class GraphQLPlugin implements RuntimePlugin {
                 resolvers.Subscription[`${camelCaseName}Deleted`] = {
                     subscribe: (_: any, __: any, context: any) => {
                         if (!context?.pubsub) {
-                            throw new Error('PubSub not available');
+                            throw new ObjectQLError({ code: 'INTERNAL_ERROR', message: 'PubSub not available' });
                         }
                         return context.pubsub.asyncIterator([`${pascalCaseName}_DELETED`]);
                     }
@@ -1503,7 +1483,6 @@ export class GraphQLPlugin implements RuntimePlugin {
         
         const graphqlType = typeMap[fieldType];
         if (!graphqlType) {
-            console.warn(`[GraphQLPlugin] Unknown field type '${fieldType}', defaulting to String`);
             return 'String';
         }
         

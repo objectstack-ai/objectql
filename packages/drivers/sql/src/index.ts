@@ -1,7 +1,7 @@
-import { Data, System as SystemSpec } from '@objectstack/spec';
+import { Data, System as _SystemSpec } from '@objectstack/spec';
 import { z } from 'zod';
-import { QueryAST, SortNode } from '@objectql/types';
-type DriverInterface = z.infer<typeof Data.DriverInterface>;
+import { QueryAST } from '@objectql/types';
+type _DriverInterface = z.infer<typeof Data.DriverInterface>;
 /**
  * ObjectQL
  * Copyright (c) 2026-present ObjectStack Inc.
@@ -10,7 +10,7 @@ type DriverInterface = z.infer<typeof Data.DriverInterface>;
  * LICENSE file in the root directory of this source tree.
  */
 
-import { Driver, IntrospectedSchema, IntrospectedTable, IntrospectedColumn, IntrospectedForeignKey } from '@objectql/types';
+import { Driver, IntrospectedSchema, IntrospectedTable, IntrospectedColumn, IntrospectedForeignKey, ObjectQLError } from '@objectql/types';
 import knex, { Knex } from 'knex';
 import { nanoid } from 'nanoid';
 
@@ -139,9 +139,9 @@ export class SqlDriver implements Driver {
                      const field = this.mapSortField(fieldRaw);
                      // Handle specific operators that map to different knex methods
                      const apply = (b: any) => {
-                         let method = nextJoin === 'or' ? 'orWhere' : 'where';
-                         let methodIn = nextJoin === 'or' ? 'orWhereIn' : 'whereIn';
-                         let methodNotIn = nextJoin === 'or' ? 'orWhereNotIn' : 'whereNotIn';
+                         const method = nextJoin === 'or' ? 'orWhere' : 'where';
+                         const methodIn = nextJoin === 'or' ? 'orWhereIn' : 'whereIn';
+                         const methodNotIn = nextJoin === 'or' ? 'orWhereNotIn' : 'whereNotIn';
                          
                          // Fix for 'contains' mapping
                          if (op === 'contains') {
@@ -218,14 +218,16 @@ export class SqlDriver implements Driver {
                         case '$lte':
                             builder[method](field, '<=', opValue);
                             break;
-                        case '$in':
+                        case '$in': {
                             const methodIn = logicalOp === 'or' ? 'orWhereIn' : 'whereIn';
                             builder[methodIn](field, opValue as any[]);
                             break;
-                        case '$nin':
+                        }
+                        case '$nin': {
                             const methodNotIn = logicalOp === 'or' ? 'orWhereNotIn' : 'whereNotIn';
                             builder[methodNotIn](field, opValue as any[]);
                             break;
+                        }
                         case '$contains':
                             builder[method](field, 'like', `%${opValue}%`);
                             break;
@@ -475,7 +477,7 @@ export class SqlDriver implements Driver {
             case 'avg': return 'avg';
             case 'min': return 'min';
             case 'max': return 'max';
-            default: throw new Error(`Unsupported aggregate function: ${func}`);
+            default: throw new ObjectQLError({ code: 'DRIVER_UNSUPPORTED_OPERATION', message: `Unsupported aggregate function: ${func}` });
         }
     }
 
@@ -741,7 +743,6 @@ export class SqlDriver implements Driver {
                  
                  // Check for _id vs id conflict (Legacy _id from mongo-style init)
                  if (existingColumns.includes('_id') && !existingColumns.includes('id')) {
-                     console.log(`[SqlDriver] Detected legacy '_id' in '${tableName}'. Recreating table for 'id' compatibility...`);
                      await this.knex.schema.dropTable(tableName);
                      exists = false;
                  }
@@ -759,7 +760,6 @@ export class SqlDriver implements Driver {
                         }
                     }
                 });
-                console.log(`[SqlDriver] Created table '${tableName}'`);
                 // Track that this table has timestamp columns
                 this.tablesWithTimestamps.add(tableName);
             } else {
@@ -776,7 +776,6 @@ export class SqlDriver implements Driver {
                          for (const [name, field] of Object.entries(obj.fields)) {
                              if (!existingColumns.includes(name)) {
                                  this.createColumn(table, name, field);
-                                 console.log(`[SqlDriver] Added column '${name}' to '${tableName}'`);
                              }
                          }
                      }
@@ -860,7 +859,7 @@ export class SqlDriver implements Driver {
         const config = this.config;
         const connection = config.connection;
         let dbName = '';
-        let adminConfig = { ...config };
+        const adminConfig = { ...config };
 
         if (typeof connection === 'string') {
             const url = new URL(connection);
@@ -872,19 +871,9 @@ export class SqlDriver implements Driver {
             adminConfig.connection = { ...connection, database: 'postgres' };
         }
 
-        console.log(`[SqlDriver] Database '${dbName}' does not exist. Creating...`);
-
         const adminKnex = knex(adminConfig);
         try {
             await adminKnex.raw(`CREATE DATABASE "${dbName}"`);
-            console.log(`[SqlDriver] Database '${dbName}' created successfully.`);
-        } catch (e: any) {
-             console.error(`[SqlDriver] Failed to create database '${dbName}':`, e.message);
-             if (e.code === '42501') {
-                 console.error(`[SqlDriver] Hint: The user '${adminConfig.connection.user || 'current user'}' does not have CREATEDB privileges.`);
-                 console.error(`[SqlDriver] Please run: createdb ${dbName}`);
-             }
-             throw e;
         } finally {
             await adminKnex.destroy();
         }
@@ -925,7 +914,7 @@ export class SqlDriver implements Driver {
                     if (data[field] !== undefined && typeof data[field] === 'string') {
                         try {
                             data[field] = JSON.parse(data[field]);
-                        } catch (e) {
+                        } catch (_e) {
                             // ignore parse error, keep as string
                         }
                     }
@@ -1129,8 +1118,8 @@ export class SqlDriver implements Driver {
                     });
                 }
             }
-        } catch (error) {
-            console.warn('Could not introspect foreign keys for requested table:', error);
+        } catch (_error) {
+            // Error silently ignored
         }
         
         return foreignKeys;
@@ -1177,7 +1166,6 @@ export class SqlDriver implements Driver {
                 const tableNames = Array.isArray(tablesResult) ? tablesResult.map((row: any) => row.name) : [];
                 
                 if (!tableNames.includes(safeTableName)) {
-                    console.warn('Could not introspect primary keys: table name contains invalid characters or table does not exist.');
                     return primaryKeys;
                 }
                 
@@ -1189,8 +1177,8 @@ export class SqlDriver implements Driver {
                     }
                 }
             }
-        } catch (error) {
-            console.warn('Could not introspect primary keys for a table:', error);
+        } catch (_error) {
+            // Error silently ignored
         }
         
         return primaryKeys;
@@ -1255,8 +1243,8 @@ export class SqlDriver implements Driver {
                     }
                 }
             }
-        } catch (error) {
-            console.warn('Could not introspect unique constraints for a table:', error);
+        } catch (_error) {
+            // Error silently ignored
         }
         
         return uniqueColumns;
@@ -1279,7 +1267,7 @@ export class SqlDriver implements Driver {
         try {
             await this.knex.raw('SELECT 1');
             return true;
-        } catch (error) {
+        } catch (_error) {
             return false;
         }
     }
@@ -1303,9 +1291,9 @@ export class SqlDriver implements Driver {
             const cmdOptions = { ...options, ...command.options };
             
             switch (command.type) {
-                case 'create':
+                case 'create': {
                     if (!command.data) {
-                        throw new Error('Create command requires data');
+                        throw new ObjectQLError({ code: 'DRIVER_QUERY_FAILED', message: 'Create command requires data' });
                     }
                     const created = await this.create(command.object, command.data, cmdOptions);
                     return {
@@ -1313,10 +1301,11 @@ export class SqlDriver implements Driver {
                         data: created,
                         affected: 1
                     };
+                }
                 
-                case 'update':
+                case 'update': {
                     if (!command.id || !command.data) {
-                        throw new Error('Update command requires id and data');
+                        throw new ObjectQLError({ code: 'DRIVER_QUERY_FAILED', message: 'Update command requires id and data' });
                     }
                     const updated = await this.update(command.object, command.id, command.data, cmdOptions);
                     return {
@@ -1324,10 +1313,11 @@ export class SqlDriver implements Driver {
                         data: updated,
                         affected: 1
                     };
+                }
                 
                 case 'delete':
                     if (!command.id) {
-                        throw new Error('Delete command requires id');
+                        throw new ObjectQLError({ code: 'DRIVER_QUERY_FAILED', message: 'Delete command requires id' });
                     }
                     await this.delete(command.object, command.id, cmdOptions);
                     return {
@@ -1335,9 +1325,9 @@ export class SqlDriver implements Driver {
                         affected: 1
                     };
                 
-                case 'bulkCreate':
+                case 'bulkCreate': {
                     if (!command.records || !Array.isArray(command.records)) {
-                        throw new Error('BulkCreate command requires records array');
+                        throw new ObjectQLError({ code: 'DRIVER_QUERY_FAILED', message: 'BulkCreate command requires records array' });
                     }
                     // Bulk insert using Knex
                     const builder = this.getBuilder(command.object, cmdOptions);
@@ -1348,10 +1338,11 @@ export class SqlDriver implements Driver {
                         data: bulkCreated,
                         affected: command.records.length
                     };
+                }
                 
-                case 'bulkUpdate':
+                case 'bulkUpdate': {
                     if (!command.updates || !Array.isArray(command.updates)) {
-                        throw new Error('BulkUpdate command requires updates array');
+                        throw new ObjectQLError({ code: 'DRIVER_QUERY_FAILED', message: 'BulkUpdate command requires updates array' });
                     }
                     // Execute updates sequentially (Knex doesn't support batch update well)
                     const updateResults = [];
@@ -1364,10 +1355,11 @@ export class SqlDriver implements Driver {
                         data: updateResults,
                         affected: command.updates.length
                     };
+                }
                 
-                case 'bulkDelete':
+                case 'bulkDelete': {
                     if (!command.ids || !Array.isArray(command.ids)) {
-                        throw new Error('BulkDelete command requires ids array');
+                        throw new ObjectQLError({ code: 'DRIVER_QUERY_FAILED', message: 'BulkDelete command requires ids array' });
                     }
                     // Bulk delete using whereIn
                     const deleteBuilder = this.getBuilder(command.object, cmdOptions);
@@ -1376,9 +1368,10 @@ export class SqlDriver implements Driver {
                         success: true,
                         affected: deleted || command.ids.length
                     };
+                }
                 
                 default:
-                    throw new Error(`Unknown command type: ${(command as any).type}`);
+                    throw new ObjectQLError({ code: 'DRIVER_UNSUPPORTED_OPERATION', message: `Unknown command type: ${(command as any).type}` });
             }
         } catch (error: any) {
             return {

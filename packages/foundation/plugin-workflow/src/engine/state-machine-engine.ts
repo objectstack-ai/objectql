@@ -161,7 +161,7 @@ export class StateMachineEngine {
 
     const targets: string[] = [];
     
-    for (const [event, transition] of Object.entries(node.on)) {
+    for (const [_event, transition] of Object.entries(node.on)) {
       if (typeof transition === 'string') {
         targets.push(transition);
       } else if (transition && typeof transition === 'object') {
@@ -209,7 +209,7 @@ export class StateMachineEngine {
     if (!currentNode.on) return undefined;
 
     // Look through all events/transitions
-    for (const [event, transition] of Object.entries(currentNode.on)) {
+    for (const [_event, transition] of Object.entries(currentNode.on)) {
       // Handle string target
       if (typeof transition === 'string') {
         if (transition === targetState) {
@@ -332,7 +332,7 @@ export class StateMachineEngine {
 
         // Validate transitions reference existing states
         if (state.on) {
-          for (const [event, transition] of Object.entries(state.on)) {
+          for (const [_event, transition] of Object.entries(state.on)) {
             const target = typeof transition === 'string' 
               ? transition 
               : (transition as any)?.target;

@@ -7,8 +7,8 @@
  */
 
 import * as repl from 'repl';
-import * as path from 'path';
-import * as fs from 'fs';
+import * as _path from 'path';
+import * as _fs from 'fs';
 import { ObjectQL } from '@objectql/core';
 import { register } from 'ts-node';
 import { resolveConfigFile } from '../utils/config-loader';
@@ -80,9 +80,8 @@ export async function startRepl(configPath?: string) {
                 // We use a getter to lazily create context with system privileges
                 Object.defineProperty(r.context, obj.name, {
                     get: () => {
-                        // HACK: We need to construct a repository. 
-                        // Since `ObjectRepository` is exported from `@objectql/core`, we can use it if we import it.
-                        // But `app` is passed from user land. We can rely on `require('@objectql/core')` here.
+                        // Dynamic require to avoid circular dependency — ObjectRepository is constructed
+                        // from the user-provided app instance to enable convenient REPL access.
                         const { ObjectRepository } = require('@objectql/core');
                         
                         const replContext: any = {

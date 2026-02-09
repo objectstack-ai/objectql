@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { MultiTenancyPlugin, TenantIsolationError } from '../src';
+import { MultiTenancyPlugin } from '../src';
 
 describe('MultiTenancyPlugin', () => {
   let plugin: MultiTenancyPlugin;

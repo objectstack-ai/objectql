@@ -76,7 +76,7 @@ export class MultiTenancyPlugin implements RuntimePlugin {
     return this.install(ctx);
   };
   
-  start = async (kernel: any): Promise<void> => {
+  start = async (_kernel: any): Promise<void> => {
     // Multi-tenancy plugin doesn't have specific start logic
     return;
   };
@@ -138,7 +138,7 @@ export class MultiTenancyPlugin implements RuntimePlugin {
   /**
    * Called when the kernel starts
    */
-  async onStart(ctx: RuntimeContext): Promise<void> {
+  async onStart(_ctx: RuntimeContext): Promise<void> {
     this.logger.info('Multi-tenancy plugin started');
   }
   

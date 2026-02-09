@@ -56,7 +56,7 @@ export async function doctorCommand(options: DoctorOptions = {}) {
             console.log(`${chalk.yellow('⚠')} TypeScript: ${chalk.yellow('Not found (optional)')}`);
             hasWarnings = true;
         }
-    } catch (e) {
+    } catch (_e) {
         console.log(`${chalk.yellow('⚠')} TypeScript: ${chalk.yellow('Not found (optional)')}`);
         hasWarnings = true;
     }
@@ -104,7 +104,7 @@ export async function doctorCommand(options: DoctorOptions = {}) {
                     hasWarnings = true;
                 }
             }
-        } catch (e: any) {
+        } catch (_e: any) {
             console.log(`${chalk.red('✗')} package.json: ${chalk.red('Invalid JSON')}`);
             hasErrors = true;
         }
@@ -141,7 +141,7 @@ export async function doctorCommand(options: DoctorOptions = {}) {
                 console.log(`  ${chalk.yellow('⚠')} Target: ${chalk.yellow(target)} (recommended: ESNext or ES2020+)`);
                 hasWarnings = true;
             }
-        } catch (e: any) {
+        } catch (_e: any) {
             console.log(`  ${chalk.red('✗')} tsconfig.json: ${chalk.red('Invalid JSON')}`);
             hasErrors = true;
         }
@@ -256,7 +256,7 @@ async function checkDependencies(packageJson: any): Promise<DependencyCheck[]> {
     return checks;
 }
 
-export async function validateCommand(options: { dir?: string }) {
+export async function validateCommand(_options: { dir?: string }) {
     console.log(chalk.blue('🔍 Validating Metadata...'));
     // This would invoke the core validator
     console.log(chalk.gray('Feature coming soon: Will validate all .object.yml files against schema.'));

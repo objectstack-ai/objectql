@@ -46,10 +46,10 @@ const createMockContext = (): RuntimeContext => {
     const mockEngine = {
         metadata: mockMetadata,
         get: async (objectName: string, id: string) => ({ id, name: 'Test' }),
-        find: async (objectName: string, query: any) => [],
+        find: async (_objectName: string, _query: any) => [],
         create: async (objectName: string, data: any) => ({ id: '1', ...data }),
         update: async (objectName: string, id: string, data: any) => ({ id, ...data }),
-        delete: async (objectName: string, id: string) => true
+        delete: async (_objectName: string, _id: string) => true
     };
 
     return { engine: mockEngine };
@@ -70,9 +70,9 @@ describe('RuntimePlugin Interface Conformance', () => {
         it('should allow optional lifecycle hooks', () => {
             const plugin: RuntimePlugin = {
                 name: '@test/plugin',
-                install: async (ctx: RuntimeContext) => {},
-                onStart: async (ctx: RuntimeContext) => {},
-                onStop: async (ctx: RuntimeContext) => {}
+                install: async (_ctx: RuntimeContext) => {},
+                onStart: async (_ctx: RuntimeContext) => {},
+                onStop: async (_ctx: RuntimeContext) => {}
             };
             
             expect(plugin.install).toBeDefined();
@@ -83,14 +83,14 @@ describe('RuntimePlugin Interface Conformance', () => {
         it('should support both sync and async hooks', async () => {
             const syncPlugin: RuntimePlugin = {
                 name: '@test/sync',
-                install: (ctx: RuntimeContext) => {
+                install: (_ctx: RuntimeContext) => {
                     // Sync implementation
                 }
             };
             
             const asyncPlugin: RuntimePlugin = {
                 name: '@test/async',
-                install: async (ctx: RuntimeContext) => {
+                install: async (_ctx: RuntimeContext) => {
                     // Async implementation
                 }
             };
@@ -162,7 +162,7 @@ describe('RuntimePlugin Interface Conformance', () => {
             
             const plugin: RuntimePlugin = {
                 name: '@test/plugin',
-                onStart: async (ctx: RuntimeContext) => {
+                onStart: async (_ctx: RuntimeContext) => {
                     startCalled = true;
                 }
             };
@@ -178,7 +178,7 @@ describe('RuntimePlugin Interface Conformance', () => {
             
             const plugin: RuntimePlugin = {
                 name: '@test/plugin',
-                onStop: async (ctx: RuntimeContext) => {
+                onStop: async (_ctx: RuntimeContext) => {
                     stopCalled = true;
                 }
             };

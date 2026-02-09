@@ -14,7 +14,7 @@ const createTestKernel = () => {
     const driver = new MemoryDriver();
     
     const metadata = {
-        register: (type: string, name: string, item: any) => {},
+        register: (_type: string, _name: string, _item: any) => {},
         list: (type: string) => {
             if (type === 'object') {
                 return [
@@ -291,7 +291,7 @@ describe('OData V4 Protocol Integration Tests', () => {
     
     describe('$expand for Nested Relationships', () => {
         beforeEach(async () => {
-            const product = await kernel.repository.create('Products', {
+            const _product = await kernel.repository.create('Products', {
                 id: 'prod-100',
                 name: 'Premium Laptop',
                 price: 2000,

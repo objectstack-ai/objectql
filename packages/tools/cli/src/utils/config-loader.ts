@@ -8,6 +8,7 @@
 
 import * as path from 'path';
 import * as fs from 'fs';
+import { ObjectQLError } from '@objectql/types';
 
 /**
  * Config file search order:
@@ -36,7 +37,7 @@ export function resolveConfigFile(configPath?: string, cwd: string = process.cwd
     if (configPath) {
         const resolved = path.isAbsolute(configPath) ? configPath : path.join(cwd, configPath);
         if (!fs.existsSync(resolved)) {
-            throw new Error(`Configuration file not found: ${resolved}`);
+            throw new ObjectQLError({ code: 'CONFIG_ERROR', message: `Configuration file not found: ${resolved}` });
         }
         return resolved;
     }
@@ -48,11 +49,12 @@ export function resolveConfigFile(configPath?: string, cwd: string = process.cwd
         }
     }
 
-    throw new Error(
-        'No configuration file found. Expected one of:\n' +
-        CONFIG_FILE_NAMES.map(f => `  - ${f}`).join('\n') +
-        '\n\nRun `objectstack create` to scaffold a new project.'
-    );
+    throw new ObjectQLError({
+        code: 'CONFIG_ERROR',
+        message: 'No configuration file found. Expected one of:\n' +
+            CONFIG_FILE_NAMES.map(f => `  - ${f}`).join('\n') +
+            '\n\nRun `objectstack create` to scaffold a new project.',
+    });
 }
 
 /**

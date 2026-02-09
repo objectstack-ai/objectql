@@ -10,7 +10,7 @@ import type { RuntimePlugin, RuntimeContext, ValidationRuleResult } from '@objec
 import { ValidationError } from '@objectql/types';
 import type { ValidationContext } from '@objectql/types';
 import { ConsoleLogger, type Logger } from '@objectql/types';
-import { Validator, ValidatorOptions } from './validator';
+import { Validator } from './validator';
 import { ValidatorPluginConfigSchema, ValidatorPluginConfig } from './config.schema';
 
 /**
@@ -92,7 +92,7 @@ export class ValidatorPlugin implements RuntimePlugin {
     return this.install(ctx);
   }
 
-  async start(ctx: any): Promise<void> {
+  async start(_ctx: any): Promise<void> {
     // Validator plugin doesn't have onStart logic in legacy
     return Promise.resolve();
   }

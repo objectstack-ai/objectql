@@ -12,7 +12,7 @@ interface DbPushOptions {
     force?: boolean;
 }
 
-export async function dbPushCommand(options: DbPushOptions) {
+export async function dbPushCommand(_options: DbPushOptions) {
     console.log(chalk.blue('💾 Database Push'));
     console.log(chalk.gray('Synchronizing schema with database...'));
     

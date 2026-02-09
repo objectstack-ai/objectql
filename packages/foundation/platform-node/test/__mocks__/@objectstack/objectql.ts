@@ -48,8 +48,8 @@ export class SchemaRegistry {
         SchemaRegistry.metadata.clear();
     }
     
-    register(schema: any): void {}
-    get(name: string): any { return null; }
+    register(_schema: any): void {}
+    get(_name: string): any { return null; }
     list(): any[] { return []; }
 }
 

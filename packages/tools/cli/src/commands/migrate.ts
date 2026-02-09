@@ -9,6 +9,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import chalk from 'chalk';
+import { ObjectQLError } from '@objectql/types';
 import { resolveConfigFile } from '../utils/config-loader';
 
 interface MigrateOptions {
@@ -33,29 +34,13 @@ const MIGRATION_TEMPLATE = `import { ObjectQL } from '@objectql/core';
  * Created: {{timestamp}}
  */
 export async function up(app: ObjectQL) {
-    // TODO: Implement migration logic
-    console.log('Running migration: {{name}}');
-    
-    // Example: Add a new field to an object
-    // const tasks = app.getObject('tasks');
-    // await tasks.updateSchema({
-    //     fields: {
-    //         new_field: { type: 'text', label: 'New Field' }
-    //     }
-    // });
+    // Add your migration logic here
+    // Example: app.getObject('tasks').updateSchema({ fields: { new_field: { type: 'text' } } });
 }
 
 export async function down(app: ObjectQL) {
-    // TODO: Implement rollback logic
-    console.log('Rolling back migration: {{name}}');
-    
-    // Example: Remove the field
-    // const tasks = app.getObject('tasks');
-    // await tasks.updateSchema({
-    //     fields: {
-    //         new_field: undefined
-    //     }
-    // });
+    // Add your rollback logic here
+    // Example: app.getObject('tasks').updateSchema({ fields: { new_field: undefined } });
 }
 `;
 
@@ -98,7 +83,7 @@ export async function migrate(options: MigrateOptions) {
                 sort: [['created_at', 'asc']]
             });
             runMigrations = result.records.map((r: any) => r.name);
-        } catch (err) {
+        } catch (_err) {
             // Migrations table doesn't exist yet, create it
             console.log(chalk.gray('Creating migrations tracking table...'));
             await createMigrationsTable(app);
@@ -225,7 +210,7 @@ export async function migrateStatus(options: MigrateStatusOptions) {
                 sort: [['run_at', 'asc']]
             });
             runMigrations = result.records.map((r: any) => r.name);
-        } catch (err) {
+        } catch (_err) {
             // Migrations table doesn't exist
             runMigrations = [];
         }
@@ -266,7 +251,7 @@ async function loadObjectQLInstance(configPath?: string): Promise<any> {
                 module: 'commonjs'
             }
         });
-    } catch (err) {
+    } catch (_err) {
         // ts-node not available, try to load JS directly
     }
 
@@ -274,7 +259,7 @@ async function loadObjectQLInstance(configPath?: string): Promise<any> {
     const app = configModule.default || configModule.app || configModule.objectql || configModule.db;
 
     if (!app) {
-        throw new Error('Config file must export an ObjectQL instance');
+        throw new ObjectQLError({ code: 'CONFIG_ERROR', message: 'Config file must export an ObjectQL instance' });
     }
 
     await app.init();

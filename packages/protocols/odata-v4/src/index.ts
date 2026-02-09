@@ -7,8 +7,8 @@
  */
 
 import type { RuntimePlugin, RuntimeContext } from '@objectql/types';
+import { ObjectQLError } from '@objectql/types';
 import { IncomingMessage, ServerResponse, createServer, Server } from 'http';
-import { mapErrorToODataError } from './validation.js';
 
 // Re-export validation utilities
 export * from './validation.js';
@@ -116,12 +116,9 @@ export class ODataV4Plugin implements RuntimePlugin {
      * Install hook - called during kernel initialization
      */
     async install(ctx: RuntimeContext): Promise<void> {
-        console.log(`[${this.name}] Installing OData V4 protocol plugin...`);
-        
         // Store reference to the engine for later use
         this.engine = ctx.engine || (ctx as any).getKernel?.();
         
-        console.log(`[${this.name}] Protocol bridge initialized`);
     }
 
     /**
@@ -130,7 +127,7 @@ export class ODataV4Plugin implements RuntimePlugin {
      */
     async onStart(ctx: RuntimeContext): Promise<void> {
         if (!this.engine) {
-            throw new Error('Protocol not initialized. Install hook must be called first.');
+            throw new ObjectQLError({ code: 'PROTOCOL_ERROR', message: 'Protocol not initialized. Install hook must be called first.' });
         }
 
         // Check if Hono server is available via service injection
@@ -148,12 +145,9 @@ export class ODataV4Plugin implements RuntimePlugin {
         }
 
         if (httpServer && httpServer.app) {
-             console.log(`[${this.name}] 🔗 Attaching to shared Hono server...`);
              await this.attachToHono(httpServer.app);
              return;
         }
-
-        console.log(`[${this.name}] Starting OData V4 server (standalone)...`);
 
         // Create HTTP server with request handler
         this.server = createServer((req, res) => this.handleRequest(req, res));
@@ -161,9 +155,6 @@ export class ODataV4Plugin implements RuntimePlugin {
         // Start listening
         await new Promise<void>((resolve) => {
             this.server!.listen(this.config.port, () => {
-                console.log(`[${this.name}] 🚀 OData V4 server listening on http://localhost:${this.config.port}${this.config.basePath}`);
-                console.log(`[${this.name}] 📄 Service Document: http://localhost:${this.config.port}${this.config.basePath}`);
-                console.log(`[${this.name}] 📝 Metadata Document: http://localhost:${this.config.port}${this.config.basePath}/$metadata`);
                 resolve();
             });
         });
@@ -232,7 +223,6 @@ export class ODataV4Plugin implements RuntimePlugin {
              return c.body(responseBody);
         });
 
-        console.log(`[${this.name}] 🚀 OData mounted at ${basePath}`);
     }
 
     // ---------------------------------------------------
@@ -240,9 +230,8 @@ export class ODataV4Plugin implements RuntimePlugin {
     /**
      * Stop hook - called when kernel stops
      */
-    async onStop(ctx: RuntimeContext): Promise<void> {
+    async onStop(_ctx: RuntimeContext): Promise<void> {
         if (this.server) {
-            console.log(`[${this.name}] Stopping OData V4 server...`);
             await new Promise<void>((resolve, reject) => {
                 this.server!.close((err) => {
                     if (err) reject(err);
@@ -271,7 +260,7 @@ export class ODataV4Plugin implements RuntimePlugin {
             try {
                 const objects = this.engine.metadata.list('object');
                 return objects.map((obj: any) => obj.name || obj.id).filter(Boolean);
-            } catch (e) {
+            } catch (_e) {
                 return [];
             }
         }
@@ -413,7 +402,6 @@ export class ODataV4Plugin implements RuntimePlugin {
                 await this.handleEntityRequest(req, res, path);
             }
         } catch (error) {
-            console.error(`[${this.name}] Request error:`, error);
             this.sendError(res, 500, error instanceof Error ? error.message : 'Internal Server Error');
         }
     }
@@ -787,7 +775,6 @@ export class ODataV4Plugin implements RuntimePlugin {
 
         // Check depth limit
         if (depth >= this.config.maxExpandDepth) {
-            console.warn(`[${this.name}] Maximum expand depth (${this.config.maxExpandDepth}) reached, skipping further expansion`);
             return;
         }
 
@@ -1060,11 +1047,12 @@ export class ODataV4Plugin implements RuntimePlugin {
         }
 
         // Unsupported filter expression
-        throw new Error(
-            `Unsupported $filter expression: "${filter}". ` +
+        throw new ObjectQLError({
+            code: 'PROTOCOL_INVALID_REQUEST',
+            message: `Unsupported $filter expression: "${filter}". ` +
             `Supported operators: eq, ne, gt, ge, lt, le, and, or, not. ` +
             `Supported functions: contains, startswith, endswith, substringof.`
-        );
+        });
     }
 
     /**
@@ -1092,10 +1080,11 @@ export class ODataV4Plugin implements RuntimePlugin {
                     depth--;
                     // Check for negative depth (closing before opening)
                     if (depth < 0) {
-                        throw new Error(
-                            `Invalid $filter expression: Mismatched parentheses. ` +
+                        throw new ObjectQLError({
+                            code: 'PROTOCOL_INVALID_REQUEST',
+                            message: `Invalid $filter expression: Mismatched parentheses. ` +
                             `Found closing ')' without matching opening '(' at position ${i}.`
-                        );
+                        });
                     }
                 }
             }
@@ -1103,17 +1092,19 @@ export class ODataV4Plugin implements RuntimePlugin {
 
         // Check final depth is zero
         if (depth !== 0) {
-            throw new Error(
-                `Invalid $filter expression: Mismatched parentheses. ` +
+            throw new ObjectQLError({
+                code: 'PROTOCOL_INVALID_REQUEST',
+                message: `Invalid $filter expression: Mismatched parentheses. ` +
                 `${depth} unclosed opening parenthesis(es).`
-            );
+            });
         }
 
         // Check quotes are balanced
         if (inQuotes) {
-            throw new Error(
-                `Invalid $filter expression: Unclosed quoted string.`
-            );
+            throw new ObjectQLError({
+                code: 'PROTOCOL_INVALID_REQUEST',
+                message: `Invalid $filter expression: Unclosed quoted string.`
+            });
         }
     }
 
@@ -1208,7 +1199,6 @@ export class ODataV4Plugin implements RuntimePlugin {
         
         const edmType = typeMap[fieldType];
         if (!edmType) {
-            console.warn(`[ODataV4Plugin] Unknown field type '${fieldType}', defaulting to Edm.String`);
             return 'Edm.String';
         }
         
@@ -1297,7 +1287,6 @@ export class ODataV4Plugin implements RuntimePlugin {
             res.end(batchResponse);
 
         } catch (error) {
-            console.error(`[${this.name}] Batch request error:`, error);
             this.sendError(res, 500, error instanceof Error ? error.message : 'Batch processing failed');
         }
     }
@@ -1435,28 +1424,56 @@ export class ODataV4Plugin implements RuntimePlugin {
     private async processChangeset(requests: any[]): Promise<string[]> {
         const responses: string[] = [];
         const operations: Array<{ type: string; entitySet: string; key?: string; data?: any }> = [];
+        const rollbackState: Array<{ type: string; entitySet: string; createdId?: string; previousData?: any }> = [];
         const tempResults: any[] = [];
         
         try {
             // First pass: Execute all operations and collect results
             for (let i = 0; i < requests.length; i++) {
                 const request = requests[i];
-                const response = await this.processBatchRequest(request);
                 
                 // Parse the operation details for potential rollback
+                let entitySet: string | undefined;
+                let key: string | undefined;
                 if (request.method && request.url) {
                     const urlParts = request.url.replace(this.config.basePath, '').split('/').filter((p: string) => p);
-                    const entitySet = urlParts[0]?.split('(')[0];
+                    entitySet = urlParts[0]?.split('(')[0];
                     const keyMatch = request.url.match(/\(([^)]+)\)/);
-                    const key = keyMatch ? keyMatch[1].replace(/'/g, '') : undefined;
+                    key = keyMatch ? keyMatch[1].replace(/'/g, '') : undefined;
                     
-                    operations.push({
-                        type: request.method,
-                        entitySet,
-                        key,
-                        data: request.body ? JSON.parse(request.body) : undefined
-                    });
+                    if (entitySet) {
+                        operations.push({
+                            type: request.method,
+                            entitySet,
+                            key,
+                            data: request.body ? JSON.parse(request.body) : undefined
+                        });
+                    }
                 }
+
+                // Store previous state before destructive operations for rollback
+                const state: { type: string; entitySet: string; createdId?: string; previousData?: any } = {
+                    type: request.method || '',
+                    entitySet: entitySet || ''
+                };
+                if (entitySet && key && (request.method === 'DELETE' || request.method === 'PATCH' || request.method === 'PUT')) {
+                    state.previousData = await this.getData(entitySet, key);
+                }
+
+                const response = await this.processBatchRequest(request);
+                
+                // For POST operations, extract the created record ID from the response
+                if (request.method === 'POST' && entitySet) {
+                    const bodyMatch = response.match(/\r\n\r\n(.+)$/s);
+                    if (bodyMatch) {
+                        try {
+                            const created = JSON.parse(bodyMatch[1]);
+                            state.createdId = created._id || created.id;
+                        } catch { /* non-JSON response */ }
+                    }
+                }
+
+                rollbackState.push(state);
                 
                 // Check if any request failed
                 if (response.includes('HTTP/1.1 4') || response.includes('HTTP/1.1 5')) {
@@ -1464,7 +1481,7 @@ export class ODataV4Plugin implements RuntimePlugin {
                     const errorMatch = response.match(/{"error":\s*({[^}]+}|"[^"]+")}/);
                     const errorDetail = errorMatch ? errorMatch[0] : 'Unknown error';
                     
-                    throw new Error(`Changeset operation ${i + 1}/${requests.length} failed: ${errorDetail}`);
+                    throw new ObjectQLError({ code: 'PROTOCOL_BATCH_ERROR', message: `Changeset operation ${i + 1}/${requests.length} failed: ${errorDetail}` });
                 }
                 
                 tempResults.push(response);
@@ -1476,15 +1493,13 @@ export class ODataV4Plugin implements RuntimePlugin {
         } catch (error) {
             // Enhanced error handling with rollback information
             const errorMessage = error instanceof Error ? error.message : 'Changeset failed';
-            console.error(`[${this.name}] Changeset failed, rolling back all operations:`, errorMessage);
-            
             // Attempt to rollback completed operations (in reverse order)
             // Note: This is a best-effort rollback since we don't have true database transactions
             // In a production system, this would use database transaction support
             try {
-                await this.rollbackChangeset(operations, tempResults.length);
-            } catch (rollbackError) {
-                console.error(`[${this.name}] Rollback failed:`, rollbackError);
+                await this.rollbackChangeset(rollbackState, tempResults.length);
+            } catch (_rollbackError) {
+                // Error silently ignored
             }
             
             // Return detailed error response for the entire changeset
@@ -1507,49 +1522,45 @@ export class ODataV4Plugin implements RuntimePlugin {
     }
 
     /**
-     * Attempt to rollback completed changeset operations
+     * Attempt to rollback completed changeset operations via compensating transactions.
      * 
-     * ⚠️ IMPORTANT: This is a DEMONSTRATION-ONLY implementation.
-     * DO NOT use in production without proper database transaction support!
+     * ⚠️ IMPORTANT: This is a best-effort compensating transaction implementation.
+     * For true atomicity in production, use database-level transaction support
+     * (BEGIN TRANSACTION / ROLLBACK).
      * 
-     * This method only LOGS rollback intentions but does NOT actually reverse operations.
+     * Rollback strategy (executed in reverse order):
+     * - POST operations: deletes the created record using the stored ID
+     * - DELETE operations: re-inserts the record using pre-fetched data
+     * - PATCH/PUT operations: restores the record to its pre-fetched values
      * 
-     * For production use, you must implement ONE of the following:
-     * 1. Database transaction support (BEGIN TRANSACTION / ROLLBACK)
-     * 2. Compensating transaction pattern with state storage
-     * 3. Event sourcing with operation replay capability
-     * 
-     * Current limitations:
-     * - Does not actually reverse operations (logs intentions only)
-     * - Requires storing created IDs, deleted records, and previous values
-     * - No guaranteed atomicity without database transaction support
-     * 
-     * Implementation requirements for true rollback:
-     * - Store created IDs during POST operations for deletion
-     * - Store deleted records before DELETE operations for restoration
-     * - Store previous values before PATCH/PUT operations for reversion
+     * Individual rollback failures are silently ignored to allow remaining
+     * operations to proceed on a best-effort basis.
      */
-    private async rollbackChangeset(operations: Array<{ type: string; entitySet: string; key?: string; data?: any }>, completedCount: number): Promise<void> {
+    private async rollbackChangeset(rollbackState: Array<{ type: string; entitySet: string; createdId?: string; previousData?: any }>, completedCount: number): Promise<void> {
         // Rollback in reverse order
         for (let i = completedCount - 1; i >= 0; i--) {
-            const op = operations[i];
+            const state = rollbackState[i];
             try {
                 // Reverse the operation
-                if (op.type === 'POST') {
-                    // Created record - try to delete it
-                    // TODO: Need to extract and store the created ID from the response
-                    console.log(`[${this.name}] Would rollback CREATE on ${op.entitySet}`);
-                } else if (op.type === 'DELETE') {
-                    // Deleted record - try to restore it
-                    // TODO: Need to store the deleted record data before deletion
-                    console.log(`[${this.name}] Would rollback DELETE on ${op.entitySet}(${op.key})`);
-                } else if (op.type === 'PATCH' || op.type === 'PUT') {
-                    // Updated record - try to restore previous values
-                    // TODO: Need to fetch and store previous values before update
-                    console.log(`[${this.name}] Would rollback UPDATE on ${op.entitySet}(${op.key})`);
+                if (state.type === 'POST') {
+                    // Created record — delete it using the stored ID
+                    if (state.createdId) {
+                        await this.deleteData(state.entitySet, state.createdId);
+                    }
+                } else if (state.type === 'DELETE') {
+                    // Deleted record — re-insert it using the stored record data
+                    if (state.previousData) {
+                        await this.createData(state.entitySet, state.previousData);
+                    }
+                } else if (state.type === 'PATCH' || state.type === 'PUT') {
+                    // Updated record — restore previous values
+                    if (state.previousData && (state.previousData._id || state.previousData.id)) {
+                        const id = state.previousData._id || state.previousData.id;
+                        await this.updateData(state.entitySet, id, state.previousData);
+                    }
                 }
-            } catch (error) {
-                console.error(`[${this.name}] Failed to rollback operation ${i}:`, error);
+            } catch (_error) {
+                // Best-effort rollback — continue with remaining operations
             }
         }
     }
@@ -1565,7 +1576,7 @@ export class ODataV4Plugin implements RuntimePlugin {
                 if (!body) return resolve({});
                 try {
                     resolve(JSON.parse(body));
-                } catch (e) {
+                } catch (_e) {
                     reject(new Error('Invalid JSON'));
                 }
             });

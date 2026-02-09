@@ -82,7 +82,7 @@ export class ObjectQLSecurityPlugin implements RuntimePlugin {
       return this.install(ctx);
   }
 
-  start = async (kernel: any): Promise<void> => {
+  start = async (_kernel: any): Promise<void> => {
       // Security plugin doesn't have specific start logic yet
       return;
   }
@@ -147,7 +147,7 @@ export class ObjectQLSecurityPlugin implements RuntimePlugin {
   /**
    * Called when the kernel starts
    */
-  async onStart(ctx: RuntimeContext): Promise<void> {
+  async onStart(_ctx: RuntimeContext): Promise<void> {
     this.logger.info('Security plugin started');
   }
 

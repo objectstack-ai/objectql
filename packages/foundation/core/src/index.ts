@@ -22,7 +22,7 @@ export {
 export type { ObjectContributor } from '@objectstack/objectql';
 
 // Export ObjectStack spec types for driver development
-import { Data, System, Automation } from '@objectstack/spec';
+import { Data, Automation } from '@objectstack/spec';
 import { z } from 'zod';
 export { QueryAST } from '@objectql/types';
 export type DriverInterface = z.infer<typeof Data.DriverInterfaceSchema>;

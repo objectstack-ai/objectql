@@ -143,7 +143,7 @@ export class QueryCompiler {
         // In production, consider a faster hash function
         try {
             return JSON.stringify(ast);
-        } catch (e) {
+        } catch (_e) {
             // Fallback for circular references
             return String(Date.now() + Math.random());
         }

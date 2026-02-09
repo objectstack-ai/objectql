@@ -89,7 +89,7 @@ export class FormulaPlugin implements RuntimePlugin {
     return this.install(ctx);
   }
 
-  async start(ctx: any): Promise<void> {
+  async start(_ctx: any): Promise<void> {
     // Formula plugin doesn't have onStart logic in legacy
     return Promise.resolve();
   }

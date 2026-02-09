@@ -8,7 +8,6 @@
 
 import { 
     MetadataRegistry,
-    MetadataItem,
     Driver, 
     ObjectConfig, 
     ObjectQLContext, 
@@ -20,9 +19,9 @@ import {
     HookContext,
     ActionHandler,
     ActionContext,
-    LoaderPlugin,
     Logger,
-    ConsoleLogger
+    ConsoleLogger,
+    ObjectQLError
 } from '@objectql/types';
 import { ObjectKernel, type Plugin } from '@objectstack/runtime';
 import { ObjectQL as RuntimeObjectQL, SchemaRegistry } from '@objectstack/objectql';
@@ -68,7 +67,7 @@ export class ObjectQL implements IObjectQL {
         this.logger = config.logger ?? new ConsoleLogger({ name: '@objectql/core', level: 'info' });
         
         if (config.connection) {
-             throw new Error("Connection strings are not supported in core directly. Use @objectql/platform-node's createDriverFromConnection or pass a driver instance to 'datasources'.");
+             throw new ObjectQLError({ code: 'CONFIG_ERROR', message: "Connection strings are not supported in core directly. Use @objectql/platform-node's createDriverFromConnection or pass a driver instance to 'datasources'." });
         }
 
         // Use the imported RuntimeObjectQL, assuming it works as intended
@@ -82,7 +81,7 @@ export class ObjectQL implements IObjectQL {
         if (config.plugins) {
             for (const plugin of config.plugins) {
                 if (typeof plugin === 'string') {
-                    throw new Error("String plugins are not supported in core. Use @objectql/platform-node or pass plugin instance.");
+                    throw new ObjectQLError({ code: 'CONFIG_ERROR', message: "String plugins are not supported in core. Use @objectql/platform-node or pass plugin instance." });
                 } else {
                     this.use(plugin as any);
                 }
@@ -158,7 +157,7 @@ export class ObjectQL implements IObjectQL {
                  // Also clean up non-object metadata items by package
                  const metadata = (SchemaRegistry as any).metadata;
                  if (metadata && metadata instanceof Map) {
-                     for (const [type, collection] of metadata.entries()) {
+                     for (const [_type, collection] of metadata.entries()) {
                          if (collection instanceof Map) {
                              for (const [key, item] of collection.entries()) {
                                  if ((item as any).package === packageName) {
@@ -203,7 +202,7 @@ export class ObjectQL implements IObjectQL {
                 if (handler) {
                     return handler(ctx);
                 }
-                throw new Error(`Action '${actionName}' on object '${objectName}' not found`);
+                throw new ObjectQLError({ code: 'NOT_FOUND', message: `Action '${actionName}' on object '${objectName}' not found` });
             }
         };
         
@@ -285,12 +284,7 @@ export class ObjectQL implements IObjectQL {
                       return callback(ctx);
                  }
 
-                 let trx: any;
-                 try {
-                     trx = await driver.beginTransaction();
-                 } catch (e) {
-                     throw e;
-                 }
+                 const trx: any = await driver.beginTransaction();
 
                  const trxCtx: ObjectQLContext = {
                      ...ctx,
@@ -325,7 +319,7 @@ export class ObjectQL implements IObjectQL {
      */
     getKernel(): ObjectKernel {
         if (!this.kernel) {
-            throw new Error('Kernel not initialized. Call init() first.');
+            throw new ObjectQLError({ code: 'INTERNAL_ERROR', message: 'Kernel not initialized. Call init() first.' });
         }
         return this.kernel;
     }
@@ -366,7 +360,7 @@ export class ObjectQL implements IObjectQL {
     datasource(name: string): Driver {
         const driver = this.datasources[name];
         if (!driver) {
-            throw new Error(`Datasource '${name}' not found`);
+            throw new ObjectQLError({ code: 'NOT_FOUND', message: `Datasource '${name}' not found` });
         }
         return driver;
     }
@@ -390,7 +384,7 @@ export class ObjectQL implements IObjectQL {
         const driver = this.datasource(datasourceName);
         
         if (!driver.introspectSchema) {
-            throw new Error(`Driver for datasource '${datasourceName}' does not support schema introspection`);
+            throw new ObjectQLError({ code: 'DRIVER_UNSUPPORTED_OPERATION', message: `Driver for datasource '${datasourceName}' does not support schema introspection` });
         }
         
         this.logger.info(`Introspecting datasource '${datasourceName}'...`);
@@ -471,7 +465,7 @@ export class ObjectQL implements IObjectQL {
 
         // Load In-Memory Objects (Dynamic Layer)
         if (this.config.objects) {
-            for (const [key, obj] of Object.entries(this.config.objects)) {
+            for (const [_key, obj] of Object.entries(this.config.objects)) {
                 this.registerObject(obj);
             }
         }

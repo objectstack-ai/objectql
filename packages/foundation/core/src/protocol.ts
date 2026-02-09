@@ -7,7 +7,8 @@
  */
 
 import { ObjectStackProtocol } from '@objectstack/spec/api';
-import type { IObjectQL, CoreServiceName, ServiceStatus, KernelDiscoveryResponse } from '@objectql/types';
+import type { IObjectQL, CoreServiceName, ServiceStatus } from '@objectql/types';
+import { ObjectQLError } from '@objectql/types';
 
 /**
  * Default service status map.
@@ -109,9 +110,10 @@ const DEFAULT_SERVICES: Readonly<Record<CoreServiceName, ServiceStatus>> = {
  * Helper: throw a "service not available" error for plugin-required methods.
  */
 function notAvailable(service: string, method: string): never {
-    throw new Error(
-        `[${method}] Service '${service}' is not available. Install a ${service} plugin to enable this feature.`
-    );
+    throw new ObjectQLError({
+        code: 'DRIVER_UNSUPPORTED_OPERATION',
+        message: `[${method}] Service '${service}' is not available. Install a ${service} plugin to enable this feature.`
+    });
 }
 
 /**
@@ -143,16 +145,28 @@ export class ObjectStackProtocolImplementation implements ObjectStackProtocol {
     // 1. metadata Service  (7 methods — kernel-provided)
     // ========================================================================
 
-    async getDiscovery(_args?: any): Promise<KernelDiscoveryResponse> {
+    async getDiscovery(_args?: any) {
         return {
             name: 'ObjectQL Engine',
+            apiName: 'objectql',
             version: '4.0.0',
             protocols: ['rest', 'graphql', 'json-rpc', 'odata'],
             services: { ...this.services },
-        };
+            capabilities: {
+                search: true,
+                files: true,
+                graphql: true,
+                notifications: true,
+                analytics: true,
+                ai: true,
+                i18n: true,
+                workflow: true,
+                websockets: true,
+            },
+        } as any;
     }
 
-    async getMetaTypes(args?: any): Promise<{ types: string[] }> {
+    async getMetaTypes(_args?: any): Promise<{ types: string[] }> {
         let types = ['object'];
         if (this.engine.metadata && typeof this.engine.metadata.getTypes === 'function') {
             types = this.engine.metadata.getTypes();
@@ -184,14 +198,14 @@ export class ObjectStackProtocolImplementation implements ObjectStackProtocol {
             this.engine.metadata.register(type, data);
             return { success: true };
         }
-        throw new Error('Engine does not support saving metadata');
+        throw new ObjectQLError({ code: 'DRIVER_UNSUPPORTED_OPERATION', message: 'Engine does not support saving metadata' });
     }
 
     async getMetaItemCached(args: { type: string; name: string }): Promise<any> {
         return this.getMetaItem(args);
     }
 
-    async getUiView(args: { object: string; type: 'list' | 'form' }): Promise<any> {
+    async getUiView(_args: { object: string; type: 'list' | 'form' }): Promise<any> {
         return null;
     }
 
@@ -212,7 +226,7 @@ export class ObjectStackProtocolImplementation implements ObjectStackProtocol {
             return await repo.find(query || {});
         }
 
-        throw new Error('Engine does not support find operation');
+        throw new ObjectQLError({ code: 'DRIVER_UNSUPPORTED_OPERATION', message: 'Engine does not support find operation' });
     }
 
     async getData(args: { object: string; id: string }): Promise<any> {
@@ -228,7 +242,7 @@ export class ObjectStackProtocolImplementation implements ObjectStackProtocol {
             return await repo.findOne(id);
         }
 
-        throw new Error('Engine does not support get operation');
+        throw new ObjectQLError({ code: 'DRIVER_UNSUPPORTED_OPERATION', message: 'Engine does not support get operation' });
     }
 
     async createData(args: { object: string; data: any }): Promise<any> {
@@ -244,7 +258,7 @@ export class ObjectStackProtocolImplementation implements ObjectStackProtocol {
             return await repo.create(data);
         }
 
-        throw new Error('Engine does not support create operation');
+        throw new ObjectQLError({ code: 'DRIVER_UNSUPPORTED_OPERATION', message: 'Engine does not support create operation' });
     }
 
     async updateData(args: { object: string; id: string; data: any }): Promise<any> {
@@ -260,7 +274,7 @@ export class ObjectStackProtocolImplementation implements ObjectStackProtocol {
             return await repo.update(id, data);
         }
 
-        throw new Error('Engine does not support update operation');
+        throw new ObjectQLError({ code: 'DRIVER_UNSUPPORTED_OPERATION', message: 'Engine does not support update operation' });
     }
 
     async deleteData(args: { object: string; id: string }): Promise<{ object: string; id: string; success: boolean }> {
@@ -278,7 +292,7 @@ export class ObjectStackProtocolImplementation implements ObjectStackProtocol {
             return { object, id, success: true };
         }
 
-        throw new Error('Engine does not support delete operation');
+        throw new ObjectQLError({ code: 'DRIVER_UNSUPPORTED_OPERATION', message: 'Engine does not support delete operation' });
     }
 
     async batchData(args: { object: string; request: { operation: 'create' | 'update' | 'delete' | 'upsert'; records: any[] } }): Promise<any> {
@@ -308,7 +322,7 @@ export class ObjectStackProtocolImplementation implements ObjectStackProtocol {
                     break;
                 }
                 default:
-                    throw new Error(`Unsupported batch operation: ${operation}`);
+                    throw new ObjectQLError({ code: 'INVALID_REQUEST', message: `Unsupported batch operation: ${operation}` });
             }
         }
 
@@ -359,19 +373,19 @@ export class ObjectStackProtocolImplementation implements ObjectStackProtocol {
             return { object: args.object, records, count: records.length };
         }
 
-        throw new Error('analyticsQuery requires an object name');
+        throw new ObjectQLError({ code: 'VALIDATION_ERROR', message: 'analyticsQuery requires an object name' });
     }
 
     async getAnalyticsMeta(args: any): Promise<any> {
         // Auto-generate analytics metadata from SchemaRegistry
         const objectName = args?.object;
         if (!objectName) {
-            throw new Error('getAnalyticsMeta requires an object name');
+            throw new ObjectQLError({ code: 'VALIDATION_ERROR', message: 'getAnalyticsMeta requires an object name' });
         }
 
         const objectConfig = this.engine.metadata?.get?.('object', objectName);
         if (!objectConfig) {
-            throw new Error(`Object '${objectName}' not found`);
+            throw new ObjectQLError({ code: 'NOT_FOUND', message: `Object '${objectName}' not found` });
         }
 
         const config = (objectConfig as any)?.content || objectConfig;
@@ -398,15 +412,15 @@ export class ObjectStackProtocolImplementation implements ObjectStackProtocol {
     // 4. auth Service  (3 methods — plugin required)
     // ========================================================================
 
-    async checkPermission(args: any): Promise<any> {
+    async checkPermission(_args: any): Promise<any> {
         notAvailable('auth', 'checkPermission');
     }
 
-    async getObjectPermissions(args: any): Promise<any> {
+    async getObjectPermissions(_args: any): Promise<any> {
         notAvailable('auth', 'getObjectPermissions');
     }
 
-    async getEffectivePermissions(args: any): Promise<any> {
+    async getEffectivePermissions(_args: any): Promise<any> {
         notAvailable('auth', 'getEffectivePermissions');
     }
 
@@ -414,23 +428,23 @@ export class ObjectStackProtocolImplementation implements ObjectStackProtocol {
     // 5. ui Service  (5 methods — plugin required)
     // ========================================================================
 
-    async listViews(args: any): Promise<any> {
+    async listViews(_args: any): Promise<any> {
         notAvailable('ui', 'listViews');
     }
 
-    async getView(args: any): Promise<any> {
+    async getView(_args: any): Promise<any> {
         notAvailable('ui', 'getView');
     }
 
-    async createView(args: any): Promise<any> {
+    async createView(_args: any): Promise<any> {
         notAvailable('ui', 'createView');
     }
 
-    async updateView(args: any): Promise<any> {
+    async updateView(_args: any): Promise<any> {
         notAvailable('ui', 'updateView');
     }
 
-    async deleteView(args: any): Promise<any> {
+    async deleteView(_args: any): Promise<any> {
         notAvailable('ui', 'deleteView');
     }
 
@@ -438,23 +452,23 @@ export class ObjectStackProtocolImplementation implements ObjectStackProtocol {
     // 6. workflow Service  (5 methods — plugin required)
     // ========================================================================
 
-    async getWorkflowConfig(args: any): Promise<any> {
+    async getWorkflowConfig(_args: any): Promise<any> {
         notAvailable('workflow', 'getWorkflowConfig');
     }
 
-    async getWorkflowState(args: any): Promise<any> {
+    async getWorkflowState(_args: any): Promise<any> {
         notAvailable('workflow', 'getWorkflowState');
     }
 
-    async workflowTransition(args: any): Promise<any> {
+    async workflowTransition(_args: any): Promise<any> {
         notAvailable('workflow', 'workflowTransition');
     }
 
-    async workflowApprove(args: any): Promise<any> {
+    async workflowApprove(_args: any): Promise<any> {
         notAvailable('workflow', 'workflowApprove');
     }
 
-    async workflowReject(args: any): Promise<any> {
+    async workflowReject(_args: any): Promise<any> {
         notAvailable('workflow', 'workflowReject');
     }
 
@@ -462,7 +476,7 @@ export class ObjectStackProtocolImplementation implements ObjectStackProtocol {
     // 7. automation Service  (1 method — plugin required)
     // ========================================================================
 
-    async triggerAutomation(args: { trigger: string; payload: Record<string, any> }): Promise<{ success: boolean; jobId?: string; result?: any }> {
+    async triggerAutomation(_args: { trigger: string; payload: Record<string, any> }): Promise<{ success: boolean; jobId?: string; result?: any }> {
         notAvailable('automation', 'triggerAutomation');
     }
 
@@ -470,27 +484,27 @@ export class ObjectStackProtocolImplementation implements ObjectStackProtocol {
     // 8. realtime Service  (6 methods — plugin required)
     // ========================================================================
 
-    async realtimeConnect(args: any): Promise<any> {
+    async realtimeConnect(_args: any): Promise<any> {
         notAvailable('realtime', 'realtimeConnect');
     }
 
-    async realtimeDisconnect(args: any): Promise<any> {
+    async realtimeDisconnect(_args: any): Promise<any> {
         notAvailable('realtime', 'realtimeDisconnect');
     }
 
-    async realtimeSubscribe(args: any): Promise<any> {
+    async realtimeSubscribe(_args: any): Promise<any> {
         notAvailable('realtime', 'realtimeSubscribe');
     }
 
-    async realtimeUnsubscribe(args: any): Promise<any> {
+    async realtimeUnsubscribe(_args: any): Promise<any> {
         notAvailable('realtime', 'realtimeUnsubscribe');
     }
 
-    async setPresence(args: any): Promise<any> {
+    async setPresence(_args: any): Promise<any> {
         notAvailable('realtime', 'setPresence');
     }
 
-    async getPresence(args: any): Promise<any> {
+    async getPresence(_args: any): Promise<any> {
         notAvailable('realtime', 'getPresence');
     }
 
@@ -498,31 +512,31 @@ export class ObjectStackProtocolImplementation implements ObjectStackProtocol {
     // 9. notification Service  (7 methods — plugin required)
     // ========================================================================
 
-    async registerDevice(args: any): Promise<any> {
+    async registerDevice(_args: any): Promise<any> {
         notAvailable('notification', 'registerDevice');
     }
 
-    async unregisterDevice(args: any): Promise<any> {
+    async unregisterDevice(_args: any): Promise<any> {
         notAvailable('notification', 'unregisterDevice');
     }
 
-    async getNotificationPreferences(args: any): Promise<any> {
+    async getNotificationPreferences(_args: any): Promise<any> {
         notAvailable('notification', 'getNotificationPreferences');
     }
 
-    async updateNotificationPreferences(args: any): Promise<any> {
+    async updateNotificationPreferences(_args: any): Promise<any> {
         notAvailable('notification', 'updateNotificationPreferences');
     }
 
-    async listNotifications(args: any): Promise<any> {
+    async listNotifications(_args: any): Promise<any> {
         notAvailable('notification', 'listNotifications');
     }
 
-    async markNotificationsRead(args: any): Promise<any> {
+    async markNotificationsRead(_args: any): Promise<any> {
         notAvailable('notification', 'markNotificationsRead');
     }
 
-    async markAllNotificationsRead(args: any): Promise<any> {
+    async markAllNotificationsRead(_args: any): Promise<any> {
         notAvailable('notification', 'markAllNotificationsRead');
     }
 
@@ -530,19 +544,19 @@ export class ObjectStackProtocolImplementation implements ObjectStackProtocol {
     // 10. ai Service  (4 methods — plugin required)
     // ========================================================================
 
-    async aiNlq(args: any): Promise<any> {
+    async aiNlq(_args: any): Promise<any> {
         notAvailable('ai', 'aiNlq');
     }
 
-    async aiChat(args: any): Promise<any> {
+    async aiChat(_args: any): Promise<any> {
         notAvailable('ai', 'aiChat');
     }
 
-    async aiSuggest(args: any): Promise<any> {
+    async aiSuggest(_args: any): Promise<any> {
         notAvailable('ai', 'aiSuggest');
     }
 
-    async aiInsights(args: any): Promise<any> {
+    async aiInsights(_args: any): Promise<any> {
         notAvailable('ai', 'aiInsights');
     }
 
@@ -550,15 +564,15 @@ export class ObjectStackProtocolImplementation implements ObjectStackProtocol {
     // 11. i18n Service  (3 methods — plugin required)
     // ========================================================================
 
-    async getLocales(args: any): Promise<any> {
+    async getLocales(_args: any): Promise<any> {
         notAvailable('i18n', 'getLocales');
     }
 
-    async getTranslations(args: any): Promise<any> {
+    async getTranslations(_args: any): Promise<any> {
         notAvailable('i18n', 'getTranslations');
     }
 
-    async getFieldLabels(args: any): Promise<any> {
+    async getFieldLabels(_args: any): Promise<any> {
         notAvailable('i18n', 'getFieldLabels');
     }
 
@@ -566,27 +580,27 @@ export class ObjectStackProtocolImplementation implements ObjectStackProtocol {
     // Package Management  (6 methods — kernel hub)
     // ========================================================================
 
-    async listPackages(args: any): Promise<any> {
-        throw new Error('listPackages not implemented');
+    async listPackages(_args: any): Promise<any> {
+        throw new ObjectQLError({ code: 'DRIVER_UNSUPPORTED_OPERATION', message: 'listPackages not implemented' });
     }
 
-    async getPackage(args: any): Promise<any> {
-        throw new Error('getPackage not implemented');
+    async getPackage(_args: any): Promise<any> {
+        throw new ObjectQLError({ code: 'DRIVER_UNSUPPORTED_OPERATION', message: 'getPackage not implemented' });
     }
 
-    async installPackage(args: any): Promise<any> {
-        throw new Error('installPackage not implemented');
+    async installPackage(_args: any): Promise<any> {
+        throw new ObjectQLError({ code: 'DRIVER_UNSUPPORTED_OPERATION', message: 'installPackage not implemented' });
     }
 
-    async uninstallPackage(args: any): Promise<any> {
-        throw new Error('uninstallPackage not implemented');
+    async uninstallPackage(_args: any): Promise<any> {
+        throw new ObjectQLError({ code: 'DRIVER_UNSUPPORTED_OPERATION', message: 'uninstallPackage not implemented' });
     }
 
-    async enablePackage(args: any): Promise<any> {
-        throw new Error('enablePackage not implemented');
+    async enablePackage(_args: any): Promise<any> {
+        throw new ObjectQLError({ code: 'DRIVER_UNSUPPORTED_OPERATION', message: 'enablePackage not implemented' });
     }
 
-    async disablePackage(args: any): Promise<any> {
-        throw new Error('disablePackage not implemented');
+    async disablePackage(_args: any): Promise<any> {
+        throw new ObjectQLError({ code: 'DRIVER_UNSUPPORTED_OPERATION', message: 'disablePackage not implemented' });
     }
 }

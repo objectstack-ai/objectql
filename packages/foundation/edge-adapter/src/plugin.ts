@@ -6,6 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import { ObjectQLError } from '@objectql/types';
 import type { RuntimePlugin, RuntimeContext, EdgeAdapterConfig } from '@objectql/types';
 import { detectRuntime } from './detector.js';
 import { validateCapabilities, getCapabilities, type CapabilityRequirement } from './capabilities.js';
@@ -52,9 +53,10 @@ export class EdgeAdapterPlugin implements RuntimePlugin {
         if (this.config.requirements) {
             const validation = validateCapabilities(runtime, this.config.requirements);
             if (!validation.valid) {
-                throw new Error(
-                    `[${this.name}] Runtime '${runtime}' missing capabilities: ${validation.missing.join(', ')}`,
-                );
+                throw new ObjectQLError({
+                    code: 'CONFIG_ERROR',
+                    message: `[${this.name}] Runtime '${runtime}' missing capabilities: ${validation.missing.join(', ')}`,
+                });
             }
         }
 

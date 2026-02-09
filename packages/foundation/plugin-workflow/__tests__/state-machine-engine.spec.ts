@@ -313,7 +313,7 @@ describe('StateMachineEngine', () => {
       const engine = new StateMachineEngine(config, guardEvaluator, actionExecutor);
 
       // Transition within compound state using absolute path
-      let result = await engine.transition('editing.draft', 'editing.review', {
+      const result = await engine.transition('editing.draft', 'editing.review', {
         record: { status: 'editing.draft' },
         operation: 'update',
       });

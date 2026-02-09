@@ -89,7 +89,7 @@ describe('MongoDriver Integration Tests', () => {
             // Driver doesn't have dropDatabase.
             // Use the client we created in beforeAll
             await client.db(dbName).dropDatabase();
-        } catch (e) {
+        } catch (_e) {
             // Ignore cleanup errors
         }
     });

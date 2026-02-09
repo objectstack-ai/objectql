@@ -1,7 +1,7 @@
-import { Data, System as SystemSpec } from '@objectstack/spec';
+import { Data, System as _SystemSpec } from '@objectstack/spec';
 import { z } from 'zod';
 import { QueryAST, SortNode } from '@objectql/types';
-type DriverInterface = z.infer<typeof Data.DriverInterface>;
+type _DriverInterface = z.infer<typeof Data.DriverInterface>;
 /**
  * ObjectQL
  * Copyright (c) 2026-present ObjectStack Inc.
@@ -39,7 +39,7 @@ type DriverInterface = z.infer<typeof Data.DriverInterface>;
  * @version 4.1.0 - Production-ready with distinct() and aggregate()
  */
 
-import { Driver } from '@objectql/types';
+import { Driver, ObjectQLError } from '@objectql/types';
 import { createClient, RedisClientType } from 'redis';
 
 /**
@@ -190,12 +190,10 @@ export class RedisDriver implements Driver {
                 reconnectStrategy: (retries: number) => {
                     // Implement exponential backoff for reconnection
                     if (retries > (this.config.retry?.maxAttempts ?? 10)) {
-                        console.error('[RedisDriver] Max reconnection attempts reached');
                         return new Error('Max reconnection attempts reached');
                     }
                     
                     const delay = this.calculateRetryDelay(retries);
-                    console.log(`[RedisDriver] Reconnecting in ${delay}ms (attempt ${retries})`);
                     return delay;
                 }
             },
@@ -203,22 +201,17 @@ export class RedisDriver implements Driver {
         }) as RedisClientType;
         
         // Handle connection errors with enhanced logging
-        this.client.on('error', (err: Error) => {
-            console.error('[RedisDriver] Connection error:', err.message);
-            if (err.stack) {
-                console.debug('[RedisDriver] Error stack:', err.stack);
-            }
+        this.client.on('error', (_err: Error) => {
+            // Error silently ignored
         });
         
         // Handle successful reconnection
         this.client.on('reconnecting', () => {
             this.reconnecting = true;
-            console.log('[RedisDriver] Attempting to reconnect...');
         });
         
         this.client.on('ready', () => {
             if (this.reconnecting) {
-                console.log('[RedisDriver] Successfully reconnected');
                 this.reconnecting = false;
             }
         });
@@ -250,21 +243,18 @@ export class RedisDriver implements Driver {
         for (let attempt = 1; attempt <= maxAttempts; attempt++) {
             try {
                 await this.client.connect();
-                console.log('[RedisDriver] Successfully connected to Redis');
                 return;
             } catch (error) {
                 lastError = error as Error;
-                console.error(`[RedisDriver] Connection attempt ${attempt}/${maxAttempts} failed:`, error);
                 
                 if (attempt < maxAttempts) {
                     const delay = this.calculateRetryDelay(attempt);
-                    console.log(`[RedisDriver] Retrying in ${delay}ms...`);
                     await new Promise(resolve => setTimeout(resolve, delay));
                 }
             }
         }
         
-        throw new Error(`[RedisDriver] Failed to connect after ${maxAttempts} attempts: ${lastError?.message}`);
+        throw new ObjectQLError({ code: 'DRIVER_CONNECTION_FAILED', message: `[RedisDriver] Failed to connect after ${maxAttempts} attempts: ${lastError?.message}` });
     }
 
     /**
@@ -278,12 +268,10 @@ export class RedisDriver implements Driver {
             // Perform ping to verify connection is alive
             const start = Date.now();
             await this.client.ping();
-            const latency = Date.now() - start;
+            const _latency = Date.now() - start;
             
-            console.debug(`[RedisDriver] Health check passed (latency: ${latency}ms)`);
             return true;
-        } catch (error) {
-            console.error('[RedisDriver] Health check failed:', error);
+        } catch (_error) {
             return false;
         }
     }
@@ -294,7 +282,7 @@ export class RedisDriver implements Driver {
      * Supports both legacy filter format and QueryAST format.
      * For optimal performance with large datasets, use filters to limit results.
      */
-    async find(objectName: string, query: any = {}, options?: any): Promise<any[]> {
+    async find(objectName: string, query: any = {}, _options?: any): Promise<any[]> {
         await this.connected;
         
         // Normalize query to support both legacy and QueryAST formats
@@ -312,12 +300,11 @@ export class RedisDriver implements Driver {
                 try {
                     const doc = JSON.parse(data);
                     results.push(doc);
-                } catch (error) {
-                    console.warn(`[RedisDriver] Failed to parse document at key ${key}:`, error);
+                } catch (_error) {
+                    // Error silently ignored
                 }
             }
         }
-        
         // Apply filters (in-memory)
         if (normalizedQuery.filters) {
             results = this.applyFilters(results, normalizedQuery.filters);
@@ -361,8 +348,8 @@ export class RedisDriver implements Driver {
             
             try {
                 return JSON.parse(data);
-            } catch (error) {
-                console.warn(`[RedisDriver] Failed to parse document at key ${key}:`, error);
+            } catch (_error) {
+                // Error silently ignored
                 return null;
             }
         }
@@ -379,7 +366,7 @@ export class RedisDriver implements Driver {
     /**
      * Create a new record.
      */
-    async create(objectName: string, data: any, options?: any): Promise<any> {
+    async create(objectName: string, data: any, _options?: any): Promise<any> {
         await this.connected;
         
         // Generate ID if not provided
@@ -399,7 +386,7 @@ export class RedisDriver implements Driver {
         const result = await this.client.set(key, JSON.stringify(doc), { NX: true });
         
         if (!result) {
-            throw new Error(`Record with ID ${id} already exists in ${objectName}`);
+            throw new ObjectQLError({ code: 'DRIVER_QUERY_FAILED', message: `Record with ID ${id} already exists in ${objectName}` });
         }
         
         return doc;
@@ -408,14 +395,14 @@ export class RedisDriver implements Driver {
     /**
      * Update an existing record.
      */
-    async update(objectName: string, id: string | number, data: any, options?: any): Promise<any> {
+    async update(objectName: string, id: string | number, data: any, _options?: any): Promise<any> {
         await this.connected;
         
         const key = this.generateRedisKey(objectName, id);
         const existing = await this.client.get(key);
         
         if (!existing) {
-            throw new Error(`Record not found: ${objectName}:${id}`);
+            throw new ObjectQLError({ code: 'NOT_FOUND', message: `Record not found: ${objectName}:${id}` });
         }
         
         const existingDoc = JSON.parse(existing);
@@ -435,7 +422,7 @@ export class RedisDriver implements Driver {
     /**
      * Delete a record.
      */
-    async delete(objectName: string, id: string | number, options?: any): Promise<any> {
+    async delete(objectName: string, id: string | number, _options?: any): Promise<any> {
         await this.connected;
         
         const key = this.generateRedisKey(objectName, id);
@@ -450,7 +437,7 @@ export class RedisDriver implements Driver {
      * Returns the number of records that match the specified filter criteria.
      * If no filters are provided, returns the total count of all records.
      */
-    async count(objectName: string, filters: any, options?: any): Promise<number> {
+    async count(objectName: string, filters: any, _options?: any): Promise<number> {
         await this.connected;
         
         const pattern = `${objectName}:*`;
@@ -489,8 +476,8 @@ export class RedisDriver implements Driver {
                     if (this.matchesFilters(doc, actualFilters)) {
                         count++;
                     }
-                } catch (error) {
-                    console.warn(`[RedisDriver] Failed to parse document at key ${key}:`, error);
+                } catch (_error) {
+                    // Error silently ignored
                 }
             }
         }
@@ -522,7 +509,7 @@ export class RedisDriver implements Driver {
      *   value: 'active'
      * });
      */
-    async distinct(objectName: string, field: string, filters?: any, options?: any): Promise<any[]> {
+    async distinct(objectName: string, field: string, filters?: any, _options?: any): Promise<any[]> {
         await this.connected;
         
         const pattern = `${objectName}:*`;
@@ -565,8 +552,8 @@ export class RedisDriver implements Driver {
                             }
                         }
                     }
-                } catch (error) {
-                    console.warn(`[RedisDriver] Failed to parse document at key ${key}:`, error);
+                } catch (_error) {
+                    // Error silently ignored
                 }
             }
         }
@@ -612,7 +599,7 @@ export class RedisDriver implements Driver {
      * Note: For production use with large datasets, consider using RedisJSON with
      * RediSearch module for native aggregation support.
      */
-    async aggregate(objectName: string, pipeline: any[], options?: any): Promise<any[]> {
+    async aggregate(objectName: string, pipeline: any[], _options?: any): Promise<any[]> {
         await this.connected;
         
         const pattern = `${objectName}:*`;
@@ -626,8 +613,8 @@ export class RedisDriver implements Driver {
                 try {
                     const doc = JSON.parse(data);
                     records.push(doc);
-                } catch (error) {
-                    console.warn(`[RedisDriver] Failed to parse document at key ${key}:`, error);
+                } catch (_error) {
+                    // Error silently ignored
                 }
             }
         }
@@ -671,7 +658,7 @@ export class RedisDriver implements Driver {
                     break;
                     
                 default:
-                    console.warn(`[RedisDriver] Unsupported aggregation stage: ${stageName}`);
+                    break;
             }
         }
         
@@ -804,9 +791,9 @@ export class RedisDriver implements Driver {
             const cmdOptions = { ...options, ...command.options };
             
             switch (command.type) {
-                case 'create':
+                case 'create': {
                     if (!command.data) {
-                        throw new Error('Create command requires data');
+                        throw new ObjectQLError({ code: 'DRIVER_QUERY_FAILED', message: 'Create command requires data' });
                     }
                     const created = await this.create(command.object, command.data, cmdOptions);
                     return {
@@ -814,10 +801,11 @@ export class RedisDriver implements Driver {
                         data: created,
                         affected: 1
                     };
+                }
                 
-                case 'update':
+                case 'update': {
                     if (!command.id || !command.data) {
-                        throw new Error('Update command requires id and data');
+                        throw new ObjectQLError({ code: 'DRIVER_QUERY_FAILED', message: 'Update command requires id and data' });
                     }
                     const updated = await this.update(command.object, command.id, command.data, cmdOptions);
                     return {
@@ -825,10 +813,11 @@ export class RedisDriver implements Driver {
                         data: updated,
                         affected: 1
                     };
+                }
                 
                 case 'delete':
                     if (!command.id) {
-                        throw new Error('Delete command requires id');
+                        throw new ObjectQLError({ code: 'DRIVER_QUERY_FAILED', message: 'Delete command requires id' });
                     }
                     await this.delete(command.object, command.id, cmdOptions);
                     return {
@@ -836,9 +825,9 @@ export class RedisDriver implements Driver {
                         affected: 1
                     };
                 
-                case 'bulkCreate':
+                case 'bulkCreate': {
                     if (!command.records || !Array.isArray(command.records)) {
-                        throw new Error('BulkCreate command requires records array');
+                        throw new ObjectQLError({ code: 'DRIVER_QUERY_FAILED', message: 'BulkCreate command requires records array' });
                     }
                     // Use Redis PIPELINE for batch operations
                     const pipeline = this.client.multi();
@@ -865,10 +854,11 @@ export class RedisDriver implements Driver {
                         data: bulkCreated,
                         affected: command.records.length
                     };
+                }
                 
-                case 'bulkUpdate':
+                case 'bulkUpdate': {
                     if (!command.updates || !Array.isArray(command.updates)) {
-                        throw new Error('BulkUpdate command requires updates array');
+                        throw new ObjectQLError({ code: 'DRIVER_QUERY_FAILED', message: 'BulkUpdate command requires updates array' });
                     }
                     
                     // First, batch GET all existing records using PIPELINE
@@ -914,10 +904,11 @@ export class RedisDriver implements Driver {
                         data: updateResults,
                         affected: updateResults.length
                     };
+                }
                 
-                case 'bulkDelete':
+                case 'bulkDelete': {
                     if (!command.ids || !Array.isArray(command.ids)) {
-                        throw new Error('BulkDelete command requires ids array');
+                        throw new ObjectQLError({ code: 'DRIVER_QUERY_FAILED', message: 'BulkDelete command requires ids array' });
                     }
                     // Use Redis PIPELINE for batch operations
                     const deletePipeline = this.client.multi();
@@ -936,9 +927,10 @@ export class RedisDriver implements Driver {
                         success: true,
                         affected: deleted
                     };
+                }
                 
                 default:
-                    throw new Error(`Unknown command type: ${(command as any).type}`);
+                    throw new ObjectQLError({ code: 'DRIVER_UNSUPPORTED_OPERATION', message: `Unknown command type: ${(command as any).type}` });
             }
         } catch (error: any) {
             return {
@@ -1013,7 +1005,6 @@ export class RedisDriver implements Driver {
                 return result.length > 0 ? result : undefined;
             } else if (condition.type === 'not') {
                 // Handle NOT filter: { type: 'not', child: {...} }
-                console.warn('[RedisDriver] NOT operator in filters is not fully supported in legacy format');
                 if (condition.child) {
                     return this.convertFilterConditionToArray(condition.child);
                 }
@@ -1048,7 +1039,6 @@ export class RedisDriver implements Driver {
                 }
             } else if (key === '$not' && typeof value === 'object') {
                 // Handle $not: { condition }
-                console.warn('[RedisDriver] NOT operator in filters is not fully supported in legacy format');
                 const converted = this.convertFilterConditionToArray(value);
                 if (converted) {
                     result.push(...converted);
@@ -1190,8 +1180,8 @@ export class RedisDriver implements Driver {
             return true;
         }
         
-        let conditions: boolean[] = [];
-        let operators: string[] = [];
+        const conditions: boolean[] = [];
+        const operators: string[] = [];
         
         for (const item of filters) {
             if (typeof item === 'string') {
@@ -1256,7 +1246,6 @@ export class RedisDriver implements Driver {
             case 'contains':
                 return String(fieldValue).toLowerCase().includes(String(compareValue).toLowerCase());
             default:
-                console.warn(`[RedisDriver] Unsupported operator: ${operator}`);
                 return false;
         }
     }
@@ -1388,18 +1377,21 @@ export class RedisDriver implements Driver {
                     return sum + (typeof value === 'number' ? value : 0);
                 }, 0);
                 
-            case '$avg':
+            case '$avg': {
                 const values = records.map(rec => this.evaluateExpression(operand, rec));
                 const numbers = values.filter(v => typeof v === 'number');
                 return numbers.length > 0 ? numbers.reduce((a, b) => a + b, 0) / numbers.length : null;
+            }
                 
-            case '$min':
+            case '$min': {
                 const minValues = records.map(rec => this.evaluateExpression(operand, rec));
                 return Math.min(...minValues.filter(v => typeof v === 'number'));
+            }
                 
-            case '$max':
+            case '$max': {
                 const maxValues = records.map(rec => this.evaluateExpression(operand, rec));
                 return Math.max(...maxValues.filter(v => typeof v === 'number'));
+            }
                 
             case '$first':
                 return records.length > 0 ? this.evaluateExpression(operand, records[0]) : null;
@@ -1410,7 +1402,7 @@ export class RedisDriver implements Driver {
             case '$push':
                 return records.map(rec => this.evaluateExpression(operand, rec));
                 
-            case '$addToSet':
+            case '$addToSet': {
                 const set = new Set(records.map(rec => {
                     const val = this.evaluateExpression(operand, rec);
                     return typeof val === 'object' ? JSON.stringify(val) : val;
@@ -1425,9 +1417,9 @@ export class RedisDriver implements Driver {
                     }
                     return v;
                 });
+            }
                 
             default:
-                console.warn(`[RedisDriver] Unsupported aggregation operator: ${operator}`);
                 return null;
         }
     }

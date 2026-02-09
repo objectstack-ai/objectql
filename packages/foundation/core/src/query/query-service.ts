@@ -13,7 +13,7 @@ import type {
     Filter,
     MetadataRegistry
 } from '@objectql/types';
-import { QueryAST } from '@objectql/types';
+import { QueryAST, ObjectQLError } from '@objectql/types';
 import { QueryBuilder } from './query-builder';
 import { QueryCompiler } from '../optimizations/QueryCompiler';
 
@@ -121,7 +121,7 @@ export class QueryService {
         const driver = this.datasources[datasourceName];
         
         if (!driver) {
-            throw new Error(`Datasource '${datasourceName}' not found for object '${objectName}'`);
+            throw new ObjectQLError({ code: 'NOT_FOUND', message: `Datasource '${datasourceName}' not found for object '${objectName}'` });
         }
         
         return driver;
@@ -134,7 +134,7 @@ export class QueryService {
     private getSchema(objectName: string): ObjectConfig {
         const obj = this.metadata.get('object', objectName);
         if (!obj) {
-            throw new Error(`Object '${objectName}' not found in metadata`);
+            throw new ObjectQLError({ code: 'NOT_FOUND', message: `Object '${objectName}' not found in metadata` });
         }
         return obj;
     }
@@ -188,7 +188,7 @@ export class QueryService {
             results = result.value || [];
             count = result.count;
         } else {
-            throw new Error(`Driver does not support query execution`);
+            throw new ObjectQLError({ code: 'DRIVER_UNSUPPORTED_OPERATION', message: `Driver does not support query execution` });
         }
         
         const executionTime = options.profile ? Date.now() - startTime : 0;
@@ -242,7 +242,7 @@ export class QueryService {
             const queryResult = await driver.executeQuery(ast, driverOptions);
             result = queryResult.value?.[0];
         } else {
-            throw new Error(`Driver does not support findOne operation`);
+            throw new ObjectQLError({ code: 'DRIVER_UNSUPPORTED_OPERATION', message: `Driver does not support findOne operation` });
         }
         
         const executionTime = options.profile ? Date.now() - startTime : 0;
@@ -292,7 +292,7 @@ export class QueryService {
             const result = await driver.executeQuery(ast, driverOptions);
             count = result.count ?? result.value?.length ?? 0;
         } else {
-            throw new Error(`Driver does not support count operation`);
+            throw new ObjectQLError({ code: 'DRIVER_UNSUPPORTED_OPERATION', message: `Driver does not support count operation` });
         }
         
         const executionTime = options.profile ? Date.now() - startTime : 0;
@@ -334,7 +334,7 @@ export class QueryService {
             results = await driver.aggregate(objectName, query, driverOptions);
         } else {
             // Driver doesn't support aggregation
-            throw new Error(`Driver does not support aggregate operations. Consider using a driver that supports aggregation.`);
+            throw new ObjectQLError({ code: 'DRIVER_UNSUPPORTED_OPERATION', message: `Driver does not support aggregate operations. Consider using a driver that supports aggregation.` });
         }
         
         const executionTime = options.profile ? Date.now() - startTime : 0;
@@ -369,7 +369,7 @@ export class QueryService {
         const driver = this.getDriver(objectName);
         const startTime = options.profile ? Date.now() : 0;
         
-        const driverOptions = {
+        const _driverOptions = {
             transaction: options.transaction,
             ...options.driverOptions
         };
@@ -382,7 +382,7 @@ export class QueryService {
             // Alternative method name
             results = await driver.query(queryString, params);
         } else {
-            throw new Error(`Driver does not support direct query execution`);
+            throw new ObjectQLError({ code: 'DRIVER_UNSUPPORTED_OPERATION', message: `Driver does not support direct query execution` });
         }
         
         const executionTime = options.profile ? Date.now() - startTime : 0;

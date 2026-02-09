@@ -1,7 +1,7 @@
-import { Data, System as SystemSpec } from '@objectstack/spec';
+import { Data, System as _SystemSpec } from '@objectstack/spec';
 import { z } from 'zod';
-import { QueryAST, SortNode } from '@objectql/types';
-type DriverInterface = z.infer<typeof Data.DriverInterface>;
+import { QueryAST } from '@objectql/types';
+type _DriverInterface = z.infer<typeof Data.DriverInterface>;
 /**
  * ObjectQL
  * Copyright (c) 2026-present ObjectStack Inc.
@@ -10,7 +10,7 @@ type DriverInterface = z.infer<typeof Data.DriverInterface>;
  * LICENSE file in the root directory of this source tree.
  */
 
-import { Driver } from '@objectql/types';
+import { Driver, ObjectQLError } from '@objectql/types';
 import { MongoClient, Db, Filter, ObjectId, FindOptions, FindOneAndUpdateOptions, UpdateFilter, ChangeStream, ChangeStreamDocument } from 'mongodb';
 
 /**
@@ -119,14 +119,14 @@ export class MongoDriver implements Driver {
             if (!this.db) return false;
             await this.db.admin().ping();
             return true;
-        } catch (error) {
+        } catch (_error) {
             return false;
         }
     }
 
     private async getCollection(objectName: string) {
         await this.connected;
-        if (!this.db) throw new Error("Database not initialized");
+        if (!this.db) throw new ObjectQLError({ code: 'DRIVER_CONNECTION_FAILED', message: 'Database not initialized' });
         return this.db.collection<any>(objectName);
     }
 
@@ -336,7 +336,7 @@ export class MongoDriver implements Driver {
      * QueryAST sort is array of {field, order}, while UnifiedQuery is array of [field, order].
      * QueryAST uses 'aggregations', while legacy uses 'aggregate'.
      */
-    async find(objectName: string, query: any, options?: any): Promise<any[]> {
+    async find(objectName: string, query: any, _options?: any): Promise<any[]> {
         const collection = await this.getCollection(objectName);
         
         // Handle both new format (where) and legacy format (filters)
@@ -486,7 +486,7 @@ export class MongoDriver implements Driver {
         return result.deletedCount;
     }
 
-    async count(objectName: string, filters: any, options?: any): Promise<number> {
+    async count(objectName: string, filters: any, _options?: any): Promise<number> {
         const collection = await this.getCollection(objectName);
         // Handle both filter objects and query objects
         let actualFilters = filters;
@@ -524,7 +524,7 @@ export class MongoDriver implements Driver {
         const filter = this.mapFilters(filters);
         
         // Remove 'id' field from update data as it shouldn't be updated
-        const { id: idToIgnore, ...updateData } = data;
+        const { id: _idToIgnore, ...updateData } = data;
         
         const isAtomic = Object.keys(updateData).some(k => k.startsWith('$'));
         const update = isAtomic ? updateData : { $set: updateData };
@@ -548,7 +548,7 @@ export class MongoDriver implements Driver {
         return { deletedCount: result.deletedCount };
     }
 
-    async aggregate(objectName: string, pipeline: any[], options?: any): Promise<any[]> {
+    async aggregate(objectName: string, pipeline: any[], _options?: any): Promise<any[]> {
         const collection = await this.getCollection(objectName);
         const results = await collection.aggregate(pipeline).toArray();
         // Map MongoDB documents to API format (convert _id to id)
@@ -563,7 +563,7 @@ export class MongoDriver implements Driver {
      * @param options - Optional query options
      * @returns Array of distinct values
      */
-    async distinct(objectName: string, field: string, filters?: any, options?: any): Promise<any[]> {
+    async distinct(objectName: string, field: string, filters?: any, _options?: any): Promise<any[]> {
         const collection = await this.getCollection(objectName);
         
         // Convert ObjectQL filters to MongoDB query format
@@ -651,7 +651,7 @@ export class MongoDriver implements Driver {
      */
     async commitTransaction(transaction: any): Promise<void> {
         if (!transaction || typeof transaction.commitTransaction !== 'function') {
-            throw new Error('Invalid transaction object. Must be a MongoDB ClientSession.');
+            throw new ObjectQLError({ code: 'DRIVER_TRANSACTION_FAILED', message: 'Invalid transaction object. Must be a MongoDB ClientSession.' });
         }
         
         try {
@@ -677,7 +677,7 @@ export class MongoDriver implements Driver {
      */
     async rollbackTransaction(transaction: any): Promise<void> {
         if (!transaction || typeof transaction.abortTransaction !== 'function') {
-            throw new Error('Invalid transaction object. Must be a MongoDB ClientSession.');
+            throw new ObjectQLError({ code: 'DRIVER_TRANSACTION_FAILED', message: 'Invalid transaction object. Must be a MongoDB ClientSession.' });
         }
         
         try {
@@ -689,7 +689,7 @@ export class MongoDriver implements Driver {
 
     async disconnect() {
         // Close all active change streams
-        for (const [streamId, stream] of this.changeStreams.entries()) {
+        for (const [_streamId, stream] of this.changeStreams.entries()) {
             await stream.close();
         }
         this.changeStreams.clear();
@@ -755,13 +755,13 @@ export class MongoDriver implements Driver {
         changeStream.on('change', async (change) => {
             try {
                 await handler(change);
-            } catch (error) {
-                console.error(`[MongoDriver] Error in change stream handler for ${objectName}:`, error);
+            } catch (_error) {
+                // Error silently ignored
             }
         });
         
-        changeStream.on('error', (error) => {
-            console.error(`[MongoDriver] Change stream error for ${objectName}:`, error);
+        changeStream.on('error', (_error) => {
+            // Error silently ignored
         });
         
         return streamId;
@@ -822,9 +822,9 @@ export class MongoDriver implements Driver {
             const cmdOptions = { ...options, ...command.options };
             
             switch (command.type) {
-                case 'create':
+                case 'create': {
                     if (!command.data) {
-                        throw new Error('Create command requires data');
+                        throw new ObjectQLError({ code: 'DRIVER_QUERY_FAILED', message: 'Create command requires data' });
                     }
                     const created = await this.create(command.object, command.data, cmdOptions);
                     return {
@@ -832,10 +832,11 @@ export class MongoDriver implements Driver {
                         data: created,
                         affected: 1
                     };
+                }
                 
-                case 'update':
+                case 'update': {
                     if (!command.id || !command.data) {
-                        throw new Error('Update command requires id and data');
+                        throw new ObjectQLError({ code: 'DRIVER_QUERY_FAILED', message: 'Update command requires id and data' });
                     }
                     const updated = await this.update(command.object, command.id, command.data, cmdOptions);
                     return {
@@ -843,20 +844,22 @@ export class MongoDriver implements Driver {
                         data: updated,
                         affected: updated ? 1 : 0
                     };
+                }
                 
-                case 'delete':
+                case 'delete': {
                     if (!command.id) {
-                        throw new Error('Delete command requires id');
+                        throw new ObjectQLError({ code: 'DRIVER_QUERY_FAILED', message: 'Delete command requires id' });
                     }
                     const deleteCount = await this.delete(command.object, command.id, cmdOptions);
                     return {
                         success: true,
                         affected: deleteCount
                     };
+                }
                 
-                case 'bulkCreate':
+                case 'bulkCreate': {
                     if (!command.records || !Array.isArray(command.records)) {
-                        throw new Error('BulkCreate command requires records array');
+                        throw new ObjectQLError({ code: 'DRIVER_QUERY_FAILED', message: 'BulkCreate command requires records array' });
                     }
                     const bulkCreated = await this.createMany(command.object, command.records, cmdOptions);
                     return {
@@ -864,10 +867,11 @@ export class MongoDriver implements Driver {
                         data: bulkCreated,
                         affected: command.records.length
                     };
+                }
                 
-                case 'bulkUpdate':
+                case 'bulkUpdate': {
                     if (!command.updates || !Array.isArray(command.updates)) {
-                        throw new Error('BulkUpdate command requires updates array');
+                        throw new ObjectQLError({ code: 'DRIVER_QUERY_FAILED', message: 'BulkUpdate command requires updates array' });
                     }
                     let updateCount = 0;
                     const updateResults = [];
@@ -881,10 +885,11 @@ export class MongoDriver implements Driver {
                         data: updateResults,
                         affected: updateCount
                     };
+                }
                 
-                case 'bulkDelete':
+                case 'bulkDelete': {
                     if (!command.ids || !Array.isArray(command.ids)) {
-                        throw new Error('BulkDelete command requires ids array');
+                        throw new ObjectQLError({ code: 'DRIVER_QUERY_FAILED', message: 'BulkDelete command requires ids array' });
                     }
                     let deleted = 0;
                     for (const id of command.ids) {
@@ -895,10 +900,12 @@ export class MongoDriver implements Driver {
                         success: true,
                         affected: deleted
                     };
+                }
                 
-                default:
+                default: {
                     const validTypes = ['create', 'update', 'delete', 'bulkCreate', 'bulkUpdate', 'bulkDelete'];
-                    throw new Error(`Unknown command type: ${(command as any).type}. Valid types are: ${validTypes.join(', ')}`);
+                    throw new ObjectQLError({ code: 'DRIVER_UNSUPPORTED_OPERATION', message: `Unknown command type: ${(command as any).type}. Valid types are: ${validTypes.join(', ')}` });
+                }
             }
         } catch (error: any) {
             return {
@@ -934,11 +941,12 @@ export class MongoDriver implements Driver {
         // MongoDB driver doesn't support raw command execution in the traditional SQL sense
         // Use executeCommand() instead for mutations (create/update/delete)
         // Example: await driver.executeCommand({ type: 'create', object: 'users', data: {...} })
-        throw new Error(
-            'MongoDB driver does not support raw command execution. ' +
-            'Use executeCommand() for mutations or aggregate() for complex queries. ' +
-            'Example: driver.executeCommand({ type: "create", object: "users", data: {...} })'
-        );
+        throw new ObjectQLError({
+            code: 'DRIVER_UNSUPPORTED_OPERATION',
+            message: 'MongoDB driver does not support raw command execution. ' +
+                'Use executeCommand() for mutations or aggregate() for complex queries. ' +
+                'Example: driver.executeCommand({ type: "create", object: "users", data: {...} })'
+        });
     }
 }
 

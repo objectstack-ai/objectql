@@ -1,6 +1,6 @@
 # ObjectQL — Next Phase Optimization & Improvement Roadmap
 
-> Created: 2026-02-09 | Status: **Proposed**
+> Created: 2026-02-09 | Status: **In Progress — Phases 1A, 3, 4 (All Waves), 5A, 6, 7 (partial) Complete**
 > Current Version: **4.2.0** | @objectstack Platform: **v2.0.1**
 > Scope: Code quality, type safety, error handling, testing, performance, and DX improvements
 
@@ -135,9 +135,9 @@ type PluginErrorCode =
 ```
 
 **Success Criteria:**
-- [ ] Zero `throw new Error(` in `packages/` (excluding test files)
-- [ ] All error codes documented in `@objectql/types`
-- [ ] Existing tests still pass after migration
+- [x] Zero `throw new Error(` in `packages/` (excluding test files)
+- [x] All error codes documented in `@objectql/types`
+- [x] Existing tests still pass after migration
 
 ### 1B. Reduce `any` type usage
 
@@ -456,6 +456,10 @@ Phase 5 (TODO/Protocol)  ────────┘
 Phase 6 (Documentation)  ────────┐  Depends on Phase 5 (protocol work)
 Phase 7 (Performance)    ────────┘  Independent, can start earlier
 ```
+
+> ✅ **Completed**: Phases 1A, 3, 4 (all waves), 5A, 6 (error-handling + architecture guides)
+> ✅ **Completed (partial)**: Phase 2 (create tests), Phase 7 (sideEffects)
+> ⏳ **Remaining**: Phase 1B (any reduction), Phase 5B (protocol refinement), Phase 7 (benchmarks)
 
 ### E. Risk Assessment
 

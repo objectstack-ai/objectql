@@ -17,7 +17,6 @@ import {
     createSuccessResponse,
     JSONRPCValidationError,
     JSONRPCErrorCode,
-    JSONRPC_VERSION,
     JSONRPCRequestSchema,
     JSONRPCResponseSchema,
     JSONRPCBatchRequestSchema,

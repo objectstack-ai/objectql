@@ -17,15 +17,12 @@ import * as fs from 'fs';
 export async function loadModules(loader: ObjectLoader, modules: string[]) {
     if (!modules || modules.length === 0) return;
     
-    console.log(`Loading ${modules.length} modules...`);
-    
     for (const moduleName of modules) {
         try {
             // Check if it is a local path
             if (moduleName.startsWith('./') || moduleName.startsWith('/') || moduleName.startsWith('../')) {
                  const localPath = path.resolve(process.cwd(), moduleName);
                  if (fs.existsSync(localPath)) {
-                     console.log(`  - ${moduleName} -> ${localPath}`);
                      loader.load(localPath);
                      continue;
                  }
@@ -49,13 +46,12 @@ export async function loadModules(loader: ObjectLoader, modules: string[]) {
                             packageRoot = currentDir;
                             break;
                         }
-                    } catch (e) {}
+                    } catch (_e) { /* package.json parse error — skip directory */ }
                 }
                 currentDir = path.dirname(currentDir);
             }
 
             if (!packageRoot) {
-                console.warn(`Could not find package root for module '${moduleName}'. Using entry directory.`);
                 packageRoot = path.dirname(entryPath);
             }
 
@@ -64,13 +60,10 @@ export async function loadModules(loader: ObjectLoader, modules: string[]) {
             const srcDir = path.join(packageRoot, 'src');
             const targetDir = fs.existsSync(srcDir) ? srcDir : packageRoot;
             
-            console.log(`  - ${moduleName} -> ${targetDir}`);
-            
-            // Load it!
             loader.load(targetDir);
 
-        } catch (e: any) {
-            console.warn(`Failed to load module '${moduleName}': ${e.message}`);
+        } catch (_e: any) {
+            // Module load failed — continue to next module
         }
     }
 }

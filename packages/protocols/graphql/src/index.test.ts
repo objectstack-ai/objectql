@@ -18,10 +18,10 @@ describe('GraphQLPlugin', () => {
     
     // Stub metadata for testing
     (kernel as any).metadata = {
-      register: (type: string, name: string, item: any) => {
+      register: (_type: string, _name: string, _item: any) => {
          // mock register
       },
-      list: (type: string) => {
+      list: (_type: string) => {
          return []
       }
     };

@@ -8,7 +8,7 @@ import { MultiTenancyPlugin, TenantIsolationError } from '../src';
 
 describe('MultiTenancyPlugin - Integration', () => {
   let plugin: MultiTenancyPlugin;
-  let mockHooks: Map<string, Function[]>;
+  let mockHooks: Map<string, ((...args: any[]) => any)[]>;
   
   beforeEach(() => {
     mockHooks = new Map();
@@ -23,7 +23,7 @@ describe('MultiTenancyPlugin - Integration', () => {
   const createMockContext = () => {
     const hooks = mockHooks;
     return {
-      hook: (name: string, handler: Function) => {
+      hook: (name: string, handler: (...args: any[]) => any) => {
         if (!hooks.has(name)) {
           hooks.set(name, []);
         }
@@ -31,7 +31,7 @@ describe('MultiTenancyPlugin - Integration', () => {
       },
       engine: {
         hooks: {
-          register: (name: string, handler: Function) => {
+          register: (name: string, handler: (...args: any[]) => any) => {
             if (!hooks.has(name)) {
               hooks.set(name, []);
             }

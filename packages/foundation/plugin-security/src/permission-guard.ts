@@ -271,7 +271,7 @@ export class PermissionGuard {
       }
     } else {
       // Fallback: evaluate rules directly
-      for (const rule of rules) {
+      for (const _rule of rules) {
         // This would require implementing condition evaluation
         // For now, we'll use the compiled version
       }

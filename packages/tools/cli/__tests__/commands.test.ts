@@ -13,7 +13,6 @@ import { i18nExtract, i18nInit, i18nValidate } from '../src/commands/i18n';
 import { syncDatabase } from '../src/commands/sync';
 import { build } from '../src/commands/build';
 import { lint } from '../src/commands/lint';
-import { format } from '../src/commands/format';
 import { test as testCommand } from '../src/commands/test';
 import { doctorCommand } from '../src/commands/doctor';
 import { ObjectQL } from '@objectql/core';
@@ -184,7 +183,7 @@ describe('CLI Commands', () => {
 
     describe('sync command', () => {
         let app: ObjectQL;
-        let configPath: string;
+        let _configPath: string;
 
         beforeEach(async () => {
             // Create a test SQLite database with sample schema
@@ -231,7 +230,7 @@ describe('CLI Commands', () => {
         afterEach(async () => {
             try {
                 if (app) await app.close();
-            } catch (e) {
+            } catch (_e) {
                 // Ignore if already closed
             }
         });

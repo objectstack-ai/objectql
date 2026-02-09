@@ -7,6 +7,7 @@
  */
 
 import type { RuntimePlugin, RuntimeContext } from '@objectql/types';
+import { ObjectQLError } from '@objectql/types';
 import { IncomingMessage, ServerResponse, createServer, Server } from 'http';
 import {
     validateRequest,
@@ -17,7 +18,6 @@ import {
     createSuccessResponse,
     JSONRPCValidationError,
     JSONRPCErrorCode,
-    JSONRPC_VERSION
 } from './validation.js';
 
 // Re-export validation utilities
@@ -71,7 +71,7 @@ interface ProgressNotification {
 /**
  * JSON-RPC 2.0 Request
  */
-interface JSONRPCRequest {
+interface _JSONRPCRequest {
     jsonrpc: '2.0';
     method: string;
     params?: any[] | Record<string, any>;
@@ -146,7 +146,7 @@ export class JSONRPCPlugin implements RuntimePlugin {
     
     private engine?: any;
     private config: Required<JSONRPCPluginConfig>;
-    private methods: Map<string, Function>;
+    private methods: Map<string, (...args: any[]) => any>;
     private methodSignatures: Map<string, MethodSignature>;
     private sessions: Map<string, Session> = new Map();
     private progressClients: Map<string, Set<(data: string) => void>> = new Map();
@@ -193,15 +193,11 @@ export class JSONRPCPlugin implements RuntimePlugin {
      * Install hook - called during kernel initialization
      */
     async install(ctx: RuntimeContext): Promise<void> {
-        console.log(`[${this.name}] Installing JSON-RPC 2.0 protocol plugin...`);
-        
         // Store reference to the engine for later use
         this.engine = ctx.engine || (ctx as any).getKernel?.();
         
         // Register RPC methods
         this.registerMethods();
-        
-        console.log(`[${this.name}] Protocol bridge initialized with ${this.methods.size} methods`);
     }
 
     /**
@@ -209,7 +205,7 @@ export class JSONRPCPlugin implements RuntimePlugin {
      */
     async onStart(ctx: RuntimeContext): Promise<void> {
         if (!this.engine) {
-            throw new Error('Protocol not initialized. Install hook must be called first.');
+            throw new ObjectQLError({ code: 'PROTOCOL_ERROR', message: 'Protocol not initialized. Install hook must be called first.' });
         }
 
         // Check if Hono server is available via service injection
@@ -227,13 +223,11 @@ export class JSONRPCPlugin implements RuntimePlugin {
         }
 
         if (httpServer && httpServer.app) {
-             console.log(`[${this.name}] 🔗 Attaching to shared Hono server...`);
              this.attachToHono(httpServer.app);
              return;
         }
         
         // Start standalone HTTP server for testing/development
-        console.log(`[${this.name}] Starting JSON-RPC server (standalone)...`);
         
         // Create HTTP server
         this.server = createServer(this.handleRequest.bind(this));
@@ -248,26 +242,22 @@ export class JSONRPCPlugin implements RuntimePlugin {
             this.server!.on('error', onError);
             this.server!.listen(this.config.port, () => {
                 this.server!.removeListener('error', onError);
-                console.log(`[${this.name}] 🚀 JSON-RPC server listening on http://localhost:${this.config.port}${this.config.basePath}`);
                 resolve();
             });
         });
-        
-        console.log(`[${this.name}] JSON-RPC protocol ready`);
     }
 
 
     /**
      * Stop hook - called when kernel stops
      */
-    async onStop(ctx: RuntimeContext): Promise<void> {
+    async onStop(_ctx: RuntimeContext): Promise<void> {
         // Stop the HTTP server
         if (this.server) {
-            console.log(`[${this.name}] Stopping JSON-RPC server...`);
             await new Promise<void>((resolve) => {
                 this.server!.close((err) => {
                     if (err) {
-                        console.error(`[${this.name}] Error closing server:`, err);
+                        // Error silently ignored
                     }
                     resolve();
                 });
@@ -379,7 +369,6 @@ export class JSONRPCPlugin implements RuntimePlugin {
                 res.end();
             }
         } catch (error) {
-            console.error(`[${this.name}] Request error:`, error);
             const errorResponse = createErrorResponse(
                 null,
                 JSONRPCErrorCode.PARSE_ERROR,
@@ -395,7 +384,6 @@ export class JSONRPCPlugin implements RuntimePlugin {
      */
     attachToHono(app: any) {
         const basePath = this.config.basePath;
-        console.log(`[${this.name}] Attaching JSON-RPC to Hono at ${basePath}`);
 
         // Post handler for RPC requests
         app.post(basePath, async (c: any) => {
@@ -435,8 +423,7 @@ export class JSONRPCPlugin implements RuntimePlugin {
                         return c.body(null, 204);
                     }
                 }
-            } catch (error) {
-                console.error(`[${this.name}] Request error:`, error);
+            } catch (_error) {
                 const errorResponse = createErrorResponse(null, JSONRPCErrorCode.PARSE_ERROR, 'Parse error');
                 return c.json(errorResponse);
             }
@@ -472,21 +459,19 @@ export class JSONRPCPlugin implements RuntimePlugin {
                     const heartbeat = setInterval(async () => {
                         try {
                             await stream.write(`: heartbeat\n\n`);
-                        } catch (e) {
+                        } catch (_e) {
                             clearInterval(heartbeat);
                         }
                     }, 30000); // 30 seconds
 
                     // Handle client disconnect
                     c.req.raw.signal.addEventListener('abort', () => {
-                        console.log(`[${this.name}] Client disconnected from progress stream: ${sessionId}`);
                         clearInterval(heartbeat);
                         const clients = this.progressClients.get(sessionId);
                         if (clients) {
                             clients.delete(callback);
                             if (clients.size === 0) {
                                 this.progressClients.delete(sessionId);
-                                console.log(`[${this.name}] All clients disconnected, session cleaned up: ${sessionId}`);
                             }
                         }
                     });
@@ -513,7 +498,7 @@ export class JSONRPCPlugin implements RuntimePlugin {
             try {
                 const objects = this.engine.metadata.list('object');
                 return objects.map((obj: any) => obj.name || obj.id).filter(Boolean);
-            } catch (e) {
+            } catch (_e) {
                 return [];
             }
         }
@@ -543,7 +528,7 @@ export class JSONRPCPlugin implements RuntimePlugin {
         if (typeof this.engine.metadata.list === 'function') {
             try {
                 return this.engine.metadata.list(type);
-            } catch (e) {
+            } catch (_e) {
                 return [];
             }
         }
@@ -664,14 +649,14 @@ export class JSONRPCPlugin implements RuntimePlugin {
      */
     private async executeAction(actionName: string, params?: any): Promise<any> {
         if (!this.engine) {
-            throw new Error('Engine not initialized');
+            throw new ObjectQLError({ code: 'INTERNAL_ERROR', message: 'Engine not initialized' });
         }
         
         if (typeof this.engine.executeAction === 'function') {
             return await this.engine.executeAction(actionName, params);
         }
         
-        throw new Error('Action execution not supported by engine');
+        throw new ObjectQLError({ code: 'PROTOCOL_METHOD_NOT_FOUND', message: 'Action execution not supported by engine' });
     }
     
     /**
@@ -765,7 +750,7 @@ export class JSONRPCPlugin implements RuntimePlugin {
         this.methods.set('metadata.getAll', async (metaType: string) => {
             // Validate metaType parameter
             if (!metaType || typeof metaType !== 'string') {
-                throw new Error('Invalid metaType parameter: must be a non-empty string');
+                throw new ObjectQLError({ code: 'PROTOCOL_INVALID_REQUEST', message: 'Invalid metaType parameter: must be a non-empty string' });
             }
             
             return this.getMetaItems(metaType);
@@ -807,7 +792,7 @@ export class JSONRPCPlugin implements RuntimePlugin {
             this.methods.set('session.get', async (sessionId: string, key: string) => {
                 const session = this.sessions.get(sessionId);
                 if (!session) {
-                    throw new Error('Session not found or expired');
+                    throw new ObjectQLError({ code: 'NOT_FOUND', message: 'Session not found or expired' });
                 }
                 this.updateSessionAccess(sessionId);
                 return session.data[key];
@@ -820,7 +805,7 @@ export class JSONRPCPlugin implements RuntimePlugin {
             this.methods.set('session.set', async (sessionId: string, key: string, value: any) => {
                 const session = this.sessions.get(sessionId);
                 if (!session) {
-                    throw new Error('Session not found or expired');
+                    throw new ObjectQLError({ code: 'NOT_FOUND', message: 'Session not found or expired' });
                 }
                 this.updateSessionAccess(sessionId);
                 session.data[key] = value;
@@ -854,7 +839,7 @@ export class JSONRPCPlugin implements RuntimePlugin {
             this.methods.set('system.describe', async (methodName: string) => {
                 const signature = this.methodSignatures.get(methodName);
                 if (!signature) {
-                    throw new Error(`Method not found: ${methodName}`);
+                    throw new ObjectQLError({ code: 'PROTOCOL_METHOD_NOT_FOUND', message: `Method not found: ${methodName}` });
                 }
                 return signature;
             });
@@ -962,7 +947,7 @@ export class JSONRPCPlugin implements RuntimePlugin {
                     const signature = this.methodSignatures.get(validatedRequest.method);
                     if (signature && signature.params.length > 0) {
                         // Map named params to positional array
-                        const positionalParams = signature.params.map((paramName, index) => {
+                        const positionalParams = signature.params.map((paramName, _index) => {
                             const value = (validatedRequest.params as Record<string, any>)[paramName];
                             // Note: undefined values are allowed - the method will handle validation
                             // If you need stricter validation, check required params here
@@ -985,7 +970,6 @@ export class JSONRPCPlugin implements RuntimePlugin {
                 const response = createSuccessResponse(validatedRequest.id ?? null, result);
                 return validateResponse(response);
             } catch (error: any) {
-                console.error(error);
                 if (isNotification) return null;
                 
                 // Handle validation errors
@@ -1133,8 +1117,8 @@ export class JSONRPCPlugin implements RuntimePlugin {
         clients.forEach(callback => {
             try {
                 callback(message);
-            } catch (error) {
-                console.error(`[${this.name}] Error sending progress to client:`, error);
+            } catch (_error) {
+                // Error silently ignored
             }
         });
     }

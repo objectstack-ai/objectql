@@ -8,7 +8,7 @@
 
 import { ObjectQL } from '../src/index';
 import { MockDriver } from './mock-driver';
-import { ObjectConfig, HookContext, ObjectQLContext } from '@objectql/types';
+import { ObjectConfig, ObjectQLContext } from '@objectql/types';
 
 const todoObject: ObjectConfig = {
     name: 'todo',
@@ -86,7 +86,7 @@ describe('ObjectQL Repository', () => {
             }
         });
 
-        app.on('afterCreate', 'todo', async (context) => {
+        app.on('afterCreate', 'todo', async (_context) => {
             afterCalled = true;
         });
 

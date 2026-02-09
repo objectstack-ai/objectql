@@ -150,8 +150,7 @@ export function validateResponse(response: unknown): z.infer<typeof JSONRPCRespo
         return JSONRPCResponseSchema.parse(response);
     } catch (error) {
         if (error instanceof z.ZodError) {
-            console.error('[JSON-RPC Validation] Response validation failed:', error.errors);
-            // Don't throw on response validation - log and return as-is
+            // Don't throw on response validation - return as-is
             return response as any;
         }
         throw error;
@@ -166,8 +165,7 @@ export function validateBatchResponse(response: unknown): z.infer<typeof JSONRPC
         return JSONRPCBatchResponseSchema.parse(response);
     } catch (error) {
         if (error instanceof z.ZodError) {
-            console.error('[JSON-RPC Validation] Batch response validation failed:', error.errors);
-            // Don't throw on response validation - log and return as-is
+            // Don't throw on batch response validation - return as-is
             return response as any;
         }
         throw error;

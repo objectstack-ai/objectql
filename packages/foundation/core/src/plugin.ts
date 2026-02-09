@@ -7,7 +7,7 @@
  */
 
 import type { RuntimePlugin, RuntimeContext } from '@objectql/types';
-import { ConsoleLogger } from '@objectql/types';
+import { ConsoleLogger, ObjectQLError } from '@objectql/types';
 import type { Logger } from '@objectql/types';
 import { ValidatorPlugin, ValidatorPluginConfig } from '@objectql/plugin-validator';
 import { FormulaPlugin, FormulaPluginConfig } from '@objectql/plugin-formula';
@@ -98,7 +98,7 @@ export class ObjectQLPlugin implements RuntimePlugin {
   version = '4.0.2';
   private logger: Logger;
   
-  constructor(private config: ObjectQLPluginConfig = {}, ql?: any) {
+  constructor(private config: ObjectQLPluginConfig = {}, _ql?: any) {
     // Set defaults
     this.config = {
       enableRepository: true,
@@ -207,7 +207,7 @@ export class ObjectQLPlugin implements RuntimePlugin {
    * Called when the kernel starts
    * This is the initialization phase
    */
-  async onStart(ctx: RuntimeContext): Promise<void> {
+  async onStart(_ctx: RuntimeContext): Promise<void> {
     this.logger.debug('Starting plugin...');
     // Additional startup logic can be added here
   }
@@ -226,7 +226,7 @@ export class ObjectQLPlugin implements RuntimePlugin {
       const datasourceName = objectConfig?.datasource || 'default';
       const driver = datasources[datasourceName];
       if (!driver) {
-        throw new Error(`Datasource '${datasourceName}' not found for object '${objectName}'`);
+        throw new ObjectQLError({ code: 'NOT_FOUND', message: `Datasource '${datasourceName}' not found for object '${objectName}'` });
       }
       return driver;
     };

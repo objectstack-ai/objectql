@@ -7,7 +7,7 @@
  */
 
 import * as vscode from 'vscode';
-import * as path from 'path';
+import * as _path from 'path';
 import * as fs from 'fs';
 
 export async function createNewFile(
@@ -93,7 +93,7 @@ export async function createNewFile(
 function getTemplate(context: vscode.ExtensionContext, fileType: string, name: string): string {
     try {
       // Look for templates in the 'templates' folder at the root of the extension
-      let templatePath = vscode.Uri.joinPath(context.extensionUri, 'templates', `${fileType}.template.yml`).fsPath;
+      const templatePath = vscode.Uri.joinPath(context.extensionUri, 'templates', `${fileType}.template.yml`).fsPath;
       
       if (fs.existsSync(templatePath)) {
           let content = fs.readFileSync(templatePath, 'utf8');
