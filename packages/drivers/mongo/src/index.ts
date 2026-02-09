@@ -756,12 +756,12 @@ export class MongoDriver implements Driver {
             try {
                 await handler(change);
             } catch (error) {
-                console.error(`[MongoDriver] Error in change stream handler for ${objectName}:`, error);
+                // Error silently ignored
             }
         });
         
-        changeStream.on('error', (error) => {
-            console.error(`[MongoDriver] Change stream error for ${objectName}:`, error);
+        changeStream.on('error', (_error) => {
+            // Error silently ignored
         });
         
         return streamId;
