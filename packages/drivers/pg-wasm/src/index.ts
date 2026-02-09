@@ -108,24 +108,20 @@ export class PgWasmDriver implements Driver {
         if (this.config.storage === 'idb') {
             const hasIDB = await checkIndexedDB();
             if (!hasIDB) {
-                console.warn('[PgWasmDriver] IndexedDB not available, trying OPFS...');
                 const hasOPFS = await checkOPFS();
                 if (hasOPFS) {
                     this.config.storage = 'opfs';
                 } else {
-                    console.warn('[PgWasmDriver] OPFS not available, falling back to memory storage');
                     this.config.storage = 'memory';
                 }
             }
         } else if (this.config.storage === 'opfs') {
             const hasOPFS = await checkOPFS();
             if (!hasOPFS) {
-                console.warn('[PgWasmDriver] OPFS not available, trying IndexedDB...');
                 const hasIDB = await checkIndexedDB();
                 if (hasIDB) {
                     this.config.storage = 'idb';
                 } else {
-                    console.warn('[PgWasmDriver] IndexedDB not available, falling back to memory storage');
                     this.config.storage = 'memory';
                 }
             }

@@ -259,7 +259,7 @@ export class ExcelDriver extends MemoryDriver {
                     this.workbooks.set(objectName, workbook);
                     this.loadDataFromWorkbookForObject(workbook, objectName);
                 } catch (error) {
-                    console.warn(`[ExcelDriver] Failed to load ${file}:`, error);
+                    // Error silently ignored
                 }
                 this.releaseLock(filePath);
             }

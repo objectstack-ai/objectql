@@ -194,15 +194,11 @@ export class JSONRPCPlugin implements RuntimePlugin {
      * Install hook - called during kernel initialization
      */
     async install(ctx: RuntimeContext): Promise<void> {
-        console.log(`[${this.name}] Installing JSON-RPC 2.0 protocol plugin...`);
-        
         // Store reference to the engine for later use
         this.engine = ctx.engine || (ctx as any).getKernel?.();
         
         // Register RPC methods
         this.registerMethods();
-        
-        console.log(`[${this.name}] Protocol bridge initialized with ${this.methods.size} methods`);
     }
 
     /**
@@ -228,13 +224,11 @@ export class JSONRPCPlugin implements RuntimePlugin {
         }
 
         if (httpServer && httpServer.app) {
-             console.log(`[${this.name}] 🔗 Attaching to shared Hono server...`);
              this.attachToHono(httpServer.app);
              return;
         }
         
         // Start standalone HTTP server for testing/development
-        console.log(`[${this.name}] Starting JSON-RPC server (standalone)...`);
         
         // Create HTTP server
         this.server = createServer(this.handleRequest.bind(this));
@@ -249,12 +243,9 @@ export class JSONRPCPlugin implements RuntimePlugin {
             this.server!.on('error', onError);
             this.server!.listen(this.config.port, () => {
                 this.server!.removeListener('error', onError);
-                console.log(`[${this.name}] 🚀 JSON-RPC server listening on http://localhost:${this.config.port}${this.config.basePath}`);
                 resolve();
             });
         });
-        
-        console.log(`[${this.name}] JSON-RPC protocol ready`);
     }
 
 
@@ -264,11 +255,10 @@ export class JSONRPCPlugin implements RuntimePlugin {
     async onStop(ctx: RuntimeContext): Promise<void> {
         // Stop the HTTP server
         if (this.server) {
-            console.log(`[${this.name}] Stopping JSON-RPC server...`);
             await new Promise<void>((resolve) => {
                 this.server!.close((err) => {
                     if (err) {
-                        console.error(`[${this.name}] Error closing server:`, err);
+                        // Error silently ignored
                     }
                     resolve();
                 });
@@ -380,7 +370,6 @@ export class JSONRPCPlugin implements RuntimePlugin {
                 res.end();
             }
         } catch (error) {
-            console.error(`[${this.name}] Request error:`, error);
             const errorResponse = createErrorResponse(
                 null,
                 JSONRPCErrorCode.PARSE_ERROR,
@@ -396,7 +385,6 @@ export class JSONRPCPlugin implements RuntimePlugin {
      */
     attachToHono(app: any) {
         const basePath = this.config.basePath;
-        console.log(`[${this.name}] Attaching JSON-RPC to Hono at ${basePath}`);
 
         // Post handler for RPC requests
         app.post(basePath, async (c: any) => {
@@ -437,7 +425,6 @@ export class JSONRPCPlugin implements RuntimePlugin {
                     }
                 }
             } catch (error) {
-                console.error(`[${this.name}] Request error:`, error);
                 const errorResponse = createErrorResponse(null, JSONRPCErrorCode.PARSE_ERROR, 'Parse error');
                 return c.json(errorResponse);
             }
@@ -480,14 +467,12 @@ export class JSONRPCPlugin implements RuntimePlugin {
 
                     // Handle client disconnect
                     c.req.raw.signal.addEventListener('abort', () => {
-                        console.log(`[${this.name}] Client disconnected from progress stream: ${sessionId}`);
                         clearInterval(heartbeat);
                         const clients = this.progressClients.get(sessionId);
                         if (clients) {
                             clients.delete(callback);
                             if (clients.size === 0) {
                                 this.progressClients.delete(sessionId);
-                                console.log(`[${this.name}] All clients disconnected, session cleaned up: ${sessionId}`);
                             }
                         }
                     });
@@ -986,7 +971,6 @@ export class JSONRPCPlugin implements RuntimePlugin {
                 const response = createSuccessResponse(validatedRequest.id ?? null, result);
                 return validateResponse(response);
             } catch (error: any) {
-                console.error(error);
                 if (isNotification) return null;
                 
                 // Handle validation errors
@@ -1135,7 +1119,7 @@ export class JSONRPCPlugin implements RuntimePlugin {
             try {
                 callback(message);
             } catch (error) {
-                console.error(`[${this.name}] Error sending progress to client:`, error);
+                // Error silently ignored
             }
         });
     }

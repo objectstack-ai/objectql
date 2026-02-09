@@ -105,7 +105,6 @@ export class SqliteWasmDriver implements Driver {
         if (this.config.storage === 'opfs') {
             const hasOPFS = await checkOPFS();
             if (!hasOPFS) {
-                console.warn('[SqliteWasmDriver] OPFS not available, falling back to memory storage');
                 this.config.storage = 'memory';
             }
         }
