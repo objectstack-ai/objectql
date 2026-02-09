@@ -676,7 +676,7 @@ export class MemoryDriver implements Driver {
                 }
             }
         } catch (error) {
-            console.warn('[MemoryDriver] Failed to load persisted data:', error);
+            // Error silently ignored
         }
         
         // Set up auto-save timer
@@ -704,7 +704,7 @@ export class MemoryDriver implements Driver {
             
             fs.writeFileSync(this.config.persistence.filePath, JSON.stringify(data, null, 2), 'utf8');
         } catch (error) {
-            console.error('[MemoryDriver] Failed to save data to disk:', error);
+            // Error silently ignored
         }
     }
 
