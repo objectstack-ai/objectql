@@ -7,6 +7,7 @@
  */
 
 import type { RuntimePlugin, RuntimeContext } from '@objectql/types';
+import { ObjectQLError } from '@objectql/types';
 import { IncomingMessage, ServerResponse, createServer, Server } from 'http';
 import { mapErrorToODataError } from './validation.js';
 
@@ -130,7 +131,7 @@ export class ODataV4Plugin implements RuntimePlugin {
      */
     async onStart(ctx: RuntimeContext): Promise<void> {
         if (!this.engine) {
-            throw new Error('Protocol not initialized. Install hook must be called first.');
+            throw new ObjectQLError({ code: 'PROTOCOL_ERROR', message: 'Protocol not initialized. Install hook must be called first.' });
         }
 
         // Check if Hono server is available via service injection
@@ -1060,11 +1061,12 @@ export class ODataV4Plugin implements RuntimePlugin {
         }
 
         // Unsupported filter expression
-        throw new Error(
-            `Unsupported $filter expression: "${filter}". ` +
+        throw new ObjectQLError({
+            code: 'PROTOCOL_INVALID_REQUEST',
+            message: `Unsupported $filter expression: "${filter}". ` +
             `Supported operators: eq, ne, gt, ge, lt, le, and, or, not. ` +
             `Supported functions: contains, startswith, endswith, substringof.`
-        );
+        });
     }
 
     /**
@@ -1092,10 +1094,11 @@ export class ODataV4Plugin implements RuntimePlugin {
                     depth--;
                     // Check for negative depth (closing before opening)
                     if (depth < 0) {
-                        throw new Error(
-                            `Invalid $filter expression: Mismatched parentheses. ` +
+                        throw new ObjectQLError({
+                            code: 'PROTOCOL_INVALID_REQUEST',
+                            message: `Invalid $filter expression: Mismatched parentheses. ` +
                             `Found closing ')' without matching opening '(' at position ${i}.`
-                        );
+                        });
                     }
                 }
             }
@@ -1103,17 +1106,19 @@ export class ODataV4Plugin implements RuntimePlugin {
 
         // Check final depth is zero
         if (depth !== 0) {
-            throw new Error(
-                `Invalid $filter expression: Mismatched parentheses. ` +
+            throw new ObjectQLError({
+                code: 'PROTOCOL_INVALID_REQUEST',
+                message: `Invalid $filter expression: Mismatched parentheses. ` +
                 `${depth} unclosed opening parenthesis(es).`
-            );
+            });
         }
 
         // Check quotes are balanced
         if (inQuotes) {
-            throw new Error(
-                `Invalid $filter expression: Unclosed quoted string.`
-            );
+            throw new ObjectQLError({
+                code: 'PROTOCOL_INVALID_REQUEST',
+                message: `Invalid $filter expression: Unclosed quoted string.`
+            });
         }
     }
 
@@ -1464,7 +1469,7 @@ export class ODataV4Plugin implements RuntimePlugin {
                     const errorMatch = response.match(/{"error":\s*({[^}]+}|"[^"]+")}/);
                     const errorDetail = errorMatch ? errorMatch[0] : 'Unknown error';
                     
-                    throw new Error(`Changeset operation ${i + 1}/${requests.length} failed: ${errorDetail}`);
+                    throw new ObjectQLError({ code: 'PROTOCOL_BATCH_ERROR', message: `Changeset operation ${i + 1}/${requests.length} failed: ${errorDetail}` });
                 }
                 
                 tempResults.push(response);

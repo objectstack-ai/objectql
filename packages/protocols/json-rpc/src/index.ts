@@ -7,6 +7,7 @@
  */
 
 import type { RuntimePlugin, RuntimeContext } from '@objectql/types';
+import { ObjectQLError } from '@objectql/types';
 import { IncomingMessage, ServerResponse, createServer, Server } from 'http';
 import {
     validateRequest,
@@ -209,7 +210,7 @@ export class JSONRPCPlugin implements RuntimePlugin {
      */
     async onStart(ctx: RuntimeContext): Promise<void> {
         if (!this.engine) {
-            throw new Error('Protocol not initialized. Install hook must be called first.');
+            throw new ObjectQLError({ code: 'PROTOCOL_ERROR', message: 'Protocol not initialized. Install hook must be called first.' });
         }
 
         // Check if Hono server is available via service injection
@@ -664,14 +665,14 @@ export class JSONRPCPlugin implements RuntimePlugin {
      */
     private async executeAction(actionName: string, params?: any): Promise<any> {
         if (!this.engine) {
-            throw new Error('Engine not initialized');
+            throw new ObjectQLError({ code: 'INTERNAL_ERROR', message: 'Engine not initialized' });
         }
         
         if (typeof this.engine.executeAction === 'function') {
             return await this.engine.executeAction(actionName, params);
         }
         
-        throw new Error('Action execution not supported by engine');
+        throw new ObjectQLError({ code: 'PROTOCOL_METHOD_NOT_FOUND', message: 'Action execution not supported by engine' });
     }
     
     /**
@@ -765,7 +766,7 @@ export class JSONRPCPlugin implements RuntimePlugin {
         this.methods.set('metadata.getAll', async (metaType: string) => {
             // Validate metaType parameter
             if (!metaType || typeof metaType !== 'string') {
-                throw new Error('Invalid metaType parameter: must be a non-empty string');
+                throw new ObjectQLError({ code: 'PROTOCOL_INVALID_REQUEST', message: 'Invalid metaType parameter: must be a non-empty string' });
             }
             
             return this.getMetaItems(metaType);
@@ -807,7 +808,7 @@ export class JSONRPCPlugin implements RuntimePlugin {
             this.methods.set('session.get', async (sessionId: string, key: string) => {
                 const session = this.sessions.get(sessionId);
                 if (!session) {
-                    throw new Error('Session not found or expired');
+                    throw new ObjectQLError({ code: 'NOT_FOUND', message: 'Session not found or expired' });
                 }
                 this.updateSessionAccess(sessionId);
                 return session.data[key];
@@ -820,7 +821,7 @@ export class JSONRPCPlugin implements RuntimePlugin {
             this.methods.set('session.set', async (sessionId: string, key: string, value: any) => {
                 const session = this.sessions.get(sessionId);
                 if (!session) {
-                    throw new Error('Session not found or expired');
+                    throw new ObjectQLError({ code: 'NOT_FOUND', message: 'Session not found or expired' });
                 }
                 this.updateSessionAccess(sessionId);
                 session.data[key] = value;
@@ -854,7 +855,7 @@ export class JSONRPCPlugin implements RuntimePlugin {
             this.methods.set('system.describe', async (methodName: string) => {
                 const signature = this.methodSignatures.get(methodName);
                 if (!signature) {
-                    throw new Error(`Method not found: ${methodName}`);
+                    throw new ObjectQLError({ code: 'PROTOCOL_METHOD_NOT_FOUND', message: `Method not found: ${methodName}` });
                 }
                 return signature;
             });

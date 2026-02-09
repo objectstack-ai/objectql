@@ -9,6 +9,7 @@
  */
 
 import type { RuntimePlugin, RuntimeContext } from '@objectql/types';
+import { ObjectQLError } from '@objectql/types';
 import { ApolloServer, HeaderMap } from '@apollo/server';
 import { expressMiddleware } from '@as-integrations/express4';
 import { ApolloServerPluginDrainHttpServer } from '@apollo/server/plugin/drainHttpServer';
@@ -180,7 +181,7 @@ export class GraphQLPlugin implements RuntimePlugin {
      */
     async onStart(ctx: RuntimeContext): Promise<void> {
         if (!this.engine) {
-            throw new Error('Protocol not initialized. Install hook must be called first.');
+            throw new ObjectQLError({ code: 'PROTOCOL_ERROR', message: 'Protocol not initialized. Install hook must be called first.' });
         }
 
         // Check for Hono server service
@@ -1253,7 +1254,7 @@ export class GraphQLPlugin implements RuntimePlugin {
                 resolvers.Subscription[`${camelCaseName}Created`] = {
                     subscribe: (_: any, args: { where?: any }, context: any) => {
                         if (!context?.pubsub) {
-                            throw new Error('PubSub not available');
+                            throw new ObjectQLError({ code: 'INTERNAL_ERROR', message: 'PubSub not available' });
                         }
                         return context.pubsub.asyncIterator([`${pascalCaseName}_CREATED`]);
                     },
@@ -1270,7 +1271,7 @@ export class GraphQLPlugin implements RuntimePlugin {
                 resolvers.Subscription[`${camelCaseName}Updated`] = {
                     subscribe: (_: any, args: { where?: any }, context: any) => {
                         if (!context?.pubsub) {
-                            throw new Error('PubSub not available');
+                            throw new ObjectQLError({ code: 'INTERNAL_ERROR', message: 'PubSub not available' });
                         }
                         return context.pubsub.asyncIterator([`${pascalCaseName}_UPDATED`]);
                     },
@@ -1286,7 +1287,7 @@ export class GraphQLPlugin implements RuntimePlugin {
                 resolvers.Subscription[`${camelCaseName}Deleted`] = {
                     subscribe: (_: any, __: any, context: any) => {
                         if (!context?.pubsub) {
-                            throw new Error('PubSub not available');
+                            throw new ObjectQLError({ code: 'INTERNAL_ERROR', message: 'PubSub not available' });
                         }
                         return context.pubsub.asyncIterator([`${pascalCaseName}_DELETED`]);
                     }
