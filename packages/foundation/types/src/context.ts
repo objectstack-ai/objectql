@@ -31,7 +31,7 @@ export interface ObjectQLContext {
      * Execute a function within a transaction.
      * The callback receives a new context 'trxCtx' which inherits userId, spaceId from this context.
      */
-    transaction(callback: (trxCtx: ObjectQLContext) => Promise<any>): Promise<any>;
+    transaction(callback: (trxCtx: ObjectQLContext) => Promise<unknown>): Promise<unknown>;
 
     /**
      * Returns a new context with system privileges (isSystem: true).
@@ -42,7 +42,7 @@ export interface ObjectQLContext {
     /**
      * Internal: Driver-specific transaction handle.
      */
-    transactionHandle?: any;
+    transactionHandle?: unknown;
 }
 
 export interface ObjectQLContextOptions {

@@ -133,7 +133,7 @@ export interface ApprovalAction {
     outcome?: 'approved' | 'rejected' | 'pending' | 'custom';
     
     /** Field updates to apply */
-    updates?: Record<string, any>;
+    updates?: Record<string, unknown>;
     
     /** Comment field name */
     comment_field?: string;
@@ -150,7 +150,7 @@ export interface FieldUpdateConfig {
     field: string;
     
     /** New value */
-    value?: any;
+    value?: unknown;
     
     /** Expression to calculate value */
     expression?: string;
@@ -198,7 +198,7 @@ export interface CreateRecordConfig {
     field_mappings?: Record<string, string>;
     
     /** Static field values */
-    values?: Record<string, any>;
+    values?: Record<string, unknown>;
 }
 
 /**
@@ -269,7 +269,7 @@ export interface WebhookCallConfig {
     headers?: Record<string, string>;
     
     /** Request body */
-    body?: any;
+    body?: unknown;
     
     /** Body template */
     body_template?: string;
@@ -277,7 +277,7 @@ export interface WebhookCallConfig {
     /** Authentication configuration */
     auth?: {
         type: 'basic' | 'bearer' | 'api_key' | 'oauth2';
-        credentials?: Record<string, any>;
+        credentials?: Record<string, unknown>;
     };
     
     /** Timeout in milliseconds */
@@ -397,12 +397,12 @@ export interface WorkflowConfig {
     initial_step?: string;
     
     /** Workflow variables */
-    variables?: Record<string, any>;
+    variables?: Record<string, unknown>;
     
     /** Success outcome field updates */
     on_success?: {
         /** Field updates on successful completion */
-        updates?: Record<string, any>;
+        updates?: Record<string, unknown>;
         /** Notification on success */
         notification?: NotificationConfig;
     };
@@ -410,7 +410,7 @@ export interface WorkflowConfig {
     /** Failure outcome configuration */
     on_failure?: {
         /** Field updates on failure */
-        updates?: Record<string, any>;
+        updates?: Record<string, unknown>;
         /** Notification on failure */
         notification?: NotificationConfig;
     };
@@ -435,7 +435,7 @@ export interface WorkflowConfig {
     };
     
     /** Custom workflow configuration */
-    config?: Record<string, any>;
+    config?: Record<string, unknown>;
     
     /** AI context for workflow generation */
     ai_context?: {
@@ -494,7 +494,7 @@ export interface WorkflowInstance {
     error?: string;
     
     /** Execution context */
-    context?: Record<string, any>;
+    context?: Record<string, unknown>;
     
     /** Step history */
     step_history?: Array<{
@@ -503,6 +503,6 @@ export interface WorkflowInstance {
         started_at: string;
         completed_at?: string;
         actor?: string;
-        result?: any;
+        result?: unknown;
     }>;
 }

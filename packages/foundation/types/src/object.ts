@@ -196,5 +196,5 @@ export interface ObjectDoc {
     _id?: string | number;
     created_at?: Date | string;
     updated_at?: Date | string;
-    [key: string]: any;
+    [key: string]: unknown;
 }

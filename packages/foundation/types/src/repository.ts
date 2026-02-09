@@ -6,20 +6,20 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { UnifiedQuery } from "./query";
+import { UnifiedQuery, Filter } from "./query";
 
-export interface IObjectRepository {
-    find(query?: UnifiedQuery): Promise<any[]>;
-    findOne(idOrQuery: string | number | UnifiedQuery): Promise<any>;
-    count(filters: any): Promise<number>;
-    create(doc: any): Promise<any>;
-    update(id: string | number, doc: any, options?: any): Promise<any>;
-    delete(id: string | number): Promise<any>;
-    aggregate(query: any): Promise<any>;
-    distinct(field: string, filters?: any): Promise<any[]>;
-    findOneAndUpdate?(filters: any, update: any, options?: any): Promise<any>;
-    createMany(data: any[]): Promise<any>;
-    updateMany(filters: any, data: any): Promise<any>;
-    deleteMany(filters: any): Promise<any>;
-    execute(actionName: string, id: string | number | undefined, params: any): Promise<any>;
+export interface IObjectRepository<T = Record<string, unknown>> {
+    find(query?: UnifiedQuery): Promise<T[]>;
+    findOne(idOrQuery: string | number | UnifiedQuery): Promise<T | null>;
+    count(filters: Filter | object): Promise<number>;
+    create(doc: Record<string, unknown>): Promise<T>;
+    update(id: string | number, doc: Record<string, unknown>, options?: Record<string, unknown>): Promise<T>;
+    delete(id: string | number): Promise<T>;
+    aggregate(query: object): Promise<unknown[]>;
+    distinct(field: string, filters?: Filter | object): Promise<unknown[]>;
+    findOneAndUpdate?(filters: Filter | object, update: Record<string, unknown>, options?: Record<string, unknown>): Promise<T | null>;
+    createMany(data: Record<string, unknown>[]): Promise<T[]>;
+    updateMany(filters: Filter | object, data: Record<string, unknown>): Promise<unknown>;
+    deleteMany(filters: Filter | object): Promise<unknown>;
+    execute(actionName: string, id: string | number | undefined, params: Record<string, unknown>): Promise<unknown>;
 }

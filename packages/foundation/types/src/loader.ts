@@ -21,5 +21,5 @@ export interface LoaderPlugin {
     name: string;
     glob: string[];
     handler: LoaderHandler;
-    options?: any;
+    options?: Record<string, unknown>;
 }

@@ -22,13 +22,13 @@ export interface RuntimeContext {
      * - action manager
      * - CRUD operations
      */
-    engine: any; // Using 'any' to avoid circular dependency
+    engine: unknown; // Using 'unknown' to avoid circular dependency with @objectstack/runtime
     
     /**
      * Get the kernel instance (alternative accessor)
      * Some implementations may use getKernel() instead of engine
      */
-    getKernel?: () => any;
+    getKernel?: () => unknown;
 }
 
 /**

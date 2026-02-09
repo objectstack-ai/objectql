@@ -27,11 +27,11 @@ export interface IObjectQL {
     triggerHook(event: HookName, objectName: string, ctx: HookContext): Promise<void>;
 
     registerAction(objectName: string, actionName: string, handler: ActionHandler): void;
-    executeAction(objectName: string, actionName: string, ctx: ActionContext): Promise<any>;
+    executeAction(objectName: string, actionName: string, ctx: ActionContext): Promise<unknown>;
     
     /**
      * Get the underlying ObjectKernel instance
      * @returns The ObjectKernel instance
      */
-    getKernel(): any; // Using 'any' to avoid circular dependency with @objectstack/runtime
+    getKernel(): unknown; // Using 'unknown' to avoid circular dependency with @objectstack/runtime
 }

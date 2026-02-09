@@ -17,7 +17,7 @@ export interface IntrospectedColumn {
     /** Whether the column is nullable */
     nullable: boolean;
     /** Default value if any */
-    defaultValue?: any;
+    defaultValue?: unknown;
     /** Whether this is a primary key */
     isPrimary?: boolean;
     /** Whether this column has a unique constraint */
@@ -178,12 +178,12 @@ export interface Driver {
     readonly supports?: DriverCapabilities;
     
     // Core CRUD methods
-    find(objectName: string, query: any, options?: any): Promise<any[]>;
-    findOne(objectName: string, id: string | number, query?: any, options?: any): Promise<any>;
-    create(objectName: string, data: any, options?: any): Promise<any>;
-    update(objectName: string, id: string | number, data: any, options?: any): Promise<any>;
-    delete(objectName: string, id: string | number, options?: any): Promise<any>;
-    count(objectName: string, filters: any, options?: any): Promise<number>;
+    find(objectName: string, query: object, options?: Record<string, unknown>): Promise<Record<string, unknown>[]>;
+    findOne(objectName: string, id: string | number, query?: object, options?: Record<string, unknown>): Promise<Record<string, unknown> | null>;
+    create(objectName: string, data: Record<string, unknown>, options?: Record<string, unknown>): Promise<Record<string, unknown>>;
+    update(objectName: string, id: string | number, data: Record<string, unknown>, options?: Record<string, unknown>): Promise<Record<string, unknown>>;
+    delete(objectName: string, id: string | number, options?: Record<string, unknown>): Promise<unknown>;
+    count(objectName: string, filters: object, options?: Record<string, unknown>): Promise<number>;
     
     // Lifecycle methods
     connect?(): Promise<void>;
@@ -191,28 +191,28 @@ export interface Driver {
     checkHealth?(): Promise<boolean>;
     
     // Bulk operations
-    execute?(command: any, parameters?: any[], options?: any): Promise<any>;
-    bulkCreate?(objectName: string, data: any[], options?: any): Promise<any>;
-    bulkUpdate?(objectName: string, updates: Array<{id: string | number, data: any}>, options?: any): Promise<any>;
-    bulkDelete?(objectName: string, ids: Array<string | number>, options?: any): Promise<any>;
+    execute?(command: object, parameters?: unknown[], options?: Record<string, unknown>): Promise<unknown>;
+    bulkCreate?(objectName: string, data: Record<string, unknown>[], options?: Record<string, unknown>): Promise<unknown>;
+    bulkUpdate?(objectName: string, updates: Array<{id: string | number, data: Record<string, unknown>}>, options?: Record<string, unknown>): Promise<unknown>;
+    bulkDelete?(objectName: string, ids: Array<string | number>, options?: Record<string, unknown>): Promise<unknown>;
     
     // Query extensions
-    distinct?(objectName: string, field: string, filters?: any, options?: any): Promise<any[]>;
-    aggregate?(objectName: string, query: any, options?: any): Promise<any[]>;
+    distinct?(objectName: string, field: string, filters?: object, options?: Record<string, unknown>): Promise<unknown[]>;
+    aggregate?(objectName: string, query: object, options?: Record<string, unknown>): Promise<Record<string, unknown>[]>;
     
     // Transaction support
-    beginTransaction?(): Promise<any>;
+    beginTransaction?(): Promise<unknown>;
     /** @deprecated Use `commit` — aligned with @objectstack/spec DriverInterfaceSchema. Will be removed in v5.0. */
-    commitTransaction?(transaction: any): Promise<void>;
+    commitTransaction?(transaction: unknown): Promise<void>;
     /** @deprecated Use `rollback` — aligned with @objectstack/spec DriverInterfaceSchema. Will be removed in v5.0. */
-    rollbackTransaction?(transaction: any): Promise<void>;
+    rollbackTransaction?(transaction: unknown): Promise<void>;
     /** Commit a transaction (spec-aligned name) */
-    commit?(transaction: any): Promise<void>;
+    commit?(transaction: unknown): Promise<void>;
     /** Rollback a transaction (spec-aligned name) */
-    rollback?(transaction: any): Promise<void>;
+    rollback?(transaction: unknown): Promise<void>;
     
     // Schema / Lifecycle
-    init?(objects: any[]): Promise<void>;
+    init?(objects: object[]): Promise<void>;
     
     /**
      * Introspect the database schema to discover existing tables, columns, and relationships.
@@ -221,32 +221,32 @@ export interface Driver {
     introspectSchema?(): Promise<IntrospectedSchema>;
 
     // Bulk / Atomic (alternative signatures)
-    createMany?(objectName: string, data: any[], options?: any): Promise<any>;
-    updateMany?(objectName: string, filters: any, data: any, options?: any): Promise<any>;
-    deleteMany?(objectName: string, filters: any, options?: any): Promise<any>;
-    findOneAndUpdate?(objectName: string, filters: any, update: any, options?: any): Promise<any>;
+    createMany?(objectName: string, data: Record<string, unknown>[], options?: Record<string, unknown>): Promise<unknown>;
+    updateMany?(objectName: string, filters: object, data: Record<string, unknown>, options?: Record<string, unknown>): Promise<unknown>;
+    deleteMany?(objectName: string, filters: object, options?: Record<string, unknown>): Promise<unknown>;
+    findOneAndUpdate?(objectName: string, filters: object, update: Record<string, unknown>, options?: Record<string, unknown>): Promise<Record<string, unknown> | null>;
 
     // DriverInterface v4.0 methods
     /**
      * Execute a query using QueryAST format (DriverInterface v4.0)
      */
-    executeQuery?(ast: any, options?: any): Promise<{ value: any[]; count?: number }>;
+    executeQuery?(ast: object, options?: Record<string, unknown>): Promise<{ value: Record<string, unknown>[]; count?: number }>;
     
     /**
      * Execute a command using Command format (DriverInterface v4.0)
      */
-    executeCommand?(command: any, options?: any): Promise<{ success: boolean; data?: any; affected: number }>;
+    executeCommand?(command: object, options?: Record<string, unknown>): Promise<{ success: boolean; data?: unknown; affected: number }>;
     
     /**
      * Alternative method name for findOne (some drivers use 'get')
      */
-    get?(objectName: string, id: string, options?: any): Promise<any>;
+    get?(objectName: string, id: string, options?: Record<string, unknown>): Promise<Record<string, unknown> | null>;
     
     /**
      * Direct query execution (legacy)
      */
-    directQuery?(sql: string, params?: any[]): Promise<any[]>;
-    query?(sql: string, params?: any[]): Promise<any[]>;
+    directQuery?(sql: string, params?: unknown[]): Promise<Record<string, unknown>[]>;
+    query?(sql: string, params?: unknown[]): Promise<Record<string, unknown>[]>;
 
     // ========================================================================
     // Methods from @objectstack/spec DriverInterfaceSchema
@@ -261,7 +261,7 @@ export interface Driver {
      * @param options - Driver options.
      * @returns The upserted record.
      */
-    upsert?(objectName: string, data: Record<string, unknown>, options?: any): Promise<any>;
+    upsert?(objectName: string, data: Record<string, unknown>, options?: Record<string, unknown>): Promise<Record<string, unknown>>;
 
     /**
      * Stream records matching the structured query.
@@ -272,7 +272,7 @@ export interface Driver {
      * @param options - Driver options.
      * @returns AsyncIterable/ReadableStream of records.
      */
-    findStream?(objectName: string, query: any, options?: any): AsyncIterable<any> | any;
+    findStream?(objectName: string, query: object, options?: Record<string, unknown>): AsyncIterable<Record<string, unknown>> | unknown;
 
     /**
      * Get connection pool statistics.
@@ -289,7 +289,7 @@ export interface Driver {
      * @param objects - Object definitions to synchronize.
      * @param options - Driver options.
      */
-    syncSchema?(objects: any[], options?: any): Promise<void>;
+    syncSchema?(objects: object[], options?: Record<string, unknown>): Promise<void>;
 
     /**
      * Drop a table/collection by name.
@@ -297,7 +297,7 @@ export interface Driver {
      * @param objectName - The name of the object/table to drop.
      * @param options - Driver options.
      */
-    dropTable?(objectName: string, options?: any): Promise<void>;
+    dropTable?(objectName: string, options?: Record<string, unknown>): Promise<void>;
 
     /**
      * Explain the execution plan for a query.
@@ -308,6 +308,6 @@ export interface Driver {
      * @param options - Driver options.
      * @returns Execution plan details.
      */
-    explain?(objectName: string, query: any, options?: any): Promise<any>;
+    explain?(objectName: string, query: object, options?: Record<string, unknown>): Promise<unknown>;
 }
 

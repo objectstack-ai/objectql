@@ -50,5 +50,5 @@ export interface AppConfig {
     /**
      * Custom metadata/settings
      */
-    [key: string]: any;
+    [key: string]: unknown;
 }
