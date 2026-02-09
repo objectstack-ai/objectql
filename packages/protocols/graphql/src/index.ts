@@ -166,13 +166,10 @@ export class GraphQLPlugin implements RuntimePlugin {
      * Install hook - called during kernel initialization
      */
     async install(ctx: RuntimeContext): Promise<void> {
-        console.log(`[${this.name}] Installing GraphQL protocol plugin...`);
         this.ctx = ctx;
         
         // Store reference to the engine for later use
         this.engine = ctx.engine || (ctx as any).getKernel?.();
-        
-        console.log(`[${this.name}] Protocol bridge initialized`);
     }
 
     /**
@@ -198,12 +195,9 @@ export class GraphQLPlugin implements RuntimePlugin {
         }
 
         if (httpServer && httpServer.app) {
-            console.log(`[${this.name}] Attaching to existing Hono server...`);
             await this.attachToHono(httpServer.app);
             return;
         }
-
-        console.log(`[${this.name}] Starting GraphQL server with subscriptions (Standalone)...`);
 
         // Generate schema from metadata
         const typeDefs = this.generateSchema();
@@ -220,7 +214,6 @@ export class GraphQLPlugin implements RuntimePlugin {
                     resolvers
                 }
             ]);
-            console.log(`[${this.name}] 🔗 Apollo Federation enabled - service: ${this.config.federationServiceName}`);
         } else {
             // Build standard GraphQL schema
             schema = makeExecutableSchema({
@@ -310,13 +303,6 @@ export class GraphQLPlugin implements RuntimePlugin {
         // Start HTTP server
         await new Promise<void>((resolve) => {
             this.httpServer.listen(this.config.port, () => {
-                console.log(`[${this.name}] 🚀 GraphQL server ready at: http://localhost:${this.config.port}/graphql`);
-                if (this.config.introspection) {
-                    console.log(`[${this.name}] 📊 Apollo Sandbox available at: http://localhost:${this.config.port}/graphql`);
-                }
-                if (this.config.enableSubscriptions) {
-                    console.log(`[${this.name}] 🔌 WebSocket subscriptions ready at: ws://localhost:${this.config.port}/graphql`);
-                }
                 resolve();
             });
         });
@@ -393,18 +379,12 @@ export class GraphQLPlugin implements RuntimePlugin {
             }
         });
         
-        console.log(`[${this.name}] 🚀 GraphQL mounted at /graphql`);
-        if (this.config.introspection) {
-            console.log(`[${this.name}] 📊 Apollo Sandbox available at /graphql`);
-        }
     }
 
     /**
      * Stop hook - called when kernel stops
      */
     async onStop(ctx: RuntimeContext): Promise<void> {
-        console.log(`[${this.name}] Stopping GraphQL server...`);
-        
         if (this.server) {
             await this.server.stop();
             this.server = undefined;
@@ -1504,7 +1484,6 @@ export class GraphQLPlugin implements RuntimePlugin {
         
         const graphqlType = typeMap[fieldType];
         if (!graphqlType) {
-            console.warn(`[GraphQLPlugin] Unknown field type '${fieldType}', defaulting to String`);
             return 'String';
         }
         
