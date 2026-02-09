@@ -8,6 +8,15 @@
 
 import { UnifiedQuery, Filter } from "./query";
 
+/**
+ * Repository interface for CRUD operations on a single object type.
+ * 
+ * Note: `object` is used for filter/query parameters instead of `Record<string, unknown>`
+ * because named TypeScript interfaces (e.g., UnifiedQuery, Filter) lack implicit index
+ * signatures and are not assignable to `Record<string, unknown>`.
+ * 
+ * @typeParam T - The document shape returned by queries. Defaults to `Record<string, unknown>`.
+ */
 export interface IObjectRepository<T = Record<string, unknown>> {
     find(query?: UnifiedQuery): Promise<T[]>;
     findOne(idOrQuery: string | number | UnifiedQuery): Promise<T | null>;

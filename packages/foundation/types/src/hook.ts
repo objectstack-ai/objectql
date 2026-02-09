@@ -61,7 +61,11 @@ export interface BaseHookContext<_T = Record<string, unknown>> {
 export interface RetrievalHookContext<T = Record<string, unknown>> extends BaseHookContext<T> {
     operation: 'find' | 'count';
     
-    /** The query criteria being executed. Modifiable in 'before' hooks. */
+    /** 
+     * The query criteria being executed. Modifiable in 'before' hooks.
+     * Typed as `object` (not `Record<string, unknown>`) because named interfaces
+     * like UnifiedQuery lack index signatures and aren't assignable to Record types.
+     */
     query: object;
     
     /** The result of the query. Only available in 'after' hooks. */

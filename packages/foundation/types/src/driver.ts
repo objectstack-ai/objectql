@@ -169,6 +169,15 @@ export interface BaseDriverConfig {
 // Driver Interface
 // ============================================================================
 
+/**
+ * Database driver interface. All storage backends implement this contract.
+ * 
+ * Type strategy:
+ * - `Record<string, unknown>` for data payloads (plain field-value maps)
+ * - `object` for query/filter/command parameters that may receive named interfaces
+ *   (e.g., UnifiedQuery, Filter) which lack implicit index signatures
+ * - `unknown` for opaque values (transaction handles, heterogeneous returns)
+ */
 export interface Driver {
     /** Driver identifier (e.g., 'memory', 'sql', 'mongo') */
     readonly name?: string;
