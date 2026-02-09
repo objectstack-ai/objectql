@@ -822,7 +822,7 @@ export class MongoDriver implements Driver {
             const cmdOptions = { ...options, ...command.options };
             
             switch (command.type) {
-                case 'create':
+                case 'create': {
                     if (!command.data) {
                         throw new ObjectQLError({ code: 'DRIVER_QUERY_FAILED', message: 'Create command requires data' });
                     }
@@ -832,8 +832,9 @@ export class MongoDriver implements Driver {
                         data: created,
                         affected: 1
                     };
+                }
                 
-                case 'update':
+                case 'update': {
                     if (!command.id || !command.data) {
                         throw new ObjectQLError({ code: 'DRIVER_QUERY_FAILED', message: 'Update command requires id and data' });
                     }
@@ -843,8 +844,9 @@ export class MongoDriver implements Driver {
                         data: updated,
                         affected: updated ? 1 : 0
                     };
+                }
                 
-                case 'delete':
+                case 'delete': {
                     if (!command.id) {
                         throw new ObjectQLError({ code: 'DRIVER_QUERY_FAILED', message: 'Delete command requires id' });
                     }
@@ -853,8 +855,9 @@ export class MongoDriver implements Driver {
                         success: true,
                         affected: deleteCount
                     };
+                }
                 
-                case 'bulkCreate':
+                case 'bulkCreate': {
                     if (!command.records || !Array.isArray(command.records)) {
                         throw new ObjectQLError({ code: 'DRIVER_QUERY_FAILED', message: 'BulkCreate command requires records array' });
                     }
@@ -864,8 +867,9 @@ export class MongoDriver implements Driver {
                         data: bulkCreated,
                         affected: command.records.length
                     };
+                }
                 
-                case 'bulkUpdate':
+                case 'bulkUpdate': {
                     if (!command.updates || !Array.isArray(command.updates)) {
                         throw new ObjectQLError({ code: 'DRIVER_QUERY_FAILED', message: 'BulkUpdate command requires updates array' });
                     }
@@ -881,8 +885,9 @@ export class MongoDriver implements Driver {
                         data: updateResults,
                         affected: updateCount
                     };
+                }
                 
-                case 'bulkDelete':
+                case 'bulkDelete': {
                     if (!command.ids || !Array.isArray(command.ids)) {
                         throw new ObjectQLError({ code: 'DRIVER_QUERY_FAILED', message: 'BulkDelete command requires ids array' });
                     }
@@ -895,10 +900,12 @@ export class MongoDriver implements Driver {
                         success: true,
                         affected: deleted
                     };
+                }
                 
-                default:
+                default: {
                     const validTypes = ['create', 'update', 'delete', 'bulkCreate', 'bulkUpdate', 'bulkDelete'];
                     throw new ObjectQLError({ code: 'DRIVER_UNSUPPORTED_OPERATION', message: `Unknown command type: ${(command as any).type}. Valid types are: ${validTypes.join(', ')}` });
+                }
             }
         } catch (error: any) {
             return {

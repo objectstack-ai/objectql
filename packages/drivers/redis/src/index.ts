@@ -791,7 +791,7 @@ export class RedisDriver implements Driver {
             const cmdOptions = { ...options, ...command.options };
             
             switch (command.type) {
-                case 'create':
+                case 'create': {
                     if (!command.data) {
                         throw new ObjectQLError({ code: 'DRIVER_QUERY_FAILED', message: 'Create command requires data' });
                     }
@@ -801,8 +801,9 @@ export class RedisDriver implements Driver {
                         data: created,
                         affected: 1
                     };
+                }
                 
-                case 'update':
+                case 'update': {
                     if (!command.id || !command.data) {
                         throw new ObjectQLError({ code: 'DRIVER_QUERY_FAILED', message: 'Update command requires id and data' });
                     }
@@ -812,6 +813,7 @@ export class RedisDriver implements Driver {
                         data: updated,
                         affected: 1
                     };
+                }
                 
                 case 'delete':
                     if (!command.id) {
@@ -823,7 +825,7 @@ export class RedisDriver implements Driver {
                         affected: 1
                     };
                 
-                case 'bulkCreate':
+                case 'bulkCreate': {
                     if (!command.records || !Array.isArray(command.records)) {
                         throw new ObjectQLError({ code: 'DRIVER_QUERY_FAILED', message: 'BulkCreate command requires records array' });
                     }
@@ -852,8 +854,9 @@ export class RedisDriver implements Driver {
                         data: bulkCreated,
                         affected: command.records.length
                     };
+                }
                 
-                case 'bulkUpdate':
+                case 'bulkUpdate': {
                     if (!command.updates || !Array.isArray(command.updates)) {
                         throw new ObjectQLError({ code: 'DRIVER_QUERY_FAILED', message: 'BulkUpdate command requires updates array' });
                     }
@@ -901,8 +904,9 @@ export class RedisDriver implements Driver {
                         data: updateResults,
                         affected: updateResults.length
                     };
+                }
                 
-                case 'bulkDelete':
+                case 'bulkDelete': {
                     if (!command.ids || !Array.isArray(command.ids)) {
                         throw new ObjectQLError({ code: 'DRIVER_QUERY_FAILED', message: 'BulkDelete command requires ids array' });
                     }
@@ -923,6 +927,7 @@ export class RedisDriver implements Driver {
                         success: true,
                         affected: deleted
                     };
+                }
                 
                 default:
                     throw new ObjectQLError({ code: 'DRIVER_UNSUPPORTED_OPERATION', message: `Unknown command type: ${(command as any).type}` });
@@ -1372,18 +1377,21 @@ export class RedisDriver implements Driver {
                     return sum + (typeof value === 'number' ? value : 0);
                 }, 0);
                 
-            case '$avg':
+            case '$avg': {
                 const values = records.map(rec => this.evaluateExpression(operand, rec));
                 const numbers = values.filter(v => typeof v === 'number');
                 return numbers.length > 0 ? numbers.reduce((a, b) => a + b, 0) / numbers.length : null;
+            }
                 
-            case '$min':
+            case '$min': {
                 const minValues = records.map(rec => this.evaluateExpression(operand, rec));
                 return Math.min(...minValues.filter(v => typeof v === 'number'));
+            }
                 
-            case '$max':
+            case '$max': {
                 const maxValues = records.map(rec => this.evaluateExpression(operand, rec));
                 return Math.max(...maxValues.filter(v => typeof v === 'number'));
+            }
                 
             case '$first':
                 return records.length > 0 ? this.evaluateExpression(operand, records[0]) : null;
@@ -1394,7 +1402,7 @@ export class RedisDriver implements Driver {
             case '$push':
                 return records.map(rec => this.evaluateExpression(operand, rec));
                 
-            case '$addToSet':
+            case '$addToSet': {
                 const set = new Set(records.map(rec => {
                     const val = this.evaluateExpression(operand, rec);
                     return typeof val === 'object' ? JSON.stringify(val) : val;
@@ -1409,6 +1417,7 @@ export class RedisDriver implements Driver {
                     }
                     return v;
                 });
+            }
                 
             default:
                 return null;
