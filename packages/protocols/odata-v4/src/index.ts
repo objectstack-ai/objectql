@@ -117,12 +117,9 @@ export class ODataV4Plugin implements RuntimePlugin {
      * Install hook - called during kernel initialization
      */
     async install(ctx: RuntimeContext): Promise<void> {
-        console.log(`[${this.name}] Installing OData V4 protocol plugin...`);
-        
         // Store reference to the engine for later use
         this.engine = ctx.engine || (ctx as any).getKernel?.();
         
-        console.log(`[${this.name}] Protocol bridge initialized`);
     }
 
     /**
@@ -149,12 +146,9 @@ export class ODataV4Plugin implements RuntimePlugin {
         }
 
         if (httpServer && httpServer.app) {
-             console.log(`[${this.name}] 🔗 Attaching to shared Hono server...`);
              await this.attachToHono(httpServer.app);
              return;
         }
-
-        console.log(`[${this.name}] Starting OData V4 server (standalone)...`);
 
         // Create HTTP server with request handler
         this.server = createServer((req, res) => this.handleRequest(req, res));
@@ -162,9 +156,6 @@ export class ODataV4Plugin implements RuntimePlugin {
         // Start listening
         await new Promise<void>((resolve) => {
             this.server!.listen(this.config.port, () => {
-                console.log(`[${this.name}] 🚀 OData V4 server listening on http://localhost:${this.config.port}${this.config.basePath}`);
-                console.log(`[${this.name}] 📄 Service Document: http://localhost:${this.config.port}${this.config.basePath}`);
-                console.log(`[${this.name}] 📝 Metadata Document: http://localhost:${this.config.port}${this.config.basePath}/$metadata`);
                 resolve();
             });
         });
@@ -233,7 +224,6 @@ export class ODataV4Plugin implements RuntimePlugin {
              return c.body(responseBody);
         });
 
-        console.log(`[${this.name}] 🚀 OData mounted at ${basePath}`);
     }
 
     // ---------------------------------------------------
@@ -243,7 +233,6 @@ export class ODataV4Plugin implements RuntimePlugin {
      */
     async onStop(ctx: RuntimeContext): Promise<void> {
         if (this.server) {
-            console.log(`[${this.name}] Stopping OData V4 server...`);
             await new Promise<void>((resolve, reject) => {
                 this.server!.close((err) => {
                     if (err) reject(err);
@@ -414,7 +403,6 @@ export class ODataV4Plugin implements RuntimePlugin {
                 await this.handleEntityRequest(req, res, path);
             }
         } catch (error) {
-            console.error(`[${this.name}] Request error:`, error);
             this.sendError(res, 500, error instanceof Error ? error.message : 'Internal Server Error');
         }
     }
@@ -788,7 +776,6 @@ export class ODataV4Plugin implements RuntimePlugin {
 
         // Check depth limit
         if (depth >= this.config.maxExpandDepth) {
-            console.warn(`[${this.name}] Maximum expand depth (${this.config.maxExpandDepth}) reached, skipping further expansion`);
             return;
         }
 
@@ -1213,7 +1200,6 @@ export class ODataV4Plugin implements RuntimePlugin {
         
         const edmType = typeMap[fieldType];
         if (!edmType) {
-            console.warn(`[ODataV4Plugin] Unknown field type '${fieldType}', defaulting to Edm.String`);
             return 'Edm.String';
         }
         
@@ -1302,7 +1288,6 @@ export class ODataV4Plugin implements RuntimePlugin {
             res.end(batchResponse);
 
         } catch (error) {
-            console.error(`[${this.name}] Batch request error:`, error);
             this.sendError(res, 500, error instanceof Error ? error.message : 'Batch processing failed');
         }
     }
@@ -1481,15 +1466,13 @@ export class ODataV4Plugin implements RuntimePlugin {
         } catch (error) {
             // Enhanced error handling with rollback information
             const errorMessage = error instanceof Error ? error.message : 'Changeset failed';
-            console.error(`[${this.name}] Changeset failed, rolling back all operations:`, errorMessage);
-            
             // Attempt to rollback completed operations (in reverse order)
             // Note: This is a best-effort rollback since we don't have true database transactions
             // In a production system, this would use database transaction support
             try {
                 await this.rollbackChangeset(operations, tempResults.length);
             } catch (rollbackError) {
-                console.error(`[${this.name}] Rollback failed:`, rollbackError);
+                // Error silently ignored
             }
             
             // Return detailed error response for the entire changeset
@@ -1543,18 +1526,15 @@ export class ODataV4Plugin implements RuntimePlugin {
                 if (op.type === 'POST') {
                     // Created record - try to delete it
                     // TODO: Need to extract and store the created ID from the response
-                    console.log(`[${this.name}] Would rollback CREATE on ${op.entitySet}`);
                 } else if (op.type === 'DELETE') {
                     // Deleted record - try to restore it
                     // TODO: Need to store the deleted record data before deletion
-                    console.log(`[${this.name}] Would rollback DELETE on ${op.entitySet}(${op.key})`);
                 } else if (op.type === 'PATCH' || op.type === 'PUT') {
                     // Updated record - try to restore previous values
                     // TODO: Need to fetch and store previous values before update
-                    console.log(`[${this.name}] Would rollback UPDATE on ${op.entitySet}(${op.key})`);
                 }
             } catch (error) {
-                console.error(`[${this.name}] Failed to rollback operation ${i}:`, error);
+                // Error silently ignored
             }
         }
     }
