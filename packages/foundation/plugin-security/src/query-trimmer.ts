@@ -160,7 +160,7 @@ export class QueryTrimmer {
         if (filter && Object.keys(filter).length > 0) {
           return filter;
         }
-      } catch (error: any) {
+      } catch (_error: any) {
         // Formula will be evaluated in-memory (fallback)
       }
       
@@ -176,7 +176,7 @@ export class QueryTrimmer {
         if (filter && Object.keys(filter).length > 0) {
           return filter;
         }
-      } catch (error: any) {
+      } catch (_error: any) {
         // Lookup will be evaluated in-memory (fallback)
       }
       

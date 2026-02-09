@@ -62,7 +62,7 @@ export async function loadModules(loader: ObjectLoader, modules: string[]) {
             
             loader.load(targetDir);
 
-        } catch (e: any) {
+        } catch (_e: any) {
             // Module load failed — continue to next module
         }
     }

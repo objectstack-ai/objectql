@@ -58,7 +58,7 @@ export class ObjectLoader {
                             registerObject(ctx.registry, obj, ctx.file, ctx.packageName);
                         }
                     }
-                } catch (e) {
+                } catch (_e) {
                     // Silently skip malformed object files
                 }
             }
@@ -85,7 +85,7 @@ export class ObjectLoader {
                         package: ctx.packageName,
                         content: hooks
                     });
-                } catch (e) {
+                } catch (_e) {
                     // Silently skip malformed hook files
                 }
             }
@@ -122,7 +122,7 @@ export class ObjectLoader {
                         });
                     }
 
-                } catch (e) {
+                } catch (_e) {
                     // Silently skip malformed action files
                 }
             }
@@ -160,7 +160,7 @@ export class ObjectLoader {
                             package: ctx.packageName,
                             content: doc
                         });
-                    } catch (e) {
+                    } catch (_e) {
                          // Silently skip malformed metadata files
                     }
                 }
@@ -243,7 +243,7 @@ export class ObjectLoader {
 
                 plugin.handler(ctx);
 
-            } catch (e) {
+            } catch (_e) {
                 // Silently skip files that fail plugin processing
             }
         }
