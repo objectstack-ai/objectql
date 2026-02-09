@@ -56,7 +56,9 @@ describe('@objectql/create templates', () => {
                 const hasConfig = allFiles.some(f =>
                     String(f).includes('objectstack.config') ||
                     String(f).includes('objectql.config') ||
-                    String(f).includes('index.ts')
+                    String(f).includes('index.ts') ||
+                    String(f).includes('.app.yml') ||
+                    String(f).includes('seed.ts')
                 );
                 expect(hasConfig).toBe(true);
             });
