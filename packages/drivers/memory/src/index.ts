@@ -1085,7 +1085,7 @@ export class MemoryDriver implements Driver {
             switch (command.type) {
                 case 'create':
                     if (!command.data) {
-                        throw new Error('Create command requires data');
+                        throw new ObjectQLError({ code: 'DRIVER_QUERY_FAILED', message: 'Create command requires data' });
                     }
                     const created = await this.create(command.object, command.data, cmdOptions);
                     return {
@@ -1096,7 +1096,7 @@ export class MemoryDriver implements Driver {
                 
                 case 'update':
                     if (!command.id || !command.data) {
-                        throw new Error('Update command requires id and data');
+                        throw new ObjectQLError({ code: 'DRIVER_QUERY_FAILED', message: 'Update command requires id and data' });
                     }
                     const updated = await this.update(command.object, command.id, command.data, cmdOptions);
                     return {
@@ -1107,7 +1107,7 @@ export class MemoryDriver implements Driver {
                 
                 case 'delete':
                     if (!command.id) {
-                        throw new Error('Delete command requires id');
+                        throw new ObjectQLError({ code: 'DRIVER_QUERY_FAILED', message: 'Delete command requires id' });
                     }
                     await this.delete(command.object, command.id, cmdOptions);
                     return {
@@ -1117,7 +1117,7 @@ export class MemoryDriver implements Driver {
                 
                 case 'bulkCreate':
                     if (!command.records || !Array.isArray(command.records)) {
-                        throw new Error('BulkCreate command requires records array');
+                        throw new ObjectQLError({ code: 'DRIVER_QUERY_FAILED', message: 'BulkCreate command requires records array' });
                     }
                     const bulkCreated = [];
                     for (const record of command.records) {
@@ -1132,7 +1132,7 @@ export class MemoryDriver implements Driver {
                 
                 case 'bulkUpdate':
                     if (!command.updates || !Array.isArray(command.updates)) {
-                        throw new Error('BulkUpdate command requires updates array');
+                        throw new ObjectQLError({ code: 'DRIVER_QUERY_FAILED', message: 'BulkUpdate command requires updates array' });
                     }
                     const updateResults = [];
                     for (const update of command.updates) {
@@ -1147,7 +1147,7 @@ export class MemoryDriver implements Driver {
                 
                 case 'bulkDelete':
                     if (!command.ids || !Array.isArray(command.ids)) {
-                        throw new Error('BulkDelete command requires ids array');
+                        throw new ObjectQLError({ code: 'DRIVER_QUERY_FAILED', message: 'BulkDelete command requires ids array' });
                     }
                     let deleted = 0;
                     for (const id of command.ids) {
@@ -1160,7 +1160,7 @@ export class MemoryDriver implements Driver {
                     };
                 
                 default:
-                    throw new Error(`Unknown command type: ${(command as any).type}`);
+                    throw new ObjectQLError({ code: 'DRIVER_UNSUPPORTED_OPERATION', message: `Unknown command type: ${(command as any).type}` });
             }
         } catch (error: any) {
             return {
@@ -1181,6 +1181,6 @@ export class MemoryDriver implements Driver {
     async execute(command: any, parameters?: any[], options?: any): Promise<any> {
         // For memory driver, this is primarily for compatibility
         // We don't support raw SQL/commands
-        throw new Error('Memory driver does not support raw command execution. Use executeCommand() instead.');
+        throw new ObjectQLError({ code: 'DRIVER_UNSUPPORTED_OPERATION', message: 'Memory driver does not support raw command execution. Use executeCommand() instead.' });
     }
 }
