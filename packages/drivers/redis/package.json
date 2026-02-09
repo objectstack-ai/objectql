@@ -26,7 +26,7 @@
   },
   "dependencies": {
     "@objectql/types": "workspace:*",
-    "@objectstack/spec": "^2.0.0",
+    "@objectstack/spec": "^2.0.1",
     "redis": "^4.6.0",
     "zod": "^3.24.1"
   },
