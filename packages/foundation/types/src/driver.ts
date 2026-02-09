@@ -202,9 +202,9 @@ export interface Driver {
     
     // Transaction support
     beginTransaction?(): Promise<any>;
-    /** @deprecated Use `commit` — aligned with @objectstack/spec DriverInterfaceSchema */
+    /** @deprecated Use `commit` — aligned with @objectstack/spec DriverInterfaceSchema. Will be removed in v5.0. */
     commitTransaction?(transaction: any): Promise<void>;
-    /** @deprecated Use `rollback` — aligned with @objectstack/spec DriverInterfaceSchema */
+    /** @deprecated Use `rollback` — aligned with @objectstack/spec DriverInterfaceSchema. Will be removed in v5.0. */
     rollbackTransaction?(transaction: any): Promise<void>;
     /** Commit a transaction (spec-aligned name) */
     commit?(transaction: any): Promise<void>;
@@ -277,6 +277,8 @@ export interface Driver {
     /**
      * Get connection pool statistics.
      * Useful for monitoring database load.
+     * 
+     * @returns Pool stats object, or undefined if pooling is not supported by the driver.
      */
     getPoolStats?(): { total: number; idle: number; active: number; waiting: number } | undefined;
 
