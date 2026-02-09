@@ -6,6 +6,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import { ObjectQLError } from '@objectql/types';
+
 /**
  * Connection interface
  */
@@ -126,7 +128,7 @@ export class GlobalConnectionPool {
         const totalConns = this.totalConnections();
         const driverConns = this.getDriverConnections(driverName);
         if (totalConns >= this.limits.total || driverConns >= this.limits.perDriver) {
-            throw new Error(`Connection pool limit reached for driver: ${driverName}`);
+            throw new ObjectQLError({ code: 'DRIVER_CONNECTION_FAILED', message: `Connection pool limit reached for driver: ${driverName}` });
         }
 
         // Create new connection

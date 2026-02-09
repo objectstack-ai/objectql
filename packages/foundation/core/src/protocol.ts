@@ -8,6 +8,7 @@
 
 import { ObjectStackProtocol } from '@objectstack/spec/api';
 import type { IObjectQL, CoreServiceName, ServiceStatus, KernelDiscoveryResponse } from '@objectql/types';
+import { ObjectQLError } from '@objectql/types';
 
 /**
  * Default service status map.
@@ -109,9 +110,10 @@ const DEFAULT_SERVICES: Readonly<Record<CoreServiceName, ServiceStatus>> = {
  * Helper: throw a "service not available" error for plugin-required methods.
  */
 function notAvailable(service: string, method: string): never {
-    throw new Error(
-        `[${method}] Service '${service}' is not available. Install a ${service} plugin to enable this feature.`
-    );
+    throw new ObjectQLError({
+        code: 'DRIVER_UNSUPPORTED_OPERATION',
+        message: `[${method}] Service '${service}' is not available. Install a ${service} plugin to enable this feature.`
+    });
 }
 
 /**
@@ -143,13 +145,25 @@ export class ObjectStackProtocolImplementation implements ObjectStackProtocol {
     // 1. metadata Service  (7 methods — kernel-provided)
     // ========================================================================
 
-    async getDiscovery(_args?: any): Promise<KernelDiscoveryResponse> {
+    async getDiscovery(_args?: any) {
         return {
             name: 'ObjectQL Engine',
+            apiName: 'objectql',
             version: '4.0.0',
             protocols: ['rest', 'graphql', 'json-rpc', 'odata'],
             services: { ...this.services },
-        };
+            capabilities: {
+                search: true,
+                files: true,
+                graphql: true,
+                notifications: true,
+                analytics: true,
+                ai: true,
+                i18n: true,
+                workflow: true,
+                websockets: true,
+            },
+        } as any;
     }
 
     async getMetaTypes(args?: any): Promise<{ types: string[] }> {
@@ -184,7 +198,7 @@ export class ObjectStackProtocolImplementation implements ObjectStackProtocol {
             this.engine.metadata.register(type, data);
             return { success: true };
         }
-        throw new Error('Engine does not support saving metadata');
+        throw new ObjectQLError({ code: 'DRIVER_UNSUPPORTED_OPERATION', message: 'Engine does not support saving metadata' });
     }
 
     async getMetaItemCached(args: { type: string; name: string }): Promise<any> {
@@ -212,7 +226,7 @@ export class ObjectStackProtocolImplementation implements ObjectStackProtocol {
             return await repo.find(query || {});
         }
 
-        throw new Error('Engine does not support find operation');
+        throw new ObjectQLError({ code: 'DRIVER_UNSUPPORTED_OPERATION', message: 'Engine does not support find operation' });
     }
 
     async getData(args: { object: string; id: string }): Promise<any> {
@@ -228,7 +242,7 @@ export class ObjectStackProtocolImplementation implements ObjectStackProtocol {
             return await repo.findOne(id);
         }
 
-        throw new Error('Engine does not support get operation');
+        throw new ObjectQLError({ code: 'DRIVER_UNSUPPORTED_OPERATION', message: 'Engine does not support get operation' });
     }
 
     async createData(args: { object: string; data: any }): Promise<any> {
@@ -244,7 +258,7 @@ export class ObjectStackProtocolImplementation implements ObjectStackProtocol {
             return await repo.create(data);
         }
 
-        throw new Error('Engine does not support create operation');
+        throw new ObjectQLError({ code: 'DRIVER_UNSUPPORTED_OPERATION', message: 'Engine does not support create operation' });
     }
 
     async updateData(args: { object: string; id: string; data: any }): Promise<any> {
@@ -260,7 +274,7 @@ export class ObjectStackProtocolImplementation implements ObjectStackProtocol {
             return await repo.update(id, data);
         }
 
-        throw new Error('Engine does not support update operation');
+        throw new ObjectQLError({ code: 'DRIVER_UNSUPPORTED_OPERATION', message: 'Engine does not support update operation' });
     }
 
     async deleteData(args: { object: string; id: string }): Promise<{ object: string; id: string; success: boolean }> {
@@ -278,7 +292,7 @@ export class ObjectStackProtocolImplementation implements ObjectStackProtocol {
             return { object, id, success: true };
         }
 
-        throw new Error('Engine does not support delete operation');
+        throw new ObjectQLError({ code: 'DRIVER_UNSUPPORTED_OPERATION', message: 'Engine does not support delete operation' });
     }
 
     async batchData(args: { object: string; request: { operation: 'create' | 'update' | 'delete' | 'upsert'; records: any[] } }): Promise<any> {
@@ -308,7 +322,7 @@ export class ObjectStackProtocolImplementation implements ObjectStackProtocol {
                     break;
                 }
                 default:
-                    throw new Error(`Unsupported batch operation: ${operation}`);
+                    throw new ObjectQLError({ code: 'INVALID_REQUEST', message: `Unsupported batch operation: ${operation}` });
             }
         }
 
@@ -359,19 +373,19 @@ export class ObjectStackProtocolImplementation implements ObjectStackProtocol {
             return { object: args.object, records, count: records.length };
         }
 
-        throw new Error('analyticsQuery requires an object name');
+        throw new ObjectQLError({ code: 'VALIDATION_ERROR', message: 'analyticsQuery requires an object name' });
     }
 
     async getAnalyticsMeta(args: any): Promise<any> {
         // Auto-generate analytics metadata from SchemaRegistry
         const objectName = args?.object;
         if (!objectName) {
-            throw new Error('getAnalyticsMeta requires an object name');
+            throw new ObjectQLError({ code: 'VALIDATION_ERROR', message: 'getAnalyticsMeta requires an object name' });
         }
 
         const objectConfig = this.engine.metadata?.get?.('object', objectName);
         if (!objectConfig) {
-            throw new Error(`Object '${objectName}' not found`);
+            throw new ObjectQLError({ code: 'NOT_FOUND', message: `Object '${objectName}' not found` });
         }
 
         const config = (objectConfig as any)?.content || objectConfig;
@@ -567,26 +581,26 @@ export class ObjectStackProtocolImplementation implements ObjectStackProtocol {
     // ========================================================================
 
     async listPackages(args: any): Promise<any> {
-        throw new Error('listPackages not implemented');
+        throw new ObjectQLError({ code: 'DRIVER_UNSUPPORTED_OPERATION', message: 'listPackages not implemented' });
     }
 
     async getPackage(args: any): Promise<any> {
-        throw new Error('getPackage not implemented');
+        throw new ObjectQLError({ code: 'DRIVER_UNSUPPORTED_OPERATION', message: 'getPackage not implemented' });
     }
 
     async installPackage(args: any): Promise<any> {
-        throw new Error('installPackage not implemented');
+        throw new ObjectQLError({ code: 'DRIVER_UNSUPPORTED_OPERATION', message: 'installPackage not implemented' });
     }
 
     async uninstallPackage(args: any): Promise<any> {
-        throw new Error('uninstallPackage not implemented');
+        throw new ObjectQLError({ code: 'DRIVER_UNSUPPORTED_OPERATION', message: 'uninstallPackage not implemented' });
     }
 
     async enablePackage(args: any): Promise<any> {
-        throw new Error('enablePackage not implemented');
+        throw new ObjectQLError({ code: 'DRIVER_UNSUPPORTED_OPERATION', message: 'enablePackage not implemented' });
     }
 
     async disablePackage(args: any): Promise<any> {
-        throw new Error('disablePackage not implemented');
+        throw new ObjectQLError({ code: 'DRIVER_UNSUPPORTED_OPERATION', message: 'disablePackage not implemented' });
     }
 }

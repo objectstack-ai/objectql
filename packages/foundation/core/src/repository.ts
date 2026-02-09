@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { ObjectQLContext, IObjectQL, ObjectConfig, Driver, UnifiedQuery, ActionContext, HookAPI, RetrievalHookContext, MutationHookContext, UpdateHookContext, ValidationContext, ValidationError, ValidationRuleResult, FormulaContext, Filter, QueryAST } from '@objectql/types';
+import { ObjectQLContext, IObjectQL, ObjectConfig, Driver, UnifiedQuery, ActionContext, HookAPI, RetrievalHookContext, MutationHookContext, UpdateHookContext, ValidationContext, ValidationError, ValidationRuleResult, FormulaContext, Filter, QueryAST, ObjectQLError } from '@objectql/types';
 import type { ObjectKernel } from '@objectstack/runtime';
 import { Data } from '@objectstack/spec';
 import { z } from 'zod';
@@ -41,7 +41,7 @@ export class ObjectRepository {
     getSchema(): ObjectConfig {
         const obj = this.app.getObject(this.objectName);
         if (!obj) {
-            throw new Error(`Object '${this.objectName}' not found`);
+            throw new ObjectQLError({ code: 'NOT_FOUND', message: `Object '${this.objectName}' not found` });
         }
         return obj;
     }
@@ -239,21 +239,21 @@ export class ObjectRepository {
 
     async aggregate(query: any): Promise<any> {
         const driver = this.getDriver();
-        if (!driver.aggregate) throw new Error("Driver does not support aggregate");
+        if (!driver.aggregate) throw new ObjectQLError({ code: 'DRIVER_UNSUPPORTED_OPERATION', message: "Driver does not support aggregate" });
         
         return driver.aggregate(this.objectName, query, this.getOptions());
     }
 
     async distinct(field: string, filters?: any): Promise<any[]> {
         const driver = this.getDriver();
-        if (!driver.distinct) throw new Error("Driver does not support distinct");
+        if (!driver.distinct) throw new ObjectQLError({ code: 'DRIVER_UNSUPPORTED_OPERATION', message: "Driver does not support distinct" });
         
         return driver.distinct(this.objectName, field, filters, this.getOptions());
     }
 
     async findOneAndUpdate(filters: any, update: any, options?: any): Promise<any> {
         const driver = this.getDriver();
-        if (!driver.findOneAndUpdate) throw new Error("Driver does not support findOneAndUpdate");
+        if (!driver.findOneAndUpdate) throw new ObjectQLError({ code: 'DRIVER_UNSUPPORTED_OPERATION', message: "Driver does not support findOneAndUpdate" });
         return driver.findOneAndUpdate(this.objectName, filters, update, this.getOptions(options));
     }
 

@@ -7,7 +7,7 @@
  */
 
 import type { RuntimePlugin, RuntimeContext } from '@objectql/types';
-import { ConsoleLogger } from '@objectql/types';
+import { ConsoleLogger, ObjectQLError } from '@objectql/types';
 import type { Logger } from '@objectql/types';
 import { ValidatorPlugin, ValidatorPluginConfig } from '@objectql/plugin-validator';
 import { FormulaPlugin, FormulaPluginConfig } from '@objectql/plugin-formula';
@@ -226,7 +226,7 @@ export class ObjectQLPlugin implements RuntimePlugin {
       const datasourceName = objectConfig?.datasource || 'default';
       const driver = datasources[datasourceName];
       if (!driver) {
-        throw new Error(`Datasource '${datasourceName}' not found for object '${objectName}'`);
+        throw new ObjectQLError({ code: 'NOT_FOUND', message: `Datasource '${datasourceName}' not found for object '${objectName}'` });
       }
       return driver;
     };

@@ -97,10 +97,30 @@ export const SERVICE_CRITICALITY: Readonly<Record<CoreServiceName, ServiceCritic
 export interface KernelDiscoveryResponse {
     /** Engine name */
     readonly name: string;
+    /** API name identifier for the spec discovery endpoint */
+    readonly apiName: string;
     /** Engine version */
     readonly version: string;
     /** Supported protocol transports */
     readonly protocols: readonly string[];
     /** Per-service status map */
     readonly services: Readonly<Record<CoreServiceName, ServiceStatus>>;
+    /** Optional capabilities flags */
+    readonly capabilities?: {
+        readonly search: boolean;
+        readonly files: boolean;
+        readonly graphql: boolean;
+        readonly notifications: boolean;
+        readonly analytics: boolean;
+        readonly ai: boolean;
+        readonly i18n: boolean;
+        readonly workflow: boolean;
+        readonly websockets: boolean;
+    };
+    /** Optional endpoint URLs */
+    readonly endpoints?: {
+        readonly rest?: string;
+        readonly graphql?: string;
+        readonly websocket?: string;
+    };
 }
