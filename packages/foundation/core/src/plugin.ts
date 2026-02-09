@@ -192,6 +192,12 @@ export class ObjectQLPlugin implements RuntimePlugin {
         const dataService = kernel.queryService || kernel;
         registerService('data', dataService);
         this.logger.debug('Registered data service alias');
+
+        // 3. Analytics service (via QueryService)
+        if (kernel.queryService) {
+            registerService('analytics', kernel.queryService);
+            this.logger.debug('Registered analytics service alias');
+        }
     }
 
     this.logger.info('Plugin installed successfully');

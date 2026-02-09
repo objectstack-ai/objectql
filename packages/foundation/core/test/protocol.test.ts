@@ -140,4 +140,181 @@ describe('ObjectStackProtocolImplementation', () => {
             expect(mockRepo.delete).toHaveBeenCalledWith('1');
         });
     });
+
+    describe('Discovery', () => {
+        it('getDiscovery should return per-service status map', async () => {
+            const result = await protocol.getDiscovery();
+            expect(result.name).toBe('ObjectQL Engine');
+            expect(result.version).toBe('4.0.0');
+            expect(result.protocols).toEqual(['rest', 'graphql', 'json-rpc', 'odata']);
+            expect(result.services).toBeDefined();
+
+            // Kernel-provided services should be enabled
+            expect(result.services.metadata.enabled).toBe(true);
+            expect(result.services.metadata.status).toBe('degraded');
+            expect(result.services.data.enabled).toBe(true);
+            expect(result.services.data.status).toBe('available');
+            expect(result.services.analytics.enabled).toBe(true);
+            expect(result.services.analytics.status).toBe('available');
+
+            // Plugin-required services should be disabled
+            expect(result.services.auth.enabled).toBe(false);
+            expect(result.services.auth.status).toBe('unavailable');
+            expect(result.services.ui.enabled).toBe(false);
+            expect(result.services.workflow.enabled).toBe(false);
+            expect(result.services.realtime.enabled).toBe(false);
+            expect(result.services.notification.enabled).toBe(false);
+            expect(result.services.ai.enabled).toBe(false);
+            expect(result.services.i18n.enabled).toBe(false);
+            expect(result.services.cache.enabled).toBe(false);
+            expect(result.services.queue.enabled).toBe(false);
+            expect(result.services.job.enabled).toBe(false);
+            expect(result.services.graphql.enabled).toBe(false);
+        });
+
+        it('updateServiceStatus should update a service status', async () => {
+            protocol.updateServiceStatus('auth', {
+                enabled: true,
+                status: 'available',
+                route: '/api/v1/auth',
+                provider: 'plugin-auth',
+            });
+
+            const result = await protocol.getDiscovery();
+            expect(result.services.auth.enabled).toBe(true);
+            expect(result.services.auth.status).toBe('available');
+            expect(result.services.auth.route).toBe('/api/v1/auth');
+            expect(result.services.auth.provider).toBe('plugin-auth');
+        });
+    });
+
+    describe('Batch Operations', () => {
+        it('createManyData should create multiple records', async () => {
+            const records = [{ name: 'A' }, { name: 'B' }];
+            (mockEngine as any).create
+                .mockResolvedValueOnce({ id: '1', name: 'A' })
+                .mockResolvedValueOnce({ id: '2', name: 'B' });
+
+            const result = await protocol.createManyData({ object: 'testObject', records });
+            expect(result.object).toBe('testObject');
+            expect(result.created).toHaveLength(2);
+            expect((mockEngine as any).create).toHaveBeenCalledTimes(2);
+        });
+
+        it('updateManyData should update multiple records', async () => {
+            const records = [
+                { id: '1', data: { name: 'A2' } },
+                { id: '2', data: { name: 'B2' } },
+            ];
+            (mockEngine as any).update
+                .mockResolvedValueOnce({ id: '1', name: 'A2' })
+                .mockResolvedValueOnce({ id: '2', name: 'B2' });
+
+            const result = await protocol.updateManyData({ object: 'testObject', records });
+            expect(result.object).toBe('testObject');
+            expect(result.updated).toHaveLength(2);
+            expect((mockEngine as any).update).toHaveBeenCalledTimes(2);
+        });
+
+        it('deleteManyData should delete multiple records', async () => {
+            (mockEngine as any).delete
+                .mockResolvedValueOnce(true)
+                .mockResolvedValueOnce(true);
+
+            const result = await protocol.deleteManyData({ object: 'testObject', ids: ['1', '2'] });
+            expect(result.object).toBe('testObject');
+            expect(result.deleted).toHaveLength(2);
+            expect((mockEngine as any).delete).toHaveBeenCalledTimes(2);
+        });
+
+        it('batchData should execute batch create operations', async () => {
+            (mockEngine as any).create
+                .mockResolvedValueOnce({ id: '1', name: 'New1' })
+                .mockResolvedValueOnce({ id: '2', name: 'New2' });
+
+            const result = await protocol.batchData({
+                object: 'testObject',
+                request: { operation: 'create', records: [{ name: 'New1' }, { name: 'New2' }] },
+            });
+            expect(result.operation).toBe('create');
+            expect(result.results).toHaveLength(2);
+        });
+    });
+
+    describe('Analytics', () => {
+        it('getAnalyticsMeta should return measures and dimensions', async () => {
+            (mockEngine.metadata?.get as jest.Mock).mockReturnValue({
+                name: 'invoice',
+                fields: {
+                    amount: { type: 'number', name: 'amount' },
+                    created_at: { type: 'date', name: 'created_at' },
+                    status: { type: 'text', name: 'status' },
+                },
+            });
+
+            const result = await protocol.getAnalyticsMeta({ object: 'invoice' });
+            expect(result.object).toBe('invoice');
+            expect(result.measures).toEqual(
+                expect.arrayContaining([
+                    expect.objectContaining({ name: 'amount', type: 'number' }),
+                ])
+            );
+            expect(result.dimensions).toEqual(
+                expect.arrayContaining([
+                    expect.objectContaining({ name: 'created_at', type: 'date' }),
+                    expect.objectContaining({ name: 'status', type: 'text' }),
+                ])
+            );
+        });
+    });
+
+    describe('Plugin-Required Services (stubs)', () => {
+        it('checkPermission should throw with service unavailable message', async () => {
+            await expect(protocol.checkPermission({})).rejects.toThrow(
+                /Service 'auth' is not available/
+            );
+        });
+
+        it('listViews should throw with service unavailable message', async () => {
+            await expect(protocol.listViews({})).rejects.toThrow(
+                /Service 'ui' is not available/
+            );
+        });
+
+        it('getWorkflowConfig should throw with service unavailable message', async () => {
+            await expect(protocol.getWorkflowConfig({})).rejects.toThrow(
+                /Service 'workflow' is not available/
+            );
+        });
+
+        it('triggerAutomation should throw with service unavailable message', async () => {
+            await expect(protocol.triggerAutomation({ trigger: 'test', payload: {} })).rejects.toThrow(
+                /Service 'automation' is not available/
+            );
+        });
+
+        it('realtimeConnect should throw with service unavailable message', async () => {
+            await expect(protocol.realtimeConnect({})).rejects.toThrow(
+                /Service 'realtime' is not available/
+            );
+        });
+
+        it('registerDevice should throw with service unavailable message', async () => {
+            await expect(protocol.registerDevice({})).rejects.toThrow(
+                /Service 'notification' is not available/
+            );
+        });
+
+        it('aiNlq should throw with service unavailable message', async () => {
+            await expect(protocol.aiNlq({})).rejects.toThrow(
+                /Service 'ai' is not available/
+            );
+        });
+
+        it('getLocales should throw with service unavailable message', async () => {
+            await expect(protocol.getLocales({})).rejects.toThrow(
+                /Service 'i18n' is not available/
+            );
+        });
+    });
 });

@@ -693,6 +693,85 @@ await kernel.stop();
 const plugins = kernel.getPlugins();
 ```
 
+## Kernel Services
+
+ObjectQL implements the ObjectStack protocol's **kernel services architecture**. The protocol defines **17 services** with **57 total methods** governed by the `ObjectStackProtocol` interface.
+
+### Architecture
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                     Kernel Layer                         │
+│  ┌──────────────────┐  ┌──────────────────────────────┐ │
+│  │  metadata (⚠️)   │  │  data + analytics (✅)       │ │
+│  │  In-memory only   │  │  ObjectQL example kernel     │ │
+│  │  DB persistence   │  │  Will be rebuilt as plugins  │ │
+│  │  pending          │  │                              │ │
+│  └──────────────────┘  └──────────────────────────────┘ │
+├─────────────────────────────────────────────────────────┤
+│                    Plugin Layer                           │
+│  All other services: auth, automation, workflow, ui,     │
+│  realtime, notification, ai, i18n, graphql, search,     │
+│  file-storage, cache, queue, job                         │
+│                                                          │
+│  Discovery API reports: enabled/unavailable/degraded     │
+│  per service so clients adapt their UI accordingly       │
+└─────────────────────────────────────────────────────────┘
+```
+
+### Service Status
+
+The `getDiscovery()` method returns a per-service status map so clients know what is available:
+
+```typescript
+const protocol = new ObjectStackProtocolImplementation(engine);
+const discovery = await protocol.getDiscovery();
+
+// discovery.services.metadata → { enabled: true, status: 'degraded', ... }
+// discovery.services.data     → { enabled: true, status: 'available', ... }
+// discovery.services.auth     → { enabled: false, status: 'unavailable', ... }
+```
+
+### Implemented Services (Kernel-Provided)
+
+| Service | Methods | Status |
+|:--------|:--------|:-------|
+| **metadata** | 7 (getDiscovery, getMetaTypes, getMetaItems, getMetaItem, saveMetaItem, getMetaItemCached, getUiView) | ⚠️ Framework (in-memory) |
+| **data** | 9 (findData, getData, createData, updateData, deleteData, batchData, createManyData, updateManyData, deleteManyData) | ✅ Implemented |
+| **analytics** | 2 (analyticsQuery, getAnalyticsMeta) | ✅ Implemented |
+
+### Plugin-Required Services
+
+| Service | Methods | Criticality |
+|:--------|:--------|:------------|
+| **auth** | 3 (checkPermission, getObjectPermissions, getEffectivePermissions) | required |
+| **ui** | 5 (listViews, getView, createView, updateView, deleteView) | optional |
+| **workflow** | 5 (getWorkflowConfig, getWorkflowState, workflowTransition, workflowApprove, workflowReject) | optional |
+| **automation** | 1 (triggerAutomation) | optional |
+| **realtime** | 6 (connect, disconnect, subscribe, unsubscribe, setPresence, getPresence) | optional |
+| **notification** | 7 (registerDevice, unregisterDevice, getNotificationPreferences, updateNotificationPreferences, listNotifications, markNotificationsRead, markAllNotificationsRead) | optional |
+| **ai** | 4 (aiNlq, aiChat, aiSuggest, aiInsights) | optional |
+| **i18n** | 3 (getLocales, getTranslations, getFieldLabels) | optional |
+| **cache** | — | core |
+| **queue** | — | core |
+| **job** | — | core |
+
+### Plugin Registration
+
+When a plugin registers a service, the discovery endpoint automatically updates:
+
+```typescript
+// In a plugin's install() method:
+protocol.updateServiceStatus('auth', {
+    enabled: true,
+    status: 'available',
+    route: '/api/v1/auth',
+    provider: 'plugin-auth',
+});
+```
+
+For the complete kernel services specification, see: [protocol.objectstack.ai/docs/guides/kernel-services](https://protocol.objectstack.ai/docs/guides/kernel-services)
+
 ## Shared Metadata
 
 Share `MetadataRegistry` between multiple ObjectQL instances:
