@@ -10,7 +10,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import chalk from 'chalk';
 import * as yaml from 'js-yaml';
-import { IntrospectedSchema, IntrospectedTable, IntrospectedColumn, ObjectConfig, IObjectQL, FieldConfig, FieldType } from '@objectql/types';
+import { IntrospectedSchema, IntrospectedTable, IntrospectedColumn, ObjectConfig, IObjectQL, FieldConfig, FieldType, ObjectQLError } from '@objectql/types';
 import { resolveConfigFile } from '../utils/config-loader';
 
 interface SyncOptions {
@@ -45,7 +45,7 @@ export async function syncDatabase(options: SyncOptions) {
         if (!driver || !driver.introspectSchema) {
             const errorMsg = 'The configured driver does not support schema introspection. Only SQL drivers (PostgreSQL, MySQL, SQLite) support this feature.';
             console.error(chalk.red(`❌ ${errorMsg}`));
-            throw new Error(errorMsg);
+            throw new ObjectQLError({ code: 'DRIVER_UNSUPPORTED_OPERATION', message: errorMsg });
         }
 
         // Introspect database schema
@@ -291,7 +291,7 @@ async function loadObjectQLInstance(configPath?: string): Promise<IObjectQL> {
                 }
             });
         } catch (err) {
-            throw new Error('TypeScript config file detected but ts-node is not installed. Please run: npm install --save-dev ts-node');
+            throw new ObjectQLError({ code: 'CONFIG_ERROR', message: 'TypeScript config file detected but ts-node is not installed. Please run: npm install --save-dev ts-node' });
         }
     }
 
@@ -309,7 +309,7 @@ async function loadObjectQLInstance(configPath?: string): Promise<IObjectQL> {
     const app = configModule.default || configModule.app || configModule.objectql || configModule.db;
 
     if (!app) {
-        throw new Error('Config file must export an ObjectQL instance as default export or named export (app/objectql/db)');
+        throw new ObjectQLError({ code: 'CONFIG_ERROR', message: 'Config file must export an ObjectQL instance as default export or named export (app/objectql/db)' });
     }
 
     // Initialize app (but don't sync schema - we're reading it)

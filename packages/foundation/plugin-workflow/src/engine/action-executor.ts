@@ -13,6 +13,7 @@
  * Actions are side effects that occur during state transitions.
  */
 
+import { ObjectQLError } from '@objectql/types';
 import type { ExecutionContext, ActionResult } from '../types';
 
 /**
@@ -167,7 +168,7 @@ export class ActionExecutor {
   private executeFieldUpdate(expr: string, record: Record<string, any>): void {
     const equalIndex = expr.indexOf('=');
     if (equalIndex === -1) {
-      throw new Error(`Invalid field update expression: ${expr}`);
+      throw new ObjectQLError({ code: 'WORKFLOW_TRANSITION_DENIED', message: `Invalid field update expression: ${expr}` });
     }
 
     const fieldName = expr.substring(0, equalIndex).trim();

@@ -6,6 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import { ObjectQLError } from '@objectql/types';
 import type { PermissionConfig, RecordRuleCondition } from '@objectql/types';
 import type { SecurityContext } from './types';
 import { PermissionLoader } from './permission-loader';
@@ -279,7 +280,7 @@ export class QueryTrimmer {
     }
     
     // Unable to convert formula to filter
-    throw new Error(`Unsupported formula pattern: ${formula}`);
+    throw new ObjectQLError({ code: 'INTERNAL_ERROR', message: `Unsupported formula pattern: ${formula}` });
   }
   
   /**
@@ -353,7 +354,7 @@ export class QueryTrimmer {
     const nestedFilter = this.conditionToFilter(nestedCondition, user);
     
     if (Object.keys(nestedFilter).length === 0) {
-      throw new Error('Unable to convert nested lookup condition');
+      throw new ObjectQLError({ code: 'INTERNAL_ERROR', message: 'Unable to convert nested lookup condition' });
     }
     
     // Create a lookup filter

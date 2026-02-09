@@ -7,6 +7,7 @@
  */
 
 import { Kernel } from '@objectstack/spec';
+import { ObjectQLError } from '@objectql/types';
 type PluginDefinition = Kernel.PluginDefinition;
 
 export function loadPlugin(packageName: string): PluginDefinition {
@@ -15,7 +16,7 @@ export function loadPlugin(packageName: string): PluginDefinition {
         const modulePath = require.resolve(packageName, { paths: [process.cwd()] });
         mod = require(modulePath);
     } catch (e) {
-        throw new Error(`Failed to resolve plugin '${packageName}': ${e}`);
+        throw new ObjectQLError({ code: 'CONFIG_ERROR', message: `Failed to resolve plugin '${packageName}': ${e}` });
     }
 
     // Helper to check if candidate is a PluginDefinition
@@ -74,6 +75,6 @@ export function loadPlugin(packageName: string): PluginDefinition {
         return instance;
     } else {
         console.error(`[PluginLoader] Failed to find plugin in '${packageName}'. Exports:`, Object.keys(mod));
-        throw new Error(`Plugin '${packageName}' must export a PluginDefinition with lifecycle hooks (onEnable, onDisable, etc.).`);
+        throw new ObjectQLError({ code: 'CONFIG_ERROR', message: `Plugin '${packageName}' must export a PluginDefinition with lifecycle hooks (onEnable, onDisable, etc.).` });
     }
 }

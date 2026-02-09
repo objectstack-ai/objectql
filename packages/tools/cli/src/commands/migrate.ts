@@ -9,6 +9,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import chalk from 'chalk';
+import { ObjectQLError } from '@objectql/types';
 import { resolveConfigFile } from '../utils/config-loader';
 
 interface MigrateOptions {
@@ -274,7 +275,7 @@ async function loadObjectQLInstance(configPath?: string): Promise<any> {
     const app = configModule.default || configModule.app || configModule.objectql || configModule.db;
 
     if (!app) {
-        throw new Error('Config file must export an ObjectQL instance');
+        throw new ObjectQLError({ code: 'CONFIG_ERROR', message: 'Config file must export an ObjectQL instance' });
     }
 
     await app.init();
