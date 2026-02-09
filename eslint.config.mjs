@@ -15,10 +15,10 @@ export default tseslint.config(
           "@typescript-eslint/no-empty-object-type": "off",
           "no-case-declarations": "off",
           "no-useless-escape": "off",
-          "prefer-const": "off",
-          "no-empty": "off",
+          "prefer-const": "error",
+          "no-empty": "warn",
           "no-undef": "off",
-          "no-useless-catch": "off",
+          "no-useless-catch": "error",
           "@typescript-eslint/no-this-alias": "off",
           "@typescript-eslint/no-unsafe-function-type": "off"
       }

@@ -286,12 +286,7 @@ export class ObjectQL implements IObjectQL {
                       return callback(ctx);
                  }
 
-                 let trx: any;
-                 try {
-                     trx = await driver.beginTransaction();
-                 } catch (e) {
-                     throw e;
-                 }
+                 const trx: any = await driver.beginTransaction();
 
                  const trxCtx: ObjectQLContext = {
                      ...ctx,

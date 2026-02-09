@@ -1115,7 +1115,7 @@ export class GraphQLPlugin implements RuntimePlugin {
                 }
                 
                 // Handle cursor-based pagination
-                let limit = args.first || args.last || 20;
+                const limit = args.first || args.last || 20;
                 let offset = 0;
                 
                 if (args.after) {

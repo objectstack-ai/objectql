@@ -49,7 +49,7 @@ export async function loadModules(loader: ObjectLoader, modules: string[]) {
                             packageRoot = currentDir;
                             break;
                         }
-                    } catch (e) {}
+                    } catch (_e) { /* package.json parse error — skip directory */ }
                 }
                 currentDir = path.dirname(currentDir);
             }

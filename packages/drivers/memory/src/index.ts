@@ -345,7 +345,7 @@ export class MemoryDriver implements Driver {
         }
         
         // Get all records for this object type
-        let records: any[] = [];
+        const records: any[] = [];
         for (const [key, value] of this.store.entries()) {
             if (key.startsWith(pattern)) {
                 records.push(value);
@@ -422,7 +422,7 @@ export class MemoryDriver implements Driver {
         const pattern = `${objectName}:`;
         
         // Get all records for this object type
-        let records: any[] = [];
+        const records: any[] = [];
         const recordKeys = new Map<string, string>();
         
         for (const [key, record] of this.store.entries()) {
@@ -468,7 +468,7 @@ export class MemoryDriver implements Driver {
         const pattern = `${objectName}:`;
         
         // Get all records for this object type
-        let records: any[] = [];
+        const records: any[] = [];
         const recordKeys = new Map<string, string>();
         
         for (const [key, record] of this.store.entries()) {
@@ -554,7 +554,7 @@ export class MemoryDriver implements Driver {
         const pattern = `${objectName}:`;
         
         // Get all records for this object type
-        let records: any[] = [];
+        const records: any[] = [];
         for (const [key, value] of this.store.entries()) {
             if (key.startsWith(pattern)) {
                 records.push({ ...value });

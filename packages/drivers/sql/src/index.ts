@@ -139,9 +139,9 @@ export class SqlDriver implements Driver {
                      const field = this.mapSortField(fieldRaw);
                      // Handle specific operators that map to different knex methods
                      const apply = (b: any) => {
-                         let method = nextJoin === 'or' ? 'orWhere' : 'where';
-                         let methodIn = nextJoin === 'or' ? 'orWhereIn' : 'whereIn';
-                         let methodNotIn = nextJoin === 'or' ? 'orWhereNotIn' : 'whereNotIn';
+                         const method = nextJoin === 'or' ? 'orWhere' : 'where';
+                         const methodIn = nextJoin === 'or' ? 'orWhereIn' : 'whereIn';
+                         const methodNotIn = nextJoin === 'or' ? 'orWhereNotIn' : 'whereNotIn';
                          
                          // Fix for 'contains' mapping
                          if (op === 'contains') {
@@ -857,7 +857,7 @@ export class SqlDriver implements Driver {
         const config = this.config;
         const connection = config.connection;
         let dbName = '';
-        let adminConfig = { ...config };
+        const adminConfig = { ...config };
 
         if (typeof connection === 'string') {
             const url = new URL(connection);
@@ -872,8 +872,6 @@ export class SqlDriver implements Driver {
         const adminKnex = knex(adminConfig);
         try {
             await adminKnex.raw(`CREATE DATABASE "${dbName}"`);
-        } catch (e: any) {
-             throw e;
         } finally {
             await adminKnex.destroy();
         }

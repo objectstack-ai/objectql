@@ -1175,8 +1175,8 @@ export class RedisDriver implements Driver {
             return true;
         }
         
-        let conditions: boolean[] = [];
-        let operators: string[] = [];
+        const conditions: boolean[] = [];
+        const operators: string[] = [];
         
         for (const item of filters) {
             if (typeof item === 'string') {
