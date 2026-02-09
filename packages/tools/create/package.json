@@ -11,7 +11,8 @@
   ],
   "scripts": {
     "build": "tsc && node scripts/copy-templates.js",
-    "copy-templates": "node scripts/copy-templates.js"
+    "copy-templates": "node scripts/copy-templates.js",
+    "test": "vitest run"
   },
   "dependencies": {
     "chalk": "^4.1.2",
