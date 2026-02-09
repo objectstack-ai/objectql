@@ -10,7 +10,7 @@ type DriverInterface = z.infer<typeof Data.DriverInterface>;
  * LICENSE file in the root directory of this source tree.
  */
 
-import { Driver } from '@objectql/types';
+import { Driver, ObjectQLError } from '@objectql/types';
 import { MongoClient, Db, Filter, ObjectId, FindOptions, FindOneAndUpdateOptions, UpdateFilter, ChangeStream, ChangeStreamDocument } from 'mongodb';
 
 /**
@@ -126,7 +126,7 @@ export class MongoDriver implements Driver {
 
     private async getCollection(objectName: string) {
         await this.connected;
-        if (!this.db) throw new Error("Database not initialized");
+        if (!this.db) throw new ObjectQLError({ code: 'DRIVER_CONNECTION_FAILED', message: 'Database not initialized' });
         return this.db.collection<any>(objectName);
     }
 
@@ -651,7 +651,7 @@ export class MongoDriver implements Driver {
      */
     async commitTransaction(transaction: any): Promise<void> {
         if (!transaction || typeof transaction.commitTransaction !== 'function') {
-            throw new Error('Invalid transaction object. Must be a MongoDB ClientSession.');
+            throw new ObjectQLError({ code: 'DRIVER_TRANSACTION_FAILED', message: 'Invalid transaction object. Must be a MongoDB ClientSession.' });
         }
         
         try {
@@ -677,7 +677,7 @@ export class MongoDriver implements Driver {
      */
     async rollbackTransaction(transaction: any): Promise<void> {
         if (!transaction || typeof transaction.abortTransaction !== 'function') {
-            throw new Error('Invalid transaction object. Must be a MongoDB ClientSession.');
+            throw new ObjectQLError({ code: 'DRIVER_TRANSACTION_FAILED', message: 'Invalid transaction object. Must be a MongoDB ClientSession.' });
         }
         
         try {
@@ -824,7 +824,7 @@ export class MongoDriver implements Driver {
             switch (command.type) {
                 case 'create':
                     if (!command.data) {
-                        throw new Error('Create command requires data');
+                        throw new ObjectQLError({ code: 'DRIVER_QUERY_FAILED', message: 'Create command requires data' });
                     }
                     const created = await this.create(command.object, command.data, cmdOptions);
                     return {
@@ -835,7 +835,7 @@ export class MongoDriver implements Driver {
                 
                 case 'update':
                     if (!command.id || !command.data) {
-                        throw new Error('Update command requires id and data');
+                        throw new ObjectQLError({ code: 'DRIVER_QUERY_FAILED', message: 'Update command requires id and data' });
                     }
                     const updated = await this.update(command.object, command.id, command.data, cmdOptions);
                     return {
@@ -846,7 +846,7 @@ export class MongoDriver implements Driver {
                 
                 case 'delete':
                     if (!command.id) {
-                        throw new Error('Delete command requires id');
+                        throw new ObjectQLError({ code: 'DRIVER_QUERY_FAILED', message: 'Delete command requires id' });
                     }
                     const deleteCount = await this.delete(command.object, command.id, cmdOptions);
                     return {
@@ -856,7 +856,7 @@ export class MongoDriver implements Driver {
                 
                 case 'bulkCreate':
                     if (!command.records || !Array.isArray(command.records)) {
-                        throw new Error('BulkCreate command requires records array');
+                        throw new ObjectQLError({ code: 'DRIVER_QUERY_FAILED', message: 'BulkCreate command requires records array' });
                     }
                     const bulkCreated = await this.createMany(command.object, command.records, cmdOptions);
                     return {
@@ -867,7 +867,7 @@ export class MongoDriver implements Driver {
                 
                 case 'bulkUpdate':
                     if (!command.updates || !Array.isArray(command.updates)) {
-                        throw new Error('BulkUpdate command requires updates array');
+                        throw new ObjectQLError({ code: 'DRIVER_QUERY_FAILED', message: 'BulkUpdate command requires updates array' });
                     }
                     let updateCount = 0;
                     const updateResults = [];
@@ -884,7 +884,7 @@ export class MongoDriver implements Driver {
                 
                 case 'bulkDelete':
                     if (!command.ids || !Array.isArray(command.ids)) {
-                        throw new Error('BulkDelete command requires ids array');
+                        throw new ObjectQLError({ code: 'DRIVER_QUERY_FAILED', message: 'BulkDelete command requires ids array' });
                     }
                     let deleted = 0;
                     for (const id of command.ids) {
@@ -898,7 +898,7 @@ export class MongoDriver implements Driver {
                 
                 default:
                     const validTypes = ['create', 'update', 'delete', 'bulkCreate', 'bulkUpdate', 'bulkDelete'];
-                    throw new Error(`Unknown command type: ${(command as any).type}. Valid types are: ${validTypes.join(', ')}`);
+                    throw new ObjectQLError({ code: 'DRIVER_UNSUPPORTED_OPERATION', message: `Unknown command type: ${(command as any).type}. Valid types are: ${validTypes.join(', ')}` });
             }
         } catch (error: any) {
             return {
@@ -934,11 +934,12 @@ export class MongoDriver implements Driver {
         // MongoDB driver doesn't support raw command execution in the traditional SQL sense
         // Use executeCommand() instead for mutations (create/update/delete)
         // Example: await driver.executeCommand({ type: 'create', object: 'users', data: {...} })
-        throw new Error(
-            'MongoDB driver does not support raw command execution. ' +
-            'Use executeCommand() for mutations or aggregate() for complex queries. ' +
-            'Example: driver.executeCommand({ type: "create", object: "users", data: {...} })'
-        );
+        throw new ObjectQLError({
+            code: 'DRIVER_UNSUPPORTED_OPERATION',
+            message: 'MongoDB driver does not support raw command execution. ' +
+                'Use executeCommand() for mutations or aggregate() for complex queries. ' +
+                'Example: driver.executeCommand({ type: "create", object: "users", data: {...} })'
+        });
     }
 }
 
