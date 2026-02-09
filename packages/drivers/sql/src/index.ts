@@ -741,7 +741,6 @@ export class SqlDriver implements Driver {
                  
                  // Check for _id vs id conflict (Legacy _id from mongo-style init)
                  if (existingColumns.includes('_id') && !existingColumns.includes('id')) {
-                     console.log(`[SqlDriver] Detected legacy '_id' in '${tableName}'. Recreating table for 'id' compatibility...`);
                      await this.knex.schema.dropTable(tableName);
                      exists = false;
                  }
@@ -759,7 +758,6 @@ export class SqlDriver implements Driver {
                         }
                     }
                 });
-                console.log(`[SqlDriver] Created table '${tableName}'`);
                 // Track that this table has timestamp columns
                 this.tablesWithTimestamps.add(tableName);
             } else {
@@ -776,7 +774,6 @@ export class SqlDriver implements Driver {
                          for (const [name, field] of Object.entries(obj.fields)) {
                              if (!existingColumns.includes(name)) {
                                  this.createColumn(table, name, field);
-                                 console.log(`[SqlDriver] Added column '${name}' to '${tableName}'`);
                              }
                          }
                      }
@@ -872,18 +869,10 @@ export class SqlDriver implements Driver {
             adminConfig.connection = { ...connection, database: 'postgres' };
         }
 
-        console.log(`[SqlDriver] Database '${dbName}' does not exist. Creating...`);
-
         const adminKnex = knex(adminConfig);
         try {
             await adminKnex.raw(`CREATE DATABASE "${dbName}"`);
-            console.log(`[SqlDriver] Database '${dbName}' created successfully.`);
         } catch (e: any) {
-             console.error(`[SqlDriver] Failed to create database '${dbName}':`, e.message);
-             if (e.code === '42501') {
-                 console.error(`[SqlDriver] Hint: The user '${adminConfig.connection.user || 'current user'}' does not have CREATEDB privileges.`);
-                 console.error(`[SqlDriver] Please run: createdb ${dbName}`);
-             }
              throw e;
         } finally {
             await adminKnex.destroy();
@@ -1130,7 +1119,7 @@ export class SqlDriver implements Driver {
                 }
             }
         } catch (error) {
-            console.warn('Could not introspect foreign keys for requested table:', error);
+            // Error silently ignored
         }
         
         return foreignKeys;
@@ -1177,7 +1166,6 @@ export class SqlDriver implements Driver {
                 const tableNames = Array.isArray(tablesResult) ? tablesResult.map((row: any) => row.name) : [];
                 
                 if (!tableNames.includes(safeTableName)) {
-                    console.warn('Could not introspect primary keys: table name contains invalid characters or table does not exist.');
                     return primaryKeys;
                 }
                 
@@ -1190,7 +1178,7 @@ export class SqlDriver implements Driver {
                 }
             }
         } catch (error) {
-            console.warn('Could not introspect primary keys for a table:', error);
+            // Error silently ignored
         }
         
         return primaryKeys;
@@ -1256,7 +1244,7 @@ export class SqlDriver implements Driver {
                 }
             }
         } catch (error) {
-            console.warn('Could not introspect unique constraints for a table:', error);
+            // Error silently ignored
         }
         
         return uniqueColumns;
