@@ -10,7 +10,7 @@ type DriverInterface = z.infer<typeof Data.DriverInterface>;
  * LICENSE file in the root directory of this source tree.
  */
 
-import { Driver, IntrospectedSchema, IntrospectedTable, IntrospectedColumn, IntrospectedForeignKey } from '@objectql/types';
+import { Driver, IntrospectedSchema, IntrospectedTable, IntrospectedColumn, IntrospectedForeignKey, ObjectQLError } from '@objectql/types';
 import knex, { Knex } from 'knex';
 import { nanoid } from 'nanoid';
 
@@ -475,7 +475,7 @@ export class SqlDriver implements Driver {
             case 'avg': return 'avg';
             case 'min': return 'min';
             case 'max': return 'max';
-            default: throw new Error(`Unsupported aggregate function: ${func}`);
+            default: throw new ObjectQLError({ code: 'DRIVER_UNSUPPORTED_OPERATION', message: `Unsupported aggregate function: ${func}` });
         }
     }
 
@@ -1305,7 +1305,7 @@ export class SqlDriver implements Driver {
             switch (command.type) {
                 case 'create':
                     if (!command.data) {
-                        throw new Error('Create command requires data');
+                        throw new ObjectQLError({ code: 'DRIVER_QUERY_FAILED', message: 'Create command requires data' });
                     }
                     const created = await this.create(command.object, command.data, cmdOptions);
                     return {
@@ -1316,7 +1316,7 @@ export class SqlDriver implements Driver {
                 
                 case 'update':
                     if (!command.id || !command.data) {
-                        throw new Error('Update command requires id and data');
+                        throw new ObjectQLError({ code: 'DRIVER_QUERY_FAILED', message: 'Update command requires id and data' });
                     }
                     const updated = await this.update(command.object, command.id, command.data, cmdOptions);
                     return {
@@ -1327,7 +1327,7 @@ export class SqlDriver implements Driver {
                 
                 case 'delete':
                     if (!command.id) {
-                        throw new Error('Delete command requires id');
+                        throw new ObjectQLError({ code: 'DRIVER_QUERY_FAILED', message: 'Delete command requires id' });
                     }
                     await this.delete(command.object, command.id, cmdOptions);
                     return {
@@ -1337,7 +1337,7 @@ export class SqlDriver implements Driver {
                 
                 case 'bulkCreate':
                     if (!command.records || !Array.isArray(command.records)) {
-                        throw new Error('BulkCreate command requires records array');
+                        throw new ObjectQLError({ code: 'DRIVER_QUERY_FAILED', message: 'BulkCreate command requires records array' });
                     }
                     // Bulk insert using Knex
                     const builder = this.getBuilder(command.object, cmdOptions);
@@ -1351,7 +1351,7 @@ export class SqlDriver implements Driver {
                 
                 case 'bulkUpdate':
                     if (!command.updates || !Array.isArray(command.updates)) {
-                        throw new Error('BulkUpdate command requires updates array');
+                        throw new ObjectQLError({ code: 'DRIVER_QUERY_FAILED', message: 'BulkUpdate command requires updates array' });
                     }
                     // Execute updates sequentially (Knex doesn't support batch update well)
                     const updateResults = [];
@@ -1367,7 +1367,7 @@ export class SqlDriver implements Driver {
                 
                 case 'bulkDelete':
                     if (!command.ids || !Array.isArray(command.ids)) {
-                        throw new Error('BulkDelete command requires ids array');
+                        throw new ObjectQLError({ code: 'DRIVER_QUERY_FAILED', message: 'BulkDelete command requires ids array' });
                     }
                     // Bulk delete using whereIn
                     const deleteBuilder = this.getBuilder(command.object, cmdOptions);
@@ -1378,7 +1378,7 @@ export class SqlDriver implements Driver {
                     };
                 
                 default:
-                    throw new Error(`Unknown command type: ${(command as any).type}`);
+                    throw new ObjectQLError({ code: 'DRIVER_UNSUPPORTED_OPERATION', message: `Unknown command type: ${(command as any).type}` });
             }
         } catch (error: any) {
             return {
