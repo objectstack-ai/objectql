@@ -284,6 +284,7 @@ export class ObjectStackProtocolImplementation implements ObjectStackProtocol {
     async batchData(args: { object: string; request: { operation: 'create' | 'update' | 'delete' | 'upsert'; records: any[] } }): Promise<any> {
         const { object, request } = args;
         const { operation, records } = request;
+        // Sequential execution to preserve ordering and avoid connection pool exhaustion
         const results: any[] = [];
 
         for (const record of records) {
@@ -297,6 +298,15 @@ export class ObjectStackProtocolImplementation implements ObjectStackProtocol {
                 case 'delete':
                     results.push(await this.deleteData({ object, id: record.id || record }));
                     break;
+                case 'upsert': {
+                    // Try update first; if entity not found, create
+                    try {
+                        results.push(await this.updateData({ object, id: record.id, data: record }));
+                    } catch {
+                        results.push(await this.createData({ object, data: record }));
+                    }
+                    break;
+                }
                 default:
                     throw new Error(`Unsupported batch operation: ${operation}`);
             }
