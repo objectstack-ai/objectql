@@ -7,6 +7,7 @@
  */
 
 import { Knex } from 'knex';
+import { ObjectQLError } from '@objectql/types';
 
 /**
  * Custom Knex client adapter for wa-sqlite
@@ -135,7 +136,7 @@ export class KnexWaSqliteClient {
     }
 
     _stream(connection: any, obj: any, stream: any, options: any): any {
-        throw new Error('Streaming is not supported in wa-sqlite adapter');
+        throw new ObjectQLError({ code: 'DRIVER_UNSUPPORTED_OPERATION', message: 'Streaming is not supported in wa-sqlite adapter' });
     }
 
     canCancelQuery = false;

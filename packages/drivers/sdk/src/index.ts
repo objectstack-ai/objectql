@@ -336,7 +336,7 @@ export class RemoteDriver implements Driver {
         try {
             await this.checkHealth();
         } catch (error) {
-            throw new Error(`Failed to connect to remote server: ${(error as Error).message}`);
+            throw new ObjectQLError({ code: 'DRIVER_CONNECTION_FAILED', message: `Failed to connect to remote server: ${(error as Error).message}` });
         }
     }
 
@@ -617,7 +617,7 @@ export class RemoteDriver implements Driver {
         const json = await res.json();
         
         if (json.error) {
-            throw new Error(json.error.message);
+            throw new ObjectQLError({ code: 'DRIVER_QUERY_FAILED', message: json.error.message });
         }
         
         return json.data;

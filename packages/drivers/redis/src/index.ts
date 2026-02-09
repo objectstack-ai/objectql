@@ -39,7 +39,7 @@ type DriverInterface = z.infer<typeof Data.DriverInterface>;
  * @version 4.1.0 - Production-ready with distinct() and aggregate()
  */
 
-import { Driver } from '@objectql/types';
+import { Driver, ObjectQLError } from '@objectql/types';
 import { createClient, RedisClientType } from 'redis';
 
 /**
@@ -264,7 +264,7 @@ export class RedisDriver implements Driver {
             }
         }
         
-        throw new Error(`[RedisDriver] Failed to connect after ${maxAttempts} attempts: ${lastError?.message}`);
+        throw new ObjectQLError({ code: 'DRIVER_CONNECTION_FAILED', message: `[RedisDriver] Failed to connect after ${maxAttempts} attempts: ${lastError?.message}` });
     }
 
     /**
@@ -399,7 +399,7 @@ export class RedisDriver implements Driver {
         const result = await this.client.set(key, JSON.stringify(doc), { NX: true });
         
         if (!result) {
-            throw new Error(`Record with ID ${id} already exists in ${objectName}`);
+            throw new ObjectQLError({ code: 'DRIVER_QUERY_FAILED', message: `Record with ID ${id} already exists in ${objectName}` });
         }
         
         return doc;
@@ -415,7 +415,7 @@ export class RedisDriver implements Driver {
         const existing = await this.client.get(key);
         
         if (!existing) {
-            throw new Error(`Record not found: ${objectName}:${id}`);
+            throw new ObjectQLError({ code: 'NOT_FOUND', message: `Record not found: ${objectName}:${id}` });
         }
         
         const existingDoc = JSON.parse(existing);
@@ -806,7 +806,7 @@ export class RedisDriver implements Driver {
             switch (command.type) {
                 case 'create':
                     if (!command.data) {
-                        throw new Error('Create command requires data');
+                        throw new ObjectQLError({ code: 'DRIVER_QUERY_FAILED', message: 'Create command requires data' });
                     }
                     const created = await this.create(command.object, command.data, cmdOptions);
                     return {
@@ -817,7 +817,7 @@ export class RedisDriver implements Driver {
                 
                 case 'update':
                     if (!command.id || !command.data) {
-                        throw new Error('Update command requires id and data');
+                        throw new ObjectQLError({ code: 'DRIVER_QUERY_FAILED', message: 'Update command requires id and data' });
                     }
                     const updated = await this.update(command.object, command.id, command.data, cmdOptions);
                     return {
@@ -828,7 +828,7 @@ export class RedisDriver implements Driver {
                 
                 case 'delete':
                     if (!command.id) {
-                        throw new Error('Delete command requires id');
+                        throw new ObjectQLError({ code: 'DRIVER_QUERY_FAILED', message: 'Delete command requires id' });
                     }
                     await this.delete(command.object, command.id, cmdOptions);
                     return {
@@ -838,7 +838,7 @@ export class RedisDriver implements Driver {
                 
                 case 'bulkCreate':
                     if (!command.records || !Array.isArray(command.records)) {
-                        throw new Error('BulkCreate command requires records array');
+                        throw new ObjectQLError({ code: 'DRIVER_QUERY_FAILED', message: 'BulkCreate command requires records array' });
                     }
                     // Use Redis PIPELINE for batch operations
                     const pipeline = this.client.multi();
@@ -868,7 +868,7 @@ export class RedisDriver implements Driver {
                 
                 case 'bulkUpdate':
                     if (!command.updates || !Array.isArray(command.updates)) {
-                        throw new Error('BulkUpdate command requires updates array');
+                        throw new ObjectQLError({ code: 'DRIVER_QUERY_FAILED', message: 'BulkUpdate command requires updates array' });
                     }
                     
                     // First, batch GET all existing records using PIPELINE
@@ -917,7 +917,7 @@ export class RedisDriver implements Driver {
                 
                 case 'bulkDelete':
                     if (!command.ids || !Array.isArray(command.ids)) {
-                        throw new Error('BulkDelete command requires ids array');
+                        throw new ObjectQLError({ code: 'DRIVER_QUERY_FAILED', message: 'BulkDelete command requires ids array' });
                     }
                     // Use Redis PIPELINE for batch operations
                     const deletePipeline = this.client.multi();
@@ -938,7 +938,7 @@ export class RedisDriver implements Driver {
                     };
                 
                 default:
-                    throw new Error(`Unknown command type: ${(command as any).type}`);
+                    throw new ObjectQLError({ code: 'DRIVER_UNSUPPORTED_OPERATION', message: `Unknown command type: ${(command as any).type}` });
             }
         } catch (error: any) {
             return {
