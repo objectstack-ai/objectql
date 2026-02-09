@@ -57,7 +57,7 @@ export class PgWasmDriver implements Driver {
         bulkDelete: true,
         transactions: true,
         savepoints: true,
-        isolationLevels: ['read-uncommitted', 'read-committed', 'repeatable-read', 'serializable'],
+        isolationLevels: ['read_uncommitted', 'read_committed', 'repeatable_read', 'serializable'],
         queryFilters: true,
         queryAggregations: true,
         querySorting: true,
@@ -76,9 +76,7 @@ export class PgWasmDriver implements Driver {
         indexes: true,
         connectionPooling: false,
         preparedStatements: true,
-        queryCache: false,
-        mutationLog: true,
-        changeTracking: true
+        queryCache: false
     };
 
     private config: Required<PgWasmDriverConfig>;

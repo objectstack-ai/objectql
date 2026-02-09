@@ -68,8 +68,10 @@ export interface IntrospectedSchema {
 
 /**
  * Transaction isolation levels supported by the driver.
+ * 
+ * Aligned with @objectstack/spec DriverCapabilitiesSchema — uses snake_case per protocol convention.
  */
-export type IsolationLevel = 'read-uncommitted' | 'read-committed' | 'repeatable-read' | 'serializable';
+export type IsolationLevel = 'read_uncommitted' | 'read_committed' | 'repeatable_read' | 'serializable' | 'snapshot';
 
 /**
  * Driver Capabilities
@@ -131,8 +133,18 @@ export interface DriverCapabilities {
     readonly connectionPooling?: boolean;
     readonly preparedStatements?: boolean;
     readonly queryCache?: boolean;
+}
 
-    // Sync support (Q3 — Offline-First Sync Protocol)
+/**
+ * Runtime Driver Capabilities (extends spec with sync-specific properties)
+ * 
+ * These properties are NOT part of the @objectstack/spec DriverCapabilitiesSchema
+ * (which sets additionalProperties: false). They are runtime-only extensions
+ * used by the Offline-First Sync Protocol (Q3).
+ * 
+ * Use this interface for drivers that need sync capabilities.
+ */
+export interface RuntimeDriverCapabilities extends DriverCapabilities {
     /** Driver can record mutations to an append-only log for offline sync */
     readonly mutationLog?: boolean;
     /** Driver supports checkpoint-based change tracking */
@@ -190,8 +202,14 @@ export interface Driver {
     
     // Transaction support
     beginTransaction?(): Promise<any>;
+    /** @deprecated Use `commit` — aligned with @objectstack/spec DriverInterfaceSchema */
     commitTransaction?(transaction: any): Promise<void>;
+    /** @deprecated Use `rollback` — aligned with @objectstack/spec DriverInterfaceSchema */
     rollbackTransaction?(transaction: any): Promise<void>;
+    /** Commit a transaction (spec-aligned name) */
+    commit?(transaction: any): Promise<void>;
+    /** Rollback a transaction (spec-aligned name) */
+    rollback?(transaction: any): Promise<void>;
     
     // Schema / Lifecycle
     init?(objects: any[]): Promise<void>;
@@ -229,5 +247,65 @@ export interface Driver {
      */
     directQuery?(sql: string, params?: any[]): Promise<any[]>;
     query?(sql: string, params?: any[]): Promise<any[]>;
+
+    // ========================================================================
+    // Methods from @objectstack/spec DriverInterfaceSchema
+    // ========================================================================
+
+    /**
+     * Upsert (create or update) a record.
+     * If the record exists (matched by ID or unique key), update it; otherwise, create it.
+     * 
+     * @param objectName - The object name.
+     * @param data - Key-value map of field data (must include ID or unique key).
+     * @param options - Driver options.
+     * @returns The upserted record.
+     */
+    upsert?(objectName: string, data: Record<string, unknown>, options?: any): Promise<any>;
+
+    /**
+     * Stream records matching the structured query.
+     * Optimized for large datasets to avoid memory overflow.
+     * 
+     * @param objectName - The name of the object.
+     * @param query - The structured QueryAST.
+     * @param options - Driver options.
+     * @returns AsyncIterable/ReadableStream of records.
+     */
+    findStream?(objectName: string, query: any, options?: any): AsyncIterable<any> | any;
+
+    /**
+     * Get connection pool statistics.
+     * Useful for monitoring database load.
+     */
+    getPoolStats?(): { total: number; idle: number; active: number; waiting: number } | undefined;
+
+    /**
+     * Synchronize the schema for one or more objects.
+     * Creates or alters tables/collections to match the object definitions.
+     * 
+     * @param objects - Object definitions to synchronize.
+     * @param options - Driver options.
+     */
+    syncSchema?(objects: any[], options?: any): Promise<void>;
+
+    /**
+     * Drop a table/collection by name.
+     * 
+     * @param objectName - The name of the object/table to drop.
+     * @param options - Driver options.
+     */
+    dropTable?(objectName: string, options?: any): Promise<void>;
+
+    /**
+     * Explain the execution plan for a query.
+     * Useful for debugging and performance optimization.
+     * 
+     * @param objectName - The name of the object.
+     * @param query - The structured QueryAST.
+     * @param options - Driver options.
+     * @returns Execution plan details.
+     */
+    explain?(objectName: string, query: any, options?: any): Promise<any>;
 }
 

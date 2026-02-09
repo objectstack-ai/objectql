@@ -87,14 +87,12 @@ export interface ImageAttachmentData extends AttachmentData {
  * Runtime Field Type
  * 
  * Extends the Protocol FieldType with runtime-specific types.
- * The Protocol Constitution defines the core field types.
- * We add runtime-specific types like 'vector', 'grid', 'location', 'object' here.
+ * The Protocol Constitution defines the core field types (including 'location' and 'vector').
+ * We add runtime-specific types like 'grid' and 'object' here.
  */
 export type FieldType = 
     | ProtocolFieldType
-    | 'location'    // Runtime: Geographic location
     | 'object'      // Runtime: Nested object/JSON
-    | 'vector'      // Runtime: Vector embeddings for AI
     | 'grid';       // Runtime: Inline grid/table
 
 /**

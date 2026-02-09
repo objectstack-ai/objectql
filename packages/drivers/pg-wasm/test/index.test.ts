@@ -96,9 +96,9 @@ describe('PgWasmDriver - Capabilities', () => {
     });
 
     it('should support all isolation levels', () => {
-        expect(driver.supports.isolationLevels).toContain('read-uncommitted');
-        expect(driver.supports.isolationLevels).toContain('read-committed');
-        expect(driver.supports.isolationLevels).toContain('repeatable-read');
+        expect(driver.supports.isolationLevels).toContain('read_uncommitted');
+        expect(driver.supports.isolationLevels).toContain('read_committed');
+        expect(driver.supports.isolationLevels).toContain('repeatable_read');
         expect(driver.supports.isolationLevels).toContain('serializable');
     });
 
