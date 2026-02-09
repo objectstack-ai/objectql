@@ -118,7 +118,8 @@ export function convertIntrospectedSchemaToObjects(
                     reference_to: foreignKey.referencedTable,
                     label: toTitleCase(column.name),
                     required: !column.nullable,
-                    searchable: false
+                    searchable: false,
+                    sortable: false
                 };
             } else {
                 // Regular field
@@ -131,7 +132,8 @@ export function convertIntrospectedSchemaToObjects(
                     type: fieldType,
                     label: toTitleCase(column.name),
                     required: !column.nullable,
-                    searchable: false
+                    searchable: false,
+                    sortable: false
                 };
                 
                 // Add unique constraint
