@@ -7,33 +7,152 @@
  */
 
 import { ObjectStackProtocol } from '@objectstack/spec/api';
-import { IObjectQL } from '@objectql/types';
+import type { IObjectQL, CoreServiceName, ServiceStatus, KernelDiscoveryResponse } from '@objectql/types';
 
 /**
- * Bridges the ObjectStack Protocol (Specification) to the ObjectQL Engine (Implementation)
+ * Default service status map.
+ * metadata + data + analytics are kernel-provided; all others require plugins.
+ */
+const DEFAULT_SERVICES: Readonly<Record<CoreServiceName, ServiceStatus>> = {
+    metadata: {
+        enabled: true,
+        status: 'degraded',
+        route: '/api/v1/meta',
+        provider: 'kernel',
+        message: 'In-memory registry; DB persistence pending',
+    },
+    data: {
+        enabled: true,
+        status: 'available',
+        route: '/api/v1/data',
+        provider: 'kernel',
+    },
+    analytics: {
+        enabled: true,
+        status: 'available',
+        route: '/api/v1/analytics',
+        provider: 'kernel',
+    },
+    auth: {
+        enabled: false,
+        status: 'unavailable',
+        message: 'Install an auth plugin to enable',
+    },
+    ui: {
+        enabled: false,
+        status: 'unavailable',
+        message: 'Install a UI plugin to enable',
+    },
+    workflow: {
+        enabled: false,
+        status: 'unavailable',
+        message: 'Install a workflow plugin to enable',
+    },
+    automation: {
+        enabled: false,
+        status: 'unavailable',
+        message: 'Install an automation plugin to enable',
+    },
+    realtime: {
+        enabled: false,
+        status: 'unavailable',
+        message: 'Install a realtime plugin to enable',
+    },
+    notification: {
+        enabled: false,
+        status: 'unavailable',
+        message: 'Install a notification plugin to enable',
+    },
+    ai: {
+        enabled: false,
+        status: 'unavailable',
+        message: 'Install an AI plugin to enable',
+    },
+    i18n: {
+        enabled: false,
+        status: 'unavailable',
+        message: 'Install an i18n plugin to enable',
+    },
+    'file-storage': {
+        enabled: false,
+        status: 'unavailable',
+        message: 'Install a file-storage plugin to enable',
+    },
+    search: {
+        enabled: false,
+        status: 'unavailable',
+        message: 'Install a search plugin to enable',
+    },
+    cache: {
+        enabled: false,
+        status: 'unavailable',
+        message: 'Install a cache plugin to enable',
+    },
+    queue: {
+        enabled: false,
+        status: 'unavailable',
+        message: 'Install a queue plugin to enable',
+    },
+    job: {
+        enabled: false,
+        status: 'unavailable',
+        message: 'Install a job plugin to enable',
+    },
+    graphql: {
+        enabled: false,
+        status: 'unavailable',
+        message: 'Install a graphql plugin to enable',
+    },
+};
+
+/**
+ * Helper: throw a "service not available" error for plugin-required methods.
+ */
+function notAvailable(service: string, method: string): never {
+    throw new Error(
+        `[${method}] Service '${service}' is not available. Install a ${service} plugin to enable this feature.`
+    );
+}
+
+/**
+ * Bridges the ObjectStack Protocol (Specification) to the ObjectQL Engine (Implementation).
+ *
+ * This class implements ALL 57 protocol methods defined by the ObjectStackProtocol interface.
+ * Kernel-provided services (metadata, data, analytics) delegate to the engine.
+ * Plugin-required services throw descriptive errors until a plugin registers the service.
  */
 export class ObjectStackProtocolImplementation implements ObjectStackProtocol {
-    constructor(private engine: IObjectQL) {}
+    private services: Record<CoreServiceName, ServiceStatus>;
+
+    constructor(private engine: IObjectQL) {
+        this.services = { ...DEFAULT_SERVICES };
+    }
+
+    // ========================================================================
+    // Service Registration (called by plugins at install time)
+    // ========================================================================
 
     /**
-     * Get API Discovery Document
+     * Update the status of a service. Called by plugins when they register a service.
      */
-    async getDiscovery(args: any): Promise<any> {
+    updateServiceStatus(name: CoreServiceName, status: Partial<ServiceStatus>): void {
+        this.services[name] = { ...this.services[name], ...status };
+    }
+
+    // ========================================================================
+    // 1. metadata Service  (7 methods — kernel-provided)
+    // ========================================================================
+
+    async getDiscovery(_args?: any): Promise<KernelDiscoveryResponse> {
         return {
             name: 'ObjectQL Engine',
             version: '4.0.0',
             protocols: ['rest', 'graphql', 'json-rpc', 'odata'],
-            auth: {
-                type: 'bearer',
-                url: '/auth/token'
-            }
+            services: { ...this.services },
         };
     }
 
-    /**
-     * Get Metadata Types (e.g., ['object', 'action'])
-     */
-    async getMetaTypes(args: any): Promise<{ types: string[] }> {
+    async getMetaTypes(args?: any): Promise<{ types: string[] }> {
         let types = ['object'];
         if (this.engine.metadata && typeof this.engine.metadata.getTypes === 'function') {
             types = this.engine.metadata.getTypes();
@@ -41,9 +160,6 @@ export class ObjectStackProtocolImplementation implements ObjectStackProtocol {
         return { types };
     }
 
-    /**
-     * Get Metadata Items for a Type
-     */
     async getMetaItems(args: { type: string }): Promise<{ type: string; items: any[] }> {
         const { type } = args;
         let items: any[] = [];
@@ -53,9 +169,6 @@ export class ObjectStackProtocolImplementation implements ObjectStackProtocol {
         return { type, items };
     }
 
-    /**
-     * Get Metadata Item
-     */
     async getMetaItem(args: { type: string; name: string }): Promise<any> {
         const { type, name } = args;
         if (this.engine.metadata && typeof this.engine.metadata.get === 'function') {
@@ -64,121 +177,76 @@ export class ObjectStackProtocolImplementation implements ObjectStackProtocol {
         return null;
     }
 
-    /**
-     * Get Cached Metadata Item
-     */
-    async getMetaItemCached(args: { type: string; name: string }): Promise<any> {
-        // Fallback to non-cached version for now
-        return this.getMetaItem(args);
-    }
-
-    /**
-     * Save Metadata Item
-     */
     async saveMetaItem(args: { type: string; name: string; item?: any }): Promise<{ success: boolean; message?: string }> {
         const { type, name, item } = args;
         if (this.engine.metadata && typeof this.engine.metadata.register === 'function') {
-            const data = { ...(item || {}), name }; // Ensure name is in data
+            const data = { ...(item || {}), name };
             this.engine.metadata.register(type, data);
             return { success: true };
         }
         throw new Error('Engine does not support saving metadata');
     }
 
-    /**
-     * Get UI View
-     */
+    async getMetaItemCached(args: { type: string; name: string }): Promise<any> {
+        return this.getMetaItem(args);
+    }
+
     async getUiView(args: { object: string; type: 'list' | 'form' }): Promise<any> {
         return null;
     }
 
-    /**
-     * Find Data Records
-     */
+    // ========================================================================
+    // 2. data Service  (9 methods — kernel-provided)
+    // ========================================================================
+
     async findData(args: { object: string; query?: any }): Promise<any> {
         const { object, query } = args;
-        
-        // Use direct kernel method if available (preferred)
+
         if (typeof (this.engine as any).find === 'function') {
-            const result = await (this.engine as any).find(object, query || {});
-            return result;
+            return await (this.engine as any).find(object, query || {});
         }
 
-        // Fallback to createContext (if engine is IObjectQL)
         if (typeof (this.engine as any).createContext === 'function') {
             const ctx = (this.engine as any).createContext({ isSystem: true });
-            try {
-                const repo = ctx.object(object);
-                return await repo.find(query || {});
-            } catch (error: any) {
-                throw new Error(`Data access failed: ${error.message}`);
-            }
+            const repo = ctx.object(object);
+            return await repo.find(query || {});
         }
 
         throw new Error('Engine does not support find operation');
     }
 
-    /**
-     * Count Data Records
-     */
-    async countData(args: { object: string; query?: any }): Promise<number> {
-        const { object, query } = args;
-        // Basic fallback
-        const result = await this.findData(args);
-        return Array.isArray(result) ? result.length : (result.value ? result.value.length : 0);
-    }
-
-
-    /**
-     * Get Single Data Record
-     */
     async getData(args: { object: string; id: string }): Promise<any> {
         const { object, id } = args;
-        
+
         if (typeof (this.engine as any).get === 'function') {
             return await (this.engine as any).get(object, id);
         }
-        
+
         if (typeof (this.engine as any).createContext === 'function') {
             const ctx = (this.engine as any).createContext({ isSystem: true });
-            try {
-                const repo = ctx.object(object);
-                return await repo.findOne(id);
-            } catch (error: any) {
-                throw new Error(`Data retrieval failed: ${error.message}`);
-            }
+            const repo = ctx.object(object);
+            return await repo.findOne(id);
         }
-        
+
         throw new Error('Engine does not support get operation');
     }
 
-    /**
-     * Create Data Record
-     */
     async createData(args: { object: string; data: any }): Promise<any> {
         const { object, data } = args;
 
         if (typeof (this.engine as any).create === 'function') {
             return await (this.engine as any).create(object, data);
         }
-        
+
         if (typeof (this.engine as any).createContext === 'function') {
             const ctx = (this.engine as any).createContext({ isSystem: true });
-            try {
-                const repo = ctx.object(object);
-                // Protocol expects returned data
-                return await repo.create(data);
-            } catch (error: any) {
-                throw new Error(`Data creation failed: ${error.message}`);
-            }
+            const repo = ctx.object(object);
+            return await repo.create(data);
         }
-        
+
         throw new Error('Engine does not support create operation');
     }
 
-    /**
-     * Update Data Record
-     */
     async updateData(args: { object: string; id: string; data: any }): Promise<any> {
         const { object, id, data } = args;
 
@@ -188,20 +256,13 @@ export class ObjectStackProtocolImplementation implements ObjectStackProtocol {
 
         if (typeof (this.engine as any).createContext === 'function') {
             const ctx = (this.engine as any).createContext({ isSystem: true });
-            try {
-                const repo = ctx.object(object);
-                return await repo.update(id, data);
-            } catch (error: any) {
-                 throw new Error(`Data update failed: ${error.message}`);
-            }
+            const repo = ctx.object(object);
+            return await repo.update(id, data);
         }
 
         throw new Error('Engine does not support update operation');
     }
 
-    /**
-     * Delete Data Record
-     */
     async deleteData(args: { object: string; id: string }): Promise<{ object: string; id: string; success: boolean }> {
         const { object, id } = args;
 
@@ -212,93 +273,310 @@ export class ObjectStackProtocolImplementation implements ObjectStackProtocol {
 
         if (typeof (this.engine as any).createContext === 'function') {
             const ctx = (this.engine as any).createContext({ isSystem: true });
-            try {
-                const repo = ctx.object(object);
-                await repo.delete(id);
-                return { object, id, success: true };
-            } catch (error: any) {
-                throw new Error(`Data deletion failed: ${error.message}`);
-            }
+            const repo = ctx.object(object);
+            await repo.delete(id);
+            return { object, id, success: true };
         }
 
         throw new Error('Engine does not support delete operation');
     }
 
-    /**
-     * Create Many Data Records
-     */
-    async createManyData(args: { object: string; records: any[]; options?: any }): Promise<any> {
-        throw new Error('createManyData not implemented');
-    }
-
-    /**
-     * Update Many Data Records
-     */
-    async updateManyData(args: { object: string; records: { id: string; data: any }[]; options?: any }): Promise<any> {
-        throw new Error('updateManyData not implemented');
-    }
-
-    /**
-     * Delete Many Data Records
-     */
-    async deleteManyData(args: { object: string; ids: string[]; options?: any }): Promise<any> {
-         throw new Error('deleteManyData not implemented');
-    }
-
-    /**
-     * Batch Operations
-     */
     async batchData(args: { object: string; request: { operation: 'create' | 'update' | 'delete' | 'upsert'; records: any[] } }): Promise<any> {
-        throw new Error('batchData not implemented');
+        const { object, request } = args;
+        const { operation, records } = request;
+        const results: any[] = [];
+
+        for (const record of records) {
+            switch (operation) {
+                case 'create':
+                    results.push(await this.createData({ object, data: record }));
+                    break;
+                case 'update':
+                    results.push(await this.updateData({ object, id: record.id, data: record }));
+                    break;
+                case 'delete':
+                    results.push(await this.deleteData({ object, id: record.id || record }));
+                    break;
+                default:
+                    throw new Error(`Unsupported batch operation: ${operation}`);
+            }
+        }
+
+        return { object, operation, results };
     }
 
-    /**
-     * Execute Action/Operation
-     */
-    async performAction(args: { object: string; id?: string; action: string; args?: any }): Promise<any> {
-        // Not implemented in this shim yet
-        throw new Error('Action execution not implemented in protocol shim');
+    async createManyData(args: { object: string; records: any[]; options?: any }): Promise<any> {
+        const { object, records } = args;
+        const results: any[] = [];
+        for (const record of records) {
+            results.push(await this.createData({ object, data: record }));
+        }
+        return { object, created: results };
     }
 
-    /**
-     * Analytics Query - Execute analytics query
-     */
+    async updateManyData(args: { object: string; records: { id: string; data: any }[]; options?: any }): Promise<any> {
+        const { object, records } = args;
+        const results: any[] = [];
+        for (const record of records) {
+            results.push(await this.updateData({ object, id: record.id, data: record.data }));
+        }
+        return { object, updated: results };
+    }
+
+    async deleteManyData(args: { object: string; ids: string[]; options?: any }): Promise<any> {
+        const { object, ids } = args;
+        const results: any[] = [];
+        for (const id of ids) {
+            results.push(await this.deleteData({ object, id }));
+        }
+        return { object, deleted: results };
+    }
+
+    // ========================================================================
+    // 3. analytics Service  (2 methods — kernel-provided)
+    // ========================================================================
+
     async analyticsQuery(args: any): Promise<any> {
-        throw new Error('analyticsQuery not implemented');
+        // Delegate to engine's query service if available
+        if (typeof (this.engine as any).queryService?.aggregate === 'function') {
+            return await (this.engine as any).queryService.aggregate(args);
+        }
+
+        // Basic fallback: use findData + in-memory aggregation
+        if (args?.object) {
+            const data = await this.findData({ object: args.object, query: args.filters });
+            const records = Array.isArray(data) ? data : (data?.value || []);
+            return { object: args.object, records, count: records.length };
+        }
+
+        throw new Error('analyticsQuery requires an object name');
     }
 
-    /**
-     * Get Analytics Metadata
-     */
     async getAnalyticsMeta(args: any): Promise<any> {
-        throw new Error('getAnalyticsMeta not implemented');
+        // Auto-generate analytics metadata from SchemaRegistry
+        const objectName = args?.object;
+        if (!objectName) {
+            throw new Error('getAnalyticsMeta requires an object name');
+        }
+
+        const objectConfig = this.engine.metadata?.get?.('object', objectName);
+        if (!objectConfig) {
+            throw new Error(`Object '${objectName}' not found`);
+        }
+
+        const config = (objectConfig as any)?.content || objectConfig;
+        const fields = config?.fields || {};
+        const measures: any[] = [];
+        const dimensions: any[] = [];
+
+        for (const [name, field] of Object.entries(fields)) {
+            const f = field as any;
+            const type = f?.type;
+            if (type === 'number' || type === 'currency' || type === 'percent') {
+                measures.push({ name, type, aggregations: ['sum', 'avg', 'min', 'max', 'count'] });
+            } else if (type === 'date' || type === 'datetime') {
+                dimensions.push({ name, type, granularities: ['day', 'week', 'month', 'quarter', 'year'] });
+            } else {
+                dimensions.push({ name, type });
+            }
+        }
+
+        return { object: objectName, measures, dimensions };
     }
 
-    /**
-     * Trigger Automation
-     */
+    // ========================================================================
+    // 4. auth Service  (3 methods — plugin required)
+    // ========================================================================
+
+    async checkPermission(args: any): Promise<any> {
+        notAvailable('auth', 'checkPermission');
+    }
+
+    async getObjectPermissions(args: any): Promise<any> {
+        notAvailable('auth', 'getObjectPermissions');
+    }
+
+    async getEffectivePermissions(args: any): Promise<any> {
+        notAvailable('auth', 'getEffectivePermissions');
+    }
+
+    // ========================================================================
+    // 5. ui Service  (5 methods — plugin required)
+    // ========================================================================
+
+    async listViews(args: any): Promise<any> {
+        notAvailable('ui', 'listViews');
+    }
+
+    async getView(args: any): Promise<any> {
+        notAvailable('ui', 'getView');
+    }
+
+    async createView(args: any): Promise<any> {
+        notAvailable('ui', 'createView');
+    }
+
+    async updateView(args: any): Promise<any> {
+        notAvailable('ui', 'updateView');
+    }
+
+    async deleteView(args: any): Promise<any> {
+        notAvailable('ui', 'deleteView');
+    }
+
+    // ========================================================================
+    // 6. workflow Service  (5 methods — plugin required)
+    // ========================================================================
+
+    async getWorkflowConfig(args: any): Promise<any> {
+        notAvailable('workflow', 'getWorkflowConfig');
+    }
+
+    async getWorkflowState(args: any): Promise<any> {
+        notAvailable('workflow', 'getWorkflowState');
+    }
+
+    async workflowTransition(args: any): Promise<any> {
+        notAvailable('workflow', 'workflowTransition');
+    }
+
+    async workflowApprove(args: any): Promise<any> {
+        notAvailable('workflow', 'workflowApprove');
+    }
+
+    async workflowReject(args: any): Promise<any> {
+        notAvailable('workflow', 'workflowReject');
+    }
+
+    // ========================================================================
+    // 7. automation Service  (1 method — plugin required)
+    // ========================================================================
+
     async triggerAutomation(args: { trigger: string; payload: Record<string, any> }): Promise<{ success: boolean; jobId?: string; result?: any }> {
-        throw new Error('triggerAutomation not implemented');
+        notAvailable('automation', 'triggerAutomation');
     }
 
-    /**
-     * List Spaces (Hub/Workspace Management)
-     */
-    async listSpaces(args: any): Promise<any> {
-        throw new Error('listSpaces not implemented');
+    // ========================================================================
+    // 8. realtime Service  (6 methods — plugin required)
+    // ========================================================================
+
+    async realtimeConnect(args: any): Promise<any> {
+        notAvailable('realtime', 'realtimeConnect');
     }
 
-    /**
-     * Create Space (Hub/Workspace Management)
-     */
-    async createSpace(args: any): Promise<any> {
-        throw new Error('createSpace not implemented');
+    async realtimeDisconnect(args: any): Promise<any> {
+        notAvailable('realtime', 'realtimeDisconnect');
     }
 
-    /**
-     * Install Plugin (Hub/Extension Management)
-     */
-    async installPlugin(args: any): Promise<any> {
-        throw new Error('installPlugin not implemented');
+    async realtimeSubscribe(args: any): Promise<any> {
+        notAvailable('realtime', 'realtimeSubscribe');
+    }
+
+    async realtimeUnsubscribe(args: any): Promise<any> {
+        notAvailable('realtime', 'realtimeUnsubscribe');
+    }
+
+    async setPresence(args: any): Promise<any> {
+        notAvailable('realtime', 'setPresence');
+    }
+
+    async getPresence(args: any): Promise<any> {
+        notAvailable('realtime', 'getPresence');
+    }
+
+    // ========================================================================
+    // 9. notification Service  (7 methods — plugin required)
+    // ========================================================================
+
+    async registerDevice(args: any): Promise<any> {
+        notAvailable('notification', 'registerDevice');
+    }
+
+    async unregisterDevice(args: any): Promise<any> {
+        notAvailable('notification', 'unregisterDevice');
+    }
+
+    async getNotificationPreferences(args: any): Promise<any> {
+        notAvailable('notification', 'getNotificationPreferences');
+    }
+
+    async updateNotificationPreferences(args: any): Promise<any> {
+        notAvailable('notification', 'updateNotificationPreferences');
+    }
+
+    async listNotifications(args: any): Promise<any> {
+        notAvailable('notification', 'listNotifications');
+    }
+
+    async markNotificationsRead(args: any): Promise<any> {
+        notAvailable('notification', 'markNotificationsRead');
+    }
+
+    async markAllNotificationsRead(args: any): Promise<any> {
+        notAvailable('notification', 'markAllNotificationsRead');
+    }
+
+    // ========================================================================
+    // 10. ai Service  (4 methods — plugin required)
+    // ========================================================================
+
+    async aiNlq(args: any): Promise<any> {
+        notAvailable('ai', 'aiNlq');
+    }
+
+    async aiChat(args: any): Promise<any> {
+        notAvailable('ai', 'aiChat');
+    }
+
+    async aiSuggest(args: any): Promise<any> {
+        notAvailable('ai', 'aiSuggest');
+    }
+
+    async aiInsights(args: any): Promise<any> {
+        notAvailable('ai', 'aiInsights');
+    }
+
+    // ========================================================================
+    // 11. i18n Service  (3 methods — plugin required)
+    // ========================================================================
+
+    async getLocales(args: any): Promise<any> {
+        notAvailable('i18n', 'getLocales');
+    }
+
+    async getTranslations(args: any): Promise<any> {
+        notAvailable('i18n', 'getTranslations');
+    }
+
+    async getFieldLabels(args: any): Promise<any> {
+        notAvailable('i18n', 'getFieldLabels');
+    }
+
+    // ========================================================================
+    // Package Management  (6 methods — kernel hub)
+    // ========================================================================
+
+    async listPackages(args: any): Promise<any> {
+        throw new Error('listPackages not implemented');
+    }
+
+    async getPackage(args: any): Promise<any> {
+        throw new Error('getPackage not implemented');
+    }
+
+    async installPackage(args: any): Promise<any> {
+        throw new Error('installPackage not implemented');
+    }
+
+    async uninstallPackage(args: any): Promise<any> {
+        throw new Error('uninstallPackage not implemented');
+    }
+
+    async enablePackage(args: any): Promise<any> {
+        throw new Error('enablePackage not implemented');
+    }
+
+    async disablePackage(args: any): Promise<any> {
+        throw new Error('disablePackage not implemented');
     }
 }

@@ -38,3 +38,4 @@ export * from './logger';
 export * from './ai';
 export * from './sync';
 export * from './edge';
+export * from './kernel-service';
