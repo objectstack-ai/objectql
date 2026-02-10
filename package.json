@@ -3,7 +3,7 @@
   "private": true,
   "packageManager": "pnpm@10.28.2",
   "scripts": {
-    "dev": "objectstack serve",
+    "dev": "objectstack serve --dev",
     "cli:dev": "ts-node packages/tools/cli/src/index.ts",
     "site:dev": "pnpm --filter @objectql/site run dev",
     "build": "turbo run build",
