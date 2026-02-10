@@ -148,7 +148,7 @@ export function validateGraphQLInput<T>(
         return schema.parse(input);
     } catch (error) {
         if (error instanceof z.ZodError) {
-            const details: ValidationErrorDetails[] = error.errors.map(err => ({
+            const details: ValidationErrorDetails[] = error.issues.map((err: z.ZodIssue) => ({
                 field: err.path.join('.'),
                 message: err.message,
                 code: err.code
@@ -183,7 +183,7 @@ export const PaginationInputSchema = z.object({
 /**
  * Filter input base schema
  */
-export const FilterInputSchema = z.record(z.any());
+export const FilterInputSchema = z.record(z.string(), z.any());
 
 /**
  * Sort order enum
@@ -195,7 +195,7 @@ export const SortOrderSchema = z.enum(['ASC', 'DESC']);
  */
 export const QueryInputSchema = z.object({
     filters: FilterInputSchema.optional(),
-    sort: z.record(SortOrderSchema).optional(),
+    sort: z.record(z.string(), SortOrderSchema).optional(),
     limit: z.number().int().positive().max(1000).optional(),
     offset: z.number().int().nonnegative().optional()
 });
@@ -203,14 +203,14 @@ export const QueryInputSchema = z.object({
 /**
  * Create input validation schema
  */
-export const CreateInputSchema = z.record(z.any());
+export const CreateInputSchema = z.record(z.string(), z.any());
 
 /**
  * Update input validation schema
  */
 export const UpdateInputSchema = z.object({
     id: z.string().min(1, 'ID is required'),
-    data: z.record(z.any())
+    data: z.record(z.string(), z.any())
 });
 
 /**

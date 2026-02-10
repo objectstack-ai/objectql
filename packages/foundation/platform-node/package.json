@@ -29,7 +29,7 @@
   "dependencies": {
     "@objectql/core": "workspace:*",
     "@objectql/types": "workspace:*",
-    "@objectstack/spec": "^2.0.1",
+    "@objectstack/spec": "^2.0.3",
     "fast-glob": "^3.3.2",
     "js-yaml": "^4.1.1"
   },

@@ -31,7 +31,7 @@ export enum JSONRPCErrorCode {
 export const JSONRPCRequestSchema = z.object({
     jsonrpc: z.literal(JSONRPC_VERSION),
     method: z.string().min(1, 'Method name cannot be empty'),
-    params: z.union([z.array(z.any()), z.record(z.any())]).optional(),
+    params: z.union([z.array(z.any()), z.record(z.string(), z.any())]).optional(),
     id: z.union([z.string(), z.number(), z.null()]).optional()
 });
 
@@ -108,7 +108,7 @@ export function validateRequest(request: unknown): z.infer<typeof JSONRPCRequest
                 JSONRPCErrorCode.INVALID_REQUEST,
                 'Invalid JSON-RPC request format',
                 {
-                    validationErrors: error.errors.map(err => ({
+                    validationErrors: error.issues.map((err: z.ZodIssue) => ({
                         path: err.path.join('.'),
                         message: err.message
                     }))
@@ -131,7 +131,7 @@ export function validateBatchRequest(request: unknown): z.infer<typeof JSONRPCBa
                 JSONRPCErrorCode.INVALID_REQUEST,
                 'Invalid JSON-RPC batch request format',
                 {
-                    validationErrors: error.errors.map(err => ({
+                    validationErrors: error.issues.map((err: z.ZodIssue) => ({
                         path: err.path.join('.'),
                         message: err.message
                     }))
@@ -188,7 +188,7 @@ export function validateMethodParams<T>(
                 JSONRPCErrorCode.INVALID_PARAMS,
                 `Invalid parameters for method '${methodName}'`,
                 {
-                    validationErrors: error.errors.map(err => ({
+                    validationErrors: error.issues.map((err: z.ZodIssue) => ({
                         path: err.path.join('.'),
                         message: err.message
                     }))
