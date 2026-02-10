@@ -118,7 +118,12 @@ export async function doctorCommand(options: DoctorOptions = {}) {
     if (fs.existsSync(tsconfigPath)) {
         console.log(chalk.gray('\nTypeScript Configuration:'));
         try {
-            const tsconfig = JSON.parse(fs.readFileSync(tsconfigPath, 'utf-8'));
+            const tsconfigRaw = fs.readFileSync(tsconfigPath, 'utf-8');
+            // Strip single-line and multi-line comments (tsconfig uses JSONC)
+            const tsconfigClean = tsconfigRaw
+                .replace(/\/\/.*$/gm, '')
+                .replace(/\/\*[\s\S]*?\*\//g, '');
+            const tsconfig = JSON.parse(tsconfigClean);
             
             // Check for recommended settings
             const compilerOptions = tsconfig.compilerOptions || {};

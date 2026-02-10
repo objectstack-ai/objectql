@@ -163,7 +163,7 @@ export class DatabasePermissionStorage implements IPermissionStorage {
     try {
       const rows = await driver.find(this.tableName, {});
       // Create a shallow copy to avoid issues when deleting during iteration
-      const items = Array.isArray(rows) ? rows as unknown as PermissionRow[] : [];
+      const items = Array.isArray(rows) ? [...rows] as unknown as PermissionRow[] : [];
       for (const row of items) {
         const id = row._id ?? row.id ?? row.object_name;
         if (id !== undefined) {
