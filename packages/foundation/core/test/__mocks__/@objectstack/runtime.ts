@@ -11,12 +11,21 @@
 class MockMetadataRegistry {
     private store = new Map<string, Map<string, any>>();
     
-    register(type: string, item: any): void {
+    register(type: string, nameOrConfig: string | any, config?: any): void {
         if (!this.store.has(type)) {
             this.store.set(type, new Map());
         }
         const typeMap = this.store.get(type)!;
-        typeMap.set(item.id || item.name, item);
+        let name: string;
+        let item: any;
+        if (config) {
+            name = nameOrConfig as string;
+            item = config;
+        } else {
+            item = nameOrConfig;
+            name = item.id || item.name;
+        }
+        typeMap.set(name, item);
     }
     
     get<T = any>(type: string, id: string): T | undefined {
