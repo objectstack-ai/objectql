@@ -59,6 +59,7 @@
   "version": "4.0.5",
   "dependencies": {
     "@objectql/protocol-json-rpc": "workspace:*",
+    "@objectstack/studio": "^2.0.2",
     "build": "^0.1.4"
   }
 }
