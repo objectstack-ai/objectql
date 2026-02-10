@@ -74,15 +74,28 @@ export class ObjectQLSecurityPlugin implements RuntimePlugin {
   }
 
   // --- Adapter for @objectstack/core compatibility ---
-  init = async (kernel: any): Promise<void> => {
+  init = async (pluginCtx: any): Promise<void> => {
+      // Extract actual kernel from PluginContext and proxy registerService
+      const actualKernel = typeof pluginCtx.getKernel === 'function'
+          ? pluginCtx.getKernel()
+          : pluginCtx;
       const ctx: any = {
-          engine: kernel,
-          getKernel: () => kernel
+          engine: actualKernel,
+          getKernel: () => actualKernel,
+          registerService: typeof pluginCtx.registerService === 'function'
+              ? pluginCtx.registerService.bind(pluginCtx)
+              : undefined,
+          hook: typeof pluginCtx.hook === 'function'
+              ? pluginCtx.hook.bind(pluginCtx)
+              : undefined,
+          trigger: typeof pluginCtx.trigger === 'function'
+              ? pluginCtx.trigger.bind(pluginCtx)
+              : undefined,
       };
       return this.install(ctx);
   }
 
-  start = async (_kernel: any): Promise<void> => {
+  start = async (_pluginCtx: any): Promise<void> => {
       // Security plugin doesn't have specific start logic yet
       return;
   }
@@ -161,10 +174,10 @@ export class ObjectQLSecurityPlugin implements RuntimePlugin {
     const registerHook = (name: string, handler: any) => {
         if (typeof ctx.hook === 'function') {
             ctx.hook(name, handler);
-        } else if (typeof (kernel as any).use === 'function') {
-            (kernel as any).use(name, handler);
         } else if (typeof (kernel as any).hooks?.register === 'function') {
            (kernel as any).hooks.register(name, handler);
+        } else {
+           this.logger.warn(`Cannot register hook '${name}': no hook registration mechanism available`);
         }
     };
 

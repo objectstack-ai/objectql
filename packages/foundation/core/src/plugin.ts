@@ -16,6 +16,7 @@ import { QueryAnalyzer } from './query/query-analyzer';
 import { ObjectStackProtocolImplementation } from './protocol';
 import type { Driver } from '@objectql/types';
 import { createDefaultAiRegistry } from './ai';
+import { SchemaRegistry } from '@objectstack/objectql';
 
 /**
  * Extended kernel with ObjectQL services
@@ -304,33 +305,74 @@ export class ObjectQLPlugin implements RuntimePlugin {
   }
 
     // --- Adapter for @objectstack/core compatibility ---
-    init = async (kernel: any): Promise<void> => {
-        // The new core passes the kernel instance directly
-        // We wrap it to match the old RuntimeContext interface
+    init = async (pluginCtx: any): Promise<void> => {
+        // The @objectstack/core kernel passes a PluginContext (with registerService, getKernel, etc.)
+        // We extract the actual kernel and build a RuntimeContext wrapper that proxies registerService.
+        const actualKernel = typeof pluginCtx.getKernel === 'function'
+            ? pluginCtx.getKernel()
+            : pluginCtx;
+
+        // Create metadata facade on the kernel if not already present.
+        // The raw ObjectKernel from @objectstack/core has no .metadata property;
+        // it's normally created by the ObjectQL wrapper (app.ts).
+        // When running via `objectstack serve`, we must create it here.
+        if (!actualKernel.metadata) {
+            const unwrapContent = (item: any) => (item && item.content) ? item.content : item;
+            actualKernel.metadata = {
+                register: (type: string, item: any) => SchemaRegistry.registerItem(type, item, item.id ? 'id' : 'name'),
+                get: (type: string, name: string) => {
+                    const item = SchemaRegistry.getItem(type, name) as any;
+                    return unwrapContent(item);
+                },
+                getEntry: (type: string, name: string) => SchemaRegistry.getItem(type, name),
+                list: (type: string) => {
+                    const items = SchemaRegistry.listItems(type);
+                    return items.map(unwrapContent);
+                },
+                unregister: (type: string, name: string) => {
+                    if (typeof SchemaRegistry.unregisterItem === 'function') {
+                        SchemaRegistry.unregisterItem(type, name);
+                    }
+                },
+                unregisterPackage: (packageName: string) => {
+                    if (typeof (SchemaRegistry as any).unregisterObjectsByPackage === 'function') {
+                        (SchemaRegistry as any).unregisterObjectsByPackage(packageName);
+                    }
+                },
+            };
+            this.logger.info('Created metadata facade on kernel');
+        }
+
         const ctx: any = {
-            engine: kernel,
-            getKernel: () => kernel
+            engine: actualKernel,
+            getKernel: () => actualKernel,
+            // Proxy registerService from PluginContext so install() can register metadata/data/analytics
+            registerService: typeof pluginCtx.registerService === 'function'
+                ? pluginCtx.registerService.bind(pluginCtx)
+                : undefined,
         };
 
         // Register Protocol Service
-        // If kernel supports service registration (PluginContext or ExtendedKernel with custom registry)
-        if (kernel && typeof kernel.registerService === 'function') {
+        if (typeof pluginCtx.registerService === 'function') {
             this.logger.info('Registering protocol service...');
-            const protocolShim = new ObjectStackProtocolImplementation(kernel);
-             kernel.registerService('protocol', protocolShim);
-             
-             // Register 'objectql' service for AppPlugin compatibility
-             kernel.registerService('objectql', this);
-             this.logger.debug('Registered objectql service');
+            const protocolShim = new ObjectStackProtocolImplementation(actualKernel);
+            pluginCtx.registerService('protocol', protocolShim);
+
+            // Register 'objectql' service for AppPlugin compatibility
+            pluginCtx.registerService('objectql', this);
+            this.logger.debug('Registered objectql service');
         }
 
         return this.install(ctx);
     }
 
-    start = async (kernel: any): Promise<void> => {
+    start = async (pluginCtx: any): Promise<void> => {
+        const actualKernel = typeof pluginCtx.getKernel === 'function'
+            ? pluginCtx.getKernel()
+            : pluginCtx;
         const ctx: any = {
-            engine: kernel,
-            getKernel: () => kernel
+            engine: actualKernel,
+            getKernel: () => actualKernel,
         };
         return this.onStart(ctx);
     }

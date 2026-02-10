@@ -25,8 +25,8 @@ import { JSONRPCPlugin } from '@objectql/protocol-json-rpc';
 import { HonoServerPlugin } from '@objectstack/plugin-hono-server';
 import { ObjectQLPlugin } from '@objectql/core';
 import { createApiRegistryPlugin } from '@objectstack/core';
+import { MemoryDriver } from '@objectql/driver-memory';
 import * as fs from 'fs';
-import * as path from 'path';
 import * as yaml from 'js-yaml';
 
 function loadObjects(dir: string) {
@@ -70,7 +70,10 @@ export default {
             enableQueryService: true,
             // Validator and Formula plugins are included by default
             enableValidator: true,
-            enableFormulas: true
+            enableFormulas: true,
+            datasources: {
+                default: new MemoryDriver()
+            }
         }),
         new ObjectQLSecurityPlugin({
             enableAudit: false

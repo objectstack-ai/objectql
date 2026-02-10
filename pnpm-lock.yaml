@@ -27,6 +27,9 @@ importers:
       '@objectql/core':
         specifier: workspace:*
         version: link:packages/foundation/core
+      '@objectql/driver-memory':
+        specifier: ^4.2.0
+        version: 4.2.0
       '@objectql/example-enterprise-erp':
         specifier: workspace:*
         version: link:examples/showcase/enterprise-erp
@@ -2084,6 +2087,12 @@ packages:
     engines: {node: '>=10'}
     deprecated: This functionality has been moved to @npmcli/fs
 
+  '@objectql/driver-memory@4.2.0':
+    resolution: {integrity: sha512-aQUUCw8Bd57nKTT+BQP+gaF2aaRdQKZESr8ATiIs10zYH8K99kRSxMCoUPUEspd6zLasaty/5+TqCQy+BsiYnA==}
+
+  '@objectql/types@4.2.0':
+    resolution: {integrity: sha512-GDJZ3tCTcVtZHJJTum5CvS9Ex2edsImfYx0rZ67bQ53YSKRr+c/wXl8bQ7HV/0fD59zRybNZxxsjmI5Viaztcw==}
+
   '@objectstack/cli@2.0.1':
     resolution: {integrity: sha512-VRtqTr/pFFy1MoM2/6UMT4UDPp1Z3aHfnS9McoDQvjTdXC9dcl4O15PvonLFl1OAtnphdbUopsDiBqd5FDO6vA==}
     hasBin: true
@@ -2107,6 +2116,10 @@ packages:
 
   '@objectstack/runtime@2.0.1':
     resolution: {integrity: sha512-6HbbPN4Msb3PGEhNEvdYNz+jK8s1SU0NL6Y8DuQifwkUK+sxo9ekOY8/eQQSSZbGHPhvIp308suUW+LmLQlLSQ==}
+
+  '@objectstack/spec@1.1.0':
+    resolution: {integrity: sha512-U0NiY+8ByG4klzKcXyOWjE0IWie8Qykj3Pm/MYz2IGZB0kyZmL5GHSNUltmd18rs96Aqfst/vCTSKM8/nPmnUA==}
+    engines: {node: '>=18.0.0'}
 
   '@objectstack/spec@2.0.1':
     resolution: {integrity: sha512-NgaMpmcXBT+AGQuCTwIYqVxKZkGs9WO5zeNIz17J8lPQ0SrhS+Hzv+5KVhOO98G4MqyJCDkodI8XMms/TVSMTg==}
@@ -8788,6 +8801,15 @@ snapshots:
       rimraf: 3.0.2
     optional: true
 
+  '@objectql/driver-memory@4.2.0':
+    dependencies:
+      '@objectql/types': 4.2.0
+      '@objectstack/spec': 1.1.0
+      mingo: 7.2.0
+      zod: 3.25.76
+
+  '@objectql/types@4.2.0': {}
+
   '@objectstack/cli@2.0.1(@objectstack/core@2.0.1)(esbuild@0.27.2)':
     dependencies:
       '@objectstack/core': 2.0.1
@@ -8842,6 +8864,10 @@ snapshots:
       '@objectstack/rest': 2.0.1
       '@objectstack/spec': 2.0.1
       '@objectstack/types': 2.0.1
+      zod: 3.25.76
+
+  '@objectstack/spec@1.1.0':
+    dependencies:
       zod: 3.25.76
 
   '@objectstack/spec@2.0.1':
