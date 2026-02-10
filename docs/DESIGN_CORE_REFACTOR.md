@@ -43,7 +43,7 @@ This document proposes **decomposing `@objectql/core`** from a monolithic runtim
 |--------|--------|-------|
 | `@objectql/core` LOC | ~3,500 | ~800 (thin re-exports + plugin orchestrator) |
 | Duplication with upstream | High (CRUD, hooks, middleware, repository, protocol) | Near-zero |
-| Plugin count (new) | 0 dedicated | 3 new plugins extracted |
+| Plugin count (new) | 0 dedicated | 4 new plugins extracted |
 | Upstream PRs needed | 0 | 3-4 PRs to `@objectstack/spec` |
 
 ---
