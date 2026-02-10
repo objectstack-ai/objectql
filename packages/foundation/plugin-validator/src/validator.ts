@@ -28,6 +28,13 @@ import {
 } from '@objectql/types';
 
 /**
+ * Minimal API interface expected by validation context
+ */
+interface ValidationApi {
+    count(objectName: string, filters: Record<string, unknown>): Promise<number>;
+}
+
+/**
  * Configuration options for the Validator.
  */
 export interface ValidatorOptions {
@@ -480,7 +487,7 @@ export class Validator {
 
         try {
             // Query database to count existing records with same field values
-            const count = await (context.api as { count: (obj: string, filters: Record<string, unknown>) => Promise<number> }).count(objectName, filters);
+            const count = await (context.api as ValidationApi).count(objectName, filters);
 
             const valid = count === 0;
 
