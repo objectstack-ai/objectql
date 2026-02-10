@@ -174,6 +174,8 @@ export class ObjectQLSecurityPlugin implements RuntimePlugin {
     const registerHook = (name: string, handler: any) => {
         if (typeof ctx.hook === 'function') {
             ctx.hook(name, handler);
+        } else if (typeof (kernel as any).use === 'function') {
+            (kernel as any).use(name, handler);
         } else if (typeof (kernel as any).hooks?.register === 'function') {
            (kernel as any).hooks.register(name, handler);
         } else {
