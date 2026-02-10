@@ -28,7 +28,7 @@ export class ObjectRepository {
     }
     
     private getKernel(): ObjectKernel {
-        return this.app.getKernel();
+        return this.app.getKernel() as ObjectKernel;
     }
 
     private getOptions(extra: Record<string, unknown> = {}) {

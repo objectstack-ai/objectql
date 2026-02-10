@@ -120,7 +120,7 @@ export class DatabasePermissionStorage implements IPermissionStorage {
       });
       const row = Array.isArray(rows) ? rows[0] : undefined;
       if (!row) return undefined;
-      return JSON.parse(row.config) as PermissionConfig;
+      return JSON.parse((row as Record<string, unknown>).config as string) as PermissionConfig;
     } catch {
       return undefined;
     }
@@ -134,8 +134,9 @@ export class DatabasePermissionStorage implements IPermissionStorage {
       const items = Array.isArray(rows) ? rows : [];
       for (const row of items) {
         try {
-          const config = JSON.parse(row.config) as PermissionConfig;
-          result.set(row.object_name, config);
+          const rowData = row as Record<string, unknown>;
+          const config = JSON.parse(rowData.config as string) as PermissionConfig;
+          result.set(rowData.object_name as string, config);
         } catch {
           // Skip rows with corrupt JSON
         }
@@ -154,8 +155,9 @@ export class DatabasePermissionStorage implements IPermissionStorage {
       // Create a shallow copy to avoid issues when deleting during iteration
       const items = Array.isArray(rows) ? [...rows] : [];
       for (const row of items) {
-        if (row._id || row.id || row.object_name) {
-          await driver.delete(this.tableName, row._id ?? row.id ?? row.object_name, {});
+        const rowData = row as Record<string, unknown>;
+        if (rowData._id || rowData.id || rowData.object_name) {
+          await driver.delete(this.tableName, (rowData._id ?? rowData.id ?? rowData.object_name) as string | number, {});
         }
       }
     } catch {
@@ -187,8 +189,9 @@ export class DatabasePermissionStorage implements IPermissionStorage {
       });
       const row = Array.isArray(rows) ? rows[0] : undefined;
       if (row) {
-        const id = row._id ?? row.id ?? row.object_name;
-        await driver.update(this.tableName, id, {
+        const rowData = row as Record<string, unknown>;
+        const id = rowData._id ?? rowData.id ?? rowData.object_name;
+        await driver.update(this.tableName, id as string | number, {
           config: JSON.stringify(config),
           updated_at: new Date().toISOString(),
         }, {});
@@ -214,8 +217,9 @@ export class DatabasePermissionStorage implements IPermissionStorage {
       });
       const row = Array.isArray(rows) ? rows[0] : undefined;
       if (row) {
-        const id = row._id ?? row.id ?? row.object_name;
-        await driver.delete(this.tableName, id, {});
+        const rowData = row as Record<string, unknown>;
+        const id = rowData._id ?? rowData.id ?? rowData.object_name;
+        await driver.delete(this.tableName, id as string | number, {});
       }
     } catch {
       // Row may not exist

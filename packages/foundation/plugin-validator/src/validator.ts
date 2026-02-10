@@ -364,7 +364,7 @@ export class Validator {
         }
 
         // Check if transition is allowed
-        const transitions = rule.transitions?.[oldState];
+        const transitions = rule.transitions?.[oldState as string];
         if (!transitions) {
             return {
                 rule: rule.name,
@@ -384,7 +384,7 @@ export class Validator {
             allowedNext = transitions.allowed_next || [];
         }
 
-        const isAllowed = allowedNext.includes(newState);
+        const isAllowed = allowedNext.includes(newState as string);
 
         return {
             rule: rule.name,
@@ -480,7 +480,7 @@ export class Validator {
 
         try {
             // Query database to count existing records with same field values
-            const count = await context.api.count(objectName, filters);
+            const count = await (context.api as { count: (obj: string, filters: Record<string, unknown>) => Promise<number> }).count(objectName, filters);
 
             const valid = count === 0;
 

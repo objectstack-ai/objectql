@@ -545,19 +545,19 @@ export class RemoteDriver implements Driver {
      * @example
      * ```typescript
      * // Execute a custom workflow
-     * const result = await driver.execute('/api/workflows/approve', {
+     * const result = await driver.executeCustomEndpoint('/api/workflows/approve', {
      *   workflowId: 'wf_123',
      *   comment: 'Approved'
      * });
      * 
      * // Use default execute endpoint
-     * const result = await driver.execute(undefined, {
+     * const result = await driver.executeCustomEndpoint(undefined, {
      *   action: 'calculateMetrics',
      *   params: { year: 2024 }
      * });
      * ```
      */
-    async execute(endpoint?: string, payload?: any, _options?: any): Promise<any> {
+    async executeCustomEndpoint(endpoint?: string, payload?: any, _options?: any): Promise<any> {
         return this.retryWithBackoff(async () => {
             const targetEndpoint = endpoint 
                 ? this.buildEndpoint(endpoint)

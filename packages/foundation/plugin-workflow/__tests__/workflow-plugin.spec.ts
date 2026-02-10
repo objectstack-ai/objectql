@@ -8,7 +8,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { WorkflowPlugin } from '../src/workflow-plugin';
-import type { _StateMachineConfig } from '@objectql/types';
+import type { StateMachineConfig } from '@objectql/types';
 
 describe('WorkflowPlugin', () => {
   let plugin: WorkflowPlugin;
