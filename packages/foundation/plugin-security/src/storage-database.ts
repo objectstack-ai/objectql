@@ -23,6 +23,17 @@ import type { IPermissionStorage, SecurityPluginConfig } from './types';
 const DEFAULT_TABLE = 'objectql_permissions';
 
 /**
+ * Interface for permission storage row structure
+ */
+interface PermissionRow {
+  _id?: string | number;
+  id?: string | number;
+  object_name: string;
+  config: string;
+  updated_at?: string;
+}
+
+/**
  * Resolver function that locates a Driver instance by datasource name.
  * Typically wired from the ObjectQL application layer.
  */
@@ -118,7 +129,7 @@ export class DatabasePermissionStorage implements IPermissionStorage {
         filters: [['object_name', '=', objectName]],
         top: 1,
       });
-      const row = Array.isArray(rows) ? rows[0] : undefined;
+      const row = Array.isArray(rows) ? rows[0] as unknown as PermissionRow | undefined : undefined;
       if (!row) return undefined;
       return JSON.parse(row.config) as PermissionConfig;
     } catch {
@@ -131,7 +142,7 @@ export class DatabasePermissionStorage implements IPermissionStorage {
     const result = new Map<string, PermissionConfig>();
     try {
       const rows = await driver.find(this.tableName, {});
-      const items = Array.isArray(rows) ? rows : [];
+      const items = Array.isArray(rows) ? rows as unknown as PermissionRow[] : [];
       for (const row of items) {
         try {
           const config = JSON.parse(row.config) as PermissionConfig;
@@ -152,10 +163,11 @@ export class DatabasePermissionStorage implements IPermissionStorage {
     try {
       const rows = await driver.find(this.tableName, {});
       // Create a shallow copy to avoid issues when deleting during iteration
-      const items = Array.isArray(rows) ? [...rows] : [];
+      const items = Array.isArray(rows) ? rows as unknown as PermissionRow[] : [];
       for (const row of items) {
-        if (row._id || row.id || row.object_name) {
-          await driver.delete(this.tableName, row._id ?? row.id ?? row.object_name, {});
+        const id = row._id ?? row.id ?? row.object_name;
+        if (id !== undefined) {
+          await driver.delete(this.tableName, id, {});
         }
       }
     } catch {
@@ -185,13 +197,15 @@ export class DatabasePermissionStorage implements IPermissionStorage {
         filters: [['object_name', '=', config.object]],
         top: 1,
       });
-      const row = Array.isArray(rows) ? rows[0] : undefined;
+      const row = Array.isArray(rows) ? rows[0] as unknown as PermissionRow | undefined : undefined;
       if (row) {
         const id = row._id ?? row.id ?? row.object_name;
-        await driver.update(this.tableName, id, {
+        if (id !== undefined) {
+          await driver.update(this.tableName, id, {
           config: JSON.stringify(config),
           updated_at: new Date().toISOString(),
         }, {});
+        }
       }
     } else {
       await driver.create(this.tableName, {
@@ -212,10 +226,12 @@ export class DatabasePermissionStorage implements IPermissionStorage {
         filters: [['object_name', '=', objectName]],
         top: 1,
       });
-      const row = Array.isArray(rows) ? rows[0] : undefined;
+      const row = Array.isArray(rows) ? rows[0] as unknown as PermissionRow | undefined : undefined;
       if (row) {
         const id = row._id ?? row.id ?? row.object_name;
-        await driver.delete(this.tableName, id, {});
+        if (id !== undefined) {
+          await driver.delete(this.tableName, id, {});
+        }
       }
     } catch {
       // Row may not exist

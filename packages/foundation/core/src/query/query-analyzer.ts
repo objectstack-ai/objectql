@@ -271,7 +271,7 @@ export class QueryAnalyzer {
      * @private
      */
     private getSchema(objectName: string): ObjectConfig {
-        const obj = this.metadata.get('object', objectName);
+        const obj = this.metadata.get<ObjectConfig>('object', objectName);
         if (!obj) {
             throw new ObjectQLError({ code: 'NOT_FOUND', message: `Object '${objectName}' not found` });
         }

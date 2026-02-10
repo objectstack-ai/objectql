@@ -11,7 +11,7 @@
  * These complement the protocol types from @objectql/types
  */
 
-import type { _StateMachineConfig } from '@objectql/types';
+import type { StateMachineConfig } from '@objectql/types';
 
 /**
  * Execution context for state machine operations

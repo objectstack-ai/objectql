@@ -688,7 +688,7 @@ describe('RemoteDriver', () => {
                 json: async () => mockResponse
             });
 
-            const result = await driver.execute('/api/custom', payload);
+            const result = await driver.executeCustomEndpoint('/api/custom', payload);
 
             expect(global.fetch).toHaveBeenCalledWith(
                 'http://localhost:3000/api/custom',
@@ -708,7 +708,7 @@ describe('RemoteDriver', () => {
                 json: async () => ({ success: true })
             });
 
-            await driver.execute(undefined, payload);
+            await driver.executeCustomEndpoint(undefined, payload);
 
             expect(global.fetch).toHaveBeenCalledWith(
                 'http://localhost:3000/api/execute',
@@ -729,7 +729,7 @@ describe('RemoteDriver', () => {
                 })
             });
 
-            await expect(driver.execute('/api/test', {}))
+            await expect(driver.executeCustomEndpoint('/api/test', {}))
                 .rejects
                 .toThrow('Server error');
         });

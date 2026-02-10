@@ -44,7 +44,7 @@ export class ObjectLoader {
                             // Object name does not match filename — using doc.name
                         }
 
-                        const packageEntry = ctx.registry.getEntry('package-map', ctx.file);
+                        const packageEntry = ctx.registry.getEntry<{ package?: string }>('package-map', ctx.file);
                         registerObject(ctx.registry, doc, ctx.file, ctx.packageName || (packageEntry && packageEntry.package));
                         return;
                     }
@@ -295,7 +295,7 @@ function registerObject(registry: MetadataRegistry, obj: any, file: string, pack
     // --- End Smart Defaults ---
 
     // Check for existing object to Merge
-    const existing = registry.getEntry('object', obj.name);
+    const existing = registry.getEntry<{ content?: ObjectConfig }>('object', obj.name);
     if (existing) {
         const base = existing.content as ObjectConfig;
         
