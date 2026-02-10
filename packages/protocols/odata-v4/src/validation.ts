@@ -148,7 +148,7 @@ export const BatchChangeSetSchema = z.object({
     requests: z.array(z.object({
         method: z.enum(['POST', 'PATCH', 'PUT', 'DELETE']),
         url: z.string(),
-        headers: z.record(z.string()).optional(),
+        headers: z.record(z.string(), z.string()).optional(),
         body: z.any().optional()
     })).min(1)
 });
@@ -161,7 +161,7 @@ export const BatchRequestSchema = z.object({
     queries: z.array(z.object({
         method: z.literal('GET'),
         url: z.string(),
-        headers: z.record(z.string()).optional()
+        headers: z.record(z.string(), z.string()).optional()
     })).optional()
 }).refine(
     data => (data.changeSets && data.changeSets.length > 0) || (data.queries && data.queries.length > 0),
@@ -223,7 +223,7 @@ export function validateQueryOptions(options: unknown): z.infer<typeof QueryOpti
                 ODataErrorCode.INVALID_QUERY,
                 'Invalid query options',
                 undefined,
-                error.errors.map(err => ({
+                error.issues.map((err: any) => ({
                     code: err.code,
                     message: err.message,
                     target: err.path.join('.')
@@ -246,7 +246,7 @@ export function validateBatchRequest(request: unknown): z.infer<typeof BatchRequ
                 ODataErrorCode.BAD_REQUEST,
                 'Invalid batch request format',
                 undefined,
-                error.errors.map(err => ({
+                error.issues.map((err: any) => ({
                     code: err.code,
                     message: err.message,
                     target: err.path.join('.')

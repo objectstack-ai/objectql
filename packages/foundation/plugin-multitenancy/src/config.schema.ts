@@ -42,10 +42,7 @@ export const MultiTenancyPluginConfigSchema = z.object({
    * Tenant resolver function to get current tenant from context
    * If not provided, falls back to context.user.tenantId or context.tenantId
    */
-  tenantResolver: z.function()
-    .args(z.any())
-    .returns(z.union([z.string(), z.promise(z.string())]))
-    .optional(),
+  tenantResolver: z.any().optional(),
   
   /**
    * Schema isolation mode
