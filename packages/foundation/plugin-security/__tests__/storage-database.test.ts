@@ -341,9 +341,9 @@ describe('DatabasePermissionStorage', () => {
       // Reload should restore to initial state
       await storage.reload();
       const result = await storage.loadAll();
-      expect(result.size).toBe(1);
-      expect(result.has('accounts')).toBe(true);
-      expect(result.has('contacts')).toBe(false);
+        expect(result.size).toBe(1);
+        expect(result.get('accounts')).toEqual(SAMPLE_PERM);
+        expect(result.has('contacts')).toBe(false);
     });
   });
 });
