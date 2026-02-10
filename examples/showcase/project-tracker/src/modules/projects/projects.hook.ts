@@ -7,6 +7,7 @@
  */
 
 import { ObjectHookDefinition } from '@objectql/types';
+import { Projects } from '../../types/projects';
 
 /**
  * Project Hooks - Business Logic Implementation
@@ -14,7 +15,7 @@ import { ObjectHookDefinition } from '@objectql/types';
  * This file implements all lifecycle hooks for the Project object.
  * Hooks are automatically triggered during CRUD operations.
  */
-const hooks: ObjectHookDefinition = {
+const hooks: ObjectHookDefinition<Projects> = {
     /**
      * beforeCreate Hook
      * 
@@ -42,7 +43,7 @@ const hooks: ObjectHookDefinition = {
         // Auto-assign owner from user context
         // Note: Framework automatically sets created_by, but we also need owner field
         if (user?.id) {
-            data.owner = user.id;
+            data.owner = String(user.id);
         }
 
         // Set default status to planned if not provided
