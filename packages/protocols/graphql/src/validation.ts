@@ -148,7 +148,7 @@ export function validateGraphQLInput<T>(
         return schema.parse(input);
     } catch (error) {
         if (error instanceof z.ZodError) {
-            const details: ValidationErrorDetails[] = error.issues.map((err: any) => ({
+            const details: ValidationErrorDetails[] = error.issues.map((err: z.ZodIssue) => ({
                 field: err.path.join('.'),
                 message: err.message,
                 code: err.code

@@ -108,7 +108,7 @@ export function validateRequest(request: unknown): z.infer<typeof JSONRPCRequest
                 JSONRPCErrorCode.INVALID_REQUEST,
                 'Invalid JSON-RPC request format',
                 {
-                    validationErrors: error.issues.map((err: any) => ({
+                    validationErrors: error.issues.map((err: z.ZodIssue) => ({
                         path: err.path.join('.'),
                         message: err.message
                     }))
@@ -131,7 +131,7 @@ export function validateBatchRequest(request: unknown): z.infer<typeof JSONRPCBa
                 JSONRPCErrorCode.INVALID_REQUEST,
                 'Invalid JSON-RPC batch request format',
                 {
-                    validationErrors: error.issues.map((err: any) => ({
+                    validationErrors: error.issues.map((err: z.ZodIssue) => ({
                         path: err.path.join('.'),
                         message: err.message
                     }))
@@ -188,7 +188,7 @@ export function validateMethodParams<T>(
                 JSONRPCErrorCode.INVALID_PARAMS,
                 `Invalid parameters for method '${methodName}'`,
                 {
-                    validationErrors: error.issues.map((err: any) => ({
+                    validationErrors: error.issues.map((err: z.ZodIssue) => ({
                         path: err.path.join('.'),
                         message: err.message
                     }))

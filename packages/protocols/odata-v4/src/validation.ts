@@ -223,7 +223,7 @@ export function validateQueryOptions(options: unknown): z.infer<typeof QueryOpti
                 ODataErrorCode.INVALID_QUERY,
                 'Invalid query options',
                 undefined,
-                error.issues.map((err: any) => ({
+                error.issues.map((err: z.ZodIssue) => ({
                     code: err.code,
                     message: err.message,
                     target: err.path.join('.')
@@ -246,7 +246,7 @@ export function validateBatchRequest(request: unknown): z.infer<typeof BatchRequ
                 ODataErrorCode.BAD_REQUEST,
                 'Invalid batch request format',
                 undefined,
-                error.issues.map((err: any) => ({
+                error.issues.map((err: z.ZodIssue) => ({
                     code: err.code,
                     message: err.message,
                     target: err.path.join('.')
