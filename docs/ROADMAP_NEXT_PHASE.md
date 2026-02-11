@@ -364,17 +364,17 @@ Each rule should be re-enabled incrementally after fixing violations:
 
 ### 7A. Core performance
 
-The `packages/foundation/core/src/optimizations/` directory contains advanced optimization modules that are already implemented:
+The optimization modules have been extracted into `@objectql/plugin-optimizations` (see [PR #373](https://github.com/objectstack-ai/objectql/pull/373)):
 
-| Module | Status | Action |
-|--------|--------|--------|
-| `GlobalConnectionPool.ts` | ✅ Implemented | Benchmark and tune pool sizes |
-| `QueryCompiler.ts` | ✅ Implemented | Add cache hit/miss metrics |
-| `LazyMetadataLoader.ts` | ✅ Implemented | Verify lazy loading in production |
-| `OptimizedValidationEngine.ts` | ✅ Implemented | Benchmark vs. base validator |
-| `CompiledHookManager.ts` | ✅ Implemented | Profile hook chain overhead |
-| `SQLQueryOptimizer.ts` | ✅ Implemented | Add query plan analysis |
-| `DependencyGraph.ts` | ✅ Implemented | Ensure circular dependency detection |
+| Module | Package | Status | Action |
+|--------|---------|--------|--------|
+| `GlobalConnectionPool.ts` | `@objectql/plugin-optimizations` | ✅ Implemented | Benchmark and tune pool sizes |
+| `QueryCompiler.ts` | `@objectql/plugin-optimizations` | ✅ Implemented | Add cache hit/miss metrics |
+| `LazyMetadataLoader.ts` | `@objectql/plugin-optimizations` | ✅ Implemented | Verify lazy loading in production |
+| `OptimizedValidationEngine.ts` | `@objectql/plugin-optimizations` | ✅ Implemented | Benchmark vs. base validator |
+| `CompiledHookManager.ts` | `@objectql/plugin-optimizations` | ✅ Implemented | Profile hook chain overhead |
+| `SQLQueryOptimizer.ts` | `@objectql/plugin-optimizations` | ✅ Implemented | Add query plan analysis |
+| `DependencyGraph.ts` | `@objectql/plugin-optimizations` | ✅ Implemented | Ensure circular dependency detection |
 
 ### 7B. Browser bundle optimization
 

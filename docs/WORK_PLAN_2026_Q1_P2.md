@@ -1,9 +1,9 @@
 # ObjectQL Work Plan — 2026 Roadmap
 
-> Created: 2026-02-08 | Last Updated: 2026-02-09 | Status: **Active**  
+> Created: 2026-02-08 | Last Updated: 2026-02-11 | Status: **Active**  
 > Current Version: **4.2.0** (all packages aligned, except `vscode-objectql` at 4.1.0)  
-> Runtime: `@objectstack/cli` v2.0.1 (Kernel pattern) — `@objectql/server` deprecated, `packages/runtime/` removed.  
-> @objectstack Platform: **v2.0.1** (upgraded from v2.0.0 — maintenance & stability patch)
+> Runtime: `@objectstack/cli` v2.0.6 (Kernel pattern) — `@objectql/server` deprecated, `packages/runtime/` removed.  
+> @objectstack Platform: **v2.0.6**
 
 ---
 
@@ -429,7 +429,9 @@ Standardize third-party plugin distribution.
 | Package | NPM Name | Environment | Description |
 |---------|----------|-------------|-------------|
 | `packages/foundation/types` | `@objectql/types` | Universal | **The Constitution.** Protocol-derived TypeScript types. Zero runtime deps. |
-| `packages/foundation/core` | `@objectql/core` | Universal | **The Engine.** QueryBuilder, QueryCompiler, Repository, HookManager. No Node.js natives. |
+| `packages/foundation/core` | `@objectql/core` | Universal | **The Engine.** Plugin orchestrator, repository pattern, and kernel factory. Delegates query and optimization logic to dedicated plugins. |
+| `packages/foundation/plugin-query` | `@objectql/plugin-query` | Universal | **🆕 PR #373.** QueryService, QueryBuilder, QueryAnalyzer, FilterTranslator. Extracted from `@objectql/core`. |
+| `packages/foundation/plugin-optimizations` | `@objectql/plugin-optimizations` | Universal | **🆕 PR #373.** Connection pooling, query compilation, compiled hooks, lazy metadata loading, SQL query optimization. Extracted from `@objectql/core`. |
 | `packages/foundation/platform-node` | `@objectql/platform-node` | Node.js | File system integration, YAML loading, glob-based plugin discovery. |
 | `packages/foundation/plugin-security` | `@objectql/plugin-security` | Universal | RBAC, Field-Level Security, Row-Level Security with AST-level enforcement. |
 | `packages/foundation/plugin-validator` | `@objectql/plugin-validator` | Universal | 5-type validation engine: field, cross-field, state_machine, unique, business_rule. |
@@ -472,12 +474,12 @@ Standardize third-party plugin distribution.
 
 | Package | Owner | Version | Role in ObjectQL |
 |---------|-------|---------|-----------------|
-| `@objectstack/cli` | ObjectStack | 2.0.1 | Kernel bootstrapper (`objectstack serve`) |
-| `@objectstack/core` | ObjectStack | 2.0.1 | Kernel runtime, plugin lifecycle |
-| `@objectstack/plugin-hono-server` | ObjectStack | 2.0.1 | HTTP server (Hono-based) |
-| `@objectstack/spec` | ObjectStack | 2.0.1 | Formal protocol specifications (Zod schemas) |
-| `@objectstack/runtime` | ObjectStack | 2.0.1 | Core runtime & query engine |
-| `@objectstack/objectql` | ObjectStack | 2.0.1 | ObjectQL runtime bridge |
+| `@objectstack/cli` | ObjectStack | 2.0.6 | Kernel bootstrapper (`objectstack serve`) |
+| `@objectstack/core` | ObjectStack | 2.0.6 | Kernel runtime, plugin lifecycle |
+| `@objectstack/plugin-hono-server` | ObjectStack | 2.0.6 | HTTP server (Hono-based) |
+| `@objectstack/spec` | ObjectStack | 2.0.6 | Formal protocol specifications (Zod schemas) |
+| `@objectstack/runtime` | ObjectStack | 2.0.6 | Core runtime & query engine |
+| `@objectstack/objectql` | ObjectStack | 2.0.6 | ObjectQL runtime bridge |
 | AI Agent / AI tooling | **Separate project** | — | Not in this monorepo |
 
 ---
