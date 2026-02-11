@@ -35,9 +35,13 @@ ObjectQL is organized as a Monorepo to ensure modularity and universal compatibi
 | Package | Environment | Description |
 | :--- | :--- | :--- |
 | **[`@objectql/types`](./packages/foundation/types)** | Universal | **The Contract.** Pure TypeScript interfaces defining the protocol. |
-| **[`@objectql/core`](./packages/foundation/core)** | Universal | **The Engine.** The runtime logic, validation, and repository pattern. |
-| **[`@objectql/platform-node`](./packages/foundation/platform-node)**| Node.js | Node.js platform utilities for file system integration, YAML loading, and plugin management. |
+| **[`@objectql/core`](./packages/foundation/core)** | Universal | **The Engine.** Plugin orchestrator, repository pattern, and kernel factory. Delegates query and optimization logic to dedicated plugins. |
+| **[`@objectql/plugin-query`](./packages/foundation/plugin-query)** | Universal | **Query Plugin.** QueryService, QueryBuilder, QueryAnalyzer, and FilterTranslator. |
+| **[`@objectql/plugin-optimizations`](./packages/foundation/plugin-optimizations)** | Universal | **Optimizations Plugin.** Connection pooling, query compilation, compiled hooks, lazy metadata loading, and SQL query optimization. |
 | **[`@objectql/plugin-security`](./packages/foundation/plugin-security)**| Universal | **Security Plugin.** Comprehensive RBAC, Field-Level Security (FLS), and Row-Level Security (RLS) with AST-level enforcement. |
+| **[`@objectql/plugin-validator`](./packages/foundation/plugin-validator)**| Universal | **Validation Plugin.** 5-type validation engine: field, cross-field, state machine, unique, and business rule. |
+| **[`@objectql/plugin-formula`](./packages/foundation/plugin-formula)**| Universal | **Formula Plugin.** Computed fields with JavaScript expressions in a sandboxed evaluator. |
+| **[`@objectql/platform-node`](./packages/foundation/platform-node)**| Node.js | Node.js platform utilities for file system integration, YAML loading, and plugin management. |
 
 ### Driver Layer
 
@@ -357,21 +361,75 @@ If you fork or clone the repository to contribute or run examples from source:
 
 1. **Setup Workspace**
    ```bash
-   git clone https://github.com/objectql/objectql.git
+   git clone https://github.com/objectstack-ai/objectql.git
    cd objectql
-   npm install -g pnpm
+   corepack enable && corepack prepare pnpm@10.28.2 --activate
    pnpm install
    ```
 
 2. **Build Packages**
-   You must build the core libraries before running examples, as they rely on local workspace builds.
+   You must build all packages before running examples or the dev server, as they rely on local workspace builds.
    ```bash
    pnpm build
    ```
 
-3. **Run Examples**
+3. **Run Dev Server**
+   Start the full-stack development server with all plugins (ObjectQL + Security + GraphQL + OData + JSON-RPC):
+   ```bash
+   pnpm dev
+   # Equivalent to: objectstack serve --dev
+   # Starts ObjectStack kernel at http://localhost:5050
+   # Loads project-tracker example metadata from objectstack.config.ts
+   ```
    
-   These examples run as **scripts** to demonstrate the ObjectQL Core Engine capabilities (Validation, CRUD, Logic Hooks). They use an in-memory SQLite database.
+   The dev server is powered by `@objectstack/cli` (v2.0.6). It reads `objectstack.config.ts` in the project root, which configures the kernel with all plugins:
+
+   ```typescript
+   // objectstack.config.ts
+   export default {
+     metadata: { name: 'objectos', version: '1.0.0' },
+     objects: loadObjects(projectTrackerDir),
+     plugins: [
+       new HonoServerPlugin({ port: 5050 }),
+       new ObjectQLPlugin({
+         enableRepository: true,
+         enableQueryService: true,   // ← uses @objectql/plugin-query internally
+         enableValidator: true,
+         enableFormulas: true,
+         datasources: { default: new MemoryDriver() }
+       }),
+       new ObjectQLSecurityPlugin({ enableAudit: false }),
+       new GraphQLPlugin({ basePath: '/graphql' }),
+       new ODataV4Plugin({ basePath: '/odata' }),
+       new JSONRPCPlugin({ basePath: '/rpc' }),
+     ]
+   };
+   ```
+
+   **Available `objectstack` CLI commands** (via `@objectstack/cli`):
+
+   | Command | Description |
+   | :--- | :--- |
+   | `objectstack serve --dev` | Start dev server (same as `pnpm dev`) |
+   | `objectstack serve` | Start production server |
+   | `objectstack create` | Scaffold a new project |
+   | `objectstack doctor` | Diagnose environment issues |
+
+4. **Run Tests**
+   ```bash
+   # Run all tests
+   npx vitest run
+
+   # Run tests for a specific package
+   npx vitest run packages/foundation/core
+
+   # Run tests in watch mode
+   npx vitest --watch
+   ```
+
+5. **Run Examples**
+   
+   These examples run as **scripts** to demonstrate the ObjectQL Core Engine capabilities (Validation, CRUD, Logic Hooks). They use an in-memory database.
 
    **Starter (Project Tracker):**
    ```bash
@@ -386,6 +444,24 @@ If you fork or clone the repository to contribute or run examples from source:
    pnpm --filter @objectql/example-enterprise-erp start
    # Output: Plugin initialization, Employee creation logs, Audit trails
    ```
+
+### Architecture Note
+
+Since [#373](https://github.com/objectstack-ai/objectql/pull/373), `@objectql/core` has been decomposed into focused plugin packages:
+
+- **`@objectql/plugin-query`** — QueryService, QueryBuilder, QueryAnalyzer, FilterTranslator
+- **`@objectql/plugin-optimizations`** — Connection pooling, query compilation, compiled hooks, SQL optimization
+
+`@objectql/core` re-exports these modules with `@deprecated` tags for backward compatibility. **New code should import directly from the plugin packages:**
+
+```typescript
+// ✅ Recommended
+import { QueryService } from '@objectql/plugin-query';
+import { QueryCompiler } from '@objectql/plugin-optimizations';
+
+// ❌ Deprecated (still works, but will be removed in v5)
+import { QueryService, QueryCompiler } from '@objectql/core';
+```
 
 ---
 

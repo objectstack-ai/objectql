@@ -3,9 +3,15 @@
   "references": [
     // Foundation Layer
     { "path": "./packages/foundation/types" },
+    { "path": "./packages/foundation/plugin-query" },
+    { "path": "./packages/foundation/plugin-optimizations" },
     { "path": "./packages/foundation/plugin-validator" },
     { "path": "./packages/foundation/plugin-formula" },
     { "path": "./packages/foundation/plugin-security" },
+    { "path": "./packages/foundation/plugin-multitenancy" },
+    { "path": "./packages/foundation/plugin-workflow" },
+    { "path": "./packages/foundation/plugin-sync" },
+    { "path": "./packages/foundation/edge-adapter" },
     { "path": "./packages/foundation/core" },
     { "path": "./packages/foundation/platform-node" },
     
@@ -17,16 +23,20 @@
     { "path": "./packages/drivers/fs" },
     { "path": "./packages/drivers/redis" },
     { "path": "./packages/drivers/excel" },
+    { "path": "./packages/drivers/sqlite-wasm" },
+    { "path": "./packages/drivers/pg-wasm" },
     
     // Protocols Layer
     { "path": "./packages/protocols/graphql" },
     { "path": "./packages/protocols/json-rpc" },
     { "path": "./packages/protocols/odata-v4" },
+    { "path": "./packages/protocols/sync" },
     
     // Tools Layer
     { "path": "./packages/tools/cli" },
     { "path": "./packages/tools/create" },
     { "path": "./packages/tools/driver-tck" },
+    { "path": "./packages/tools/protocol-tck" },
     { "path": "./packages/tools/vscode-objectql" },
     
     // Examples

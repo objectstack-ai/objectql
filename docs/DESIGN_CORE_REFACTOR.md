@@ -3,7 +3,7 @@
 > **Author:** ObjectStack Architecture Team  
 > **Date:** 2026-02-10  
 > **Updated:** 2026-02-11  
-> **Status:** Ready for Implementation — Upstream prerequisites met  
+> **Status:** ✅ Completed — Implemented in [PR #373](https://github.com/objectstack-ai/objectql/pull/373)  
 > **Scope:** Decompose `@objectql/core`, align with `@objectstack/objectql` plugin extension model  
 > **Upstream Repo:** https://github.com/objectstack-ai/spec (v2.0.5+, latest commit `33646a7`)  
 > **Local Repo:** https://github.com/objectstack-ai/objectql (v4.2.0)
