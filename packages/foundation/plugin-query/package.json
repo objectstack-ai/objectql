@@ -1,0 +1,28 @@
+{
+  "name": "@objectql/plugin-query",
+  "version": "4.2.0",
+  "description": "Query execution and analysis plugin for ObjectQL - query service, builder, and analyzer",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@objectql/types": "workspace:*",
+    "@objectql/plugin-optimizations": "workspace:*",
+    "@objectstack/core": "^2.0.6",
+    "@objectstack/spec": "^2.0.6"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0"
+  }
+}
