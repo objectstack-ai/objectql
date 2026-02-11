@@ -56,9 +56,6 @@ export * from './plugin';
 // ── Utilities ──
 export * from './util';
 
-// ── AI runtime (kept in core — separate AI project) ──
-export * from './ai';
-
 // ── Re-export from @objectql/plugin-query (backward compatibility) ──
 // Import from '@objectql/plugin-query' directly for new code.
 

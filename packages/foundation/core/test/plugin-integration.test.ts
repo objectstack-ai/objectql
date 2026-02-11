@@ -61,7 +61,6 @@ describe('ObjectQLPlugin Integration', () => {
                 enableRepository: false,
                 enableValidator: false,
                 enableFormulas: true,
-                enableAI: false,
             });
             expect(plugin).toBeDefined();
         });
@@ -176,7 +175,6 @@ describe('ObjectQLPlugin Integration', () => {
                 enableRepository: false,
                 enableValidator: false,
                 enableFormulas: false,
-                enableAI: false,
             });
             
             const runtimeContext = { engine: mockContext.app };

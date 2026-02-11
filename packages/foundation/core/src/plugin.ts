@@ -12,9 +12,7 @@ import type { Logger } from '@objectql/types';
 import { ValidatorPlugin, ValidatorPluginConfig } from '@objectql/plugin-validator';
 import { FormulaPlugin, FormulaPluginConfig } from '@objectql/plugin-formula';
 import { QueryPlugin } from '@objectql/plugin-query';
-import { ObjectStackProtocolImplementation } from './protocol';
 import type { Driver } from '@objectql/types';
-import { createDefaultAiRegistry } from './ai';
 import { SchemaRegistry } from '@objectstack/objectql';
 
 /**
@@ -52,12 +50,6 @@ export interface ObjectQLPluginConfig {
   formulaConfig?: FormulaPluginConfig;
   
   /**
-   * Enable AI integration
-   * @default true
-   */
-  enableAI?: boolean;
-  
-  /**
    * Enable query service and analyzer
    * @default true
    */
@@ -90,7 +82,6 @@ export class ObjectQLPlugin implements RuntimePlugin {
       enableRepository: true,
       enableValidator: true,
       enableFormulas: true,
-      enableAI: true,
       enableQueryService: true,
       ...config
     };
@@ -148,10 +139,6 @@ export class ObjectQLPlugin implements RuntimePlugin {
     if (this.config.enableFormulas !== false) {
       const formulaPlugin = new FormulaPlugin(this.config.formulaConfig || {});
       await formulaPlugin.install?.(ctx);
-    }
-    
-    if (this.config.enableAI !== false) {
-      await this.registerAI(kernel);
     }
     
     // Register system service aliases
@@ -266,17 +253,6 @@ export class ObjectQLPlugin implements RuntimePlugin {
     this.logger.info('Repository pattern registered');
   }
   
-  /**
-   * Register AI integration
-   * @private
-   */
-  private async registerAI(kernel: any): Promise<void> {
-    if (!(kernel as any).ai) {
-      (kernel as any).ai = createDefaultAiRegistry();
-    }
-    this.logger.debug('AI integration registered');
-  }
-
     // --- Adapter for @objectstack/core compatibility ---
     init = async (pluginCtx: any): Promise<void> => {
         // The @objectstack/core kernel passes a PluginContext (with registerService, getKernel, etc.)
@@ -325,13 +301,8 @@ export class ObjectQLPlugin implements RuntimePlugin {
                 : undefined,
         };
 
-        // Register Protocol Service
+        // Register 'objectql' service for AppPlugin compatibility
         if (typeof pluginCtx.registerService === 'function') {
-            this.logger.info('Registering protocol service...');
-            const protocolShim = new ObjectStackProtocolImplementation(actualKernel);
-            pluginCtx.registerService('protocol', protocolShim);
-
-            // Register 'objectql' service for AppPlugin compatibility
             pluginCtx.registerService('objectql', this);
             this.logger.debug('Registered objectql service');
         }
