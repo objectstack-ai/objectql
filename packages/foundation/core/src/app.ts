@@ -27,9 +27,9 @@ import { ObjectKernel, type Plugin } from '@objectstack/runtime';
 import { ObjectQL as RuntimeObjectQL, SchemaRegistry } from '@objectstack/objectql';
 import { ValidatorPlugin } from '@objectql/plugin-validator';
 import { FormulaPlugin } from '@objectql/plugin-formula';
+import { CompiledHookManager } from '@objectql/plugin-optimizations';
 import { ObjectRepository } from './repository';
 import { convertIntrospectedSchemaToObjects } from './util';
-import { CompiledHookManager } from './optimizations/CompiledHookManager';
 
 /**
  * ObjectQL

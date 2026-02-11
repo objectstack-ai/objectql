@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-// import { describe, it, expect, beforeEach } from '@jest/globals';
+// Import from the plugin package where the optimization modules now live
 import {
     OptimizedMetadataRegistry,
     QueryCompiler,
@@ -16,7 +16,7 @@ import {
     LazyMetadataLoader,
     DependencyGraph,
     SQLQueryOptimizer
-} from '../src/optimizations';
+} from '@objectql/plugin-optimizations';
 
 describe('Kernel Optimizations', () => {
     describe('OptimizedMetadataRegistry', () => {
