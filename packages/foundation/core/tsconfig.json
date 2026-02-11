@@ -12,6 +12,8 @@
   "references": [
     { "path": "../types" },
     { "path": "../plugin-validator" },
-    { "path": "../plugin-formula" }
+    { "path": "../plugin-formula" },
+    { "path": "../plugin-query" },
+    { "path": "../plugin-optimizations" }
   ]
 }

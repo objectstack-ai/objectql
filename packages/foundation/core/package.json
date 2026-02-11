@@ -30,6 +30,8 @@
   },
   "dependencies": {
     "@objectql/plugin-formula": "workspace:*",
+    "@objectql/plugin-optimizations": "workspace:*",
+    "@objectql/plugin-query": "workspace:*",
     "@objectql/plugin-validator": "workspace:*",
     "@objectql/types": "workspace:*",
     "@objectstack/core": "^2.0.6",

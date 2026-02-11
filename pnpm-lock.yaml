@@ -549,6 +549,12 @@ importers:
       '@objectql/plugin-formula':
         specifier: workspace:*
         version: link:../plugin-formula
+      '@objectql/plugin-optimizations':
+        specifier: workspace:*
+        version: link:../plugin-optimizations
+      '@objectql/plugin-query':
+        specifier: workspace:*
+        version: link:../plugin-query
       '@objectql/plugin-validator':
         specifier: workspace:*
         version: link:../plugin-validator
