@@ -11,29 +11,11 @@ import { ConsoleLogger, ObjectQLError } from '@objectql/types';
 import type { Logger } from '@objectql/types';
 import { ValidatorPlugin, ValidatorPluginConfig } from '@objectql/plugin-validator';
 import { FormulaPlugin, FormulaPluginConfig } from '@objectql/plugin-formula';
-import { QueryService } from './query/query-service';
-import { QueryAnalyzer } from './query/query-analyzer';
+import { QueryPlugin } from '@objectql/plugin-query';
 import { ObjectStackProtocolImplementation } from './protocol';
 import type { Driver } from '@objectql/types';
 import { createDefaultAiRegistry } from './ai';
 import { SchemaRegistry } from '@objectstack/objectql';
-
-/**
- * Extended kernel with ObjectQL services
- */
-interface ExtendedKernel {
-    metadata?: any;
-    actions?: any;
-    hooks?: any;
-    getAllDrivers?: () => Driver[];
-    create?: (objectName: string, data: any) => Promise<any>;
-    update?: (objectName: string, id: string, data: any) => Promise<any>;
-    delete?: (objectName: string, id: string) => Promise<any>;
-    find?: (objectName: string, query: any) => Promise<any>;
-    get?: (objectName: string, id: string) => Promise<any>;
-    queryService?: QueryService;
-    queryAnalyzer?: QueryAnalyzer;
-}
 
 /**
  * Configuration for the ObjectQL Plugin
@@ -91,12 +73,15 @@ export interface ObjectQLPluginConfig {
 /**
  * ObjectQL Plugin
  * 
- * Implements the RuntimePlugin interface to provide ObjectQL's enhanced features
- * (Repository, Validator, Formula, AI) on top of the microkernel.
+ * Thin orchestrator that composes ObjectQL's extension plugins
+ * (QueryPlugin, ValidatorPlugin, FormulaPlugin, AI) on top of the microkernel.
+ * 
+ * Delegates query execution to @objectql/plugin-query and provides
+ * repository-pattern CRUD bridging to the kernel.
  */
 export class ObjectQLPlugin implements RuntimePlugin {
   name = '@objectql/core';
-  version = '4.0.2';
+  version = '4.2.0';
   private logger: Logger;
   
   constructor(private config: ObjectQLPluginConfig = {}, _ql?: any) {
@@ -119,7 +104,7 @@ export class ObjectQLPlugin implements RuntimePlugin {
   async install(ctx: RuntimeContext): Promise<void> {
     this.logger.info('Installing plugin...');
     
-    const kernel = ctx.engine as ExtendedKernel;
+    const kernel = ctx.engine as any;
     
     // Get datasources - either from config or from kernel drivers
     let datasources = this.config.datasources;
@@ -141,21 +126,11 @@ export class ObjectQLPlugin implements RuntimePlugin {
       }
     }
     
-    // Register QueryService and QueryAnalyzer if enabled
+    // Delegate query service registration to QueryPlugin
     if (this.config.enableQueryService !== false && datasources) {
-      const queryService = new QueryService(
-        datasources,
-        kernel.metadata
-      );
-      kernel.queryService = queryService;
-      
-      const queryAnalyzer = new QueryAnalyzer(
-        queryService,
-        kernel.metadata
-      );
-      kernel.queryAnalyzer = queryAnalyzer;
-      
-      this.logger.info('QueryService and QueryAnalyzer registered');
+      const queryPlugin = new QueryPlugin({ datasources });
+      await queryPlugin.install(ctx);
+      this.logger.info('QueryPlugin installed (QueryService + QueryAnalyzer)');
     }
     
     // Register components based on configuration
@@ -280,8 +255,6 @@ export class ObjectQLPlugin implements RuntimePlugin {
     kernel.count = async (objectName: string, filters?: any): Promise<number> => {
       // Use QueryService if available
       if ((kernel as any).queryService) {
-          // QueryService.count expects a UnifiedQuery filter or just filter object?
-          // Looking at QueryService.count signature: count(objectName: string, where?: Filter, options?: QueryOptions)
           const result = await (kernel as any).queryService.count(objectName, filters);
           return result.value;
       }
