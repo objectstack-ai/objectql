@@ -377,9 +377,43 @@ If you fork or clone the repository to contribute or run examples from source:
    Start the full-stack development server with all plugins (ObjectQL + Security + GraphQL + OData + JSON-RPC):
    ```bash
    pnpm dev
+   # Equivalent to: objectstack serve --dev
    # Starts ObjectStack kernel at http://localhost:5050
-   # Loads project-tracker example metadata
+   # Loads project-tracker example metadata from objectstack.config.ts
    ```
+   
+   The dev server is powered by `@objectstack/cli` (v2.0.6). It reads `objectstack.config.ts` in the project root, which configures the kernel with all plugins:
+
+   ```typescript
+   // objectstack.config.ts
+   export default {
+     metadata: { name: 'objectos', version: '1.0.0' },
+     objects: loadObjects(projectTrackerDir),
+     plugins: [
+       new HonoServerPlugin({ port: 5050 }),
+       new ObjectQLPlugin({
+         enableRepository: true,
+         enableQueryService: true,   // ← uses @objectql/plugin-query internally
+         enableValidator: true,
+         enableFormulas: true,
+         datasources: { default: new MemoryDriver() }
+       }),
+       new ObjectQLSecurityPlugin({ enableAudit: false }),
+       new GraphQLPlugin({ basePath: '/graphql' }),
+       new ODataV4Plugin({ basePath: '/odata' }),
+       new JSONRPCPlugin({ basePath: '/rpc' }),
+     ]
+   };
+   ```
+
+   **Available `objectstack` CLI commands** (via `@objectstack/cli`):
+
+   | Command | Description |
+   | :--- | :--- |
+   | `objectstack serve --dev` | Start dev server (same as `pnpm dev`) |
+   | `objectstack serve` | Start production server |
+   | `objectstack create` | Scaffold a new project |
+   | `objectstack doctor` | Diagnose environment issues |
 
 4. **Run Tests**
    ```bash
