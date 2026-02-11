@@ -2,9 +2,10 @@
 
 > **Author:** ObjectStack Architecture Team  
 > **Date:** 2026-02-10  
-> **Status:** Draft / RFC  
+> **Updated:** 2026-02-11  
+> **Status:** Ready for Implementation — Upstream prerequisites met  
 > **Scope:** Decompose `@objectql/core`, align with `@objectstack/objectql` plugin extension model  
-> **Upstream Repo:** https://github.com/objectstack-ai/spec (v2.0.5)  
+> **Upstream Repo:** https://github.com/objectstack-ai/spec (v2.0.5+, latest commit `33646a7`)  
 > **Local Repo:** https://github.com/objectstack-ai/objectql (v4.2.0)
 
 ---
@@ -44,7 +45,7 @@ This document proposes **decomposing `@objectql/core`** from a monolithic runtim
 | `@objectql/core` LOC | ~3,500 | ~800 (thin re-exports + plugin orchestrator) |
 | Duplication with upstream | High (CRUD, hooks, middleware, repository, protocol) | Near-zero |
 | Plugin count (new) | 0 dedicated | 2 new plugins extracted |
-| Upstream PRs needed | 0 | 1-2 PRs to `@objectstack/spec` |
+| Upstream PRs needed | 0 | ~~1-2 PRs to `@objectstack/spec`~~ → ✅ 0 (all merged) |
 
 ---
 
@@ -421,12 +422,15 @@ export function createObjectQLKernel(options: ObjectQLKernelOptions = {}) {
 
 ### 5.1 Overview
 
-To support the local project's features as plugins, the upstream `@objectstack/objectql` engine needs **4 enhancement areas**:
+> **🟢 Status (2026-02-11): All upstream prerequisites are now met.**
+> Evaluated against upstream commit [`33646a7`](https://github.com/objectstack-ai/spec/commit/33646a782cc5cb076e404a3178e84b8fd5fd7087) (2026-02-11).
 
-| # | Change | Upstream Package | Type | Priority |
-|---|--------|-----------------|------|----------|
-| 5.1.1 | Query Profiling Hook Extension Point | `@objectstack/objectql` | Feature | 🔴 High |
-| 5.1.2 | Optimization Integration Hooks | `@objectstack/core` | Feature | 🟡 Medium |
+The following upstream enhancements were identified as prerequisites for this refactoring. All have been implemented in the upstream `@objectstack/spec` repository:
+
+| # | Change | Upstream Package | Type | Status |
+|---|--------|-----------------|------|--------|
+| 5.1.1 | Query Profiling Hook Extension Point | `@objectstack/objectql` | Feature | ✅ **Met** — Middleware API exists; `OperationContext` and `EngineMiddleware` types exported |
+| 5.1.2 | Optimization Integration Hooks | `@objectstack/core` | Feature | ✅ **Met** — `replaceService<T>()` added to `PluginContext` interface and implemented |
 
 > **Removed from scope:**
 > - ~~Gateway / Protocol Router Extension Point~~ — The upstream server (`@objectstack/plugin-hono-server`) already provides the API layer; no gateway plugin is needed.
@@ -434,37 +438,11 @@ To support the local project's features as plugins, the upstream `@objectstack/o
 
 ### 5.1.1 Query Profiling Hook Extension Point
 
-**Problem:** The local `QueryService` wraps driver CRUD calls with profiling (execution time, rows scanned, index usage). The upstream engine has no extension point for injecting profiling around driver calls.
+**Problem:** The local `QueryService` wraps driver CRUD calls with profiling (execution time, rows scanned, index usage). The upstream engine had no extension point for injecting profiling around driver calls.
 
-**Proposed Change (upstream `@objectstack/objectql/engine.ts`):**
+**Resolution: ✅ Use existing middleware — no dedicated `QueryProfiler` interface needed.**
 
-```typescript
-// Add profiling hooks in the engine lifecycle
-export interface QueryProfiler {
-  beforeExecute(context: {
-    object: string;
-    operation: string;
-    ast?: QueryAST;
-  }): void;
-  afterExecute(context: {
-    object: string;
-    operation: string;
-    ast?: QueryAST;
-    result?: unknown;
-    executionTimeMs: number;
-    error?: Error;
-  }): void;
-}
-
-// In ObjectQL class:
-private profiler?: QueryProfiler;
-
-registerProfiler(profiler: QueryProfiler) {
-  this.profiler = profiler;
-}
-```
-
-**Alternative:** Achieve via middleware (already exists). The middleware chain is sufficient if the local `QueryPlugin` registers a profiling middleware:
+The upstream `ObjectQL` engine already provides `registerMiddleware(fn, options)` with onion-model execution, and exports both `OperationContext` and `EngineMiddleware` types for plugin authors. The local `QueryPlugin` can register a profiling middleware directly:
 
 ```typescript
 // In QueryPlugin.init():
@@ -476,38 +454,52 @@ ql.registerMiddleware(async (opCtx, next) => {
 });
 ```
 
-**Recommendation:** Use existing middleware — **no upstream change needed** for profiling.
+**Upstream evidence:**
+- `packages/objectql/src/engine.ts` — `registerMiddleware(fn: EngineMiddleware, options?: { object?: string }): void`
+- `packages/objectql/src/index.ts` — `export type { OperationContext, EngineMiddleware } from './engine.js'`
+- Merged via [PR #597](https://github.com/objectstack-ai/spec/pull/597) (2026-02-11)
 
 ### 5.1.2 Optimization Integration Hooks
 
-**Problem:** The local `OptimizationsPlugin` wants to replace/enhance kernel internals (metadata registry, hook manager, connection pooling). The upstream kernel doesn't expose these as replaceable services.
+**Problem:** The local `OptimizationsPlugin` wants to replace/enhance kernel internals (metadata registry, hook manager, connection pooling). The upstream kernel didn't expose these as replaceable services.
 
-**Proposed Change (upstream `@objectstack/core`):**
+**Resolution: ✅ `replaceService<T>()` API added to upstream `PluginContext`.**
 
-Add a **service replacement** API to `PluginContext`:
+The upstream `@objectstack/core` now provides a first-class `replaceService` method:
 
 ```typescript
-// In PluginContext:
+// PluginContext interface (packages/core/src/types.ts):
 replaceService<T>(name: string, implementation: T): void;
 ```
 
-**Alternative:** Use **decorator pattern** — the optimization plugin wraps existing services:
+This is fully implemented in:
+- `ObjectKernel` (`packages/core/src/kernel.ts`) — validates service exists, replaces in both service map and `PluginLoader`
+- `ObjectKernelBase` (`packages/core/src/kernel-base.ts`) — supports both `Map` and `IServiceRegistry` backends
+- `PluginLoader` (`packages/core/src/plugin-loader.ts`) — `replaceService()` with existence validation
+
+**Usage (in OptimizationsPlugin):**
 
 ```typescript
 // In OptimizationsPlugin.start():
 const existingMetadata = ctx.getService('metadata');
 const optimizedMetadata = new OptimizedMetadataRegistry(existingMetadata);
-ctx.registerService('metadata', optimizedMetadata); // override
+ctx.replaceService('metadata', optimizedMetadata); // first-class API
 ```
 
-**Recommendation:** The decorator approach works today. An upstream `replaceService` API would be cleaner but is not blocking.
+**Upstream evidence:**
+- Merged via commit [`b6b411e`](https://github.com/objectstack-ai/spec/commit/b6b411e8db38065ce1e0f95ba9b5b3ce26ab8bad) — "feat(core): add replaceService to PluginContext for optimization integration hooks"
+- Validation fix via commit [`a5a5742`](https://github.com/objectstack-ai/spec/commit/a5a5742289d7cf3d0cadb59bcedc2507a0401e63) — "fix: add validation to PluginLoader.replaceService for consistency"
 
 ### 5.2 Summary of Upstream PRs
 
-| PR | Target Repo | Target Package | Description | Blocking? |
-|----|------------|----------------|-------------|-----------|
-| **PR-1** | objectstack-ai/spec | `@objectstack/objectql` | Export `OperationContext` and `EngineMiddleware` types for plugin authors | 🔴 Yes |
-| **PR-2** | objectstack-ai/spec | `@objectstack/core` | Add `replaceService` to `PluginContext` interface | 🟡 No (decorator workaround) |
+> **🟢 All upstream prerequisites are complete. No blocking PRs remain.**
+
+| PR | Target Repo | Target Package | Description | Status |
+|----|------------|----------------|-------------|--------|
+| **PR-1** | objectstack-ai/spec | `@objectstack/objectql` | Export `OperationContext` and `EngineMiddleware` types for plugin authors | ✅ **Merged** (PR #597) |
+| **PR-2** | objectstack-ai/spec | `@objectstack/core` | Add `replaceService` to `PluginContext` interface | ✅ **Merged** (commit `b6b411e`) |
+
+Additionally, the upstream has added **16+ formal service contract interfaces** in `@objectstack/spec/contracts` (PRs [#599](https://github.com/objectstack-ai/spec/pull/599), [#600](https://github.com/objectstack-ai/spec/pull/600)), including `IMetadataService`, `IAuthService`, `IAnalyticsService`, `IAIService`, `IRealtimeService`, and more. These contracts further strengthen the plugin boundary for the local refactoring.
 
 > **Removed from scope:**
 > - ~~Add `gateway` to `CoreServiceName` enum~~ — Gateway plugin is not needed (upstream server handles API).
@@ -666,7 +658,7 @@ export { QueryService } from '@objectql/plugin-query';
 
 ### Phase 3: Core Slimming (Week 3)
 
-- [ ] Submit upstream PRs (§5.2)
+- [x] ~~Submit upstream PRs (§5.2)~~ — All upstream prerequisites already merged (see §5)
 - [ ] Remove `app.ts` (local ObjectQL class)
 - [ ] Remove `protocol.ts` (duplicated)
 - [ ] Remove `repository.ts` (duplicated)
@@ -679,8 +671,8 @@ export { QueryService } from '@objectql/plugin-query';
 
 ### Phase 4: Upstream Integration (Week 4+)
 
-- [ ] Merge upstream PRs
-- [ ] Update `@objectstack/*` dependency versions
+- [x] ~~Merge upstream PRs~~ — All prerequisites merged as of 2026-02-11
+- [ ] Update `@objectstack/*` dependency versions to include `replaceService` and type exports
 - [ ] Remove local workarounds once upstream changes are released
 - [ ] Tag v5.0 release
 
@@ -692,7 +684,7 @@ export { QueryService } from '@objectql/plugin-query';
 
 | Risk | Probability | Impact | Mitigation |
 |------|-------------|--------|------------|
-| **Upstream rejects PRs** | Medium | High | All changes have local workarounds (decorators, service registration) |
+| ~~**Upstream rejects PRs**~~ | ~~Medium~~ | ~~High~~ | ✅ **Eliminated** — All upstream PRs merged as of 2026-02-11 |
 | **API breaking changes** | Medium | High | Phase approach with deprecated re-exports; v5.0 major release for removals |
 | **Hook behavior difference** | Low | Medium | Comprehensive hook integration tests; compare local vs upstream execution order |
 | **Performance regression** | Low | Medium | Benchmark before/after; `OptimizationsPlugin` preserves all existing optimizations |
@@ -826,8 +818,58 @@ export type { DriverInterface, StateMachineConfig, ... } // spec types
 | **FQN** | Fully Qualified Name — namespaced identifier for objects (e.g., `com.acme.crm.user`) |
 | **QueryAST** | Abstract Syntax Tree for queries (from `@objectstack/spec/data`) |
 | **HookContext** | Context object passed to lifecycle hooks (from `@objectstack/spec/data`) |
-| **OperationContext** | Context for middleware chain (operation, AST, result) |
+| **OperationContext** | Context for middleware chain (operation, AST, result) — exported from `@objectstack/objectql` |
+| **EngineMiddleware** | Onion-model middleware type for data operations — exported from `@objectstack/objectql` |
 | **CoreServiceName** | Enum of recognized kernel services (metadata, data, analytics, auth, etc.) |
+| **replaceService** | `PluginContext` method for swapping kernel service implementations (added upstream for §5.1.2) |
+
+### 10.5 Upstream Compliance Verification (2026-02-11)
+
+Evaluated against upstream `@objectstack/spec` commit [`33646a7`](https://github.com/objectstack-ai/spec/commit/33646a782cc5cb076e404a3178e84b8fd5fd7087).
+
+#### Exports Verification (`@objectstack/objectql`)
+
+The following types and classes are confirmed exported from `packages/objectql/src/index.ts`:
+
+| Export | Type | Required By |
+|--------|------|-------------|
+| `ObjectQL` | Class | §4.4 (re-export as canonical engine) |
+| `ObjectRepository` | Class | §4.4 (re-export) |
+| `ScopedContext` | Class | §4.4 (re-export) |
+| `SchemaRegistry` | Class | §4.4 (re-export) |
+| `ObjectQLPlugin` | Class | §4.3 (kernel bootstrap) |
+| `ObjectStackProtocolImplementation` | Class | §4.4 (re-export) |
+| `MetadataFacade` | Class | §4.4 (re-export) |
+| `computeFQN`, `parseFQN` | Function | §4.4 (re-export) |
+| `RESERVED_NAMESPACES`, `DEFAULT_OWNER_PRIORITY`, `DEFAULT_EXTENDER_PRIORITY` | Constant | §4.4 (re-export) |
+| `ObjectContributor` | Type | §4.4 (re-export) |
+| `ObjectQLHostContext` | Type | §4.4 (re-export) |
+| `HookHandler`, `HookEntry` | Type | §4.4 (re-export) |
+| `OperationContext` | Type | §5.1.1 (query profiling middleware) |
+| `EngineMiddleware` | Type | §5.1.1 (query profiling middleware) |
+
+#### `PluginContext` API Verification (`@objectstack/core`)
+
+The `PluginContext` interface in `packages/core/src/types.ts` exposes:
+
+| Method | Signature | Required By |
+|--------|-----------|-------------|
+| `registerService` | `(name: string, service: any): void` | Standard plugin registration |
+| `getService` | `<T>(name: string): T` | Service discovery |
+| `replaceService` | `<T>(name: string, implementation: T): void` | §5.1.2 (optimization hooks) |
+| `getServices` | `(): Map<string, any>` | Service enumeration |
+| `hook` | `(name: string, handler: Function): void` | Hook registration |
+| `trigger` | `(name: string, ...args: any[]): Promise<void>` | Hook triggering |
+| `logger` | `Logger` | Logging |
+| `getKernel` | `(): ObjectKernel` | Advanced use cases |
+
+#### Engine Middleware Verification (`@objectstack/objectql`)
+
+The `ObjectQL` engine in `packages/objectql/src/engine.ts` confirms:
+- `registerMiddleware(fn: EngineMiddleware, options?: { object?: string }): void` — onion-model middleware
+- `registerHook(event, handler, options)` — priority-based, per-object hooks
+- `triggerHooks(event, context)` — hook execution with object matching
+- All CRUD operations execute through `executeWithMiddleware()` pipeline
 
 ---
 
