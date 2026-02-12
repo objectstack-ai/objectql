@@ -41,6 +41,10 @@ ObjectQL is organized as a Monorepo to ensure modularity and universal compatibi
 | **[`@objectql/plugin-security`](./packages/foundation/plugin-security)**| Universal | **Security Plugin.** Comprehensive RBAC, Field-Level Security (FLS), and Row-Level Security (RLS) with AST-level enforcement. |
 | **[`@objectql/plugin-validator`](./packages/foundation/plugin-validator)**| Universal | **Validation Plugin.** 5-type validation engine: field, cross-field, state machine, unique, and business rule. |
 | **[`@objectql/plugin-formula`](./packages/foundation/plugin-formula)**| Universal | **Formula Plugin.** Computed fields with JavaScript expressions in a sandboxed evaluator. |
+| **[`@objectql/plugin-workflow`](./packages/foundation/plugin-workflow)**| Universal | **Workflow Plugin.** State machine executor with guards, actions, and compound states. |
+| **[`@objectql/plugin-multitenancy`](./packages/foundation/plugin-multitenancy)**| Universal | **Multi-Tenancy Plugin.** Automatic tenant isolation via hook-based filter rewriting. |
+| **[`@objectql/plugin-sync`](./packages/foundation/plugin-sync)**| Universal | **Sync Plugin.** Offline-first sync engine with conflict resolution strategies. |
+| **[`@objectql/edge-adapter`](./packages/foundation/edge-adapter)**| Universal | **Edge Adapter.** Runtime detection and capability validation for edge environments. |
 | **[`@objectql/platform-node`](./packages/foundation/platform-node)**| Node.js | Node.js platform utilities for file system integration, YAML loading, and plugin management. |
 
 ### Driver Layer
@@ -159,14 +163,14 @@ ObjectQL isolates the "What" (Query) from the "How" (Execution).
 * Perfect for testing, prototyping, and client-side state management
 * See [Browser Demo](./examples/browser-demo/) for live examples
 
-#### SQLite WASM Driver (`@objectql/driver-sqlite-wasm`) *(Coming Soon)*
+#### SQLite WASM Driver (`@objectql/driver-sqlite-wasm`)
 
 * **Browser-native SQL** via WebAssembly (~300KB gzip)
 * **OPFS persistence** — GB-scale storage, data survives page refreshes
 * Reuses the Knex SQLite dialect — same query compilation as `driver-sql`
 * Perfect for offline-first apps and PWAs
 
-#### PostgreSQL WASM Driver (`@objectql/driver-pg-wasm`) *(Coming Soon)*
+#### PostgreSQL WASM Driver (`@objectql/driver-pg-wasm`)
 
 * **Full PostgreSQL in the browser** via PGlite (~3MB gzip)
 * JSONB, full-text search, arrays, range types
@@ -333,14 +337,23 @@ ObjectQL has **mature, production-ready implementations** of core features:
 > **📄 See [Protocol Compliance Report](./PROTOCOL_COMPLIANCE_REPORT.md) for comprehensive analysis**  
 > **🗺️ See [Protocol Development Plan](./PROTOCOL_DEVELOPMENT_PLAN_ZH.md) for detailed roadmap (中文)**
 
-### Features Requiring Application Layer Implementation ⚠️
+### Plugin Ecosystem 🧩
 
-These features have type definitions but require implementation in your application:
+| Plugin | Status | Description |
+|--------|--------|-------------|
+| **[`@objectql/plugin-workflow`](./packages/foundation/plugin-workflow)** | ✅ Implemented | Full state machine executor with guards, actions, compound states |
+| **[`@objectql/plugin-multitenancy`](./packages/foundation/plugin-multitenancy)** | ✅ Implemented | Automatic tenant isolation via hook-based filter rewriting |
+| **[`@objectql/plugin-sync`](./packages/foundation/plugin-sync)** | ✅ Implemented | Offline-first sync with LWW, CRDT, and manual conflict resolution |
+| **[`@objectql/edge-adapter`](./packages/foundation/edge-adapter)** | ✅ Implemented | Edge runtime detection and capability validation |
 
-- 🔜 **Workflows** - `@objectql/plugin-workflow` planned (Q1 Phase 3) — full state machine executor
-- 🔜 **Multi-tenancy** - `@objectql/plugin-multitenancy` planned (Q2) — automatic tenant isolation
-- ⚠️ **Audit Trails** - Use hooks to track changes (or use the security plugin's audit logging)
-- ⚠️ **Reports** - Use query API + external libraries
+### Protocol Layer 🌐
+
+| Package | Compliance | Status |
+|---------|-----------|--------|
+| **[`@objectql/protocol-graphql`](./packages/protocols/graphql)** | 85% | ⚠️ Good — Subscriptions, Federation planned Q2 |
+| **[`@objectql/protocol-odata-v4`](./packages/protocols/odata-v4)** | 80% | ⚠️ Good — $expand, $count, $batch planned Q2 |
+| **[`@objectql/protocol-json-rpc`](./packages/protocols/json-rpc)** | 90% | ✅ Excellent |
+| **[`@objectql/protocol-sync`](./packages/protocols/sync)** | ✅ | ✅ Sync protocol handler with change logs and checkpoints |
 
 ### Key Documents
 

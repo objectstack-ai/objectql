@@ -1,0 +1,229 @@
+---
+title: PG WASM Driver
+description: Full PostgreSQL in the browser via PGlite WASM with IndexedDB, OPFS, and in-memory storage
+---
+
+# PG WASM Driver
+
+The PG WASM Driver (`@objectql/driver-pg-wasm`) embeds a complete PostgreSQL instance inside the browser using [PGlite](https://pglite.dev/) — a WASM build of Postgres. It supports JSONB, full-text search, transactions, and array fields with no server required.
+
+## Features
+
+- ✅ **Full PostgreSQL**: Real Postgres query engine compiled to WebAssembly
+- ✅ **Multiple Storage Backends**: IndexedDB, OPFS, or in-memory
+- ✅ **Transactions**: Full ACID transaction support with begin/commit/rollback
+- ✅ **JSONB**: Native JSON document queries
+- ✅ **Full-Text Search**: Built-in `tsvector` / `tsquery` support
+- ✅ **Array Fields**: Native PostgreSQL array column types
+- ✅ **Knex Pipeline**: Reuses `@objectql/driver-sql` Knex codegen (`client: 'pg'`)
+- ✅ **Extensions**: Load PGlite extensions (e.g., `pgvector`)
+
+## Architecture
+
+```
+QueryAST → Knex (client: 'pg') → SQL string → PGlite WASM → IndexedDB / OPFS / Memory
+```
+
+The driver compiles queries through the same Knex `pg` pipeline used by the server-side SQL driver, then executes the SQL against a PGlite WASM instance. The result is full PostgreSQL semantics — including window functions, CTEs, and JSONB operators — running entirely client-side.
+
+## Installation
+
+```bash
+pnpm add @objectql/driver-pg-wasm
+```
+
+## Configuration
+
+```typescript
+interface PgWasmDriverConfig {
+  /** Storage backend */
+  storage: 'idb' | 'opfs' | 'memory';
+  /** Database name (IndexedDB database or OPFS directory). Default: 'objectql' */
+  database?: string;
+  /** PGlite extensions to load */
+  extensions?: Record<string, unknown>;
+}
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `storage` | `'idb' \| 'opfs' \| 'memory'` | `'idb'` | Persistence backend |
+| `database` | `string` | `'objectql'` | Database / namespace identifier |
+| `extensions` | `Record<string, unknown>` | `{}` | PGlite extensions to load |
+
+## Quick Start
+
+```typescript
+import { ObjectStackKernel } from '@objectstack/runtime';
+import { PgWasmDriver } from '@objectql/driver-pg-wasm';
+
+const kernel = new ObjectStackKernel([
+  new PgWasmDriver({
+    storage: 'idb',
+    database: 'my-app'
+  })
+]);
+
+await kernel.start();
+```
+
+## Storage Backends
+
+| Backend | Persistence | Capacity | Best For |
+|---------|-------------|----------|----------|
+| `idb` (IndexedDB) | ✅ Persistent | Hundreds of MB (quota-dependent) | Default — widest browser support |
+| `opfs` (Origin Private File System) | ✅ Persistent | GB-scale | Large datasets, near-native I/O |
+| `memory` | ❌ Ephemeral | WASM heap only | Unit tests, SSR, throwaway sessions |
+
+```typescript
+// IndexedDB (default, broadest support)
+new PgWasmDriver({ storage: 'idb' });
+
+// OPFS (best performance for large datasets)
+new PgWasmDriver({ storage: 'opfs' });
+
+// Memory (testing)
+new PgWasmDriver({ storage: 'memory' });
+```
+
+## PostgreSQL-Specific Features
+
+### JSONB Queries
+
+```typescript
+const ctx = kernel.createContext({ isSystem: true });
+const settings = ctx.object('settings');
+
+// Create a record with JSONB data
+await settings.create({
+  userId: 'user-1',
+  preferences: { theme: 'dark', locale: 'en', notifications: true }
+});
+
+// Query nested JSONB fields
+const darkThemeUsers = await settings.find({
+  filters: [['preferences.theme', '=', 'dark']]
+});
+```
+
+### Full-Text Search
+
+```typescript
+const articles = ctx.object('articles');
+
+// Full-text search using PostgreSQL tsvector
+const results = await articles.find({
+  filters: [['content', 'contains', 'ObjectQL migration guide']]
+});
+```
+
+### Transactions
+
+```typescript
+const driver = kernel.getDriver();
+const trx = await driver.beginTransaction();
+
+try {
+  await driver.create('orders', { total: 99.99, status: 'pending' }, { transaction: trx });
+  await driver.update('inventory', 'item-1', { stock: 49 }, { transaction: trx });
+  await driver.commit(trx);
+} catch (error) {
+  await driver.rollback(trx);
+  throw error;
+}
+```
+
+### Extensions
+
+```typescript
+import { vector } from '@electric-sql/pglite/vector';
+
+const driver = new PgWasmDriver({
+  storage: 'idb',
+  extensions: { vector }
+});
+```
+
+## Browser Requirements
+
+| Requirement | Fallback |
+|-------------|----------|
+| WebAssembly | Required — no fallback |
+| IndexedDB | Required for `idb` storage |
+| OPFS | Required for `opfs` storage; needs `Cross-Origin-Isolated` headers |
+| `SharedArrayBuffer` | Required for OPFS sync access |
+
+For OPFS storage, set these HTTP headers:
+
+```
+Cross-Origin-Opener-Policy: same-origin
+Cross-Origin-Embedder-Policy: require-corp
+```
+
+## Capabilities
+
+```typescript
+{
+  transactions: true,
+  joins: true,
+  aggregations: true,
+  fullTextSearch: true,
+  jsonFields: true,
+  arrayFields: true,
+  queryFilters: true,
+  querySorting: true,
+  queryPagination: true,
+  bulkOperations: true,
+  schemaSync: true
+}
+```
+
+## Usage
+
+```typescript
+const ctx = kernel.createContext({ isSystem: true });
+const projects = ctx.object('projects');
+
+// Create
+const project = await projects.create({
+  name: 'ObjectQL v5',
+  tags: ['typescript', 'wasm'],
+  metadata: { priority: 'high', milestone: 'Q3' }
+});
+
+// Query with filters, sort, and pagination
+const active = await projects.find({
+  filters: [['metadata.priority', '=', 'high']],
+  sort: [['created_at', 'desc']],
+  limit: 20
+});
+
+// Aggregations
+const stats = await projects.aggregate({
+  aggregations: [
+    { function: 'count', field: '*', alias: 'total' }
+  ],
+  groupBy: ['status']
+});
+```
+
+## Bundle Size
+
+| Component | Size (gzip) |
+|-----------|-------------|
+| PGlite WASM binary | ~2.8 MB |
+| Driver + Knex pg codegen | ~200 KB |
+| **Total** | **~3 MB** |
+
+Consider lazy-loading the driver to keep initial bundle size small:
+
+```typescript
+const { PgWasmDriver } = await import('@objectql/driver-pg-wasm');
+```
+
+## Related Documentation
+
+- [SQL Driver](/docs/drivers/sql) — Server-side Knex driver with native PostgreSQL
+- [SQLite WASM Driver](/docs/drivers/sqlite-wasm) — Lighter-weight browser SQL alternative
+- [Memory Driver](/docs/drivers/memory) — Lightweight in-memory driver
+- [Driver Overview](/docs/drivers)

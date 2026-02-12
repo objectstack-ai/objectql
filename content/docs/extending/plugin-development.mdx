@@ -1,0 +1,271 @@
+---
+title: "Plugin Development Guide"
+description: "Step-by-step guide to building, testing, and publishing ObjectQL plugins"
+---
+
+# Plugin Development Guide
+
+This guide walks through building a production-quality ObjectQL plugin from scratch. For a high-level overview of the plugin system, see [Plugin Development](/docs/extending/plugins).
+
+## Plugin Contract
+
+Every plugin implements the `RuntimePlugin` interface from `@objectstack/runtime`:
+
+```typescript
+import type { RuntimePlugin, RuntimeContext } from '@objectstack/runtime';
+
+interface RuntimePlugin {
+  name: string;
+  version?: string;
+  install?(ctx: RuntimeContext): void | Promise<void>;
+  onStart?(ctx: RuntimeContext): void | Promise<void>;
+  onStop?(ctx: RuntimeContext): void | Promise<void>;
+}
+```
+
+| Method | Phase | Purpose |
+|--------|-------|---------|
+| `constructor` | Instantiation | Validate config, set defaults |
+| `install(ctx)` | Kernel init | Register hooks, initialize state |
+| `onStart(ctx)` | `kernel.start()` | Connect to services, start background jobs |
+| `onStop(ctx)` | `kernel.stop()` | Cleanup resources, flush buffers |
+
+## Plugin Lifecycle
+
+```
+new MyPlugin(config)      →  constructor (validate config)
+kernel = new Kernel([p])  →  plugin.install(ctx)
+await kernel.start()      →  plugin.onStart(ctx)
+  ↕ runtime hooks fire
+await kernel.stop()       →  plugin.onStop(ctx)
+```
+
+## Registering Hooks
+
+Inside `install()`, use the kernel's `use()` method to register lifecycle hooks:
+
+```typescript
+async install(ctx: RuntimeContext): Promise<void> {
+  const kernel = ctx.engine as any;
+
+  kernel.use?.('beforeFind', async (context: any) => {
+    // Runs before every find/findOne query
+  });
+
+  kernel.use?.('beforeCreate', async (context: any) => {
+    // Runs before every create operation
+  });
+
+  kernel.use?.('afterCreate', async (context: any) => {
+    // Runs after every create operation
+  });
+}
+```
+
+### Available Hooks
+
+| Hook | Fires | Typical Use |
+|------|-------|-------------|
+| `beforeFind` | Before query execution | Inject tenant filters, caching |
+| `afterFind` | After query execution | Transform results, decrypt fields |
+| `beforeCreate` | Before insert | Validate data, inject defaults |
+| `afterCreate` | After insert | Send notifications, audit log |
+| `beforeUpdate` | Before update | Validate transitions, capture old state |
+| `afterUpdate` | After update | Sync external systems |
+| `beforeDelete` | Before delete | Soft-delete enforcement |
+| `afterDelete` | After delete | Cascade cleanup |
+
+## Example: Audit Logging Plugin
+
+### Step 1: Define the Plugin Class
+
+```typescript
+import type { RuntimePlugin, RuntimeContext } from '@objectstack/runtime';
+import { ObjectQLError } from '@objectql/types';
+
+export class AuditPlugin implements RuntimePlugin {
+  name = '@myorg/plugin-audit';
+  version = '1.0.0';
+
+  private logs: Array<{ timestamp: number; object: string; op: string; userId?: string }> = [];
+
+  async install(ctx: RuntimeContext): Promise<void> {
+    const kernel = ctx.engine as any;
+
+    kernel.use?.('afterCreate', async (c: any) => {
+      this.logs.push({
+        timestamp: Date.now(),
+        object: c.objectName,
+        op: 'create',
+        userId: c.userId
+      });
+    });
+
+    kernel.use?.('afterUpdate', async (c: any) => {
+      this.logs.push({
+        timestamp: Date.now(),
+        object: c.objectName,
+        op: 'update',
+        userId: c.userId
+      });
+    });
+
+    kernel.use?.('afterDelete', async (c: any) => {
+      this.logs.push({
+        timestamp: Date.now(),
+        object: c.objectName,
+        op: 'delete',
+        userId: c.userId
+      });
+    });
+  }
+
+  async onStart(): Promise<void> {
+    console.log(`[${this.name}] Audit logging active`);
+  }
+
+  getLogs() {
+    return this.logs;
+  }
+}
+```
+
+### Step 2: Register with the Kernel
+
+```typescript
+import { ObjectStackKernel } from '@objectstack/runtime';
+import { InMemoryDriver } from '@objectstack/driver-memory';
+import { AuditPlugin } from './audit-plugin';
+
+const audit = new AuditPlugin();
+
+const kernel = new ObjectStackKernel([
+  new InMemoryDriver(),
+  audit
+]);
+
+await kernel.start();
+```
+
+## Example: Validation Plugin
+
+```typescript
+import type { RuntimePlugin, RuntimeContext } from '@objectstack/runtime';
+import { ObjectQLError } from '@objectql/types';
+
+export class RequiredFieldsPlugin implements RuntimePlugin {
+  name = '@myorg/plugin-required-fields';
+
+  private rules: Record<string, string[]>;
+
+  constructor(rules: Record<string, string[]>) {
+    this.rules = rules;
+  }
+
+  async install(ctx: RuntimeContext): Promise<void> {
+    const kernel = ctx.engine as any;
+
+    kernel.use?.('beforeCreate', async (c: any) => {
+      this.validate(c.objectName, c.data);
+    });
+
+    kernel.use?.('beforeUpdate', async (c: any) => {
+      this.validate(c.objectName, c.data);
+    });
+  }
+
+  private validate(objectName: string, data: Record<string, unknown>): void {
+    const required = this.rules[objectName];
+    if (!required) return;
+
+    for (const field of required) {
+      if (data[field] === undefined || data[field] === null || data[field] === '') {
+        throw new ObjectQLError({
+          code: 'VALIDATION_FAIL',
+          message: `Field "${field}" is required on "${objectName}"`,
+          details: { field, objectName }
+        });
+      }
+    }
+  }
+}
+```
+
+## Testing Plugins
+
+Use `vitest` to test plugin logic in isolation:
+
+```typescript
+import { describe, it, expect, beforeEach } from 'vitest';
+import { AuditPlugin } from '../src/audit-plugin';
+
+describe('AuditPlugin', () => {
+  let plugin: AuditPlugin;
+
+  beforeEach(() => {
+    plugin = new AuditPlugin();
+  });
+
+  it('should have correct metadata', () => {
+    expect(plugin.name).toBe('@myorg/plugin-audit');
+    expect(plugin.version).toBe('1.0.0');
+  });
+
+  it('should start with empty logs', () => {
+    expect(plugin.getLogs()).toHaveLength(0);
+  });
+});
+```
+
+### Integration Test with Kernel
+
+```typescript
+import { describe, it, expect } from 'vitest';
+import { ObjectStackKernel } from '@objectstack/runtime';
+import { AuditPlugin } from '../src/audit-plugin';
+
+describe('AuditPlugin integration', () => {
+  it('should install without errors', async () => {
+    const plugin = new AuditPlugin();
+    const kernel = new ObjectStackKernel([plugin]);
+    await expect(kernel.start()).resolves.not.toThrow();
+  });
+});
+```
+
+## Best Practices
+
+1. **No SQL generation** — Plugins must never construct raw SQL. Use the ObjectQL query API.
+2. **Use `ObjectQLError`** — Never `throw new Error()`. Always use `ObjectQLError` with a semantic code.
+3. **Structured logging** — Prefix log messages with `[pluginName]` for easy filtering.
+4. **Async safety** — Hook handlers must be `async` and must not block the event loop.
+5. **Cleanup in `onStop`** — Release resources, flush buffers, and close connections.
+6. **Single responsibility** — One concern per plugin (audit, validation, caching — not all three).
+7. **Validate config in constructor** — Fail fast with a clear error if configuration is invalid.
+8. **Do not mutate context** — Treat hook context as read-only unless the hook is explicitly designed for mutation (e.g., `beforeCreate` data injection).
+
+## Publishing
+
+Package your plugin under an npm scope:
+
+```json
+{
+  "name": "@myorg/objectql-plugin-audit",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "peerDependencies": {
+    "@objectstack/runtime": "^5.0.0"
+  }
+}
+```
+
+```bash
+pnpm build && npm publish --access public
+```
+
+## Related Documentation
+
+- [Plugin Development](/docs/extending/plugins) — High-level plugin architecture
+- [Custom Drivers](/docs/extending/custom-drivers) — Build data adapters
+- [Error Handling](/docs/guides/error-handling) — ObjectQLError reference

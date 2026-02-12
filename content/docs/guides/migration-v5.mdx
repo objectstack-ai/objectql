@@ -1,0 +1,252 @@
+---
+title: "Migration Guide: v4 → v5"
+description: "Step-by-step guide for migrating ObjectQL projects from v4 to v5"
+---
+
+# Migration Guide: v4 → v5
+
+ObjectQL v5 consolidates the runtime into the ObjectStack Kernel, removes deprecated packages, and introduces browser-native drivers. This guide covers every breaking change and the migration path for each.
+
+## Overview of v5 Changes
+
+- **Unified Kernel**: All bootstrapping goes through `ObjectStackKernel` from `@objectstack/runtime`
+- **Hono-based Server**: `@objectql/server` replaced by `@objectstack/plugin-hono-server`
+- **Browser Drivers**: New `@objectql/driver-sqlite-wasm` and `@objectql/driver-pg-wasm`
+- **Structured Errors**: All errors now use `ObjectQLError` — plain `throw new Error()` is prohibited
+- **Removed Packages**: Several legacy packages absorbed or replaced
+
+## Breaking Changes
+
+### 1. Removed `@objectql/server`
+
+The standalone Express-based server has been replaced by the ObjectStack Kernel with the Hono server plugin.
+
+**Before (v4):**
+
+```typescript
+import { ObjectQLServer } from '@objectql/server';
+
+const server = new ObjectQLServer({
+  port: 3000,
+  driver: myDriver,
+  objects: ['./src/objects']
+});
+
+await server.start();
+```
+
+**After (v5):**
+
+```typescript
+import { ObjectStackKernel } from '@objectstack/runtime';
+import { HonoServerPlugin } from '@objectstack/plugin-hono-server';
+
+const kernel = new ObjectStackKernel([
+  myDriver,
+  new HonoServerPlugin({ port: 3000, staticRoot: './public' })
+]);
+
+await kernel.start();
+```
+
+### 2. Removed `@objectql/driver-localstorage`
+
+The localStorage driver has been replaced by the SQLite WASM driver, which offers better performance, larger capacity, and real SQL queries.
+
+**Before (v4):**
+
+```typescript
+import { LocalStorageDriver } from '@objectql/driver-localstorage';
+const driver = new LocalStorageDriver({ prefix: 'myapp' });
+```
+
+**After (v5):**
+
+```typescript
+import { SqliteWasmDriver } from '@objectql/driver-sqlite-wasm';
+const driver = new SqliteWasmDriver({ storage: 'opfs', filename: 'myapp.db' });
+```
+
+### 3. Removed `@objectql/driver-utils`
+
+Shared driver utilities (ID generation, filter helpers, type coercion) have been absorbed into `@objectql/core`.
+
+**Before (v4):**
+
+```typescript
+import { generateId, applyFilters } from '@objectql/driver-utils';
+```
+
+**After (v5):**
+
+```typescript
+import { generateId, applyFilters } from '@objectql/core';
+```
+
+### 4. Removed `packages/runtime/`
+
+The legacy `packages/runtime/` directory has been replaced by the `@objectstack/runtime` package, which provides the unified `ObjectStackKernel`.
+
+**Before (v4):**
+
+```typescript
+import { Runtime } from '@objectql/runtime';
+```
+
+**After (v5):**
+
+```typescript
+import { ObjectStackKernel } from '@objectstack/runtime';
+```
+
+### 5. Error Handling: `ObjectQLError` Required
+
+All packages now throw `ObjectQLError` exclusively. Plugins and custom drivers **must** follow this convention.
+
+**Before (v4):**
+
+```typescript
+throw new Error('Record not found');
+```
+
+**After (v5):**
+
+```typescript
+import { ObjectQLError } from '@objectql/types';
+
+throw new ObjectQLError({
+  code: 'NOT_FOUND',
+  message: 'Record not found',
+  details: { objectName: 'users', recordId: id }
+});
+```
+
+## New Packages in v5
+
+| Package | Description |
+|---------|-------------|
+| `@objectql/driver-sqlite-wasm` | SQLite in the browser via WebAssembly + OPFS |
+| `@objectql/driver-pg-wasm` | PostgreSQL in the browser via PGlite WASM |
+| `@objectstack/plugin-workflow` | Declarative workflow engine |
+| `@objectstack/plugin-multitenancy` | Automatic tenant isolation |
+| `@objectstack/plugin-sync` | Offline-first data synchronization |
+| `@objectstack/edge-adapter` | Deploy kernels to edge runtimes (Cloudflare, Deno) |
+| `@objectstack/protocol-sync` | CRDT-based conflict resolution protocol |
+
+## Migration Steps
+
+### Step 1: Update Dependencies
+
+```bash
+# Remove deprecated packages
+pnpm remove @objectql/server @objectql/driver-localstorage @objectql/driver-utils @objectql/runtime
+
+# Add v5 packages
+pnpm add @objectstack/runtime @objectstack/plugin-hono-server
+```
+
+### Step 2: Update Bootstrap Code
+
+Replace all server/runtime initialization with the Kernel pattern:
+
+```typescript
+import { ObjectStackKernel } from '@objectstack/runtime';
+import { SqlDriver } from '@objectql/driver-sql';
+import { HonoServerPlugin } from '@objectstack/plugin-hono-server';
+
+const kernel = new ObjectStackKernel([
+  new SqlDriver({
+    client: 'pg',
+    connection: process.env.DATABASE_URL
+  }),
+  new HonoServerPlugin({
+    port: Number(process.env.PORT) || 3000,
+    staticRoot: './public'
+  })
+]);
+
+await kernel.start();
+```
+
+### Step 3: Replace Error Throws
+
+Search your codebase for `throw new Error` and replace with `ObjectQLError`:
+
+```bash
+grep -rn "throw new Error" src/ --include="*.ts"
+```
+
+Replace each occurrence:
+
+```typescript
+// Before
+throw new Error('Validation failed: email is required');
+
+// After
+import { ObjectQLError } from '@objectql/types';
+
+throw new ObjectQLError({
+  code: 'VALIDATION_FAIL',
+  message: 'Validation failed: email is required',
+  details: { field: 'email' }
+});
+```
+
+### Step 4: Update Imports
+
+Replace removed package imports with their v5 equivalents:
+
+```typescript
+// Before
+import { generateId } from '@objectql/driver-utils';
+import { Runtime } from '@objectql/runtime';
+
+// After
+import { generateId } from '@objectql/core';
+import { ObjectStackKernel } from '@objectstack/runtime';
+```
+
+### Step 5: Test
+
+Run the full test suite to verify the migration:
+
+```bash
+pnpm test
+```
+
+## Kernel Bootstrap Pattern (v5)
+
+The canonical v5 startup pattern for reference:
+
+```typescript
+import { ObjectStackKernel } from '@objectstack/runtime';
+import { InMemoryDriver } from '@objectstack/driver-memory';
+import { HonoServerPlugin } from '@objectstack/plugin-hono-server';
+
+import CrmApp from '@objectstack/example-crm/objectstack.config';
+import TodoApp from '@objectstack/example-todo/objectstack.config';
+
+(async () => {
+  console.log('🚀 Booting Kernel...');
+
+  const kernel = new ObjectStackKernel([
+    CrmApp,
+    TodoApp,
+    new InMemoryDriver(),
+    new HonoServerPlugin({
+      port: 3004,
+      staticRoot: './public'
+    })
+  ]);
+
+  await kernel.start();
+})();
+```
+
+## Related Documentation
+
+- [Error Handling](/docs/guides/error-handling) — ObjectQLError reference
+- [SQLite WASM Driver](/docs/drivers/sqlite-wasm) — Browser-native SQLite
+- [PG WASM Driver](/docs/drivers/pg-wasm) — Browser-native PostgreSQL
+- [Plugin Development](/docs/extending/plugins) — Build custom plugins
+- [Architecture](/docs/guides/architecture) — System architecture overview
