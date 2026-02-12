@@ -1,0 +1,266 @@
+---
+title: "Driver Development Guide"
+description: "Step-by-step guide to implementing, testing, and publishing custom ObjectQL drivers"
+---
+
+# Driver Development Guide
+
+This guide covers building a conformant ObjectQL driver from scratch. For a high-level overview, see [Custom Drivers](/docs/extending/custom-drivers).
+
+## The Driver Interface
+
+Defined in `@objectql/types`, the `Driver` interface describes the contract between the ObjectQL engine and a data backend:
+
+```typescript
+import type { Driver } from '@objectql/types';
+```
+
+### Required Methods
+
+Every driver **must** implement these core methods:
+
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| `connect` | `() => Promise<void>` | Open connection to the data source |
+| `disconnect` | `() => Promise<void>` | Close connection and release resources |
+| `find` | `(object, query, options?) => Promise<any[]>` | Query multiple records |
+| `findOne` | `(object, id, query?, options?) => Promise<any>` | Retrieve a single record by ID |
+| `create` | `(object, data, options?) => Promise<any>` | Insert a new record |
+| `update` | `(object, id, data, options?) => Promise<any>` | Update an existing record |
+| `delete` | `(object, id, options?) => Promise<any>` | Remove a record |
+| `count` | `(object, filters, options?) => Promise<number>` | Count matching records |
+| `init` | `(objects: any[]) => Promise<void>` | Initialize schema from ObjectQL metadata |
+
+### Optional Methods
+
+Implement these for advanced capabilities:
+
+| Method | Description |
+|--------|-------------|
+| `bulkCreate(object, records, options?)` | Insert multiple records in one operation |
+| `bulkUpdate(object, filters, data, options?)` | Update multiple records matching a filter |
+| `bulkDelete(object, ids, options?)` | Delete multiple records by ID |
+| `distinct(object, field, filters?, options?)` | Return distinct values for a field |
+| `aggregate(object, query, options?)` | Run aggregation queries (SUM, AVG, COUNT, etc.) |
+| `introspectSchema()` | Discover existing schema from the data source |
+| `beginTransaction()` | Start a database transaction |
+| `commitTransaction(trx)` | Commit a transaction |
+| `rollbackTransaction(trx)` | Roll back a transaction |
+| `checkHealth()` | Return `true` if connection is healthy |
+
+## DriverCapabilities
+
+Declare what your driver supports so the engine can adapt query planning:
+
+```typescript
+public readonly supports = {
+  transactions: false,
+  joins: false,
+  aggregations: false,
+  fullTextSearch: false,
+  jsonFields: true,
+  arrayFields: false,
+  queryFilters: true,
+  querySorting: true,
+  queryPagination: true,
+  bulkOperations: true,
+  schemaSync: true
+};
+```
+
+## Example: Minimal Custom Driver
+
+```typescript
+import type { Driver } from '@objectql/types';
+import { ObjectQLError } from '@objectql/types';
+
+export class MapDriver implements Driver {
+  name = 'MapDriver';
+  version = '1.0.0';
+  supports = {
+    transactions: false,
+    joins: false,
+    aggregations: false,
+    fullTextSearch: false,
+    jsonFields: true,
+    arrayFields: false,
+    queryFilters: true,
+    querySorting: true,
+    queryPagination: true
+  };
+
+  private store = new Map<string, Map<string, any>>();
+
+  async connect(): Promise<void> { /* no-op */ }
+  async disconnect(): Promise<void> { this.store.clear(); }
+
+  async init(objects: any[]): Promise<void> {
+    for (const obj of objects) {
+      if (!this.store.has(obj.name)) {
+        this.store.set(obj.name, new Map());
+      }
+    }
+  }
+
+  private getTable(objectName: string): Map<string, any> {
+    let table = this.store.get(objectName);
+    if (!table) {
+      table = new Map();
+      this.store.set(objectName, table);
+    }
+    return table;
+  }
+
+  async create(objectName: string, data: any): Promise<any> {
+    const table = this.getTable(objectName);
+    const id = data.id ?? crypto.randomUUID();
+    const record = { ...data, id };
+    table.set(String(id), record);
+    return record;
+  }
+
+  async findOne(objectName: string, id: string | number): Promise<any> {
+    const table = this.getTable(objectName);
+    return table.get(String(id)) ?? null;
+  }
+
+  async find(objectName: string, query: any = {}): Promise<any[]> {
+    const table = this.getTable(objectName);
+    let results = Array.from(table.values());
+
+    if (query.limit) {
+      results = results.slice(query.skip ?? 0, (query.skip ?? 0) + query.limit);
+    }
+    return results;
+  }
+
+  async update(objectName: string, id: string | number, data: any): Promise<any> {
+    const table = this.getTable(objectName);
+    const existing = table.get(String(id));
+    if (!existing) {
+      throw new ObjectQLError({ code: 'NOT_FOUND', message: `Record ${id} not found` });
+    }
+    const updated = { ...existing, ...data, id };
+    table.set(String(id), updated);
+    return updated;
+  }
+
+  async delete(objectName: string, id: string | number): Promise<any> {
+    const table = this.getTable(objectName);
+    const existing = table.get(String(id));
+    if (!existing) {
+      throw new ObjectQLError({ code: 'NOT_FOUND', message: `Record ${id} not found` });
+    }
+    table.delete(String(id));
+    return existing;
+  }
+
+  async count(objectName: string, filters: any): Promise<number> {
+    const results = await this.find(objectName, { filters });
+    return results.length;
+  }
+}
+```
+
+## Driver TCK (Technology Compatibility Kit)
+
+Use `@objectql/driver-tck` to verify your driver conforms to the ObjectQL contract:
+
+```typescript
+import { describe } from 'vitest';
+import { runDriverTCK } from '@objectql/driver-tck';
+import { MapDriver } from '../src';
+
+describe('MapDriver TCK', () => {
+  runDriverTCK(() => new MapDriver());
+});
+```
+
+The TCK validates:
+
+- ✅ CRUD operations (create, find, findOne, update, delete)
+- ✅ Count queries
+- ✅ Pagination (skip, limit)
+- ✅ ID generation and uniqueness
+- ✅ Error handling for missing records
+- ✅ Schema initialization via `init()`
+- ✅ Connection lifecycle (connect / disconnect)
+
+## Composition Pattern
+
+Wrap the existing `SqlDriver` to add behavior without reimplementing SQL compilation:
+
+```typescript
+import { SqlDriver } from '@objectql/driver-sql';
+import type { Driver } from '@objectql/types';
+
+export class CachingSqlDriver implements Driver {
+  name = 'CachingSqlDriver';
+  version = '1.0.0';
+
+  private inner: SqlDriver;
+  private cache = new Map<string, any>();
+
+  constructor(config: any) {
+    this.inner = new SqlDriver(config);
+    this.supports = this.inner.supports;
+  }
+
+  supports: any;
+
+  async connect() { await this.inner.connect(); }
+  async disconnect() { this.cache.clear(); await this.inner.disconnect(); }
+
+  async findOne(objectName: string, id: string | number, query?: any, options?: any) {
+    const key = `${objectName}:${id}`;
+    if (this.cache.has(key)) return this.cache.get(key);
+
+    const result = await this.inner.findOne(objectName, id, query, options);
+    if (result) this.cache.set(key, result);
+    return result;
+  }
+
+  // Delegate remaining methods to inner driver
+  find(...args: any[]) { return (this.inner.find as any)(...args); }
+  create(...args: any[]) { return (this.inner.create as any)(...args); }
+  update(...args: any[]) { return (this.inner.update as any)(...args); }
+  delete(...args: any[]) { return (this.inner.delete as any)(...args); }
+  count(...args: any[]) { return (this.inner.count as any)(...args); }
+  init(...args: any[]) { return (this.inner.init as any)(...args); }
+}
+```
+
+## Best Practices
+
+1. **Use `ObjectQLError`** — Never `throw new Error()`. Always use `ObjectQLError` with a semantic error code (`NOT_FOUND`, `CONNECTION_FAIL`, `VALIDATION_FAIL`).
+2. **Handle connection lifecycle** — Implement `connect()` and `disconnect()` properly. Support reconnection on transient failures.
+3. **Declare capabilities honestly** — Only set `transactions: true` if your driver truly supports ACID transactions.
+4. **Test with the TCK** — Run the full conformance suite before publishing.
+5. **No dialect leakage** — Driver internals (SQL strings, wire protocol details) must never leak into the public API.
+6. **Sanitize inputs** — Treat all `objectName`, `id`, and `data` values as untrusted user input.
+7. **Document storage semantics** — Clearly state durability guarantees, consistency model, and capacity limits.
+
+## Publishing
+
+```json
+{
+  "name": "@myorg/objectql-driver-mydb",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "peerDependencies": {
+    "@objectql/types": "^4.0.0"
+  }
+}
+```
+
+```bash
+pnpm build && npm publish --access public
+```
+
+## Related Documentation
+
+- [Custom Drivers](/docs/extending/custom-drivers) — High-level driver architecture
+- [Protocol TCK](/docs/extending/protocol-tck) — Conformance testing details
+- [SQL Driver](/docs/drivers/sql) — Reference SQL driver implementation
+- [Plugin Development](/docs/extending/plugins) — Add cross-cutting behavior

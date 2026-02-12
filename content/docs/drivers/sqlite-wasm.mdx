@@ -1,0 +1,172 @@
+---
+title: SQLite WASM Driver
+description: Browser-native SQLite via WebAssembly with OPFS persistence for offline-capable web applications
+---
+
+# SQLite WASM Driver
+
+The SQLite WASM Driver (`@objectql/driver-sqlite-wasm`) brings a full SQLite database into the browser using WebAssembly. It leverages the [wa-sqlite](https://nicedoc.io/nicedoc/nicedoc.io) WASM build and the Origin Private File System (OPFS) for persistent, gigabyte-scale storage — no server required.
+
+## Features
+
+- ✅ **OPFS Persistent Storage**: Survives page reloads and browser restarts (GB-scale)
+- ✅ **Memory Fallback**: Ephemeral in-memory mode for testing and SSR
+- ✅ **Knex Compilation Pipeline**: Reuses `@objectql/driver-sql` Knex codegen (`client: 'sqlite3'`)
+- ✅ **Full CRUD**: find, findOne, create, update, delete, count
+- ✅ **Bulk Operations**: createMany, updateMany, deleteMany
+- ✅ **Schema Sync**: Auto-create and update tables from ObjectQL metadata
+- ✅ **WAL Mode**: Optional Write-Ahead Logging for concurrent read performance
+- ✅ **Small Bundle**: ~300 KB gzip for the WASM binary
+
+## Architecture
+
+```
+QueryAST → Knex (client: 'sqlite3') → SQL string → wa-sqlite WASM → OPFS / Memory
+```
+
+The driver compiles abstract intent through the same Knex pipeline used by the server-side SQL driver, then executes the resulting SQL string against a wa-sqlite WebAssembly instance backed by either OPFS or an in-memory VFS.
+
+## Installation
+
+```bash
+pnpm add @objectql/driver-sqlite-wasm
+```
+
+## Configuration
+
+```typescript
+interface SqliteWasmDriverConfig {
+  /** Storage backend: 'opfs' for persistent or 'memory' for ephemeral */
+  storage: 'opfs' | 'memory';
+  /** Database filename (OPFS path segment). Default: 'objectql.db' */
+  filename?: string;
+  /** Enable WAL mode for better read concurrency. Default: true */
+  walMode?: boolean;
+  /** SQLite page size in bytes. Default: 4096 */
+  pageSize?: number;
+}
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `storage` | `'opfs' \| 'memory'` | `'opfs'` | Persistence backend |
+| `filename` | `string` | `'objectql.db'` | OPFS database file name |
+| `walMode` | `boolean` | `true` | Enable Write-Ahead Logging |
+| `pageSize` | `number` | `4096` | SQLite page size in bytes |
+
+## Quick Start
+
+```typescript
+import { ObjectStackKernel } from '@objectstack/runtime';
+import { SqliteWasmDriver } from '@objectql/driver-sqlite-wasm';
+
+const kernel = new ObjectStackKernel([
+  new SqliteWasmDriver({
+    storage: 'opfs',
+    filename: 'my-app.db',
+    walMode: true
+  })
+]);
+
+await kernel.start();
+```
+
+## Storage Backends
+
+### OPFS (Persistent)
+
+The Origin Private File System provides true filesystem-level persistence inside the browser sandbox. Data survives page reloads, tab closures, and browser restarts.
+
+- **Capacity**: Governed by browser storage quotas (typically GB-scale)
+- **Performance**: Near-native via synchronous `FileSystemSyncAccessHandle`
+- **Concurrency**: Single-writer; use WAL mode for concurrent reads
+- **Use case**: Production offline-first apps, local-first collaboration
+
+### Memory (Ephemeral)
+
+All data lives in WASM linear memory and is lost on page unload.
+
+- **Capacity**: Limited by available memory
+- **Performance**: Fastest possible — no I/O
+- **Use case**: Unit tests, SSR pre-rendering, throwaway prototypes
+
+```typescript
+// Memory mode for tests
+const driver = new SqliteWasmDriver({ storage: 'memory' });
+```
+
+## Browser Requirements
+
+| Requirement | Fallback |
+|-------------|----------|
+| WebAssembly | Required — no fallback |
+| OPFS (`navigator.storage.getDirectory`) | Graceful fallback to `memory` mode |
+| `SharedArrayBuffer` (for OPFS sync access) | Requires `Cross-Origin-Isolated` headers |
+
+Set these HTTP headers for OPFS support:
+
+```
+Cross-Origin-Opener-Policy: same-origin
+Cross-Origin-Embedder-Policy: require-corp
+```
+
+If OPFS is unavailable, the driver automatically falls back to memory storage and logs a warning.
+
+## Capabilities
+
+```typescript
+{
+  transactions: false,
+  joins: false,
+  aggregations: false,
+  fullTextSearch: false,
+  jsonFields: true,
+  arrayFields: false,
+  queryFilters: true,
+  querySorting: true,
+  queryPagination: true,
+  bulkOperations: true,
+  schemaSync: true
+}
+```
+
+## Usage
+
+```typescript
+const ctx = kernel.createContext({ isSystem: true });
+const tasks = ctx.object('tasks');
+
+// Create
+const task = await tasks.create({
+  title: 'Ship offline mode',
+  status: 'active'
+});
+
+// Query
+const active = await tasks.find({
+  filters: [['status', '=', 'active']],
+  sort: [['created_at', 'desc']],
+  limit: 50
+});
+
+// Update
+await tasks.update(task.id, { status: 'done' });
+
+// Delete
+await tasks.delete(task.id);
+```
+
+## Bundle Size
+
+| Component | Size (gzip) |
+|-----------|-------------|
+| wa-sqlite WASM binary | ~250 KB |
+| Driver + Knex sqlite3 codegen | ~50 KB |
+| **Total** | **~300 KB** |
+
+## Related Documentation
+
+- [SQL Driver](/docs/drivers/sql) — Server-side Knex driver
+- [Memory Driver](/docs/drivers/memory) — Lightweight in-memory alternative
+- [PG WASM Driver](/docs/drivers/pg-wasm) — PostgreSQL in the browser
+- [Driver Overview](/docs/drivers)

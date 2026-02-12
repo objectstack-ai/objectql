@@ -5,6 +5,8 @@
     "custom-drivers",
     "plugins",
     "protocol-tck",
-    "ai"
+    "ai",
+    "plugin-development",
+    "driver-development"
   ]
 }

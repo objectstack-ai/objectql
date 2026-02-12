@@ -2,6 +2,7 @@
   "title": "Guides",
   "pages": [
     "error-handling",
-    "architecture"
+    "architecture",
+    "migration-v5"
   ]
 }

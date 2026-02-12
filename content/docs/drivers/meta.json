@@ -8,6 +8,8 @@
     "fs",
     "excel",
     "redis",
-    "sdk"
+    "sdk",
+    "sqlite-wasm",
+    "pg-wasm"
   ]
 }
