@@ -9,9 +9,11 @@
 // ── Convenience factory ──
 export { createObjectQLKernel, type ObjectQLKernelOptions } from './kernel-factory';
 
-// ── Core runtime components ──
-export * from './repository';
-export * from './app';
+// ── Re-export upstream engine (replaces local app.ts + repository.ts) ──
+export { ObjectQL, ObjectRepository, ScopedContext, SchemaRegistry } from '@objectstack/objectql';
+export type { HookHandler, HookEntry, OperationContext, EngineMiddleware, ObjectQLHostContext } from '@objectstack/objectql';
+
+// ── Plugin orchestration ──
 export * from './plugin';
 
 // ── Utilities ──
