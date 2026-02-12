@@ -68,7 +68,7 @@ describe('ObjectQL Repository', () => {
 
         await repo.delete(created._id);
         const found = await repo.findOne(created._id);
-        expect(found).toBeUndefined();
+        expect(found).toBeNull();
     });
 
     it('should support listeners (triggers)', async () => {

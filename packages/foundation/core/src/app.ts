@@ -32,6 +32,46 @@ import { ObjectRepository } from './repository';
 import { convertIntrospectedSchemaToObjects } from './util';
 
 /**
+ * Internal bridge interface for the ObjectKernel.
+ * Provides typed access to kernel properties that are dynamically assigned,
+ * avoiding `as any` casts throughout the codebase.
+ */
+interface KernelBridge {
+    metadata: {
+        register(type: string, item: Record<string, unknown>): void;
+        get(type: string, name: string): Record<string, unknown> | undefined;
+        getEntry(type: string, name: string): unknown;
+        list(type: string): Array<Record<string, unknown>>;
+        unregister(type: string, name: string): void;
+        unregisterPackage(packageName: string): void;
+    };
+    hooks: {
+        register(event: string, objectName: string, handler: HookHandler, packageName?: string): void;
+        removePackage(packageName: string): void;
+        trigger(event: string, objectName: string, ctx: HookContext): Promise<void>;
+    };
+    actions: {
+        register(objectName: string, actionName: string, handler: ActionHandler, packageName?: string): void;
+        removePackage(packageName: string): void;
+        execute(objectName: string, actionName: string, ctx: ActionContext): Promise<unknown>;
+    };
+    // CRUD methods dynamically assigned during init()
+    create?(objectName: string, doc: Record<string, unknown>, options?: Record<string, unknown>): Promise<unknown>;
+    update?(objectName: string, id: string, doc: Record<string, unknown>, options?: Record<string, unknown>): Promise<unknown>;
+    delete?(objectName: string, id: string, options?: Record<string, unknown>): Promise<unknown>;
+    find?(objectName: string, query: Record<string, unknown>, options?: Record<string, unknown>): Promise<{ value: Record<string, unknown>[]; count: number }>;
+    findOne?(objectName: string, id: string, options?: Record<string, unknown>): Promise<Record<string, unknown> | null>;
+    get?(objectName: string, id: string): Promise<Record<string, unknown> | null>;
+    count?(objectName: string, query: Record<string, unknown>, options?: Record<string, unknown>): Promise<number>;
+    setDriver?(driver: Driver): void;
+    start?(): Promise<void>;
+    bootstrap?(): Promise<void>;
+    use?(plugin: Plugin): void;
+    queryService?: Record<string, unknown>;
+    getAllDrivers?(): Driver[];
+}
+
+/**
  * ObjectQL
  * 
  * ObjectQL implementation that wraps ObjectKernel
@@ -40,20 +80,21 @@ import { convertIntrospectedSchemaToObjects } from './util';
 export class ObjectQL implements IObjectQL {
     // Delegate to kernel for metadata, hooks, and actions
     public get metadata(): MetadataRegistry {
-        return (this.kernel as any).metadata;
+        return this.bridge.metadata as unknown as MetadataRegistry;
     }
     
     private datasources: Record<string, Driver> = {};
     private remotes: string[] = [];
     
     // ObjectStack Kernel Integration
-    private kernel!: ObjectKernel & Record<string, any>;
-    private ql: any;
-    private kernelPlugins: any[] = [];
+    private kernel!: ObjectKernel;
+    private bridge!: KernelBridge;
+    private ql: RuntimeObjectQL;
+    private kernelPlugins: Plugin[] = [];
     
     // Optimized managers
     private hookManager = new CompiledHookManager();
-    private localActions = new Map<string, any>();
+    private localActions = new Map<string, ActionHandler & { _package?: string }>();
     
     // Structured logger
     private logger: Logger;
@@ -83,7 +124,7 @@ export class ObjectQL implements IObjectQL {
                 if (typeof plugin === 'string') {
                     throw new ObjectQLError({ code: 'CONFIG_ERROR', message: "String plugins are not supported in core. Use @objectql/platform-node or pass plugin instance." });
                 } else {
-                    this.use(plugin as any);
+                    this.use(plugin as unknown as Plugin);
                 }
             }
         }
@@ -97,24 +138,17 @@ export class ObjectQL implements IObjectQL {
         }
         
         // Create the kernel with registered plugins
-        this.kernel = new (ObjectKernel as any)(this.kernelPlugins);
+        const KernelConstructor = ObjectKernel as unknown as new (plugins: Plugin[]) => ObjectKernel;
+        this.kernel = new KernelConstructor(this.kernelPlugins);
+        this.bridge = this.kernel as unknown as KernelBridge;
         for (const plugin of this.kernelPlugins) {
-             // Fallback for kernels that support .use() but maybe didn't take them in constructor or if we need to support both
-             // NOTE: Modern ObjectKernel takes plugins in constructor.
-             if ((this.kernel as any).use) {
-                 // Try to avoid double registration if the kernel is smart, but since we don't know the kernel logic perfectly:
-                 // Ideally check if already added. But for now, we leave this for backward compat 
-                 // if ObjectKernel DOESN't take constructor args but HAS use().
-                 
-                 // However, we just instantiated it.
-                 // Let's assume constructor is the way if available.
-                 // But we keep this check for .use() just in case the constructor signature is different (e.g. empty)
-                 (this.kernel as any).use(plugin);
+             if (this.bridge.use) {
+                 this.bridge.use(plugin);
              }
         }
 
         // Helper to unwrap content property (matching MetadataRegistry behavior)
-        const unwrapContent = (item: any) => {
+        const unwrapContent = (item: Record<string, unknown>) => {
             if (item && item.content) {
                 return item.content;
             }
@@ -122,45 +156,40 @@ export class ObjectQL implements IObjectQL {
         };
 
         // Stub legacy accessors
-        (this.kernel as any).metadata = {
-            register: (type: string, item: any) => SchemaRegistry.registerItem(type, item, item.id ? 'id' : 'name'),
+        this.bridge.metadata = {
+            register: (type: string, item: Record<string, unknown>) => SchemaRegistry.registerItem(type, item, item.id ? 'id' : 'name'),
             get: (type: string, name: string) => {
-                const item = SchemaRegistry.getItem(type, name) as any;
-                return unwrapContent(item);
+                const item = SchemaRegistry.getItem(type, name) as Record<string, unknown> | null;
+                return item ? (unwrapContent(item) as Record<string, unknown>) : undefined;
             },
             getEntry: (type: string, name: string) => SchemaRegistry.getItem(type, name),
             list: (type: string) => {
-                const items = SchemaRegistry.listItems(type);
-                return items.map(unwrapContent);
+                const items = SchemaRegistry.listItems(type) as Array<Record<string, unknown>>;
+                return items.map(i => unwrapContent(i) as Record<string, unknown>);
             },
             unregister: (type: string, name: string) => {
-                 // Use the official unregisterItem API when available (added in @objectstack/objectql v0.9.2)
-                 // Fallback to direct metadata access for older versions or test mocks
                  if (typeof SchemaRegistry.unregisterItem === 'function') {
                      SchemaRegistry.unregisterItem(type, name);
                  } else {
-                     // Fallback: try to access metadata Map directly
-                     const metadata = (SchemaRegistry as any).metadata;
-                     if (metadata && metadata instanceof Map) {
-                         const collection = metadata.get(type);
-                         if (collection && collection instanceof Map) {
+                     const registry = SchemaRegistry as unknown as { metadata?: Map<string, Map<string, unknown>> };
+                     if (registry.metadata instanceof Map) {
+                         const collection = registry.metadata.get(type);
+                         if (collection instanceof Map) {
                              collection.delete(name);
                          }
                      }
                  }
             },
             unregisterPackage: (packageName: string) => {
-                 // Use the official @objectstack/objectql 1.1.0 API for object cleanup
                  if (typeof SchemaRegistry.unregisterObjectsByPackage === 'function') {
                      SchemaRegistry.unregisterObjectsByPackage(packageName);
                  }
-                 // Also clean up non-object metadata items by package
-                 const metadata = (SchemaRegistry as any).metadata;
-                 if (metadata && metadata instanceof Map) {
-                     for (const [_type, collection] of metadata.entries()) {
+                 const registry = SchemaRegistry as unknown as { metadata?: Map<string, Map<string, Record<string, unknown>>> };
+                 if (registry.metadata instanceof Map) {
+                     for (const [_type, collection] of registry.metadata.entries()) {
                          if (collection instanceof Map) {
                              for (const [key, item] of collection.entries()) {
-                                 if ((item as any).package === packageName) {
+                                 if (item.package === packageName) {
                                      collection.delete(key);
                                  }
                              }
@@ -169,35 +198,32 @@ export class ObjectQL implements IObjectQL {
                  }
             }
         };
-        const kernelHooks = (this.kernel as any).hooks || {};
-        Object.assign(kernelHooks, {
-            register: (event: string, objectName: string, handler: any, packageName?: string) => {
+        this.bridge.hooks = {
+            register: (event: string, objectName: string, handler: HookHandler, packageName?: string) => {
                 this.hookManager.registerHook(event, objectName, handler, packageName);
             },
             removePackage: (packageName: string) => {
                 this.hookManager.removePackage(packageName);
             },
-            trigger: async (event: string, objectName: string, ctx: any) => {
+            trigger: async (event: string, objectName: string, ctx: HookContext) => {
                 await this.hookManager.runHooks(event, objectName, ctx);
             }
-        });
-        if (!(this.kernel as any).hooks) {
-            (this.kernel as any).hooks = kernelHooks;
-        }
-        (this.kernel as any).actions = {
-            register: (objectName: string, actionName: string, handler: any, packageName?: string) => {
+        };
+        this.bridge.actions = {
+            register: (objectName: string, actionName: string, handler: ActionHandler, packageName?: string) => {
                 const key = `${objectName}:${actionName}`;
-                (handler as any)._package = packageName;
-                this.localActions.set(key, handler);
+                const taggedHandler = handler as ActionHandler & { _package?: string };
+                taggedHandler._package = packageName;
+                this.localActions.set(key, taggedHandler);
             },
             removePackage: (packageName: string) => {
                 for (const [key, handler] of this.localActions.entries()) {
-                    if ((handler as any)._package === packageName) {
+                    if (handler._package === packageName) {
                         this.localActions.delete(key);
                     }
                 }
             },
-            execute: async (objectName: string, actionName: string, ctx: any) => {
+            execute: async (objectName: string, actionName: string, ctx: ActionContext) => {
                 const handler = this.localActions.get(`${objectName}:${actionName}`);
                 if (handler) {
                     return handler(ctx);
@@ -208,16 +234,14 @@ export class ObjectQL implements IObjectQL {
         
         // Register initial metadata if provided
         if (config.registry) {
-            // Copy metadata from provided registry to kernel's registry
             for (const type of config.registry.getTypes()) {
                 const items = config.registry.list(type);
                 for (const item of items) {
-                    // Safely extract the item's id/name
                     const itemId = typeof item === 'object' && item !== null 
                         ? (item as { name?: string; id?: string }).name || (item as { name?: string; id?: string }).id || 'unknown'
                         : 'unknown';
                     
-                    (this.kernel as any).metadata.register(type, {
+                    this.bridge.metadata.register(type, {
                         type,
                         id: itemId,
                         content: item
@@ -229,44 +253,31 @@ export class ObjectQL implements IObjectQL {
     
     use(plugin: Plugin) {
         this.kernelPlugins.push(plugin);
-        if (this.kernel && (this.kernel as any).use) {
-            (this.kernel as any).use(plugin);
+        if (this.kernel && this.bridge.use) {
+            this.bridge.use(plugin);
         }
     }
 
     removePackage(name: string) {
-        // Delegate to kernel managers
-        (this.kernel as any).metadata.unregisterPackage(name);
-        (this.kernel as any).hooks.removePackage(name);
-        (this.kernel as any).actions.removePackage(name);
+        this.bridge.metadata.unregisterPackage(name);
+        this.bridge.hooks.removePackage(name);
+        this.bridge.actions.removePackage(name);
     }
 
     on(event: HookName, objectName: string, handler: HookHandler, packageName?: string) {
-        // Delegate to kernel hook manager
-        // We wrap the handler to bridge ObjectQL's rich context types with runtime's base types
-        // The runtime HookContext supports all fields via index signature, so this is safe
-        const wrappedHandler = handler as unknown as any;
-        (this.kernel as any).hooks.register(event, objectName, wrappedHandler, packageName);
+        this.bridge.hooks.register(event, objectName, handler, packageName);
     }
 
     async triggerHook(event: HookName, objectName: string, ctx: HookContext) {
-        // Delegate to kernel hook manager
-        // Runtime HookContext supports ObjectQL-specific fields via index signature
-        await (this.kernel as any).hooks.trigger(event, objectName, ctx);
+        await this.bridge.hooks.trigger(event, objectName, ctx);
     }
 
     registerAction(objectName: string, actionName: string, handler: ActionHandler, packageName?: string) {
-        // Delegate to kernel action manager
-        // We wrap the handler to bridge ObjectQL's rich context types with runtime's base types
-        // The runtime ActionContext supports all fields via index signature, so this is safe
-        const wrappedHandler = handler as unknown as any;
-        (this.kernel as any).actions.register(objectName, actionName, wrappedHandler, packageName);
+        this.bridge.actions.register(objectName, actionName, handler, packageName);
     }
 
     async executeAction(objectName: string, actionName: string, ctx: ActionContext) {
-        // Delegate to kernel action manager
-        // Runtime ActionContext supports ObjectQL-specific fields via index signature
-        return await (this.kernel as any).actions.execute(objectName, actionName, ctx);
+        return await this.bridge.actions.execute(objectName, actionName, ctx);
     }
 
     createContext(options: ObjectQLContextOptions): ObjectQLContext {
@@ -278,18 +289,18 @@ export class ObjectQL implements IObjectQL {
             object: (name: string) => {
                 return new ObjectRepository(name, ctx, this);
             },
-            transaction: async (callback: (ctx: ObjectQLContext) => Promise<any>) => {
+            transaction: async (callback: (ctx: ObjectQLContext) => Promise<unknown>) => {
                  const driver = this.datasources['default'];
                  if (!driver || !driver.beginTransaction) {
                       return callback(ctx);
                  }
 
-                 const trx: any = await driver.beginTransaction();
+                 const trx = await driver.beginTransaction();
 
                  const trxCtx: ObjectQLContext = {
                      ...ctx,
                      transactionHandle: trx,
-                     transaction: async (cb: (ctx: ObjectQLContext) => Promise<any>) => cb(trxCtx)
+                     transaction: async (cb: (ctx: ObjectQLContext) => Promise<unknown>) => cb(trxCtx)
                  };
 
                  try {
@@ -333,23 +344,24 @@ export class ObjectQL implements IObjectQL {
                 }
             }
         }
-        (this.kernel as any).metadata.register('object', object);
+        this.bridge.metadata.register('object', object as unknown as Record<string, unknown>);
     }
 
     unregisterObject(name: string) {
-        (this.kernel as any).metadata.unregister('object', name);
+        this.bridge.metadata.unregister('object', name);
     }
 
     getObject(name: string): ObjectConfig | undefined {
-        const item = (this.kernel as any).metadata.get('object', name);
-        return item?.content || item;
+        const item = this.bridge.metadata.get('object', name) as Record<string, unknown> | undefined;
+        if (!item) return undefined;
+        return (item.content || item) as ObjectConfig;
     }
 
     getConfigs(): Record<string, ObjectConfig> {
         const result: Record<string, ObjectConfig> = {};
-        const items = (this.kernel as any).metadata.list('object') || [];
+        const items = this.bridge.metadata.list('object') || [];
         for (const item of items) {
-            const config = item.content || item;
+            const config = (item.content || item) as ObjectConfig;
             if (config?.name) {
                 result[config.name] = config;
             }
@@ -416,51 +428,48 @@ export class ObjectQL implements IObjectQL {
         this.logger.info('Initializing with ObjectKernel...');
         
         // Start the kernel - this will install and start all plugins
-        if ((this.kernel as any).start) {
-            await (this.kernel as any).start();
-        } else if ((this.kernel as any).bootstrap) {
-            await (this.kernel as any).bootstrap();
+        if (this.bridge.start) {
+            await this.bridge.start();
+        } else if (this.bridge.bootstrap) {
+            await this.bridge.bootstrap();
         } else {
              this.logger.warn('ObjectKernel does not have start() or bootstrap() method');
              
              // Manually initialize plugins if kernel doesn't support lifecycle
              for (const plugin of this.kernelPlugins) {
                  try {
-                     if (typeof (plugin as any).init === 'function') {
-                         await (plugin as any).init(this.kernel);
+                     const p = plugin as Plugin & { init?: (kernel: ObjectKernel) => Promise<void>; start?: (kernel: ObjectKernel) => Promise<void>; name?: string };
+                     if (typeof p.init === 'function') {
+                         await p.init(this.kernel);
                      }
-                     if (typeof (plugin as any).start === 'function') {
-                         await (plugin as any).start(this.kernel);
+                     if (typeof p.start === 'function') {
+                         await p.start(this.kernel);
                      }
                  } catch (error) {
-                     this.logger.error(`Failed to initialize plugin ${(plugin as any).name || 'unknown'}`, error as Error);
-                     // Continue with other plugins even if one fails
+                     const p = plugin as Plugin & { name?: string };
+                     this.logger.error(`Failed to initialize plugin ${p.name || 'unknown'}`, error as Error);
                  }
              }
         }
         
         // TEMPORARY: Set driver for backward compatibility during migration
-        // This allows the kernel mock to delegate to the driver
         const defaultDriver = this.datasources['default'];
-        if (typeof (this.kernel as any).setDriver === 'function') {
-            if (defaultDriver) {
-                (this.kernel as any).setDriver(defaultDriver);
-            }
+        if (this.bridge.setDriver && defaultDriver) {
+            this.bridge.setDriver(defaultDriver);
         }
 
         // TEMPORARY: Patch kernel with CRUD methods dynamically if missing
-        // This ensures the repository can delegate to the kernel even if using the new @objectstack/core kernel
-        if (typeof (this.kernel as any).create !== 'function' && defaultDriver) {
-             (this.kernel as any).create = (object: string, doc: any, options: any) => defaultDriver.create(object, doc, options);
-             (this.kernel as any).update = (object: string, id: any, doc: any, options: any) => defaultDriver.update(object, id, doc, options);
-             (this.kernel as any).delete = (object: string, id: any, options: any) => defaultDriver.delete(object, id, options);
-             (this.kernel as any).find = async (object: string, query: any, options: any) => {
+        if (typeof this.bridge.create !== 'function' && defaultDriver) {
+             this.bridge.create = (object: string, doc: Record<string, unknown>, options?: Record<string, unknown>) => defaultDriver.create(object, doc, options || {});
+             this.bridge.update = (object: string, id: string, doc: Record<string, unknown>, options?: Record<string, unknown>) => defaultDriver.update(object, id, doc, options || {});
+             this.bridge.delete = (object: string, id: string, options?: Record<string, unknown>) => defaultDriver.delete(object, id, options || {});
+             this.bridge.find = async (object: string, query: Record<string, unknown>, options?: Record<string, unknown>) => {
                  const res = await defaultDriver.find(object, query, options);
                  return { value: res || [], count: (res || []).length };
              };
-             (this.kernel as any).findOne = (object: string, id: any, options: any) => defaultDriver.findOne(object, id, options);
-             (this.kernel as any).get = (object: string, id: any) => defaultDriver.findOne(object, id); 
-             (this.kernel as any).count = (object: string, query: any, options: any) => defaultDriver.count(object, query, options);
+             this.bridge.findOne = (object: string, id: string, options?: Record<string, unknown>) => defaultDriver.findOne(object, id, options);
+             this.bridge.get = (object: string, id: string) => defaultDriver.findOne(object, id); 
+             this.bridge.count = (object: string, query: Record<string, unknown>, options?: Record<string, unknown>) => defaultDriver.count(object, query, options || {});
         }
 
         // Load In-Memory Objects (Dynamic Layer)
@@ -470,11 +479,10 @@ export class ObjectQL implements IObjectQL {
             }
         }
 
-        const registryItems = (this.kernel as any).metadata.list('object');
-        const objects = (registryItems || []).map((item: any) => item.content || item) as ObjectConfig[];
+        const registryItems = this.bridge.metadata.list('object');
+        const objects = (registryItems || []).map((item) => (item.content || item) as ObjectConfig);
         
         // Init Datasources
-        // Let's pass all objects to all configured drivers.
         for (const [name, driver] of Object.entries(this.datasources)) {
             if (driver.init) {
                 this.logger.debug(`Initializing driver '${name}'...`);
@@ -489,7 +497,7 @@ export class ObjectQL implements IObjectQL {
     }
 
     private async processInitialData() {
-        const dataEntries = (this.kernel as any).metadata.list('data');
+        const dataEntries = this.bridge.metadata.list('data');
         if (dataEntries.length === 0) return;
 
         this.logger.info(`Processing ${dataEntries.length} initial data files...`);
@@ -498,20 +506,15 @@ export class ObjectQL implements IObjectQL {
         const ctx = this.createContext({ isSystem: true });
 
         for (const entry of dataEntries) {
-            // Unwrapping metadata content if present
-            const dataContent = (entry as any).content || entry;
+            const dataContent = (entry.content || entry) as Record<string, unknown>;
 
-            // Expected format:
-            // 1. { object: 'User', records: [...] }
-            // 2. [ record1, record2 ] (with name property added by loader inferred from filename)
-            
-            let objectName = dataContent.object;
-            let records = dataContent.records;
+            let objectName = dataContent.object as string | undefined;
+            let records = dataContent.records as Record<string, unknown>[] | undefined;
 
             if (Array.isArray(dataContent)) {
-                records = dataContent;
-                if (!objectName && (dataContent as any).name) {
-                    objectName = (dataContent as any).name;
+                records = dataContent as Record<string, unknown>[];
+                if (!objectName && (dataContent as unknown as { name?: string }).name) {
+                    objectName = (dataContent as unknown as { name?: string }).name;
                 }
             }
 
@@ -524,19 +527,11 @@ export class ObjectQL implements IObjectQL {
             
             for (const record of records) {
                 try {
-                    // Check existence if a unique key is provided?
-                    // For now, let's assume if it has an ID, we check it.
-                    // Or we could try to find existing record by some key matching logic.
-                    // Simple approach: create. If it fails (constraint), ignore.
-                    
-                    // Actually, a better approach for initial data is "upsert" or "create if not exists".
-                    // But without unique keys defined in data, we can't reliably dedup.
-                    // Let's try to 'create' and catch errors.
                     await repo.create(record);
                     this.logger.debug(`Initialized record for ${objectName}`);
-                } catch (e: any) {
-                    // Ignore duplicate key errors silently-ish
-                     this.logger.warn(`Failed to insert initial data for ${objectName}: ${e.message}`);
+                } catch (e: unknown) {
+                    const message = e instanceof Error ? e.message : String(e);
+                     this.logger.warn(`Failed to insert initial data for ${objectName}: ${message}`);
                 }
             }
         }
