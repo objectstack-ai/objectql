@@ -6,8 +6,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { ObjectQL } from '@objectql/core';
 import { ObjectLoader } from '@objectql/platform-node';
+import { MetadataRegistry } from '@objectql/types';
 import { generateTypes } from './generate';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -36,8 +36,8 @@ export async function build(options: BuildOptions) {
         console.log(chalk.cyan('1️⃣  Validating metadata files...'));
         
         try {
-            const app = new ObjectQL({ datasources: {} });
-            const loader = new ObjectLoader(app.metadata);
+            const registry = new MetadataRegistry();
+            const loader = new ObjectLoader(registry);
             loader.load(rootDir);
             console.log(chalk.green('   ✅ Metadata validation passed\n'));
         } catch (e: any) {

@@ -6,9 +6,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { ObjectQL } from '@objectql/core';
 import { ObjectLoader } from '@objectql/platform-node';
-import { ObjectConfig, FieldConfig } from '@objectql/types';
+import { MetadataRegistry, ObjectConfig, FieldConfig } from '@objectql/types';
 import * as path from 'path';
 import chalk from 'chalk';
 
@@ -31,13 +30,13 @@ export async function lint(options: LintOptions) {
     let hasWarnings = false;
     
     try {
-        const app = new ObjectQL({ datasources: {} });
-        const loader = new ObjectLoader(app.metadata);
+        const registry = new MetadataRegistry();
+        const loader = new ObjectLoader(registry);
         
         console.log(chalk.cyan('Loading metadata files...'));
         loader.load(rootDir);
         
-        const objects = app.metadata.list('object');
+        const objects = registry.list('object');
         
         console.log(chalk.green(`✅ Found ${objects.length} object(s)\n`));
         

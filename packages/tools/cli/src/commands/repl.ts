@@ -73,7 +73,8 @@ export async function startRepl(configPath?: string) {
         r.context.object = (name: string) => app.getObject(name);
         
         // Helper to get a repo quickly: tasks.find() instead of app.object('tasks').find()
-        const objects = app.metadata.list<{ name: string }>('object');
+        const configs = app.getConfigs();
+        const objects = Object.values(configs) as Array<{ name: string }>;
         for (const obj of objects) {
             // Inject repositories as top-level globals if valid identifiers
             if (/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(obj.name)) {
