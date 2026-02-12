@@ -5,7 +5,7 @@
 > **Updated:** 2026-02-11  
 > **Status:** ✅ Completed — Implemented in [PR #373](https://github.com/objectstack-ai/objectql/pull/373)  
 > **Scope:** Decompose `@objectql/core`, align with `@objectstack/objectql` plugin extension model  
-> **Upstream Repo:** https://github.com/objectstack-ai/spec (v2.0.5+, latest commit `33646a7`)  
+> **Upstream Repo:** https://github.com/objectstack-ai/spec (v3.0.0)  
 > **Local Repo:** https://github.com/objectstack-ai/objectql (v4.2.0)
 
 ---
@@ -84,16 +84,16 @@ packages/foundation/core/src/
 ```
 
 **Dependencies:**
-- `@objectstack/core` (^2.0.5)
-- `@objectstack/objectql` (^2.0.5)
-- `@objectstack/runtime` (^2.0.5)
-- `@objectstack/spec` (^2.0.5)
+- `@objectstack/core` (^3.0.0)
+- `@objectstack/objectql` (^3.0.0)
+- `@objectstack/runtime` (^3.0.0)
+- `@objectstack/spec` (^3.0.0)
 - `@objectql/types` (workspace)
 - `@objectql/plugin-validator` (workspace)
 - `@objectql/plugin-formula` (workspace)
 - `zod`, `js-yaml`
 
-### 2.2 Upstream `@objectstack/objectql` (v2.0.5) — Module Inventory
+### 2.2 Upstream `@objectstack/objectql` (v3.0.0) — Module Inventory
 
 ```
 packages/objectql/src/          (in objectstack-ai/spec repo)

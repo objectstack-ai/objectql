@@ -1,7 +1,7 @@
 # ObjectQL Work Plan — 2026 Q3: Edge Runtime & Offline Sync
 
 > Created: 2026-02-08 | Last Updated: 2026-02-09 | Status: **Planned** | Target: 2026-07 — 2026-09  
-> Current Version: **4.2.0** | @objectstack Platform: **v2.0.1** | Prerequisite: Q1 Phase 2 (WASM Drivers), Q2 (Protocol Maturity)  
+> Current Version: **4.2.0** | @objectstack Platform: **v3.0.0** | Prerequisite: Q1 Phase 2 (WASM Drivers), Q2 (Protocol Maturity)  
 > Parent Document: [WORK_PLAN_2026_Q1_P2.md](./WORK_PLAN_2026_Q1_P2.md)
 
 ---

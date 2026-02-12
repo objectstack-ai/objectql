@@ -1,7 +1,7 @@
 # ObjectQL — Next Phase Optimization & Improvement Roadmap
 
 > Created: 2026-02-09 | Status: **In Progress — Phases 1A, 3, 4 (All Waves), 5A, 6, 7 (partial) Complete**
-> Current Version: **4.2.0** | @objectstack Platform: **v2.0.1**
+> Current Version: **4.2.0** | @objectstack Platform: **v3.0.0**
 > Scope: Code quality, type safety, error handling, testing, performance, and DX improvements
 
 ---
@@ -437,7 +437,7 @@ Top packages by `as any` cast count:
 
 - **`@objectql/types`** correctly has ZERO production dependencies (pure types)
 - **`@objectql/core`** depends on `plugin-formula` and `plugin-validator` — tight coupling noted
-- All `@objectstack/*` packages are at **v2.0.1** — aligned
+- All `@objectstack/*` packages are at **v3.0.0** — aligned
 - **`mingo`** (used in memory driver) is the only non-standard query engine dependency
 - **`knex`** is shared across `driver-sql`, `driver-pg-wasm`, `driver-sqlite-wasm`
 

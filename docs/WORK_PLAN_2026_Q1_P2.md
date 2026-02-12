@@ -2,8 +2,8 @@
 
 > Created: 2026-02-08 | Last Updated: 2026-02-11 | Status: **Active**  
 > Current Version: **4.2.0** (all packages aligned, except `vscode-objectql` at 4.1.0)  
-> Runtime: `@objectstack/cli` v2.0.6 (Kernel pattern) — `@objectql/server` deprecated, `packages/runtime/` removed.  
-> @objectstack Platform: **v2.0.6**
+> Runtime: `@objectstack/cli` v3.0.0 (Kernel pattern) — `@objectql/server` deprecated, `packages/runtime/` removed.  
+> @objectstack Platform: **v3.0.0**
 
 ---
 
@@ -474,12 +474,12 @@ Standardize third-party plugin distribution.
 
 | Package | Owner | Version | Role in ObjectQL |
 |---------|-------|---------|-----------------|
-| `@objectstack/cli` | ObjectStack | 2.0.6 | Kernel bootstrapper (`objectstack serve`) |
-| `@objectstack/core` | ObjectStack | 2.0.6 | Kernel runtime, plugin lifecycle |
-| `@objectstack/plugin-hono-server` | ObjectStack | 2.0.6 | HTTP server (Hono-based) |
-| `@objectstack/spec` | ObjectStack | 2.0.6 | Formal protocol specifications (Zod schemas) |
-| `@objectstack/runtime` | ObjectStack | 2.0.6 | Core runtime & query engine |
-| `@objectstack/objectql` | ObjectStack | 2.0.6 | ObjectQL runtime bridge |
+| `@objectstack/cli` | ObjectStack | 3.0.0 | Kernel bootstrapper (`objectstack serve`) |
+| `@objectstack/core` | ObjectStack | 3.0.0 | Kernel runtime, plugin lifecycle |
+| `@objectstack/plugin-hono-server` | ObjectStack | 3.0.0 | HTTP server (Hono-based) |
+| `@objectstack/spec` | ObjectStack | 3.0.0 | Formal protocol specifications (Zod schemas) |
+| `@objectstack/runtime` | ObjectStack | 3.0.0 | Core runtime & query engine |
+| `@objectstack/objectql` | ObjectStack | 3.0.0 | ObjectQL runtime bridge |
 | AI Agent / AI tooling | **Separate project** | — | Not in this monorepo |
 
 ---
