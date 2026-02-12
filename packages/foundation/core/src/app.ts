@@ -51,18 +51,27 @@ export class ObjectQL extends UpstreamObjectQL {
   /** Typed self-reference for compat methods */
   private get compat(): UpstreamCompat { return this as unknown as UpstreamCompat; }
 
+  private pendingDrivers: Array<{ name: string; driver: DriverInterface; isDefault: boolean }> = [];
+
+  // Explicitly declare inherited methods to ensure they're in the type definition
+  declare registerObject: (schema: ServiceObject, packageId?: string, namespace?: string) => string;
+
   constructor(config: ObjectQLConfig = {}) {
     // Upstream constructor only accepts hostContext
     super();
 
-    // Register drivers from legacy datasources config
+    // Store drivers for registration during init()
     if (config.datasources) {
       for (const [name, driver] of Object.entries(config.datasources)) {
         if (!(driver as any).name) {
           (driver as any).name = name;
         }
         // Cast: local Driver interface is structurally compatible with upstream DriverInterface
-        this.registerDriver(driver as DriverInterface, name === 'default');
+        this.pendingDrivers.push({
+          name,
+          driver: driver as DriverInterface,
+          isDefault: name === 'default'
+        });
       }
     }
   }
@@ -74,6 +83,12 @@ export class ObjectQL extends UpstreamObjectQL {
    * bridge all objects loaded via ObjectLoader into the upstream SchemaRegistry.
    */
   async init(): Promise<void> {
+    // Register any pending drivers from the constructor config
+    for (const { driver, isDefault } of this.pendingDrivers) {
+      (this as any).registerDriver(driver, isDefault);
+    }
+    this.pendingDrivers = [];
+
     this.syncMetadataToRegistry();
     return super.init();
   }
@@ -89,7 +104,7 @@ export class ObjectQL extends UpstreamObjectQL {
       if (obj && obj.name) {
         // Only register if not already in SchemaRegistry
         if (!SchemaRegistry.getObject(obj.name)) {
-          this.compat.registerObject(obj as ServiceObject, '__filesystem__');
+          super.registerObject(obj as ServiceObject, '__filesystem__');
         }
       }
     }
@@ -115,9 +130,9 @@ export class ObjectQL extends UpstreamObjectQL {
    * local MetadataRegistry for objects loaded via ObjectLoader but
    * not yet synced (i.e., init() hasn't been called yet).
    */
-  getObject(name: string): ServiceObject | undefined {
-    // Check upstream SchemaRegistry
-    const upstream = SchemaRegistry.getObject(name);
+  override getObject(name: string): ServiceObject | undefined {
+    // Check upstream SchemaRegistry first (call parent)
+    const upstream = super.getObject(name);
     if (upstream) return upstream;
     // Fallback: check local MetadataRegistry (pre-init)
     return this.metadata.get<ServiceObject>('object', name);
@@ -129,15 +144,9 @@ export class ObjectQL extends UpstreamObjectQL {
    * Merges results from the upstream SchemaRegistry with the
    * local MetadataRegistry (for pre-init objects).
    */
-  getConfigs(): Record<string, ServiceObject> {
-    const result: Record<string, ServiceObject> = {};
-    // Get upstream objects from SchemaRegistry
-    const upstreamObjects = SchemaRegistry.getAllObjects();
-    for (const obj of upstreamObjects) {
-      if (obj.name) {
-        result[obj.name] = obj;
-      }
-    }
+  override getConfigs(): Record<string, ServiceObject> {
+    // Get upstream objects first (call parent)
+    const result = super.getConfigs();
     // Merge local MetadataRegistry entries not yet synced upstream
     const localObjects = this.metadata.list<any>('object');
     for (const obj of localObjects) {
@@ -152,8 +161,8 @@ export class ObjectQL extends UpstreamObjectQL {
    * Remove all hooks, actions, and objects contributed by a package.
    * Also cleans up the local MetadataRegistry.
    */
-  removePackage(packageId: string): void {
-    this.compat.removePackage(packageId);
+  override removePackage(packageId: string): void {
+    super.removePackage(packageId);
     this.metadata.unregisterPackage(packageId);
   }
 }
