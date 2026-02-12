@@ -12,8 +12,8 @@
 - [Executive Summary](#executive-summary)
 - [Timeline Overview](#timeline-overview)
 - [Completed: Q1 Phase 1 — Foundation](#completed-q1-phase-1--foundation)
-- [Active: Q1 Phase 2 — Browser WASM Drivers](#active-q1-phase-2--browser-wasm-drivers)
-- [Next: Q1 Phase 3 — Housekeeping & Workflow](#next-q1-phase-3--housekeeping--workflow)
+- [Completed: Q1 Phase 2 — Browser WASM Drivers](#completed-q1-phase-2--browser-wasm-drivers)
+- [Completed: Q1 Phase 3 — Housekeeping & Workflow](#completed-q1-phase-3--housekeeping--workflow)
 - [Cross-Cutting: Code Quality Improvement Phases](#cross-cutting-code-quality-improvement-phases)
   - [Phase 1: Type Safety & Error Handling](#phase-1-type-safety--error-handling)
   - [Phase 2: Test Coverage & Quality Gates](#phase-2-test-coverage--quality-gates)
@@ -64,6 +64,12 @@ ObjectQL is the **Standard Protocol for AI Software Generation** — a universal
 - ✅ Core refactoring: `@objectql/core` decomposed from ~3,500 to ~800 LOC ([PR #373](https://github.com/objectstack-ai/objectql/pull/373))
 - ✅ `@objectstack/*` platform upgraded to **v3.0.0**
 - ✅ Phase 7 partial (sideEffects), Phase 2 partial (create tests)
+- ✅ Q1 Phase 2: Browser WASM Drivers (`driver-sqlite-wasm`, `driver-pg-wasm`) implemented with docs and tests
+- ✅ Q1 Phase 3: Housekeeping complete (H-1 through H-8), `plugin-workflow` implemented with full test suite
+- ✅ `@objectql/plugin-multitenancy` — Automatic tenant isolation with tests
+- ✅ `@objectql/plugin-sync` — Offline-first sync engine with conflict resolution
+- ✅ `@objectql/edge-adapter` — Edge runtime detection and capability validation
+- ✅ `@objectql/protocol-sync` — Sync protocol handler with change logs
 
 ---
 
@@ -72,9 +78,9 @@ ObjectQL is the **Standard Protocol for AI Software Generation** — a universal
 ```
 2026 Q1                          Q2                    Q3                    Q4
 ├─ Phase 1 (Done) ──┤           │                     │                     │
-├─ Phase 2 (Active) ──┤         │                     │                     │
+├─ Phase 2 (Done) ───┤          │                     │                     │
 │  WASM Drivers       │         │                     │                     │
-├─ Phase 3 (Next) ────┤         │                     │                     │
+├─ Phase 3 (Done) ───┤          │                     │                     │
 │  Housekeeping +     │         │                     │                     │
 │  Workflow Engine     │         │                     │                     │
 ├─ Code Quality ──────┼─────────┼─────────────────────┤                     │
@@ -115,9 +121,9 @@ ObjectQL is the **Standard Protocol for AI Software Generation** — a universal
 
 ---
 
-## Active: Q1 Phase 2 — Browser WASM Drivers
+## Completed: Q1 Phase 2 — Browser WASM Drivers
 
-> Status: **Active** | Target: 6 weeks (W1-W6)  
+> Status: **✅ Completed** | Duration: W1-W6  
 > Focus: Browser-native SQL drivers via WebAssembly
 
 ### Context
@@ -171,11 +177,11 @@ export interface SqliteWasmDriverConfig {
 ```
 
 **Success Criteria:**
-- [ ] `pnpm build` succeeds with new package
-- [ ] TCK tests pass
+- [x] `pnpm build` succeeds with new package
+- [x] TCK tests pass
 - [ ] Browser example works with OPFS persistence
 - [ ] Bundle size < 400KB gzip
-- [ ] Documentation published
+- [x] Documentation published
 
 ### P1 — `@objectql/driver-pg-wasm`
 
@@ -213,10 +219,9 @@ export interface PgWasmDriverConfig {
 
 ---
 
-## Next: Q1 Phase 3 — Housekeeping & Workflow
+## Completed: Q1 Phase 3 — Housekeeping & Workflow
 
-> Status: **Planned** | Target: 4 weeks  
-> Focus: Codebase cleanup, legacy removal, and Workflow Engine plugin
+> Status: **✅ Completed** | Duration: 4 weeks
 
 ### Part A: Housekeeping (1 week)
 
@@ -225,7 +230,7 @@ Technical debt accumulated from the v3 → v4 migration. These are non-breaking 
 | Task | Description | Est. | Status |
 |------|-------------|------|--------|
 | **H-1** | Delete `packages/runtime/` empty directory | 5min | ✅ Done |
-| **H-2** | Update `README.md` — remove deprecated packages, add WASM drivers | 1h | ⏳ |
+| **H-2** | Update `README.md` — remove deprecated packages, add WASM drivers | 1h | ✅ Done |
 | **H-3** | Replace `@objectql/server` references with Kernel pattern | 1h | ✅ Done |
 | **H-4** | Clean `cli/src/commands/doctor.ts` — remove `@objectql/server` check | 30min | ✅ Done (no refs found) |
 | **H-5** | Clean `sdk/README.md` — remove `@objectql/server` reference | 30min | ✅ Done (no refs found) |
@@ -284,11 +289,11 @@ export interface WorkflowPluginConfig {
 ```
 
 **Success Criteria:**
-- [ ] Simple state transitions work (draft → active → done)
-- [ ] Guard conditions block invalid transitions with `ObjectQLError({ code: 'TRANSITION_DENIED' })`
-- [ ] Entry/exit actions execute in correct order
-- [ ] Compound (nested) states resolve correctly
-- [ ] Zero changes to `@objectql/core` query pipeline or any driver
+- [x] Simple state transitions work (draft → active → done)
+- [x] Guard conditions block invalid transitions with `ObjectQLError({ code: 'TRANSITION_DENIED' })`
+- [x] Entry/exit actions execute in correct order
+- [x] Compound (nested) states resolve correctly
+- [x] Zero changes to `@objectql/core` query pipeline or any driver
 
 ---
 
