@@ -9,8 +9,9 @@
 // ── Convenience factory ──
 export { createObjectQLKernel, type ObjectQLKernelOptions } from './kernel-factory';
 
-// ── Re-export upstream engine (replaces local app.ts + repository.ts) ──
-export { ObjectQL, ObjectRepository, ScopedContext, SchemaRegistry } from '@objectstack/objectql';
+// ── Re-export bridge engine (extends upstream with MetadataRegistry + legacy config) ──
+export { ObjectQL, type ObjectQLConfig } from './app';
+export { ObjectRepository, ScopedContext, SchemaRegistry } from '@objectstack/objectql';
 export type { HookHandler, HookEntry, OperationContext, EngineMiddleware, ObjectQLHostContext } from '@objectstack/objectql';
 
 // ── Plugin orchestration ──
