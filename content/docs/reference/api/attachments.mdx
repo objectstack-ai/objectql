@@ -1081,35 +1081,42 @@ ObjectQL provides a flexible file storage abstraction that supports multiple bac
 #### Using Local File Storage
 
 ```typescript
-import { createNodeHandler, LocalFileStorage } from '@objectql/server';
-import { ObjectQL } from '@objectql/core';
-import * as http from 'http';
+import { ObjectStackKernel } from '@objectstack/runtime';
+import { HonoServerPlugin } from '@objectstack/plugin-hono-server';
+import { ObjectQLPlugin } from '@objectql/core';
 
-const app = new ObjectQL({ /* ... */ });
+const kernel = new ObjectStackKernel([
+  appConfig,
+  myDriver,
+  new ObjectQLPlugin(),
+  new HonoServerPlugin({
+    port: 3000,
+    fileStorage: {
+      type: 'local',
+      baseDir: './uploads',
+      baseUrl: 'http://localhost:3000/api/files'
+    }
+  })
+]);
 
-// Configure local file storage
-const fileStorage = new LocalFileStorage({
-    baseDir: './uploads',  // or process.env.OBJECTQL_UPLOAD_DIR
-    baseUrl: 'http://localhost:3000/api/files'  // or process.env.OBJECTQL_BASE_URL
-});
-
-// Create HTTP handler with file storage
-const handler = createNodeHandler(app, { fileStorage });
-
-const server = http.createServer(handler);
-server.listen(3000);
+await kernel.start();
 ```
 
 #### Using Memory Storage (For Testing)
 
 ```typescript
-import { MemoryFileStorage } from '@objectql/server';
-
-const fileStorage = new MemoryFileStorage({
-    baseUrl: 'http://localhost:3000/api/files'
-});
-
-const handler = createNodeHandler(app, { fileStorage });
+const kernel = new ObjectStackKernel([
+  appConfig,
+  myDriver,
+  new ObjectQLPlugin(),
+  new HonoServerPlugin({
+    port: 3000,
+    fileStorage: {
+      type: 'memory',
+      baseUrl: 'http://localhost:3000/api/files'
+    }
+  })
+]);
 ```
 
 #### Custom Storage Implementation
@@ -1117,7 +1124,7 @@ const handler = createNodeHandler(app, { fileStorage });
 You can implement custom storage backends by implementing the `IFileStorage` interface:
 
 ```typescript
-import { IFileStorage, AttachmentData, FileStorageOptions } from '@objectql/server';
+import { IFileStorage, AttachmentData, FileStorageOptions } from '@objectql/types';
 
 class S3FileStorage implements IFileStorage {
     async save(

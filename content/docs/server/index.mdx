@@ -55,35 +55,37 @@ Extend ObjectQL with plugins:
 
 ## Quick Setup
 
-### Express Integration
+### Kernel Pattern (Recommended)
 
 ```typescript
-import express from 'express';
-import { ObjectQL } from '@objectql/core';
+// objectstack.config.ts
+import { ObjectStackKernel } from '@objectstack/runtime';
+import { HonoServerPlugin } from '@objectstack/plugin-hono-server';
+import { ObjectQLPlugin } from '@objectql/core';
 import { SqlDriver } from '@objectql/driver-sql';
-import { createNodeHandler } from '@objectql/server';
 
-const app = express();
+const kernel = new ObjectStackKernel([
+  {
+    name: 'my-app',
+    objects: {
+      User: {
+        name: 'User',
+        fields: {
+          name: { type: 'text', required: true },
+          email: { type: 'text', required: true }
+        }
+      }
+    }
+  },
+  new SqlDriver({
+    client: 'postgresql',
+    connection: process.env.DATABASE_URL
+  }),
+  new ObjectQLPlugin(),
+  new HonoServerPlugin({ port: 3000 })
+]);
 
-// Initialize ObjectQL
-const objectql = new ObjectQL({
-  datasources: {
-    default: new SqlDriver({
-      client: 'postgresql',
-      connection: process.env.DATABASE_URL
-    })
-  }
-});
-
-await objectql.init();
-
-// Mount ObjectQL handler
-app.use('/api/objectql', createNodeHandler(objectql));
-
-// Start server
-app.listen(3000, () => {
-  console.log('Server running on http://localhost:3000');
-});
+await kernel.start();
 ```
 
 ### Configuration File
@@ -104,11 +106,7 @@ export default defineConfig({
         password: process.env.DB_PASSWORD
       }
     }
-  },
-  modules: [
-    'src/objects',
-    '@objectql/module-auth'
-  ]
+  }
 });
 ```
 

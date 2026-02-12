@@ -1,8 +1,8 @@
 # ObjectQL — 2026 Roadmap
 
 > Created: 2026-02-08 | Last Updated: 2026-02-12 | Status: **Active**  
-> Current Version: **4.2.0** (all packages aligned, except `vscode-objectql` at 4.1.0)  
-> Runtime: `@objectstack/cli` v3.0.0 (Kernel pattern) — `@objectql/server` deprecated, `packages/runtime/` removed.  
+> Current Version: **4.2.0** (all packages aligned)  
+> Runtime: `@objectstack/cli` v3.0.0 (Kernel pattern) — `@objectql/server` removed, `packages/runtime/` removed.  
 > @objectstack Platform: **v3.0.0**
 
 ---
@@ -222,16 +222,16 @@ export interface PgWasmDriverConfig {
 
 Technical debt accumulated from the v3 → v4 migration. These are non-breaking cleanups.
 
-| Task | Description | Est. |
-|------|-------------|------|
-| **H-1** | Delete `packages/runtime/` empty directory | 5min |
-| **H-2** | Update `README.md` — remove deprecated packages, add WASM drivers | 1h |
-| **H-3** | Replace `@objectql/server` references with Kernel pattern | 1h |
-| **H-4** | Clean `cli/src/commands/doctor.ts` — remove `@objectql/server` check | 30min |
-| **H-5** | Clean `sdk/README.md` — remove `@objectql/server` reference | 30min |
-| **H-6** | Bump `vscode-objectql` from 4.1.0 → 4.2.0 | 1h |
-| **H-7** | Update express-server example README | 30min |
-| **H-8** | Audit CHANGELOG.md files for deprecated references | 1h |
+| Task | Description | Est. | Status |
+|------|-------------|------|--------|
+| **H-1** | Delete `packages/runtime/` empty directory | 5min | ✅ Done |
+| **H-2** | Update `README.md` — remove deprecated packages, add WASM drivers | 1h | ⏳ |
+| **H-3** | Replace `@objectql/server` references with Kernel pattern | 1h | ✅ Done |
+| **H-4** | Clean `cli/src/commands/doctor.ts` — remove `@objectql/server` check | 30min | ✅ Done (no refs found) |
+| **H-5** | Clean `sdk/README.md` — remove `@objectql/server` reference | 30min | ✅ Done (no refs found) |
+| **H-6** | Bump `vscode-objectql` from 4.1.0 → 4.2.0 | 1h | ✅ Done |
+| **H-7** | Update express-server example README | 30min | ✅ Done |
+| **H-8** | Audit CHANGELOG.md files for deprecated references | 1h | ✅ Skipped (historical) |
 
 ### Part B: `@objectql/plugin-workflow` (3 weeks)
 
