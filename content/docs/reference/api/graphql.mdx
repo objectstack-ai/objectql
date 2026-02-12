@@ -903,10 +903,14 @@ function UserList() {
 ObjectQL doesn't include GraphQL Playground by default, but you can easily add it:
 
 ```typescript
+import { ObjectStackKernel } from '@objectstack/runtime';
 import { GraphQLPlugin } from '@objectql/protocol-graphql';
+import { ObjectQLPlugin } from '@objectql/core';
+import { MemoryDriver } from '@objectql/driver-memory';
 
 const kernel = new ObjectStackKernel([
-  myDriver,
+  appConfig,
+  new MemoryDriver(),
   new ObjectQLPlugin(),
   new GraphQLPlugin({
     port: 4000,

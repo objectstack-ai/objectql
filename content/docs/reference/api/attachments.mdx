@@ -1084,10 +1084,11 @@ ObjectQL provides a flexible file storage abstraction that supports multiple bac
 import { ObjectStackKernel } from '@objectstack/runtime';
 import { HonoServerPlugin } from '@objectstack/plugin-hono-server';
 import { ObjectQLPlugin } from '@objectql/core';
+import { SqlDriver } from '@objectql/driver-sql';
 
 const kernel = new ObjectStackKernel([
   appConfig,
-  myDriver,
+  new SqlDriver({ client: 'sqlite3', connection: { filename: ':memory:' } }),
   new ObjectQLPlugin(),
   new HonoServerPlugin({
     port: 3000,
@@ -1107,7 +1108,7 @@ await kernel.start();
 ```typescript
 const kernel = new ObjectStackKernel([
   appConfig,
-  myDriver,
+  new SqlDriver({ client: 'sqlite3', connection: { filename: ':memory:' } }),
   new ObjectQLPlugin(),
   new HonoServerPlugin({
     port: 3000,

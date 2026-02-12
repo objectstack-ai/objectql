@@ -407,10 +407,12 @@ When using `@objectstack/plugin-hono-server`, CSRF protection is enabled by defa
 ```typescript
 import { ObjectStackKernel } from '@objectstack/runtime';
 import { HonoServerPlugin } from '@objectstack/plugin-hono-server';
+import { ObjectQLPlugin } from '@objectql/core';
+import { MemoryDriver } from '@objectql/driver-memory';
 
 const kernel = new ObjectStackKernel([
   appConfig,
-  myDriver,
+  new MemoryDriver(),
   new ObjectQLPlugin(),
   new HonoServerPlugin({
     port: 3000,

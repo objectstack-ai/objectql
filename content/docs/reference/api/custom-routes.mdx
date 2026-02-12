@@ -31,12 +31,14 @@ Configure custom routes when creating the Kernel with protocol plugins:
 ```typescript
 import { ObjectStackKernel } from '@objectstack/runtime';
 import { HonoServerPlugin } from '@objectstack/plugin-hono-server';
+import { ObjectQLPlugin } from '@objectql/core';
 import { JSONRPCPlugin } from '@objectql/protocol-json-rpc';
+import { MemoryDriver } from '@objectql/driver-memory';
 
 // Define custom routes via plugin configuration
 const kernel = new ObjectStackKernel([
   appConfig,
-  myDriver,
+  new MemoryDriver(),
   new ObjectQLPlugin(),
   new JSONRPCPlugin({ basePath: '/v1/rpc' }),
   new HonoServerPlugin({
