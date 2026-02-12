@@ -382,7 +382,7 @@ If you fork or clone the repository to contribute or run examples from source:
    # Loads project-tracker example metadata from objectstack.config.ts
    ```
    
-   The dev server is powered by `@objectstack/cli` (v2.0.6). It reads `objectstack.config.ts` in the project root, which configures the kernel with all plugins:
+   The dev server is powered by `@objectstack/cli` (v3.0.0). It reads `objectstack.config.ts` in the project root, which configures the kernel with all plugins:
 
    ```typescript
    // objectstack.config.ts
