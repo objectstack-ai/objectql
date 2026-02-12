@@ -21,10 +21,6 @@
   - changed-files:
     - any-glob-to-any-file: ['packages/drivers/**/*']
 
-'🚀 runtime':
-  - changed-files:
-    - any-glob-to-any-file: ['packages/runtime/**/*']
-
 '📝 examples':
   - changed-files:
     - any-glob-to-any-file: ['examples/**/*']

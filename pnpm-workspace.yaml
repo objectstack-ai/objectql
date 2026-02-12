@@ -1,7 +1,6 @@
 packages:
   - packages/foundation/*
   - packages/drivers/*
-  - packages/runtime/*
   - packages/tools/*
   - packages/protocols/*
   - examples/quickstart/*

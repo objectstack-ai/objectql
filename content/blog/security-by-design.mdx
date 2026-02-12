@@ -402,21 +402,29 @@ const record = await repository.findOne({
 
 ### 3. Cross-Site Request Forgery (CSRF) Protection
 
-When using `@objectql/server`, CSRF protection is enabled by default:
+When using `@objectstack/plugin-hono-server`, CSRF protection is enabled by default:
 
 ```typescript
-import { createObjectQLServer } from '@objectql/server';
+import { ObjectStackKernel } from '@objectstack/runtime';
+import { HonoServerPlugin } from '@objectstack/plugin-hono-server';
+import { ObjectQLPlugin } from '@objectql/core';
+import { MemoryDriver } from '@objectql/driver-memory';
 
-const server = createObjectQLServer({
-  repository,
-  security: {
-    csrf: {
-      enabled: true,
-      cookieName: 'csrf_token',
-      headerName: 'X-CSRF-Token'
+const kernel = new ObjectStackKernel([
+  appConfig,
+  new MemoryDriver(),
+  new ObjectQLPlugin(),
+  new HonoServerPlugin({
+    port: 3000,
+    security: {
+      csrf: {
+        enabled: true,
+        cookieName: 'csrf_token',
+        headerName: 'X-CSRF-Token'
+      }
     }
-  }
-});
+  })
+]);
 ```
 
 All state-changing requests require a valid CSRF token:

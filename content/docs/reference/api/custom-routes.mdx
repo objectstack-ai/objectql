@@ -26,23 +26,32 @@ By default, ObjectQL uses these API paths:
 
 ### Basic Usage
 
-Configure custom routes when creating handlers:
+Configure custom routes when creating the Kernel with protocol plugins:
 
 ```typescript
-import { createNodeHandler, createRESTHandler, createMetadataHandler } from '@objectql/server';
+import { ObjectStackKernel } from '@objectstack/runtime';
+import { HonoServerPlugin } from '@objectstack/plugin-hono-server';
+import { ObjectQLPlugin } from '@objectql/core';
+import { JSONRPCPlugin } from '@objectql/protocol-json-rpc';
+import { MemoryDriver } from '@objectql/driver-memory';
 
-// Define custom routes
-const customRoutes = {
-    rpc: '/v1/rpc',
-    data: '/v1/resources',
-    metadata: '/v1/schema',
-    files: '/v1/storage'
-};
+// Define custom routes via plugin configuration
+const kernel = new ObjectStackKernel([
+  appConfig,
+  new MemoryDriver(),
+  new ObjectQLPlugin(),
+  new JSONRPCPlugin({ basePath: '/v1/rpc' }),
+  new HonoServerPlugin({
+    port: 3000,
+    routes: {
+      data: '/v1/resources',
+      metadata: '/v1/schema',
+      files: '/v1/storage'
+    }
+  })
+]);
 
-// Create handlers with custom routes
-const nodeHandler = createNodeHandler(app, { routes: customRoutes });
-const restHandler = createRESTHandler(app, { routes: customRoutes });
-const metadataHandler = createMetadataHandler(app, { routes: customRoutes });
+await kernel.start();
 ```
 
 ### Route Configuration Interface
@@ -78,62 +87,55 @@ interface ApiRouteConfig {
 ## Complete Example
 
 ```typescript
-import express from 'express';
-import { ObjectQL } from '@objectql/core';
+import { ObjectStackKernel } from '@objectstack/runtime';
+import { HonoServerPlugin } from '@objectstack/plugin-hono-server';
+import { ObjectQLPlugin } from '@objectql/core';
 import { SqlDriver } from '@objectql/driver-sql';
-import { createNodeHandler, createRESTHandler, createMetadataHandler } from '@objectql/server';
+import { JSONRPCPlugin } from '@objectql/protocol-json-rpc';
 
 async function main() {
-    // 1. Initialize ObjectQL
-    const app = new ObjectQL({
-        datasources: {
-            default: new SqlDriver({
-                client: 'sqlite3',
-                connection: { filename: ':memory:' },
-                useNullAsDefault: true
-            })
+    // 1. Define app configuration
+    const appConfig = {
+        name: 'my-app',
+        objects: {
+            user: {
+                name: 'user',
+                label: 'User',
+                fields: {
+                    name: { type: 'text', label: 'Name' },
+                    email: { type: 'email', label: 'Email' }
+                }
+            }
         }
-    });
-    
-    // Register your objects
-    app.registerObject({
-        name: 'user',
-        label: 'User',
-        fields: {
-            name: { type: 'text', label: 'Name' },
-            email: { type: 'email', label: 'Email' }
-        }
-    });
-    
-    await app.init();
-    
-    // 2. Define custom API routes
-    const customRoutes = {
-        rpc: '/v1/rpc',
-        data: '/v1/resources',
-        metadata: '/v1/schema',
-        files: '/v1/storage'
     };
     
-    // 3. Create handlers with custom routes
-    const nodeHandler = createNodeHandler(app, { routes: customRoutes });
-    const restHandler = createRESTHandler(app, { routes: customRoutes });
-    const metadataHandler = createMetadataHandler(app, { routes: customRoutes });
+    // 2. Create Kernel with custom route configuration
+    const kernel = new ObjectStackKernel([
+        appConfig,
+        new SqlDriver({
+            client: 'sqlite3',
+            connection: { filename: ':memory:' },
+            useNullAsDefault: true
+        }),
+        new ObjectQLPlugin(),
+        new JSONRPCPlugin({ basePath: '/v1/rpc' }),
+        new HonoServerPlugin({
+            port: 3000,
+            routes: {
+                data: '/v1/resources',
+                metadata: '/v1/schema',
+                files: '/v1/storage'
+            }
+        })
+    ]);
     
-    // 4. Setup Express with custom paths
-    const server = express();
+    await kernel.start();
     
-    server.all('/v1/rpc*', nodeHandler);
-    server.all('/v1/resources/*', restHandler);
-    server.all('/v1/schema*', metadataHandler);
-    
-    server.listen(3000, () => {
-        console.log('🚀 Server running with custom routes');
-        console.log('  JSON-RPC:  http://localhost:3000/v1/rpc');
-        console.log('  REST API:  http://localhost:3000/v1/resources');
-        console.log('  Metadata:  http://localhost:3000/v1/schema');
-        console.log('  Files:     http://localhost:3000/v1/storage');
-    });
+    console.log('🚀 Server running with custom routes');
+    console.log('  JSON-RPC:  http://localhost:3000/v1/rpc');
+    console.log('  REST API:  http://localhost:3000/v1/resources');
+    console.log('  Metadata:  http://localhost:3000/v1/schema');
+    console.log('  Files:     http://localhost:3000/v1/storage');
 }
 
 main().catch(console.error);

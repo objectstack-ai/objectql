@@ -32,7 +32,7 @@ Both GET and POST methods are supported:
 
 ## Installation
 
-The GraphQL adapter is included in `@objectql/server`:
+The GraphQL adapter is available as a protocol plugin `@objectql/protocol-graphql`:
 
 ```typescript
 import { ObjectStackKernel } from '@objectstack/runtime';
@@ -903,17 +903,24 @@ function UserList() {
 ObjectQL doesn't include GraphQL Playground by default, but you can easily add it:
 
 ```typescript
-import express from 'express';
-import { graphqlHTTP } from 'express-graphql';
-import { createGraphQLHandler, generateGraphQLSchema } from '@objectql/server';
+import { ObjectStackKernel } from '@objectstack/runtime';
+import { GraphQLPlugin } from '@objectql/protocol-graphql';
+import { ObjectQLPlugin } from '@objectql/core';
+import { MemoryDriver } from '@objectql/driver-memory';
 
-const app = express();
-const schema = generateGraphQLSchema(objectQLApp);
+const kernel = new ObjectStackKernel([
+  appConfig,
+  new MemoryDriver(),
+  new ObjectQLPlugin(),
+  new GraphQLPlugin({
+    port: 4000,
+    introspection: true
+  })
+]);
 
-app.use('/api/graphql', graphqlHTTP({
-  schema,
-  graphiql: true  // Enable GraphiQL interface
-}));
+await kernel.start();
+
+// GraphQL Playground available via introspection endpoint
 ```
 
 ## Postman

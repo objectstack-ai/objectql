@@ -16,15 +16,21 @@ You can configure an ObjectQL instance to act as a **Gateway**. It connects to o
 ### The Subgraph (Service A)
 
 This is a standard ObjectQL service running standard drivers (SQL/Mongo).
-It must expose the metadata API (default in `@objectql/server`).
+It exposes the metadata API via protocol plugins.
 
 ```typescript
 // user-service/index.ts
-const app = new ObjectQL({
-    modules: ['./src/objects'], // Defines 'user', 'role'
-    datasources: { ... }
-});
+import { ObjectStackKernel } from '@objectstack/runtime';
+import { HonoServerPlugin } from '@objectstack/plugin-hono-server';
+
+const kernel = new ObjectStackKernel([
+    { name: 'user-service', objects: { /* user, role */ } },
+    new SqlDriver({ /* ... */ }),
+    new ObjectQLPlugin(),
+    new HonoServerPlugin({ port: 3000 })
+]);
 // Exposes http://user-service:3000/api/metadata/objects
+await kernel.start();
 ```
 
 ### The Gateway
