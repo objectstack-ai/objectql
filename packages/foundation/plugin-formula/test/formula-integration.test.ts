@@ -14,6 +14,7 @@
 
 import { ObjectQL } from '@objectql/core';
 import { MockDriver } from './mock-driver';
+import { FormulaPlugin } from '../src/formula-plugin';
 
 describe('Formula Integration', () => {
   let app: ObjectQL;
@@ -28,8 +29,18 @@ describe('Formula Integration', () => {
       }
     });
 
+    // Install the Formula Plugin with a context that has a hook method
+    const formulaPlugin = new FormulaPlugin();
+    const ctx = {
+      engine: app,
+      hook: (event: string, handler: any) => {
+        app.registerHook(event, handler);
+      }
+    };
+    await formulaPlugin.install(ctx);
+
     // Register an object with formula fields
-    app.registerObject({
+    const contactSchema = {
       name: 'contact',
       fields: {
         first_name: {
@@ -68,7 +79,11 @@ describe('Formula Integration', () => {
           label: 'Status',
         },
       },
-    });
+    };
+
+    // Register in both SchemaRegistry and MetadataRegistry
+    app.registerObject(contactSchema);
+    app.metadata.register('object', contactSchema);
 
     await app.init();
   });
@@ -157,7 +172,7 @@ describe('Formula Integration', () => {
   describe('Complex Formula Examples', () => {
     beforeEach(async () => {
       // Register an object with more complex formulas
-      app.registerObject({
+      const orderSchema = {
         name: 'order',
         fields: {
           subtotal: { type: 'currency' },
@@ -185,7 +200,11 @@ describe('Formula Integration', () => {
             data_type: 'text',
           },
         },
-      });
+      };
+
+      // Register in both SchemaRegistry and MetadataRegistry
+      app.registerObject(orderSchema);
+      app.metadata.register('object', orderSchema);
     });
 
     it('should calculate complex financial formulas', async () => {
@@ -247,7 +266,7 @@ describe('Formula Integration', () => {
 
   describe('Formula Error Handling', () => {
     beforeEach(async () => {
-      app.registerObject({
+      const productSchema = {
         name: 'product',
         fields: {
           name: { type: 'text' },
@@ -258,7 +277,11 @@ describe('Formula Integration', () => {
             data_type: 'number',
           },
         },
-      });
+      };
+
+      // Register in both SchemaRegistry and MetadataRegistry
+      app.registerObject(productSchema);
+      app.metadata.register('object', productSchema);
     });
 
     it('should handle formula evaluation errors gracefully', async () => {
