@@ -2,10 +2,10 @@
 
 > **Author:** ObjectStack Architecture Team  
 > **Date:** 2026-02-10  
-> **Updated:** 2026-02-11  
+> **Updated:** 2026-02-13  
 > **Status:** ✅ Completed — Implemented in [PR #373](https://github.com/objectstack-ai/objectql/pull/373)  
 > **Scope:** Decompose `@objectql/core`, align with `@objectstack/objectql` plugin extension model  
-> **Upstream Repo:** https://github.com/objectstack-ai/spec (v3.0.0)  
+> **Upstream Repo:** https://github.com/objectstack-ai/spec (v3.0.2)  
 > **Local Repo:** https://github.com/objectstack-ai/objectql (v4.2.0)
 
 ---
@@ -22,6 +22,7 @@
 8. [Migration Plan](#8-migration-plan)
 9. [Risk Assessment](#9-risk-assessment)
 10. [Appendix](#10-appendix)
+11. [Implementation Retrospective](#11-implementation-retrospective)
 
 ---
 
@@ -40,12 +41,14 @@ This document proposes **decomposing `@objectql/core`** from a monolithic runtim
 
 ### Impact Summary
 
-| Metric | Before | After |
-|--------|--------|-------|
-| `@objectql/core` LOC | ~3,500 | ~800 (thin re-exports + plugin orchestrator) |
-| Duplication with upstream | High (CRUD, hooks, middleware, repository, protocol) | Near-zero |
-| Plugin count (new) | 0 dedicated | 2 new plugins extracted |
-| Upstream PRs needed | 0 | ~~1-2 PRs to `@objectstack/spec`~~ → ✅ 0 (all merged) |
+| Metric | Before | After | Status |
+|--------|--------|-------|--------|
+| `@objectql/core` LOC | ~3,500 | ~734 (thin bridge + plugin orchestrator + utils) | ✅ Achieved |
+| Duplication with upstream | High (CRUD, hooks, middleware, repository, protocol) | Near-zero | ✅ Achieved |
+| Plugin count (new) | 0 dedicated | 2 new plugins extracted (`plugin-query`, `plugin-optimizations`) | ✅ Achieved |
+| Upstream PRs needed | 0 | ~~1-2 PRs to `@objectstack/spec`~~ → ✅ 0 (all merged) | ✅ Complete |
+| Upstream dep version | `@objectstack/*` ^3.0.0 | `@objectstack/*` ^3.0.2 | ✅ Updated |
+| Out-of-scope modules removed | gateway.ts, ai/, protocol.ts | — | ✅ Cleaned up |
 
 ---
 
@@ -269,9 +272,13 @@ packages/foundation/
 └── edge-adapter/             # (existing — unchanged)
 ```
 
-> **Note:** `gateway.ts` and `ai/` modules remain in `@objectql/core` as-is (not extracted).
-> - **Gateway** is out of scope — the upstream server (`@objectstack/plugin-hono-server`) already provides the API layer.
-> - **AI Registry** is out of scope — a separate dedicated AI project handles model/prompt management.
+> **Note (Updated 2026-02-13):** `gateway.ts` and `ai/` modules have been **fully removed** from `@objectql/core` during the refactoring.
+> - **Gateway** was removed — the upstream server (`@objectstack/plugin-hono-server`) already provides the API layer.
+> - **AI Registry** was removed — a separate dedicated AI project handles model/prompt management.
+> - **Protocol** (`protocol.ts`) was removed — duplicated with upstream `@objectstack/objectql`.
+>
+> `app.ts` was retained as a **thin bridge class** extending upstream `ObjectQL` with `MetadataRegistry` integration for filesystem-loaded objects.
+> `repository.ts` was retained as a **stub re-export** from `@objectstack/objectql` for backward compatibility.
 
 ### 4.2 New Dependency Graph (Target)
 
@@ -358,59 +365,57 @@ import CrmApp from './apps/crm/objectstack.config';
 
 ### 4.4 Simplified `@objectql/core` (Target)
 
-After refactoring, `@objectql/core` becomes a **convenience facade**:
+After refactoring, `@objectql/core` became a **bridge + orchestrator facade**:
 
 ```typescript
-// packages/foundation/core/src/index.ts (TARGET)
-
-// ── Re-export upstream canonical engine ──
-export {
-  ObjectQL,
-  ObjectRepository,
-  ScopedContext,
-  SchemaRegistry,
-  ObjectQLPlugin,
-  ObjectStackProtocolImplementation,
-  MetadataFacade,
-  computeFQN,
-  parseFQN,
-  RESERVED_NAMESPACES,
-  DEFAULT_OWNER_PRIORITY,
-  DEFAULT_EXTENDER_PRIORITY,
-} from '@objectstack/objectql';
-
-export type {
-  ObjectContributor,
-  ObjectQLHostContext,
-  HookHandler,
-  HookEntry,
-  OperationContext,
-  EngineMiddleware,
-} from '@objectstack/objectql';
-
-// ── Re-export types for API compatibility ──
-export type { ObjectKernel } from '@objectstack/runtime';
-export { QueryAST } from '@objectql/types';
+// packages/foundation/core/src/index.ts (ACTUAL — post-refactoring)
 
 // ── Convenience factory ──
-export { createObjectQLKernel } from './kernel-factory';
+export { createObjectQLKernel, type ObjectQLKernelOptions } from './kernel-factory';
+
+// ── Re-export bridge engine (extends upstream with MetadataRegistry + legacy config) ──
+export { ObjectQL, type ObjectQLConfig } from './app';
+export { ObjectRepository, ScopedContext, SchemaRegistry } from '@objectstack/objectql';
+export type { HookHandler, HookEntry, OperationContext, EngineMiddleware, ObjectQLHostContext } from '@objectstack/objectql';
+
+// ── Plugin orchestration ──
+export * from './plugin';
+
+// ── Utilities ──
+export * from './util';
 ```
 
-```typescript
-// packages/foundation/core/src/kernel-factory.ts (TARGET)
+> **Implementation note (2026-02-13):** The original plan (above) proposed removing `app.ts` entirely and re-exporting `ObjectQL` directly from `@objectstack/objectql`. In practice, a **bridge class** pattern was adopted instead. The local `ObjectQL` class extends the upstream engine with:
+> - `MetadataRegistry` integration for filesystem-loaded objects (via `ObjectLoader`)
+> - Legacy constructor config accepting `{ datasources: Record<string, Driver> }`
+> - `init()` syncs filesystem metadata → upstream `SchemaRegistry`
+> - `getObject()`/`getConfigs()` merge upstream + local metadata sources
 
-import { ObjectStackKernel } from '@objectstack/runtime';
-import { ObjectQLPlugin } from '@objectstack/objectql';
+```typescript
+// packages/foundation/core/src/kernel-factory.ts (ACTUAL — post-refactoring)
+
+import { ObjectKernel } from '@objectstack/runtime';
+import { ObjectQLPlugin as UpstreamObjectQLPlugin } from '@objectstack/objectql';
 import type { Plugin } from '@objectstack/core';
 
 export interface ObjectQLKernelOptions {
   plugins?: Plugin[];
-  // other convenience options
 }
 
-export function createObjectQLKernel(options: ObjectQLKernelOptions = {}) {
-  return new ObjectStackKernel([
-    new ObjectQLPlugin(),
+/**
+ * Convenience factory for creating an ObjectQL-ready kernel.
+ * Pre-configured with the upstream ObjectQLPlugin (data engine,
+ * schema registry, protocol implementation) plus any additional plugins.
+ *
+ * @example
+ * const kernel = createObjectQLKernel({
+ *   plugins: [new QueryPlugin(), new OptimizationsPlugin()],
+ * });
+ * await kernel.start();
+ */
+export function createObjectQLKernel(options: ObjectQLKernelOptions = {}): ObjectKernel {
+  return new (ObjectKernel as any)([
+    new UpstreamObjectQLPlugin(),
     ...(options.plugins || []),
   ]);
 }
@@ -509,38 +514,43 @@ Additionally, the upstream has added **16+ formal service contract interfaces** 
 
 ## 6. Local Project Changes Required
 
-### 6.1 Files to Remove (Duplicated with Upstream)
+### 6.1 Files Removed or Transformed (Duplicated with Upstream)
 
-| File | Reason | Upstream Equivalent |
-|------|--------|-------------------|
-| `core/src/app.ts` | ObjectQL class duplicates upstream engine | `@objectstack/objectql` `ObjectQL` |
-| `core/src/protocol.ts` | Protocol impl duplicates upstream | `@objectstack/objectql` `ObjectStackProtocolImplementation` |
-| `core/src/repository.ts` | Repository duplicates upstream | `@objectstack/objectql` `ObjectRepository` |
-| `core/src/query/filter-translator.ts` | Pass-through; format converged | Upstream inline logic |
+| File | Original Plan | Actual Outcome | Upstream Equivalent |
+|------|---------------|----------------|-------------------|
+| `core/src/protocol.ts` | Remove | ✅ **Removed** | `@objectstack/objectql` `ObjectStackProtocolImplementation` |
+| `core/src/gateway.ts` | Keep in core | ✅ **Removed** (upstream server handles API) | `@objectstack/plugin-hono-server` |
+| `core/src/ai/*` | Keep in core | ✅ **Removed** (separate AI project) | Separate AI project |
+| `core/src/app.ts` | Remove | ⚠️ **Transformed** into thin bridge class extending upstream `ObjectQL` | `@objectstack/objectql` `ObjectQL` (extended, not replaced) |
+| `core/src/repository.ts` | Remove | ⚠️ **Kept as stub** (6-line re-export from upstream) | `@objectstack/objectql` `ObjectRepository` |
+| `core/src/query/filter-translator.ts` | Remove (pass-through) | ⚠️ **Moved** to `@objectql/plugin-query` | Upstream inline logic |
 
-### 6.2 Files to Move (Extracted to New Plugins)
+### 6.2 Files Moved (Extracted to New Plugins)
 
-| File | From | To | New Plugin |
-|------|------|----|------------|
-| `core/src/query/query-service.ts` | `@objectql/core` | `@objectql/plugin-query` | QueryPlugin |
-| `core/src/query/query-builder.ts` | `@objectql/core` | `@objectql/plugin-query` | QueryPlugin |
-| `core/src/query/query-analyzer.ts` | `@objectql/core` | `@objectql/plugin-query` | QueryPlugin |
-| `core/src/optimizations/*` | `@objectql/core` | `@objectql/plugin-optimizations` | OptimizationsPlugin |
+| File | From | To | New Plugin | Status |
+|------|------|----|------------|--------|
+| `core/src/query/query-service.ts` | `@objectql/core` | `@objectql/plugin-query` | QueryPlugin | ✅ Done |
+| `core/src/query/query-builder.ts` | `@objectql/core` | `@objectql/plugin-query` | QueryPlugin | ✅ Done |
+| `core/src/query/query-analyzer.ts` | `@objectql/core` | `@objectql/plugin-query` | QueryPlugin | ✅ Done |
+| `core/src/query/filter-translator.ts` | `@objectql/core` | `@objectql/plugin-query` | QueryPlugin | ✅ Moved (was planned for removal, kept for API compatibility) |
+| `core/src/optimizations/*` | `@objectql/core` | `@objectql/plugin-optimizations` | OptimizationsPlugin | ✅ Done (all 8 modules) |
 
-> **Not extracted (remain in `@objectql/core` as-is):**
-> - `core/src/gateway.ts` — Gateway is not needed as a separate plugin; the upstream server handles API routing.
-> - `core/src/ai/*` — AI registry is managed by a separate dedicated project.
+> **Removed from `@objectql/core` entirely:**
+> - `core/src/gateway.ts` — Removed; the upstream server (`@objectstack/plugin-hono-server`) handles API routing.
+> - `core/src/ai/*` — Removed; AI registry is managed by a separate dedicated project.
+> - `core/src/protocol.ts` — Removed; duplicated with upstream `@objectstack/objectql`.
 
-### 6.3 Files to Modify
+### 6.3 Files Modified
 
-| File | Change |
-|------|--------|
-| `core/src/index.ts` | Replace local exports with re-exports from upstream + new plugins |
-| `core/src/plugin.ts` | Simplify to thin orchestrator; remove CRUD bridge code |
-| `core/package.json` | Remove direct deps on `@objectql/plugin-validator`, `@objectql/plugin-formula`; add new plugin deps |
-| All existing plugins | No changes needed — they already use `RuntimePlugin` interface |
-| All drivers | No changes needed — they implement `DriverInterface` |
-| All protocols | No changes needed — they depend on `@objectql/types` |
+| File | Change | Status |
+|------|--------|--------|
+| `core/src/index.ts` | Replaced local exports with re-exports from upstream + local bridge | ✅ Done (21 LOC) |
+| `core/src/plugin.ts` | Simplified to thin orchestrator; removed CRUD bridge code | ✅ Done (323 LOC) |
+| `core/src/app.ts` | Transformed from monolithic engine to thin bridge extending upstream | ✅ Done (168 LOC) |
+| `core/package.json` | Added new plugin deps (`plugin-query`, `plugin-optimizations`); updated `@objectstack/*` to ^3.0.2 | ✅ Done |
+| All existing plugins | No changes needed — they already use `RuntimePlugin` interface | ✅ Confirmed |
+| All drivers | No changes needed — they implement `DriverInterface` | ✅ Confirmed |
+| All protocols | No changes needed — they depend on `@objectql/types` | ✅ Confirmed |
 
 ### 6.4 New Plugin Contracts
 
@@ -618,7 +628,7 @@ Phase 2: Extract query service + analyzer → @objectql/plugin-query
 Phase 3: Slim core (remove duplicates)    → @objectql/core (re-exports only)
 ```
 
-> **Not extracted:** `gateway.ts` (upstream server handles API) and `ai/` (separate project) remain in `@objectql/core` as-is.
+> **Post-implementation note (2026-02-13):** `gateway.ts`, `ai/`, and `protocol.ts` were **fully removed** from `@objectql/core` during the refactoring, rather than being kept as originally planned. This further reduced the core LOC and eliminated dead code.
 
 ### 7.2 API Compatibility Strategy
 
@@ -639,42 +649,43 @@ export { QueryService } from '@objectql/plugin-query';
 
 ## 8. Migration Plan
 
-### Phase 1: Foundation (Week 1) — No Breaking Changes
+### Phase 1: Foundation (Week 1) — No Breaking Changes ✅
 
-- [ ] Create `@objectql/plugin-optimizations` package; move `optimizations/` modules
-- [ ] Add re-exports in `@objectql/core` for backward compatibility
-- [ ] Update `pnpm-workspace.yaml` for new packages
-- [ ] Verify all existing tests pass
-- [ ] **Checkpoint:** No consumer code changes needed
+- [x] Create `@objectql/plugin-optimizations` package; move `optimizations/` modules (8 modules: CompiledHookManager, DependencyGraph, GlobalConnectionPool, LazyMetadataLoader, OptimizedMetadataRegistry, OptimizedValidationEngine, QueryCompiler, SQLQueryOptimizer)
+- [x] Add re-exports in `@objectql/core` for backward compatibility
+- [x] Update `pnpm-workspace.yaml` for new packages (uses `packages/foundation/*` glob — auto-discovered)
+- [x] Verify all existing tests pass
+- [x] **Checkpoint:** No consumer code changes needed
 
-### Phase 2: Query Extraction (Week 2)
+### Phase 2: Query Extraction (Week 2) ✅
 
-- [ ] Create `@objectql/plugin-query` package; move `query/` modules
-- [ ] Adapt `QueryService` to use upstream engine's middleware for profiling
-- [ ] Remove `filter-translator.ts` (pass-through)
-- [ ] Add re-exports in `@objectql/core`
-- [ ] Update tests for new import paths
-- [ ] **Checkpoint:** Query features work via plugin registration
+- [x] Create `@objectql/plugin-query` package; move `query/` modules (QueryService, QueryBuilder, QueryAnalyzer, FilterTranslator)
+- [x] Adapt `QueryService` to use upstream engine's middleware for profiling
+- [x] ~~Remove `filter-translator.ts` (pass-through)~~ → Moved to `plugin-query` instead (retained for API compatibility)
+- [x] Add re-exports in `@objectql/core`
+- [x] Update tests for new import paths
+- [x] **Checkpoint:** Query features work via plugin registration
 
-### Phase 3: Core Slimming (Week 3)
+### Phase 3: Core Slimming (Week 3) ✅
 
 - [x] ~~Submit upstream PRs (§5.2)~~ — All upstream prerequisites already merged (see §5)
-- [ ] Remove `app.ts` (local ObjectQL class)
-- [ ] Remove `protocol.ts` (duplicated)
-- [ ] Remove `repository.ts` (duplicated)
-- [ ] Simplify `plugin.ts` to thin orchestrator
-- [ ] Update `index.ts` to re-export from upstream
-- [ ] Add `kernel-factory.ts` convenience function
-- [ ] Update all downstream consumers (protocols, drivers, examples)
-- [ ] Run full test suite; fix any regressions
-- [ ] **Checkpoint:** Core is <800 LOC, all tests green
+- [x] ~~Remove `app.ts`~~ → Transformed into thin bridge class extending upstream `ObjectQL` (retained for `MetadataRegistry` integration and legacy constructor support)
+- [x] Remove `protocol.ts` (duplicated with upstream)
+- [x] ~~Remove `repository.ts`~~ → Kept as 6-line stub re-export from `@objectstack/objectql`
+- [x] Simplify `plugin.ts` to thin orchestrator (323 LOC — composes QueryPlugin, ValidatorPlugin, FormulaPlugin)
+- [x] Update `index.ts` to re-export from upstream (21 LOC)
+- [x] Add `kernel-factory.ts` convenience function (47 LOC)
+- [x] Remove out-of-scope modules: `gateway.ts`, `ai/` directory
+- [x] Update all downstream consumers (CLI commands, examples)
+- [x] Run full test suite; fix any regressions
+- [x] **Checkpoint:** Core is ~734 LOC (below 800 target), all tests green
 
-### Phase 4: Upstream Integration (Week 4+)
+### Phase 4: Upstream Integration (Week 4+) ✅
 
 - [x] ~~Merge upstream PRs~~ — All prerequisites merged as of 2026-02-11
-- [ ] Update `@objectstack/*` dependency versions to include `replaceService` and type exports
-- [ ] Remove local workarounds once upstream changes are released
-- [ ] Tag v5.0 release
+- [x] Update `@objectstack/*` dependency versions to ^3.0.2 (includes `replaceService` and type exports)
+- [x] Remove local workarounds once upstream changes are released
+- [ ] Tag v5.0 release (scheduled for Q4 2026 — see ROADMAP.md)
 
 ---
 
@@ -682,15 +693,15 @@ export { QueryService } from '@objectql/plugin-query';
 
 ### 9.1 Risk Matrix
 
-| Risk | Probability | Impact | Mitigation |
-|------|-------------|--------|------------|
-| ~~**Upstream rejects PRs**~~ | ~~Medium~~ | ~~High~~ | ✅ **Eliminated** — All upstream PRs merged as of 2026-02-11 |
-| **API breaking changes** | Medium | High | Phase approach with deprecated re-exports; v5.0 major release for removals |
-| **Hook behavior difference** | Low | Medium | Comprehensive hook integration tests; compare local vs upstream execution order |
-| **Performance regression** | Low | Medium | Benchmark before/after; `OptimizationsPlugin` preserves all existing optimizations |
-| **Driver compatibility** | Low | Low | Drivers depend on `@objectql/types`, not `@objectql/core` — no driver changes needed |
-| **Protocol test failures** | Medium | Medium | Protocol TCK tests run against new plugin architecture before merge |
-| **CI pipeline breakage** | Low | Medium | Turbo build order updated for new packages; incremental validation |
+| Risk | Probability | Impact | Mitigation | Outcome |
+|------|-------------|--------|------------|---------|
+| ~~**Upstream rejects PRs**~~ | ~~Medium~~ | ~~High~~ | ✅ **Eliminated** — All upstream PRs merged as of 2026-02-11 | ✅ No issue |
+| **API breaking changes** | Medium | High | Phase approach with deprecated re-exports; v5.0 major release for removals | ✅ Mitigated — bridge class + stub re-exports preserve backward compatibility |
+| **Hook behavior difference** | Low | Medium | Comprehensive hook integration tests; compare local vs upstream execution order | ✅ No regressions observed |
+| **Performance regression** | Low | Medium | Benchmark before/after; `OptimizationsPlugin` preserves all existing optimizations | ✅ No regressions — all 8 optimization modules extracted intact |
+| **Driver compatibility** | Low | Low | Drivers depend on `@objectql/types`, not `@objectql/core` — no driver changes needed | ✅ Confirmed — zero driver changes required |
+| **Protocol test failures** | Medium | Medium | Protocol TCK tests run against new plugin architecture before merge | ✅ No protocol test failures |
+| **CI pipeline breakage** | Low | Medium | Turbo build order updated for new packages; incremental validation | ✅ Build passes (36/36 tasks) |
 
 ### 9.2 Rollback Plan
 
@@ -701,10 +712,10 @@ Each phase produces independently deployable packages. If Phase N fails:
 
 ### 9.3 Non-Goals
 
-- **Not changing `@objectql/types`:** The types package remains the "Constitution" and is unaffected
-- **Not changing existing plugins:** `plugin-security`, `plugin-validator`, etc. are already properly structured
-- **Not changing drivers:** Driver packages depend on types, not core
-- **Not removing `@objectql/core`:** The package persists as a convenience facade
+- **Not changing `@objectql/types`:** The types package remains the "Constitution" and is unaffected ✅
+- **Not changing existing plugins:** `plugin-security`, `plugin-validator`, etc. are already properly structured ✅
+- **Not changing drivers:** Driver packages depend on types, not core ✅
+- **Not removing `@objectql/core`:** The package persists as a convenience bridge + orchestrator facade ✅
 
 ---
 
@@ -771,39 +782,52 @@ class ObjectQLPlugin implements Plugin {
 }
 ```
 
-### 10.3 Current Local `@objectql/core` Public API
+### 10.3 Post-Refactoring `@objectql/core` Public API
 
 ```typescript
-// Classes
-export class ObjectQL implements IObjectQL           // → REMOVE (use upstream)
-export class ObjectQLPlugin implements RuntimePlugin // → SIMPLIFY (thin orchestrator)
-export class ObjectRepository                        // → REMOVE (use upstream)
-export class ObjectGateway                           // → KEEP in core (upstream server handles API)
-export class QueryService                            // → MOVE to plugin-query
-export class QueryBuilder                            // → MOVE to plugin-query
-export class QueryAnalyzer                           // → MOVE to plugin-query
-export class FilterTranslator                        // → REMOVE (pass-through)
-export class ObjectStackProtocolImplementation       // → REMOVE (use upstream)
+// ── Bridge Engine (extends upstream with MetadataRegistry + legacy config) ──
+export class ObjectQL extends UpstreamObjectQL      // Thin bridge — MetadataRegistry + legacy datasources config
+export type ObjectQLConfig                          // Config type for legacy constructor
 
-// Optimizations
-export class CompiledHookManager                     // → MOVE to plugin-optimizations
-export class DependencyGraph                         // → MOVE to plugin-optimizations
-export class GlobalConnectionPool                    // → MOVE to plugin-optimizations
-export class LazyMetadataLoader                      // → MOVE to plugin-optimizations
-export class OptimizedMetadataRegistry               // → MOVE to plugin-optimizations
-export class OptimizedValidationEngine               // → MOVE to plugin-optimizations
-export class QueryCompiler                           // → MOVE to plugin-optimizations
-export class SQLQueryOptimizer                       // → MOVE to plugin-optimizations
+// ── Re-exports from upstream (canonical) ──
+export { ObjectRepository } from '@objectstack/objectql'   // Context-scoped repository
+export { ScopedContext } from '@objectstack/objectql'       // Context factory
+export { SchemaRegistry } from '@objectstack/objectql'      // FQN-based object registry
 
-// AI (kept in core — separate AI project handles model/prompt management)
-export class InMemoryModelRegistry                   // → KEEP in core
-export class InMemoryPromptRegistry                  // → KEEP in core
-export function createDefaultAiRegistry()            // → KEEP in core
+// ── Type re-exports from upstream ──
+export type { HookHandler, HookEntry } from '@objectstack/objectql'
+export type { OperationContext, EngineMiddleware } from '@objectstack/objectql'
+export type { ObjectQLHostContext } from '@objectstack/objectql'
 
-// Re-exports (remain)
-export { ObjectKernel } from '@objectstack/runtime'
-export { SchemaRegistry, computeFQN, parseFQN, ... } from '@objectstack/objectql'
-export type { DriverInterface, StateMachineConfig, ... } // spec types
+// ── Plugin Orchestrator ──
+export class ObjectQLPlugin implements RuntimePlugin  // Composes QueryPlugin, ValidatorPlugin, FormulaPlugin
+export interface ObjectQLPluginConfig                 // Configuration for plugin orchestrator
+
+// ── Convenience Factory ──
+export function createObjectQLKernel(options?)        // Pre-configured kernel with upstream ObjectQLPlugin
+export interface ObjectQLKernelOptions                // Factory options
+
+// ── Utilities ──
+export function toTitleCase(str: string): string
+export function mapDatabaseTypeToFieldType(dbType: string): string
+export function convertIntrospectedSchemaToObjects(schema: any): ServiceObject[]
+
+// ── Backward-Compat Stub ──
+export { ObjectRepository } from '@objectstack/objectql'  // (also in repository.ts for path compatibility)
+```
+
+#### File Inventory (Post-Refactoring)
+
+```
+packages/foundation/core/src/
+├── index.ts            # 21 LOC  — Public API barrel
+├── app.ts              # 168 LOC — Bridge class extending upstream ObjectQL
+├── kernel-factory.ts   # 47 LOC  — Convenience kernel factory
+├── plugin.ts           # 323 LOC — Plugin orchestrator (QueryPlugin + ValidatorPlugin + FormulaPlugin)
+├── repository.ts       # 6 LOC   — Stub re-export from upstream
+└── util.ts             # 169 LOC — Schema conversion utilities
+                        ─────────
+                        734 LOC total
 ```
 
 ### 10.4 Glossary
@@ -870,6 +894,82 @@ The `ObjectQL` engine in `packages/objectql/src/engine.ts` confirms:
 - `registerHook(event, handler, options)` — priority-based, per-object hooks
 - `triggerHooks(event, context)` — hook execution with object matching
 - All CRUD operations execute through `executeWithMiddleware()` pipeline
+
+---
+
+**End of Appendix**
+
+---
+
+## 11. Implementation Retrospective
+
+> **Date:** 2026-02-13  
+> **PR:** [#373](https://github.com/objectstack-ai/objectql/pull/373)
+
+### 11.1 Summary
+
+The `@objectql/core` refactoring has been **completed successfully**. The core package was decomposed from a ~3,500 LOC monolithic runtime into a **734 LOC** thin bridge + plugin orchestrator, achieving a **79% LOC reduction** (exceeding the ~800 LOC target).
+
+Two new plugin packages were extracted:
+- **`@objectql/plugin-query`** (v4.2.0) — QueryService, QueryBuilder, QueryAnalyzer, FilterTranslator
+- **`@objectql/plugin-optimizations`** (v4.2.0) — 8 optimization modules (CompiledHookManager, DependencyGraph, GlobalConnectionPool, LazyMetadataLoader, OptimizedMetadataRegistry, OptimizedValidationEngine, QueryCompiler, SQLQueryOptimizer)
+
+### 11.2 Deviations from Original Plan
+
+| Area | Original Plan | Actual Implementation | Rationale |
+|------|--------------|----------------------|-----------|
+| **`app.ts`** | Remove entirely; re-export upstream `ObjectQL` directly | Retained as **bridge class** extending upstream `ObjectQL` | Bridge needed for `MetadataRegistry` integration (filesystem-loaded objects via `ObjectLoader`) and legacy constructor config (`{ datasources: ... }`) |
+| **`repository.ts`** | Remove entirely | Kept as **6-line stub** re-exporting `ObjectRepository` from upstream | Preserves import path compatibility for downstream consumers |
+| **`filter-translator.ts`** | Remove (pass-through) | Moved to `@objectql/plugin-query` | Retained for `QueryBuilder` API compatibility within the plugin |
+| **`gateway.ts`** | Keep in core (out of scope) | **Removed** from core | Upstream `@objectstack/plugin-hono-server` fully handles API routing; dead code removed |
+| **`ai/` directory** | Keep in core (out of scope) | **Removed** from core | Separate AI project handles model/prompt management; dead code removed |
+| **`protocol.ts`** | Remove (duplicated) | **Removed** ✅ | As planned — upstream `ObjectStackProtocolImplementation` is canonical |
+| **`plugin.ts`** | Simplify to thin orchestrator | Retained as **323 LOC orchestrator** composing QueryPlugin + ValidatorPlugin + FormulaPlugin | Still the largest file, but serves as the central composition point for all ObjectQL extension plugins |
+| **Upstream deps** | `@objectstack/*` ^3.0.0 | Updated to `@objectstack/*` ^3.0.2 | Includes `replaceService` API and exported `OperationContext`/`EngineMiddleware` types |
+
+### 11.3 Post-Refactoring Architecture
+
+```
+packages/foundation/core/src/        (734 LOC)
+├── index.ts            ──▶ Public API barrel (re-exports from upstream + local bridge)
+├── app.ts              ──▶ Bridge class: upstream ObjectQL + MetadataRegistry + legacy config
+├── kernel-factory.ts   ──▶ Convenience factory: createObjectQLKernel()
+├── plugin.ts           ──▶ Plugin orchestrator: composes QueryPlugin, ValidatorPlugin, FormulaPlugin
+├── repository.ts       ──▶ Stub re-export: ObjectRepository from @objectstack/objectql
+└── util.ts             ──▶ Schema utilities: toTitleCase, mapDatabaseTypeToFieldType, convertIntrospectedSchemaToObjects
+
+packages/foundation/plugin-query/    (NEW — extracted from core/src/query/)
+├── plugin.ts           ──▶ QueryPlugin: RuntimePlugin implementation
+├── query-service.ts    ──▶ Query execution with profiling
+├── query-builder.ts    ──▶ UnifiedQuery → QueryAST conversion
+├── query-analyzer.ts   ──▶ Performance analysis and optimization suggestions
+├── filter-translator.ts──▶ Filter format bridge (pass-through)
+└── index.ts            ──▶ Exports
+
+packages/foundation/plugin-optimizations/  (NEW — extracted from core/src/optimizations/)
+├── plugin.ts                ──▶ OptimizationsPlugin: RuntimePlugin implementation
+├── CompiledHookManager.ts   ──▶ Compiled hook execution
+├── DependencyGraph.ts       ──▶ Dependency tracking
+├── GlobalConnectionPool.ts  ──▶ Kernel-level connection pooling
+├── LazyMetadataLoader.ts    ──▶ Lazy metadata loading
+├── OptimizedMetadataRegistry.ts ──▶ O(k) package uninstall with secondary indexes
+├── OptimizedValidationEngine.ts ──▶ Optimized validation
+├── QueryCompiler.ts         ──▶ LRU-cached query plan compilation
+├── SQLQueryOptimizer.ts     ──▶ SQL query optimization
+└── index.ts                 ──▶ Exports
+```
+
+### 11.4 Lessons Learned
+
+1. **Bridge > Replace:** A bridge class that extends the upstream engine proved more practical than direct replacement. The `MetadataRegistry` integration pattern allows filesystem-loaded objects (via `ObjectLoader`) to coexist with upstream `SchemaRegistry`-managed objects — a critical requirement for the CLI tools and example apps.
+
+2. **Aggressive Cleanup Works:** Removing `gateway.ts`, `ai/`, and `protocol.ts` (originally planned to keep) eliminated dead code without breaking any consumers. The upstream ecosystem fully covers these concerns.
+
+3. **Plugin Composition is the Right Abstraction:** The `ObjectQLPlugin` orchestrator that composes `QueryPlugin`, `ValidatorPlugin`, and `FormulaPlugin` aligns perfectly with the ObjectStack microkernel architecture. Each concern is isolated and independently testable.
+
+4. **Stub Re-exports Preserve Compatibility:** Keeping `repository.ts` as a 6-line stub re-export is a zero-cost way to prevent import breakage in downstream packages during the transition to v5.0.
+
+5. **Upstream Readiness Unblocked Everything:** Having all upstream prerequisites (`replaceService` API, `OperationContext`/`EngineMiddleware` type exports) merged before starting the local refactoring eliminated the highest-risk items from the plan.
 
 ---
 
