@@ -38,7 +38,7 @@
   },
   "dependencies": {
     "@objectql/types": "workspace:*",
-    "@objectstack/spec": "^3.0.1",
+    "@objectstack/spec": "^3.0.2",
     "zod": "^4.3.6"
   },
   "devDependencies": {
