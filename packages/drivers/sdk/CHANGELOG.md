@@ -1,5 +1,13 @@
 # @objectql/sdk
 
+## 4.2.1
+
+### Patch Changes
+
+- a0aa26a: Unify all package versions and release a patch
+- Updated dependencies [a0aa26a]
+  - @objectql/types@4.2.1
+
 ## 4.2.0
 
 ### Minor Changes
@@ -40,6 +48,7 @@
   This patch release includes bug fixes, driver improvements, and enhanced test coverage:
 
   ### Driver Improvements
+
   - **MongoDB Driver**: Fixed bulk operations, transaction support, and type safety improvements
   - **FileSystem Driver**: Fixed TCK test compatibility with dataDir parameter
   - **SQL Driver**: Enhanced TCK test compatibility and fixed test failures
@@ -47,22 +56,26 @@
   - **Driver Utils**: Added shared utilities package for cross-driver functionality
 
   ### Testing & Quality
+
   - Added comprehensive TCK (Technology Compatibility Kit) compliance tests for all drivers
   - Expanded TCK test suite to 30+ comprehensive tests
   - Enhanced test infrastructure with better error handling
   - Added --passWithNoTests flag for packages without tests
 
   ### Type Safety
+
   - Improved type safety in MongoDB driver update methods
   - Better handling of atomic operators in MongoDB driver
   - Enhanced type definitions across driver layer
 
   ### Documentation
+
   - Added comprehensive driver documentation
   - Enhanced official documentation with Phase 2 implementation summaries
   - Improved protocol layer documentation
 
   ### Infrastructure
+
   - Standardized driver layer implementation
   - Enhanced protocol layer with better abstraction
   - Improved GitHub Actions workflow configurations
@@ -80,6 +93,7 @@
 - **Patch Release v4.0.3**
 
   This patch release includes infrastructure improvements and development experience enhancements:
+
   - Refactored dev server setup for improved configuration handling
   - Enhanced example scripts and development workflow
   - Updated build and test infrastructure
@@ -96,6 +110,7 @@
 - **Patch Release v4.0.2**
 
   This patch release includes:
+
   - Infrastructure improvements and maintenance updates
   - Enhanced stability and reliability
   - Bug fixes and performance optimizations
@@ -110,6 +125,7 @@
 - **Release Version 4.0.1**
 
   This patch release includes the latest repository improvements and infrastructure updates:
+
   - Added comprehensive GitHub workflows for CI/CD, testing, and quality assurance
   - Enhanced documentation and developer experience
   - Improved build and release processes with Changesets
@@ -127,6 +143,7 @@
 - 79d04e1: Patch release for January 2026 updates
 
   This patch includes minor improvements and maintenance updates:
+
   - Enhanced type safety across core packages
   - Improved error handling in drivers
   - Documentation updates
@@ -149,6 +166,7 @@
   This is a coordinated major release that unifies all ObjectQL packages to version 2.0.0, establishing a synchronized versioning strategy across the entire ecosystem.
 
   ### 🎯 Key Changes
+
   - **Unified Versioning**: All core packages now share the same version number (2.0.0)
   - **Fixed Group Management**: Updated changeset configuration to include all @objectql packages in the fixed versioning group
   - **Simplified Maintenance**: Future releases will automatically maintain version consistency across the entire monorepo
@@ -156,6 +174,7 @@
   ### 📦 Packages Included
 
   All ObjectQL packages are now synchronized at version 2.0.0:
+
   - Foundation: `@objectql/types`, `@objectql/core`, `@objectql/platform-node`
   - Drivers: `@objectql/driver-sql`, `@objectql/driver-mongo`, `@objectql/driver-redis`, `@objectql/driver-fs`, `@objectql/driver-memory`, `@objectql/driver-localstorage`, `@objectql/driver-excel`, `@objectql/sdk`
   - Runtime: `@objectql/server`
