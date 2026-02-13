@@ -1,5 +1,13 @@
 # @objectql/plugin-multitenancy
 
+## 4.2.1
+
+### Patch Changes
+
+- a0aa26a: Unify all package versions and release a patch
+- Updated dependencies [a0aa26a]
+  - @objectql/types@4.2.1
+
 ## 4.2.0 (2026-02-08)
 
 ### Features
@@ -34,6 +42,7 @@
 ### Configuration
 
 All configuration options are validated via Zod schema:
+
 - `enabled`: Enable/disable plugin (default: true)
 - `tenantField`: Field name for tenant ID (default: 'tenant_id')
 - `strictMode`: Prevent cross-tenant access (default: true)

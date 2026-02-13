@@ -1,6 +1,6 @@
 {
   "name": "@objectql/plugin-query",
-  "version": "4.2.0",
+  "version": "4.2.1",
   "description": "Query execution and analysis plugin for ObjectQL - query service, builder, and analyzer",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -11,7 +11,9 @@
       "default": "./dist/index.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc"
   },

@@ -1,6 +1,6 @@
 {
   "name": "@objectql/protocol-sync",
-  "version": "4.2.0",
+  "version": "4.2.1",
   "description": "Server-side sync protocol for ObjectQL - delta computation, change tracking, and conflict resolution",
   "type": "module",
   "main": "./dist/index.js",
@@ -23,6 +23,13 @@
     "typescript": "^5.3.3",
     "vitest": "^1.0.4"
   },
-  "keywords": ["objectql", "objectstack", "sync", "protocol", "offline", "plugin"],
+  "keywords": [
+    "objectql",
+    "objectstack",
+    "sync",
+    "protocol",
+    "offline",
+    "plugin"
+  ],
   "license": "MIT"
 }
