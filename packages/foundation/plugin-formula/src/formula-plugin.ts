@@ -127,94 +127,112 @@ export class FormulaPlugin implements RuntimePlugin {
   }
   
   /**
+   * Evaluate formula fields on a set of records for a given object.
+   * @private
+   */
+  private evaluateFormulas(objectName: string, result: any, session?: any): void {
+      if (!result) return;
+
+      // Get schema from MetadataRegistry or kernel.getObject()
+      const schemaItem = this.kernel.metadata?.get?.('object', objectName)
+        ?? (typeof this.kernel.getObject === 'function' ? this.kernel.getObject(objectName) : undefined);
+      const schema = schemaItem?.content || schemaItem;
+      if (!schema || !schema.fields) return;
+
+      // Identify formula fields
+      const formulaFields: [string, any][] = [];
+      for (const [key, field] of Object.entries(schema.fields) as any[]) {
+          if (field.type === 'formula' && field.expression) {
+              formulaFields.push([key, field]);
+          }
+      }
+      if (formulaFields.length === 0) return;
+
+      const results = Array.isArray(result) ? result : [result];
+      const now = new Date();
+      const systemInfo = {
+            today: new Date(now.getFullYear(), now.getMonth(), now.getDate()),
+            now: now,
+            year: now.getFullYear(),
+            month: now.getMonth() + 1,
+            day: now.getDate(),
+            hour: now.getHours(),
+            minute: now.getMinutes(),
+            second: now.getSeconds(),
+      };
+
+      for (const record of results) {
+          if (!record) continue;
+
+          const formulaContext: FormulaContext = {
+              record,
+              system: systemInfo,
+              current_user: {
+                  id: session?.userId || '',
+                  name: session?.name,
+                  email: session?.email,
+                  role: session?.roles?.[0]
+              },
+              is_new: false,
+              record_id: record._id || record.id
+          };
+
+          for (const [fieldName, fieldConfig] of formulaFields) {
+              const evalResult = this.engine.evaluate(
+                  fieldConfig.expression,
+                  formulaContext,
+                  fieldConfig.data_type || 'text',
+                  { strict: true }
+              );
+
+              if (evalResult.success) {
+                  record[fieldName] = evalResult.value;
+              } else {
+                  record[fieldName] = null;
+                  this.logger.error('[ObjectQL][FormulaEngine] Formula evaluation failed', undefined, {
+                    objectName,
+                    fieldName,
+                    recordId: formulaContext.record_id,
+                    expression: fieldConfig.expression,
+                    error: evalResult.error,
+                    stack: evalResult.stack,
+                  });
+              }
+          }
+      }
+  }
+
+  /**
    * Register formula evaluation middleware
    * @private
    */
   private registerFormulaMiddleware(kernel: KernelWithFormulas, ctx: any): void {
+      // Strategy 1: Register as engine middleware (covers both find and findOne)
+      const engine = ctx.engine || kernel;
+      if (typeof engine.registerMiddleware === 'function') {
+          engine.registerMiddleware(async (opCtx: any, next: () => Promise<void>) => {
+              await next();
+              if ((opCtx.operation === 'find' || opCtx.operation === 'findOne') && opCtx.result) {
+                  this.evaluateFormulas(opCtx.object, opCtx.result, opCtx.context);
+              }
+          });
+          return;
+      }
+
+      // Strategy 2: Register as afterFind hook (find only, no findOne coverage)
       const registerHook = (name: string, handler: any) => {
         if (typeof ctx.hook === 'function') {
             ctx.hook(name, handler);
         } else if (kernel.hooks && typeof kernel.hooks.register === 'function') {
-            // Register for all objects using wildcard
             kernel.hooks.register(name, '*', handler);
         }
       };
 
       registerHook('afterFind', async (context: any) => {
-          // context is RetrievalHookContext
-          const { objectName, result, user } = context;
-          if (!result) return;
-          
-          // Get schema
-          const schemaItem = this.kernel.metadata.get('object', objectName);
-          const schema = schemaItem?.content || schemaItem;
-          if (!schema || !schema.fields) {
-               return;
-          }
-          
-          // Identify formula fields
-          const formulaFields: [string, any][] = [];
-          for (const [key, field] of Object.entries(schema.fields) as any[]) {
-              if (field.type === 'formula' && field.expression) {
-                  formulaFields.push([key, field]);
-              }
-          }
-          
-          if (formulaFields.length === 0) return;
-
-          const results = Array.isArray(result) ? result : [result];
-          const now = new Date();
-          const systemInfo = {
-                today: new Date(now.getFullYear(), now.getMonth(), now.getDate()),
-                now: now,
-                year: now.getFullYear(),
-                month: now.getMonth() + 1,
-                day: now.getDate(),
-                hour: now.getHours(),
-                minute: now.getMinutes(),
-                second: now.getSeconds(),
-          };
-
-          for (const record of results) {
-              if (!record) continue;
-              
-              const formulaContext: FormulaContext = {
-                  record,
-                  system: systemInfo,
-                  current_user: {
-                      id: user?.id || '',
-                      name: user?.name,
-                      email: user?.email,
-                      role: user?.roles?.[0]
-                  },
-                  is_new: false,
-                  record_id: record._id || record.id
-              };
-              
-              for (const [fieldName, fieldConfig] of formulaFields) {
-                  const evalResult = this.engine.evaluate(
-                      fieldConfig.expression,
-                      formulaContext,
-                      fieldConfig.data_type || 'text',
-                      { strict: true }
-                  );
-                  
-                  if (evalResult.success) {
-                      record[fieldName] = evalResult.value;
-                  } else {
-                      record[fieldName] = null;
-                      // Log specific error as seen in repository.ts
-                        this.logger.error('[ObjectQL][FormulaEngine] Formula evaluation failed', undefined, {
-                          objectName: objectName,
-                          fieldName,
-                          recordId: formulaContext.record_id,
-                          expression: fieldConfig.expression,
-                          error: evalResult.error,
-                          stack: evalResult.stack,
-                        });
-                  }
-              }
-          }
+          // Upstream hook context uses 'object' (not 'objectName') and 'session' (not 'user')
+          const objectName = context.object || context.objectName;
+          const session = context.session || context.user;
+          this.evaluateFormulas(objectName, context.result, session);
       });
   }
   
