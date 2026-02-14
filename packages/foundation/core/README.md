@@ -1,8 +1,11 @@
 # @objectql/core
 
-> **Implementation Status**: ✅ **Production Ready** - All core features fully implemented and tested. See [Implementation Status](https://github.com/objectstack-ai/objectql/blob/main/IMPLEMENTATION_STATUS.md) for complete details.
+> ⚠️ **DEPRECATED**: This package is deprecated. Use [`@objectstack/objectql`](https://www.npmjs.com/package/@objectstack/objectql) instead.
+> See the [Migration Guide](https://github.com/objectstack-ai/spec/blob/main/content/docs/guides/objectql-migration.mdx) for step-by-step instructions.
 
-The core ORM and runtime engine for ObjectQL. This package handles object querying, CRUD operations, database driver coordination, transaction management, and **metadata-driven validation**. As of version 4.0.0, it wraps the **ObjectKernel** for plugin architecture and lifecycle management.
+The core ORM and runtime engine for ObjectQL. All core functionality (ObjectQL engine, SchemaRegistry, createObjectQLKernel, utilities) is now available directly from `@objectstack/objectql`.
+
+The `ObjectQLPlugin` (orchestrator composing sub-plugins like ValidatorPlugin, FormulaPlugin, QueryPlugin) remains in this package as it is specific to the `@objectql` ecosystem.
 
 ## Features
 

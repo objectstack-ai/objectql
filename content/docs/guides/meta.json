@@ -3,6 +3,7 @@
   "pages": [
     "error-handling",
     "architecture",
-    "migration-v5"
+    "migration-v5",
+    "objectql-migration"
   ]
 }
