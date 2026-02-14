@@ -241,6 +241,15 @@ export class ObjectQL {
             return hookContext.result;
           });
           return opCtx.result;
+        },
+        count: async (filter?: any) => {
+          const driver = this.drivers.get(this.defaultDriver || this.drivers.keys().next().value);
+          if (driver?.count) {
+            return driver.count(name, filter);
+          }
+          // Fallback: use find and count
+          const results = driver?.find ? await driver.find(name, filter) : [];
+          return Array.isArray(results) ? results.length : 0;
         }
       })
     };
