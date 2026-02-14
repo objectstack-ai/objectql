@@ -15,7 +15,7 @@ import { build } from '../src/commands/build';
 import { lint } from '../src/commands/lint';
 import { test as testCommand } from '../src/commands/test';
 import { doctorCommand } from '../src/commands/doctor';
-import { ObjectQL } from '@objectql/core';
+import { ObjectQL } from '@objectstack/objectql';
 import { SqlDriver } from '@objectql/driver-sql';
 import * as yaml from 'js-yaml';
 

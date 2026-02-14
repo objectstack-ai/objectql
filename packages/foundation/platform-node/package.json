@@ -27,7 +27,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@objectql/core": "workspace:*",
+    "@objectstack/objectql": "^3.0.4",
     "@objectql/types": "workspace:*",
     "@objectstack/spec": "^3.0.4",
     "fast-glob": "^3.3.2",

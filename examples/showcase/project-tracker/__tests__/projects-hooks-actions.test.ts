@@ -15,7 +15,7 @@
  * 3. Business logic patterns from the specification
  */
 
-import { ObjectQL } from '@objectql/core';
+import { ObjectQL } from '@objectstack/objectql';
 import hooks from '../src/modules/projects/projects.hook';
 import * as actions from '../src/modules/projects/projects.action';
 

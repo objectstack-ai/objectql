@@ -6,8 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-// Import ObjectQLPlugin types from @objectql/core instead of @objectstack/runtime
-// to avoid ESM/CJS compatibility issues
+// Plugin types defined locally to avoid ESM/CJS compatibility issues
 type RuntimeContext = any;
 
 interface ObjectQLPlugin {

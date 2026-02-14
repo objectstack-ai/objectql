@@ -27,7 +27,7 @@ interface MigrateStatusOptions {
     dir?: string;
 }
 
-const MIGRATION_TEMPLATE = `import { ObjectQL } from '@objectql/core';
+const MIGRATION_TEMPLATE = `import { ObjectQL } from '@objectstack/objectql';
 
 /**
  * Migration: {{name}}

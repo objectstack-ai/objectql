@@ -12,7 +12,7 @@
     "start": "ts-node src/index.ts"
   },
   "dependencies": {
-    "@objectql/core": "workspace:*",
+    "@objectstack/objectql": "^3.0.4",
     "@objectql/driver-sql": "workspace:*",
     "sqlite3": "^5.1.7"
   },

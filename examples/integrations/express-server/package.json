@@ -26,7 +26,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@objectql/core": "workspace:*",
+    "@objectstack/objectql": "^3.0.4",
     "@objectql/driver-sql": "workspace:*",
     "@objectql/platform-node": "workspace:*",
     "sqlite3": "^5.1.7"

@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { ObjectQL } from '@objectql/core';
+import { ObjectQL } from '@objectstack/objectql';
 import { ObjectLoader } from '../src';
 import * as path from 'path';
 

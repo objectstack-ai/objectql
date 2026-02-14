@@ -23,7 +23,7 @@ export default defineConfig({
   optimizeDeps: {
     include: [
       '@objectql/types',
-      '@objectql/core',
+      '@objectstack/objectql',
       '@objectql/driver-memory'
     ]
   },

@@ -9,7 +9,7 @@
 import * as repl from 'repl';
 import * as _path from 'path';
 import * as _fs from 'fs';
-import { ObjectQL } from '@objectql/core';
+import { ObjectQL } from '@objectstack/objectql';
 import { register } from 'ts-node';
 import { resolveConfigFile } from '../utils/config-loader';
 
@@ -83,7 +83,7 @@ export async function startRepl(configPath?: string) {
                     get: () => {
                         // Dynamic require to avoid circular dependency — ObjectRepository is constructed
                         // from the user-provided app instance to enable convenient REPL access.
-                        const { ObjectRepository } = require('@objectql/core');
+                        const { ObjectRepository } = require('@objectstack/objectql');
                         
                         const replContext: any = {
                             roles: ['admin'],
