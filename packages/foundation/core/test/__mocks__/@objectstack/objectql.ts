@@ -14,6 +14,7 @@ export class ObjectQL {
   private drivers = new Map<string, any>();
   private defaultDriver: any = null;
   private hooks = new Map<string, any[]>();
+  private middlewares: Array<{ fn: any; object?: string }> = [];
   
   constructor(public config: any) {}
   
@@ -66,6 +67,40 @@ export class ObjectQL {
     }
     this.hooks.get(event)!.push({ handler, options });
   }
+
+  registerMiddleware(fn: any, options?: { object?: string }) {
+    this.middlewares.push({ fn, object: options?.object });
+  }
+
+  private async executeWithMiddleware(opCtx: any, executor: () => Promise<any>) {
+    const applicable = this.middlewares.filter(
+      (m) => !m.object || m.object === '*' || m.object === opCtx.object
+    );
+    let index = 0;
+    const next = async () => {
+      if (index < applicable.length) {
+        const mw = applicable[index++];
+        await mw.fn(opCtx, next);
+      } else {
+        opCtx.result = await executor();
+      }
+    };
+    await next();
+    return opCtx.result;
+  }
+
+  private async triggerHooks(event: string, context: any) {
+    const entries = this.hooks.get(event) || [];
+    for (const entry of entries) {
+      if (entry.options?.object) {
+        const targets = Array.isArray(entry.options.object) ? entry.options.object : [entry.options.object];
+        if (!targets.includes('*') && !targets.includes(context.object)) {
+          continue;
+        }
+      }
+      await entry.handler(context);
+    }
+  }
   
   createContext(options: any = {}) {
     return {
@@ -73,17 +108,25 @@ export class ObjectQL {
       object: (name: string) => ({
         find: async (filter: any) => {
           const driver = this.drivers.get(this.defaultDriver || this.drivers.keys().next().value);
-          if (driver && driver.find) {
-            return driver.find(name, filter);
-          }
-          return [];
+          const opCtx = { object: name, operation: 'find', options: filter, context: options, result: undefined as any };
+          await this.executeWithMiddleware(opCtx, async () => {
+            const hookContext = { object: name, event: 'beforeFind', input: { options: filter }, session: options };
+            await this.triggerHooks('beforeFind', hookContext);
+            const result = driver?.find ? await driver.find(name, filter) : [];
+            hookContext.event = 'afterFind';
+            (hookContext as any).result = result;
+            await this.triggerHooks('afterFind', hookContext);
+            return (hookContext as any).result;
+          });
+          return opCtx.result;
         },
         findOne: async (filter: any) => {
           const driver = this.drivers.get(this.defaultDriver || this.drivers.keys().next().value);
-          if (driver && driver.findOne) {
-            return driver.findOne(name, filter);
-          }
-          return null;
+          const opCtx = { object: name, operation: 'findOne', options: filter, context: options, result: undefined as any };
+          await this.executeWithMiddleware(opCtx, async () => {
+            return driver?.findOne ? await driver.findOne(name, filter) : null;
+          });
+          return opCtx.result;
         },
         insert: async (data: any) => {
           const driver = this.drivers.get(this.defaultDriver || this.drivers.keys().next().value);
