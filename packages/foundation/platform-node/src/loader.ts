@@ -11,7 +11,7 @@ import * as glob from 'fast-glob';
 import * as path from 'path';
 import { MetadataRegistry, ObjectConfig, LoaderPlugin, LoaderHandlerContext, FieldConfig } from '@objectql/types';
 import * as yaml from 'js-yaml';
-import { toTitleCase } from '@objectql/core';
+import { toTitleCase } from '@objectstack/objectql';
 
 export class ObjectLoader {
     private plugins: LoaderPlugin[] = [];

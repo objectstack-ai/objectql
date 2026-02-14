@@ -208,6 +208,7 @@ async function checkDependencies(packageJson: any): Promise<DependencyCheck[]> {
     
     // Check for ObjectQL core packages
     const corePackages = [
+        '@objectstack/objectql',
         '@objectql/core',
         '@objectql/types',
         '@objectql/cli'

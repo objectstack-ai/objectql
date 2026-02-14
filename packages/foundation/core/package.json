@@ -1,7 +1,8 @@
 {
   "name": "@objectql/core",
   "version": "4.2.1",
-  "description": "Universal runtime engine for ObjectQL - AI-native metadata-driven ORM with validation, repository pattern, and driver orchestration",
+  "deprecated": "Use @objectstack/objectql instead. See https://github.com/objectstack-ai/spec/blob/main/content/docs/guides/objectql-migration.mdx",
+  "description": "DEPRECATED — Use @objectstack/objectql. Plugin orchestrator for ObjectQL sub-plugins (validator, formula, query).",
   "keywords": [
     "objectql",
     "orm",
