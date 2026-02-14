@@ -63,9 +63,8 @@ export class ObjectQL extends UpstreamObjectQL {
     // Store drivers for registration during init()
     if (config.datasources) {
       for (const [name, driver] of Object.entries(config.datasources)) {
-        if (!(driver as any).name) {
-          (driver as any).name = name;
-        }
+        // Always set driver.name to the config key so datasource(name) lookups work
+        (driver as any).name = name;
         // Cast: local Driver interface is structurally compatible with upstream DriverInterface
         this.pendingDrivers.push({
           name,
