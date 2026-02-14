@@ -12,7 +12,7 @@ importers:
         specifier: workspace:*
         version: link:packages/protocols/json-rpc
       '@objectstack/studio':
-        specifier: ^3.0.3
+        specifier: ^3.0.4
         version: 3.0.4(@types/node@20.19.30)(@types/react-dom@19.2.3(@types/react@19.2.10))(@types/react@19.2.10)(typescript@5.9.3)
       build:
         specifier: ^0.1.4
@@ -52,16 +52,16 @@ importers:
         specifier: workspace:*
         version: link:packages/protocols/odata-v4
       '@objectstack/cli':
-        specifier: ^3.0.3
+        specifier: ^3.0.4
         version: 3.0.4(@objectstack/core@3.0.4)(esbuild@0.27.2)
       '@objectstack/core':
-        specifier: ^3.0.3
+        specifier: ^3.0.4
         version: 3.0.4
       '@objectstack/plugin-auth':
-        specifier: ^3.0.3
+        specifier: ^3.0.4
         version: 3.0.4(mongodb@7.0.0(socks@2.8.7))(next@16.1.6(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(pg@8.18.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(vitest@1.6.1)(vue@3.5.27(typescript@5.9.3))
       '@objectstack/plugin-hono-server':
-        specifier: ^3.0.3
+        specifier: ^3.0.4
         version: 3.0.4
       '@types/js-yaml':
         specifier: ^4.0.9
@@ -334,7 +334,7 @@ importers:
         specifier: workspace:*
         version: link:../../foundation/types
       '@objectstack/spec':
-        specifier: ^3.0.3
+        specifier: ^3.0.4
         version: 3.0.4
       exceljs:
         specifier: ^4.4.0
@@ -359,7 +359,7 @@ importers:
         specifier: workspace:*
         version: link:../../foundation/types
       '@objectstack/spec':
-        specifier: ^3.0.3
+        specifier: ^3.0.4
         version: 3.0.4
       zod:
         specifier: ^4.3.6
@@ -378,7 +378,7 @@ importers:
         specifier: workspace:*
         version: link:../../foundation/types
       '@objectstack/spec':
-        specifier: ^3.0.3
+        specifier: ^3.0.4
         version: 3.0.4
       mingo:
         specifier: ^7.1.1
@@ -397,7 +397,7 @@ importers:
         specifier: workspace:*
         version: link:../../foundation/types
       '@objectstack/spec':
-        specifier: ^3.0.3
+        specifier: ^3.0.4
         version: 3.0.4
       mongodb:
         specifier: ^5.9.2
@@ -422,7 +422,7 @@ importers:
         specifier: workspace:*
         version: link:../../foundation/types
       '@objectstack/spec':
-        specifier: ^3.0.3
+        specifier: ^3.0.4
         version: 3.0.4
       knex:
         specifier: ^3.1.0
@@ -453,7 +453,7 @@ importers:
         specifier: workspace:*
         version: link:../../foundation/types
       '@objectstack/spec':
-        specifier: ^3.0.3
+        specifier: ^3.0.4
         version: 3.0.4
       redis:
         specifier: ^4.6.0
@@ -475,7 +475,7 @@ importers:
         specifier: workspace:*
         version: link:../../foundation/types
       '@objectstack/spec':
-        specifier: ^3.0.3
+        specifier: ^3.0.4
         version: 3.0.4
       zod:
         specifier: ^4.3.6
@@ -491,7 +491,7 @@ importers:
         specifier: workspace:*
         version: link:../../foundation/types
       '@objectstack/spec':
-        specifier: ^3.0.3
+        specifier: ^3.0.4
         version: 3.0.4
       knex:
         specifier: ^3.1.0
@@ -516,7 +516,7 @@ importers:
         specifier: workspace:*
         version: link:../../foundation/types
       '@objectstack/spec':
-        specifier: ^3.0.3
+        specifier: ^3.0.4
         version: 3.0.4
       knex:
         specifier: ^3.1.0
@@ -562,16 +562,16 @@ importers:
         specifier: workspace:*
         version: link:../types
       '@objectstack/core':
-        specifier: ^3.0.3
+        specifier: ^3.0.4
         version: 3.0.4
       '@objectstack/objectql':
-        specifier: ^3.0.3
+        specifier: ^3.0.4
         version: 3.0.4
       '@objectstack/runtime':
-        specifier: ^3.0.3
+        specifier: ^3.0.4
         version: 3.0.4
       '@objectstack/spec':
-        specifier: ^3.0.3
+        specifier: ^3.0.4
         version: 3.0.4
       zod:
         specifier: ^4.3.6
@@ -603,7 +603,7 @@ importers:
         specifier: workspace:*
         version: link:../types
       '@objectstack/spec':
-        specifier: ^3.0.3
+        specifier: ^3.0.4
         version: 3.0.4
       fast-glob:
         specifier: ^3.3.2
@@ -622,10 +622,10 @@ importers:
         specifier: workspace:*
         version: link:../types
       '@objectstack/core':
-        specifier: ^3.0.3
+        specifier: ^3.0.4
         version: 3.0.4
       '@objectstack/spec':
-        specifier: ^3.0.3
+        specifier: ^3.0.4
         version: 3.0.4
       zod:
         specifier: ^4.3.6
@@ -641,10 +641,10 @@ importers:
         specifier: workspace:*
         version: link:../types
       '@objectstack/core':
-        specifier: ^3.0.3
+        specifier: ^3.0.4
         version: 3.0.4
       '@objectstack/spec':
-        specifier: ^3.0.3
+        specifier: ^3.0.4
         version: 3.0.4
       zod:
         specifier: ^4.3.6
@@ -660,10 +660,10 @@ importers:
         specifier: workspace:*
         version: link:../types
       '@objectstack/core':
-        specifier: ^3.0.3
+        specifier: ^3.0.4
         version: 3.0.4
       '@objectstack/spec':
-        specifier: ^3.0.3
+        specifier: ^3.0.4
         version: 3.0.4
     devDependencies:
       typescript:
@@ -679,10 +679,10 @@ importers:
         specifier: workspace:*
         version: link:../types
       '@objectstack/core':
-        specifier: ^3.0.3
+        specifier: ^3.0.4
         version: 3.0.4
       '@objectstack/spec':
-        specifier: ^3.0.3
+        specifier: ^3.0.4
         version: 3.0.4
     devDependencies:
       typescript:
@@ -695,10 +695,10 @@ importers:
         specifier: workspace:*
         version: link:../types
       '@objectstack/core':
-        specifier: ^3.0.3
+        specifier: ^3.0.4
         version: 3.0.4
       '@objectstack/spec':
-        specifier: ^3.0.3
+        specifier: ^3.0.4
         version: 3.0.4
       zod:
         specifier: ^4.3.6
@@ -727,10 +727,10 @@ importers:
         specifier: workspace:*
         version: link:../types
       '@objectstack/core':
-        specifier: ^3.0.3
+        specifier: ^3.0.4
         version: 3.0.4
       '@objectstack/spec':
-        specifier: ^3.0.3
+        specifier: ^3.0.4
         version: 3.0.4
       zod:
         specifier: ^4.3.6
@@ -746,10 +746,10 @@ importers:
         specifier: workspace:*
         version: link:../types
       '@objectstack/core':
-        specifier: ^3.0.3
+        specifier: ^3.0.4
         version: 3.0.4
       '@objectstack/spec':
-        specifier: ^3.0.3
+        specifier: ^3.0.4
         version: 3.0.4
       zod:
         specifier: ^4.3.6
@@ -762,7 +762,7 @@ importers:
   packages/foundation/types:
     devDependencies:
       '@objectstack/spec':
-        specifier: ^3.0.3
+        specifier: ^3.0.4
         version: 3.0.4
       ts-json-schema-generator:
         specifier: ^2.4.0
@@ -789,7 +789,7 @@ importers:
         specifier: workspace:*
         version: link:../../foundation/types
       '@objectstack/spec':
-        specifier: ^3.0.3
+        specifier: ^3.0.4
         version: 3.0.4
       cors:
         specifier: ^2.8.5
@@ -826,7 +826,7 @@ importers:
         specifier: workspace:*
         version: link:../../tools/protocol-tck
       '@objectstack/core':
-        specifier: ^3.0.3
+        specifier: ^3.0.4
         version: 3.0.4
       '@types/cors':
         specifier: ^2.8.17
@@ -850,7 +850,7 @@ importers:
         specifier: workspace:*
         version: link:../../foundation/types
       '@objectstack/spec':
-        specifier: ^3.0.3
+        specifier: ^3.0.4
         version: 3.0.4
       zod:
         specifier: ^4.3.6
@@ -863,7 +863,7 @@ importers:
         specifier: workspace:*
         version: link:../../tools/protocol-tck
       '@objectstack/core':
-        specifier: ^3.0.3
+        specifier: ^3.0.4
         version: 3.0.4
       typescript:
         specifier: ^5.3.3
@@ -878,7 +878,7 @@ importers:
         specifier: workspace:*
         version: link:../../foundation/types
       '@objectstack/spec':
-        specifier: ^3.0.3
+        specifier: ^3.0.4
         version: 3.0.4
       zod:
         specifier: ^4.3.6
@@ -891,7 +891,7 @@ importers:
         specifier: workspace:*
         version: link:../../tools/protocol-tck
       '@objectstack/core':
-        specifier: ^3.0.3
+        specifier: ^3.0.4
         version: 3.0.4
       typescript:
         specifier: ^5.3.3
