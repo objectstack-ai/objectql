@@ -20,7 +20,18 @@ export class ObjectQL {
   
   async connect() {}
   async disconnect() {}
-  async init() {}
+  async init() {
+    // Initialize drivers (connect + sync schema)
+    for (const [_name, driver] of this.drivers) {
+      if (driver.connect) {
+        await driver.connect();
+      }
+      if (driver.init) {
+        const objects = SchemaRegistry.getAllObjects();
+        await driver.init(objects);
+      }
+    }
+  }
   
   registerDriver(driver: any, isDefault: boolean = false) {
     if (!driver.name) {
@@ -30,6 +41,18 @@ export class ObjectQL {
     if (isDefault) {
       this.defaultDriver = driver.name;
     }
+  }
+
+  datasource(name: string): any {
+    const driver = this.drivers.get(name);
+    if (!driver) {
+      throw new Error(`[ObjectQL] Datasource '${name}' not found`);
+    }
+    return driver;
+  }
+
+  getDriverByName(name: string): any {
+    return this.drivers.get(name);
   }
   
   registerObject(schema: any, packageId: string = '__runtime__', namespace?: string): string {
@@ -66,6 +89,10 @@ export class ObjectQL {
       this.hooks.set(event, []);
     }
     this.hooks.get(event)!.push({ handler, options });
+  }
+
+  on(event: string, objectName: string, handler: any, packageId?: string) {
+    this.registerHook(event, handler, { object: objectName, packageId });
   }
 
   registerMiddleware(fn: any, options?: { object?: string }) {
@@ -128,25 +155,101 @@ export class ObjectQL {
           });
           return opCtx.result;
         },
+        create: async (data: any) => {
+          const driver = this.drivers.get(this.defaultDriver || this.drivers.keys().next().value);
+          const opCtx = { object: name, operation: 'insert', data, context: options, result: undefined as any };
+          await this.executeWithMiddleware(opCtx, async () => {
+            const hookContext: any = {
+              object: name, event: 'beforeCreate',
+              input: { data: opCtx.data }, session: options,
+              data: opCtx.data, user: options.userId ? { id: options.userId } : options.user
+            };
+            await this.triggerHooks('beforeCreate', hookContext);
+            const finalData = hookContext.data || hookContext.input.data;
+            const result = driver?.create ? await driver.create(name, finalData, options) : finalData;
+            hookContext.event = 'afterCreate';
+            hookContext.result = result;
+            await this.triggerHooks('afterCreate', hookContext);
+            return hookContext.result;
+          });
+          return opCtx.result;
+        },
         insert: async (data: any) => {
           const driver = this.drivers.get(this.defaultDriver || this.drivers.keys().next().value);
-          if (driver && driver.insert) {
-            return driver.insert(name, data);
-          }
-          return data;
+          const opCtx = { object: name, operation: 'insert', data, context: options, result: undefined as any };
+          await this.executeWithMiddleware(opCtx, async () => {
+            const hookContext: any = {
+              object: name, event: 'beforeCreate',
+              input: { data: opCtx.data }, session: options,
+              data: opCtx.data, user: options.userId ? { id: options.userId } : options.user
+            };
+            await this.triggerHooks('beforeCreate', hookContext);
+            const finalData = hookContext.data || hookContext.input.data;
+            const result = driver?.create ? await driver.create(name, finalData, options)
+              : driver?.insert ? await driver.insert(name, finalData)
+              : finalData;
+            hookContext.event = 'afterCreate';
+            hookContext.result = result;
+            await this.triggerHooks('afterCreate', hookContext);
+            return hookContext.result;
+          });
+          return opCtx.result;
         },
         update: async (id: string, data: any) => {
           const driver = this.drivers.get(this.defaultDriver || this.drivers.keys().next().value);
-          if (driver && driver.update) {
-            return driver.update(name, id, data);
-          }
-          return data;
+          const opCtx = { object: name, operation: 'update', data, context: options, result: undefined as any };
+          await this.executeWithMiddleware(opCtx, async () => {
+            // Fetch previous data for hooks that need it
+            let previousData: any;
+            if (driver?.findOne) {
+              try { previousData = await driver.findOne(name, { _id: id }); } catch (_e) { /* ignore */ }
+            }
+            const hookContext: any = {
+              object: name, event: 'beforeUpdate',
+              input: { id, data: opCtx.data }, session: options,
+              data: opCtx.data, previousData, user: options.userId ? { id: options.userId } : options.user
+            };
+            await this.triggerHooks('beforeUpdate', hookContext);
+            const finalData = hookContext.data || hookContext.input.data;
+            const result = driver?.update ? await driver.update(name, id, finalData, options) : finalData;
+            hookContext.event = 'afterUpdate';
+            hookContext.result = result;
+            await this.triggerHooks('afterUpdate', hookContext);
+            return hookContext.result;
+          });
+          return opCtx.result;
         },
         delete: async (id: string) => {
           const driver = this.drivers.get(this.defaultDriver || this.drivers.keys().next().value);
-          if (driver && driver.delete) {
-            return driver.delete(name, id);
+          const opCtx = { object: name, operation: 'delete', context: options, result: undefined as any };
+          await this.executeWithMiddleware(opCtx, async () => {
+            // Fetch current data for hooks that need it
+            let previousData: any;
+            if (driver?.findOne) {
+              try { previousData = await driver.findOne(name, { _id: id }); } catch (_e) { /* ignore */ }
+            }
+            const hookContext: any = {
+              object: name, event: 'beforeDelete',
+              input: { id }, session: options,
+              data: previousData, previousData, user: options.userId ? { id: options.userId } : options.user
+            };
+            await this.triggerHooks('beforeDelete', hookContext);
+            const result = driver?.delete ? await driver.delete(name, id) : true;
+            hookContext.event = 'afterDelete';
+            hookContext.result = result;
+            await this.triggerHooks('afterDelete', hookContext);
+            return hookContext.result;
+          });
+          return opCtx.result;
+        },
+        count: async (filter?: any) => {
+          const driver = this.drivers.get(this.defaultDriver || this.drivers.keys().next().value);
+          if (driver?.count) {
+            return driver.count(name, filter);
           }
+          // Fallback: use find and count
+          const results = driver?.find ? await driver.find(name, filter) : [];
+          return Array.isArray(results) ? results.length : 0;
         }
       })
     };
