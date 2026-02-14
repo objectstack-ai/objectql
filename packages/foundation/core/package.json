@@ -34,10 +34,10 @@
     "@objectql/plugin-query": "workspace:*",
     "@objectql/plugin-validator": "workspace:*",
     "@objectql/types": "workspace:*",
-    "@objectstack/core": "^3.0.3",
-    "@objectstack/objectql": "^3.0.3",
-    "@objectstack/runtime": "^3.0.3",
-    "@objectstack/spec": "^3.0.3",
+    "@objectstack/core": "^3.0.4",
+    "@objectstack/objectql": "^3.0.4",
+    "@objectstack/runtime": "^3.0.4",
+    "@objectstack/spec": "^3.0.4",
     "zod": "^4.3.6"
   },
   "devDependencies": {
