@@ -31,7 +31,7 @@
     "test": "vitest run"
   },
   "peerDependencies": {
-    "@objectstack/objectql": "^3.0.4",
+    "@objectql/core": "workspace:*",
     "@objectql/driver-sql": "workspace:*",
     "@objectql/platform-node": "workspace:*",
     "@objectql/types": "workspace:*",
@@ -39,7 +39,7 @@
   },
   "devDependencies": {
     "@objectql/cli": "workspace:*",
-    "@objectstack/objectql": "^3.0.4",
+    "@objectql/core": "workspace:*",
     "@objectql/driver-sql": "workspace:*",
     "@objectql/platform-node": "workspace:*",
     "@objectql/types": "workspace:*",

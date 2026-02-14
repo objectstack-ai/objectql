@@ -12,7 +12,7 @@
  * Tests that metadata files are correctly loaded and registered
  */
 
-import { ObjectQL } from '@objectstack/objectql';
+import { ObjectQL } from '@objectql/core';
 import { SqlDriver } from '@objectql/driver-sql';
 import { ObjectLoader } from '@objectql/platform-node';
 import * as path from 'path';

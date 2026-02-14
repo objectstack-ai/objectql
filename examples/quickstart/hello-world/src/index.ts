@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { ObjectQL } from '@objectstack/objectql';
+import { ObjectQL } from '@objectql/core';
 import { SqlDriver } from '@objectql/driver-sql';
 
 async function main() {

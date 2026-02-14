@@ -12,7 +12,7 @@
  * Tests that the enterprise-scale metadata organization is correctly loaded
  */
 
-import { ObjectQL } from '@objectstack/objectql';
+import { ObjectQL } from '@objectql/core';
 import { SqlDriver } from '@objectql/driver-sql';
 import { ObjectLoader } from '@objectql/platform-node';
 import * as path from 'path';

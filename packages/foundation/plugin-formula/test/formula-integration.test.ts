@@ -12,7 +12,7 @@
  * Tests formula evaluation within repository queries
  */
 
-import { ObjectQL } from '@objectstack/objectql';
+import { ObjectQL } from '@objectql/core';
 import { MockDriver } from './mock-driver';
 import { FormulaPlugin } from '../src/formula-plugin';
 

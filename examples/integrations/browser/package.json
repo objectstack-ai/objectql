@@ -10,7 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@objectstack/objectql": "^3.0.4",
+    "@objectql/core": "workspace:*",
     "@objectql/driver-memory": "workspace:*",
     "@objectql/types": "workspace:*"
   },

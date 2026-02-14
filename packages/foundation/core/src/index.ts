@@ -9,10 +9,11 @@
  * See: https://github.com/objectstack-ai/spec/blob/main/content/docs/guides/objectql-migration.mdx
  */
 
-// ── Re-exports from @objectstack/objectql (deprecated — import directly from upstream) ──
+// ── Bridge engine (deprecated — use @objectstack/objectql ObjectQL directly) ──
+/** @deprecated Import ObjectQL from `@objectstack/objectql` instead. This bridge class will be removed in a future version. */
+export { ObjectQL, type ObjectQLConfig } from './app';
 
-/** @deprecated Import from `@objectstack/objectql` instead. */
-export { ObjectQL } from '@objectstack/objectql';
+// ── Re-exports from @objectstack/objectql (deprecated — import directly from upstream) ──
 /** @deprecated Import from `@objectstack/objectql` instead. */
 export { ObjectRepository, ScopedContext, SchemaRegistry } from '@objectstack/objectql';
 /** @deprecated Import from `@objectstack/objectql` instead. */
