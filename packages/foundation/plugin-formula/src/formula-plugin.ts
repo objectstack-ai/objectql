@@ -137,7 +137,12 @@ export class FormulaPlugin implements RuntimePlugin {
       const schemaItem = this.kernel.metadata?.get?.('object', objectName)
         ?? (typeof this.kernel.getObject === 'function' ? this.kernel.getObject(objectName) : undefined);
       const schema = schemaItem?.content || schemaItem;
-      if (!schema || !schema.fields) return;
+      if (!schema || !schema.fields) {
+          if (objectName) {
+              this.logger.debug('No schema found for object, skipping formula evaluation', { objectName });
+          }
+          return;
+      }
 
       // Identify formula fields
       const formulaFields: [string, any][] = [];
@@ -168,7 +173,7 @@ export class FormulaPlugin implements RuntimePlugin {
               record,
               system: systemInfo,
               current_user: {
-                  id: session?.userId || '',
+                  id: session?.userId || session?.id || '',
                   name: session?.name,
                   email: session?.email,
                   role: session?.roles?.[0]
