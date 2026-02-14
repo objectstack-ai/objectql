@@ -13,15 +13,17 @@
 /** @deprecated Import ObjectQL from `@objectstack/objectql` instead. This bridge class will be removed in a future version. */
 export { ObjectQL, type ObjectQLConfig } from './app';
 
+// ── Convenience factory (local implementation — wraps upstream kernel) ──
+export { createObjectQLKernel } from './kernel-factory';
+export type { ObjectQLKernelOptions } from './kernel-factory';
+
 // ── Re-exports from @objectstack/objectql (deprecated — import directly from upstream) ──
 /** @deprecated Import from `@objectstack/objectql` instead. */
 export { ObjectRepository, ScopedContext, SchemaRegistry } from '@objectstack/objectql';
 /** @deprecated Import from `@objectstack/objectql` instead. */
-export { createObjectQLKernel } from '@objectstack/objectql';
-/** @deprecated Import from `@objectstack/objectql` instead. */
 export { toTitleCase, convertIntrospectedSchemaToObjects } from '@objectstack/objectql';
 /** @deprecated Import from `@objectstack/objectql` instead. */
-export type { ObjectQLKernelOptions, HookHandler, HookEntry, OperationContext, EngineMiddleware, ObjectQLHostContext } from '@objectstack/objectql';
+export type { HookHandler, HookEntry, OperationContext, EngineMiddleware, ObjectQLHostContext } from '@objectstack/objectql';
 
 // ── Plugin orchestration (downstream — stays in @objectql ecosystem) ──
 export * from './plugin';

@@ -26,7 +26,7 @@ All core functionality previously provided by `@objectql/core` is now available 
     "dependencies": {
 -     "@objectql/core": "^4.x",
 -     "@objectql/types": "^4.x",
-+     "@objectstack/objectql": "^3.1.0"
++     "@objectstack/objectql": "^3.0.4"
     }
   }
 ```
@@ -91,7 +91,7 @@ import { createObjectQLKernel } from '@objectstack/objectql';
 const kernel = await createObjectQLKernel({
   plugins: [myDriverPlugin],
 });
-await kernel.bootstrap();
+await kernel.start();
 ```
 
 ### MetadataRegistry → MetadataFacade
