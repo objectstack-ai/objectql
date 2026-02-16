@@ -41,6 +41,24 @@ import { Driver, ObjectQLError } from '@objectql/types';
 import { Query, Aggregator } from 'mingo';
 
 /**
+ * Typed wrapper for Mingo query operations.
+ * Centralizes the type casts required for Mingo library interop,
+ * since Mingo expects `Record<string, any>` but we use `Record<string, unknown>`.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type MingoCompatible = Record<string, any>;
+
+function mingoFind(records: Record<string, unknown>[], mongoQuery: Record<string, unknown>): Record<string, unknown>[] {
+    const query = new Query(mongoQuery as MingoCompatible);
+    return query.find(records as MingoCompatible[]).all() as Record<string, unknown>[];
+}
+
+function mingoAggregate(records: Record<string, unknown>[], pipeline: Record<string, unknown>[]): Record<string, unknown>[] {
+    const aggregator = new Aggregator(pipeline as MingoCompatible[]);
+    return aggregator.run(records as MingoCompatible[]) as Record<string, unknown>[];
+}
+
+/**
  * Command interface for executeCommand method
  */
 export interface Command {
@@ -198,8 +216,7 @@ export class MemoryDriver implements Driver {
         
         // Apply filters using Mingo
         if (mongoQuery && Object.keys(mongoQuery).length > 0) {
-            const mingoQuery = new Query(mongoQuery);
-            records = mingoQuery.find(records as any).all() as Record<string, unknown>[];
+            records = mingoFind(records, mongoQuery);
         }
         
         // Apply sorting manually (Mingo's sort has issues with CJS builds)
@@ -291,7 +308,10 @@ export class MemoryDriver implements Driver {
                     details: { objectName, id }
                 });
             }
-            return null as unknown as Record<string, unknown>;
+            // Non-strict mode: return null to indicate record not found
+            // Note: This deviates from the Driver interface (which requires Record<string, unknown>)
+            // but preserves backward compatibility for consumers that check for null returns.
+            return null!;
         }
         
         const doc = {
@@ -361,8 +381,7 @@ export class MemoryDriver implements Driver {
         // Convert to MongoDB query and use Mingo to count
         const mongoQuery = this.convertToMongoQuery(whereCondition as Record<string, unknown> | unknown[] | undefined);
         if (mongoQuery && Object.keys(mongoQuery).length > 0) {
-            const mingoQuery = new Query(mongoQuery);
-            const matchedRecords = mingoQuery.find(records as any).all();
+            const matchedRecords = mingoFind(records, mongoQuery);
             return matchedRecords.length;
         }
         
@@ -387,8 +406,7 @@ export class MemoryDriver implements Driver {
         if (filters) {
             const mongoQuery = this.convertToMongoQuery(filters as Record<string, unknown>);
             if (mongoQuery && Object.keys(mongoQuery).length > 0) {
-                const mingoQuery = new Query(mongoQuery);
-                records = mingoQuery.find(records as any).all() as Record<string, unknown>[];
+                records = mingoFind(records, mongoQuery);
             }
         }
         
@@ -438,8 +456,7 @@ export class MemoryDriver implements Driver {
         let matchedRecords = records;
         
         if (mongoQuery && Object.keys(mongoQuery).length > 0) {
-            const mingoQuery = new Query(mongoQuery);
-            matchedRecords = mingoQuery.find(records as any).all() as Record<string, unknown>[];
+            matchedRecords = mingoFind(records, mongoQuery);
         }
         
         // Update matched records
@@ -484,8 +501,7 @@ export class MemoryDriver implements Driver {
         let matchedRecords = records;
         
         if (mongoQuery && Object.keys(mongoQuery).length > 0) {
-            const mingoQuery = new Query(mongoQuery);
-            matchedRecords = mingoQuery.find(records as any).all() as Record<string, unknown>[];
+            matchedRecords = mingoFind(records, mongoQuery);
         }
         
         // Delete matched records
@@ -563,10 +579,7 @@ export class MemoryDriver implements Driver {
         }
         
         // Use Mingo to execute the aggregation pipeline
-        const aggregator = new Aggregator(pipeline as any);
-        const results = aggregator.run(records as any);
-        
-        return results as Record<string, unknown>[];
+        return mingoAggregate(records, pipeline as Record<string, unknown>[]);
     }
 
     /**
