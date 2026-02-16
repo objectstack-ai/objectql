@@ -1,9 +1,9 @@
 # ObjectQL — 2026 Roadmap
 
-> Created: 2026-02-08 | Last Updated: 2026-02-14 | Status: **Active**  
-> Current Version: **4.2.1** (all packages aligned)  
-> Runtime: `@objectstack/cli` v3.0.4 (Kernel pattern) — `@objectql/server` removed, `packages/runtime/` removed.  
-> @objectstack Platform: **v3.0.4**
+> Created: 2026-02-08 | Last Updated: 2026-02-16 | Status: **Active**  
+> Current Version: **4.2.2** (all packages aligned, root 4.2.0, vscode-objectql 4.2.0)  
+> Runtime: `@objectstack/cli` v3.0.6 (Kernel pattern) — `@objectql/server` removed, `packages/runtime/` removed.  
+> @objectstack Platform: **v3.0.6**
 
 ---
 
@@ -38,6 +38,7 @@
 - [Removed Packages](#removed-packages)
 - [Codebase Audit Findings](#codebase-audit-findings)
 - [Architecture Decisions Record](#architecture-decisions-record)
+- [@objectstack/spec Protocol Alignment Status](#objectstackspec-protocol-alignment-status)
 
 ---
 
@@ -58,19 +59,19 @@ ObjectQL is the **Standard Protocol for AI Software Generation** — a universal
 
 | Category | Current State | Target State |
 |----------|---------------|--------------|
-| `any` type usage | ~847 instances (core: 28 ✅) | < 50 (critical path zero) |
-| Error handling | 100% `ObjectQLError` ✅ | 100% `ObjectQLError` |
-| Test coverage | All packages have tests ✅ (SDK, CLI, Create, VSCode added) | Full coverage with ≥ 80% per package |
-| Console logging | Zero `console.*` in production source ✅ | Zero in source; structured logging via hooks |
-| ESLint rules | All 11 rules re-enabled ✅ | Progressive re-enablement |
+| `any` type usage | ~962 instances (753 `: any` + 210 `as any`; core: 31, types: 1 ✅) | < 50 (critical path zero) |
+| Error handling | 100% `ObjectQLError` ✅ (zero `throw new Error` in production source) | 100% `ObjectQLError` |
+| Test coverage | 28 of 30 packages have tests ✅ (plugin-optimizations, plugin-query: 0 test files 🔴) | Full coverage with ≥ 80% per package |
+| Console logging | Near-zero — 3 intentional deprecation warnings in `@objectql/core`, 1 retry log in `sdk`, 2 in `types/logger` fallback | Zero in source; structured logging via hooks |
+| ESLint rules | 13 rules configured (11 active, `no-explicit-any` off, `no-undef` off) ✅ | Progressive strictness; re-enable `no-explicit-any` as warn |
 | Protocol compliance | GraphQL 95%+, OData 95%+, JSON-RPC 95%+ ✅ | 95%+ all protocols |
 
 ### Completed Milestones
 
 - ✅ Phases 1A (ObjectQLError migration), 3 (logging), 4 (ESLint all waves), 5A (TODO elimination), 5B (protocol compliance 95%+), 6 (error-handling + architecture guides)
 - ✅ Core refactoring: `@objectql/core` decomposed from ~3,500 to ~800 LOC ([PR #373](https://github.com/objectstack-ai/objectql/pull/373))
-- ✅ `@objectstack/*` platform upgraded to **v3.0.4** (Zod v4 alignment)
-- ✅ Phase 7 partial (sideEffects), Phase 2 (test suites for SDK, CLI, Create, VSCode)
+- ✅ `@objectstack/*` platform upgraded to **v3.0.6** (Zod v4 alignment)
+- ✅ Phase 7 partial (sideEffects in 27 packages), Phase 2 (test suites for SDK, CLI, Create, VSCode)
 - ✅ Q1 Phase 2: Browser WASM Drivers (`driver-sqlite-wasm`, `driver-pg-wasm`) implemented with docs and tests
 - ✅ Q1 Phase 3: Housekeeping complete (H-1 through H-8), `plugin-workflow` implemented with full test suite
 - ✅ `@objectql/plugin-multitenancy` — Automatic tenant isolation with tests
@@ -79,7 +80,11 @@ ObjectQL is the **Standard Protocol for AI Software Generation** — a universal
 - ✅ `@objectql/protocol-sync` — Sync protocol handler with change logs
 - ✅ Q2: Protocol Maturity — GraphQL subscriptions/Federation v2/DataLoader, OData $expand/$count/$batch, JSON-RPC count/execute/batch
 - ✅ Q3: Edge & Offline Sync — Edge adapter, sync engine, protocol sync handler
-- ✅ Phase 1B partial: Core `any` reduction (99→28 via KernelBridge interface)
+- ✅ Phase 1B partial: Core `any` reduction (99→31 via KernelBridge interface)
+- ✅ `@objectql/core` deprecation Phases A–C completed — all modules deprecated with `console.warn` + `@deprecated` JSDoc
+- ✅ Utility functions (`toTitleCase`, `convertIntrospectedSchemaToObjects`) moved from core to `@objectql/types`
+- ✅ All 66/66 test tasks pass (including plugin-formula integration tests — previously failing, now fixed)
+- ✅ 67 documentation files (.mdx) across 12 sections
 
 ---
 
@@ -334,18 +339,34 @@ type PluginErrorCode = 'TENANT_ISOLATION_VIOLATION' | 'TENANT_NOT_FOUND'
 
 #### 1B. `any` Type Reduction ⏳ In Progress
 
-Current: ~847 `: any` instances, ~182 `as any` casts (total ~1029).
-Progress: `@objectql/core` reduced from 99 → 28 via `KernelBridge` interface.
+Current: ~753 `: any` instances, ~210 `as any` casts (total ~962).
+Progress: `@objectql/core` reduced from 99 → 31 via `KernelBridge` interface. `@objectql/types` reduced to 1 (justified).
 Target: < 50 (justified edge cases only).
 
-| `any` Location | Replacement Strategy | Status |
-|----------------|---------------------|--------|
-| Type definitions (`@objectql/types`) | `unknown`, generics `<T>`, Zod inferred types | ✅ Clean (1 justified) |
-| Core (`@objectql/core`) | `KernelBridge` interface, typed CRUD methods | ✅ 99 → 28 |
-| Driver implementations | `Record<string, unknown>` | ⏳ Remaining |
-| Protocol handlers | `unknown` + type guards | ⏳ Remaining |
-| Plugin hooks | Generic `HookContext<T>` | ⏳ Remaining |
-| `as any` casts | Proper type narrowing | ⏳ Remaining |
+| `any` Location | Count | Replacement Strategy | Status |
+|----------------|-------|---------------------|--------|
+| Type definitions (`@objectql/types`) | 1 | `unknown`, generics `<T>`, Zod inferred types | ✅ Clean (1 justified) |
+| Core (`@objectql/core`) | 31 | `KernelBridge` interface, typed CRUD methods | ✅ 99 → 31 |
+| Driver implementations | 237 | `Record<string, unknown>` | ⏳ Remaining |
+| Protocol handlers | 286 | `unknown` + type guards | ⏳ Remaining |
+| Plugin hooks | 259 | Generic `HookContext<T>` | ⏳ Remaining |
+| Tools (CLI, TCK, VSCode) | 68 | Typed args, narrowing | ⏳ Remaining |
+| Platform-node | 13 | Typed loader/file APIs | ⏳ Remaining |
+
+**Top `any` offenders:**
+
+| Package | `: any` + `as any` |
+|---------|-------------------|
+| `@objectql/protocol-json-rpc` | 102 |
+| `@objectql/protocol-graphql` | 101 |
+| `@objectql/protocol-odata-v4` | 83 |
+| `@objectql/plugin-security` | 67 |
+| `@objectql/plugin-multitenancy` | 64 |
+| `@objectql/driver-sql` | 50 |
+| `@objectql/driver-redis` | 46 |
+| `@objectql/plugin-workflow` | 44 |
+| `@objectql/driver-mongo` | 44 |
+| `@objectql/driver-memory` | 38 |
 
 ### Phase 2: Test Coverage & Quality Gates
 
@@ -357,8 +378,10 @@ Target: < 50 (justified edge cases only).
 | **@objectql/cli** | 1 file (37 tests) | ✅ | Command registration, options, utilities | ✅ Done |
 | **vscode-objectql** | 1 file (20 tests) | ✅ | Manifest, commands, providers | ✅ Done |
 | **@objectql/sdk** | 1 file (65 tests) | ✅ | RemoteDriver, DataApiClient, MetadataApiClient | ✅ Done |
-| **@objectql/driver-pg-wasm** | 1 file | Medium | Add OPFS, fallback, JSONB tests |
-| **@objectql/driver-sqlite-wasm** | 1 file | Medium | Add OPFS, WAL, fallback tests |
+| **@objectql/driver-pg-wasm** | 1 file | Medium | Add OPFS, fallback, JSONB tests | ⏳ |
+| **@objectql/driver-sqlite-wasm** | 1 file | Medium | Add OPFS, WAL, fallback tests | ⏳ |
+| **@objectql/plugin-optimizations** | **0 files** 🔴 | **Critical** | No test coverage at all | 🔴 Open |
+| **@objectql/plugin-query** | **0 files** 🔴 | **Critical** | No test coverage at all | 🔴 Open |
 
 **CI Quality Gates:**
 
@@ -370,17 +393,22 @@ Target: < 50 (justified edge cases only).
 | ESLint | ✅ (many rules off) | ✅ (progressive strictness) |
 | TCK conformance | Manual | CI-automated |
 
-### Phase 3: Console Logging & Observability ✅ Completed
+### Phase 3: Console Logging & Observability ✅ Completed (with caveats)
 
 - [x] Audit all `console.*` calls
 - [x] Remove debug-only `console.log` from drivers
 - [x] Replace necessary logging with hook-based events
-- [x] Keep `console.*` only in `@objectql/cli`
+- [x] Keep `console.*` only in `@objectql/cli` and tools (CLI: 211 calls — expected for user-facing tool)
 - [x] Add ESLint `no-console` with CLI override
+
+**Remaining `console.*` in non-tool production source (6 total):**
+- `@objectql/core` (3): Intentional deprecation `console.warn` in plugin.ts, app.ts, kernel-factory.ts — will be removed at v5.0
+- `@objectql/sdk` (1): Retry logging `console.log` — should migrate to hook-based logging
+- `@objectql/types/logger.ts` (2): Fallback `console.error` for uncaught errors — justified safety net
 
 ### Phase 4: ESLint Strictness Progression ✅ Completed (All Waves)
 
-All 5 waves completed. Rules re-enabled: `prefer-const`, `no-useless-catch`, `no-empty`, `no-unused-vars`, `no-case-declarations`, `no-useless-escape`, `no-require-imports`, `no-explicit-any` (warn), `no-empty-object-type`, `no-unsafe-function-type`, `no-this-alias`.
+13 rules configured (11 active, 2 off). Active rules: `prefer-const`, `no-useless-catch`, `no-empty`, `no-unused-vars`, `no-case-declarations`, `no-useless-escape`, `no-require-imports`, `no-empty-object-type`, `no-unsafe-function-type`, `no-this-alias`, `no-console`. Disabled: `no-explicit-any` (off — re-enable as warn is a stretch goal), `no-undef` (off — TypeScript handles this).
 
 ### Phase 5: TODO Elimination & Protocol Compliance
 
@@ -404,21 +432,22 @@ See [Q1 Phase 3 Part A](#part-a-housekeeping-1-week) above.
 
 #### 6B. New Documentation Needs
 
-| Document | Location | Purpose |
-|----------|----------|---------|
-| Error handling guide | `content/docs/guides/error-handling.mdx` | `ObjectQLError` pattern, error codes |
-| Plugin development guide | `content/docs/extending/plugin-development.mdx` | How to build a custom plugin |
-| Driver development guide | `content/docs/extending/driver-development.mdx` | How to implement a new driver |
-| Architecture overview | `content/docs/guides/architecture.mdx` | Updated architecture diagram |
-| Migration guide (v4 → v5) | `content/docs/guides/migration-v5.mdx` | Breaking changes, deprecated API removal |
+| Document | Location | Purpose | Status |
+|----------|----------|---------|--------|
+| Error handling guide | `content/docs/guides/error-handling.mdx` | `ObjectQLError` pattern, error codes | ✅ Done |
+| Plugin development guide | `content/docs/extending/plugin-development.mdx` | How to build a custom plugin | ✅ Done |
+| Driver development guide | `content/docs/extending/driver-development.mdx` | How to implement a new driver | ✅ Done |
+| Architecture overview | `content/docs/guides/architecture.mdx` | Updated architecture diagram | ✅ Done |
+| Migration guide (v4 → v5) | `content/docs/guides/migration-v5.mdx` | Breaking changes, deprecated API removal | ✅ Done |
 
 #### 6C. VSCode Extension Alignment
 
-| Task | Description |
-|------|-------------|
-| Bump version to 4.2.0 | Align with monorepo |
-| Add basic test suite | Extension activation, schema validation, snippet tests |
-| Publish to VS Code Marketplace | If not already published |
+| Task | Description | Status |
+|------|-------------|--------|
+| Bump version to 4.2.0 | Align with monorepo | ✅ Done |
+| Add basic test suite | Extension activation, schema validation, snippet tests | ✅ Done (1 test file) |
+| Publish to VS Code Marketplace | If not already published | ⏳ Remaining |
+| Bump version to 4.2.2 | Align with other packages | 🔴 Open |
 
 ### Phase 7: Performance & Bundle Optimization
 
@@ -443,7 +472,7 @@ Optimization modules extracted into `@objectql/plugin-optimizations` ([PR #373](
 | **BO-1** | Tree-shaking audit | 4h |
 | **BO-2** | Measure `@objectql/core` bundle size (target: < 50KB gzip) | 2h |
 | **BO-3** | WASM lazy loading | 4h |
-| **BO-4** | Add `sideEffects: false` to all package.json files | ✅ Done |
+| **BO-4** | Add `sideEffects: false` to all package.json files | ✅ Done (27 packages) |
 
 #### 7C. Driver Performance Benchmarks ⏳ Remaining
 
@@ -741,27 +770,29 @@ Define wire format, `MutationLogEntry` schema, `SyncConflict` schema, checkpoint
 
 ---
 
-## Immediate Next Steps (Post v3.0.4 Upgrade)
+## Immediate Next Steps (Post v3.0.6 Upgrade)
 
 > Status: **Active** | Target: 2026-02 — 2026-03
 
-Priority tasks following the `@objectstack` v3.0.4 upgrade:
+Priority tasks following the `@objectstack` v3.0.6 upgrade:
 
 | # | Task | Priority | Status | Description |
 |---|------|----------|--------|-------------|
-| 1 | Fix `plugin-formula` integration tests | High | 🔴 Open | 6 pre-existing test failures in `formula-integration.test.ts` — formula fields evaluate to `undefined`. Root cause: hook registration / metadata lookup mismatch in FormulaPlugin (`afterFind` hook not triggered, `kernel.metadata.get()` vs `kernel.getObject()` mismatch). |
+| 1 | Fix `plugin-formula` integration tests | High | ✅ Fixed | Previously 6 pre-existing test failures — now all pass (66/66 test tasks, including plugin-formula). |
 | 2 | Re-enable `AuthPlugin` | Medium | 🔴 Open | Disabled due to camelCase field names (`createdAt`, `updatedAt`, `emailVerified`) violating ObjectQL snake_case spec. Coordinate with `@objectstack/plugin-auth` upstream or add field name normalization layer. |
-| 3 | Align `@objectql/types` with `@objectstack/spec` v3.0.4 Zod v4 schemas | High | ✅ Done | `z.infer<>` type derivation compiles correctly against Zod v4 schema exports in `@objectstack/spec@3.0.4`. Verified via 36/36 build tasks passing. |
-| 4 | Core bridge class stabilization | Medium | ✅ Done | `app.ts` bridge class — all `registerObject`, `getObject`, `getConfigs`, `removePackage` overrides align with `@objectstack/objectql@3.0.4` API surface. Build verified. |
-| 5 | Bump `@objectql/*` packages to **4.3.0** | Low | 🟡 Next | Release patch with `@objectstack` v3.0.4 compatibility via Changesets. |
-| 6 | Reduce `any` usage in driver layer | Medium | 🔴 Open | `driver-sql` (54), `driver-memory` (51), `driver-redis` (48), `driver-mongo` (47) — tighten types for production reliability. |
-| 7 | Structured logging framework | Low | 🔴 Open | Replace remaining `console.*` calls in drivers (`driver-sql`: 13, `driver-redis`: 19, `driver-mongo`: 4, `protocol-json-rpc`: 15) with hook-based structured logging. |
+| 3 | Align `@objectql/types` with `@objectstack/spec` v3.0.6 Zod v4 schemas | High | ✅ Done | `z.infer<>` type derivation compiles correctly against Zod v4 schema exports in `@objectstack/spec@3.0.6`. Verified via 36/36 build tasks passing. |
+| 4 | Core bridge class stabilization | Medium | ✅ Done | `app.ts` bridge class — all `registerObject`, `getObject`, `getConfigs`, `removePackage` overrides align with `@objectstack/objectql@3.0.6` API surface. Build verified. |
+| 5 | Bump `@objectql/*` packages to **4.3.0** | Low | 🟡 Next | Release patch with `@objectstack` v3.0.6 compatibility via Changesets. |
+| 6 | Reduce `any` usage in driver layer | Medium | 🔴 Open | `driver-sql` (50), `driver-redis` (46), `driver-mongo` (44), `driver-memory` (38) — tighten types for production reliability. |
+| 7 | Structured logging framework | Low | 🔴 Open | Migrate `sdk` retry `console.log` and `types/logger.ts` fallback `console.error` to hook-based structured logging. |
+| 8 | Add tests for `plugin-optimizations` and `plugin-query` | High | 🔴 Open | Both packages have **zero test files** — critical gap for foundational infrastructure packages. |
+| 9 | Reduce `any` in protocol handlers | Medium | 🔴 Open | `protocol-json-rpc` (102), `protocol-graphql` (101), `protocol-odata-v4` (83) — highest `any` density in the monorepo. |
 
 ---
 
 ## `@objectql/core` Deprecation & Migration Plan
 
-> Status: **Phases A–C Completed** | Constitutional Basis: `@objectstack/spec` Protocol Specification  
+> Status: **Phases A–C Completed** | Constitutional Basis: `@objectstack/spec@3.0.6` Protocol Specification  
 > Prerequisite: Core refactoring completed — [PR #373](https://github.com/objectstack-ai/objectql/pull/373) (~3,500 → 734 LOC thin bridge + plugin orchestrator)
 
 **Goal:** Fully retire `@objectql/core` as a standalone package. The ObjectQL ecosystem transitions to a **pure plugin architecture** — no aggregator, no bridge, no intermediate layer. All capabilities are delivered as independent, composable `RuntimePlugin` instances registered directly with the `ObjectStackKernel`.
@@ -922,7 +953,7 @@ Standardize third-party plugin distribution.
 
 ## Package Matrix
 
-> All packages at **4.2.1** unless noted.
+> All packages at **4.2.2** unless noted. Root package.json at 4.2.0.
 
 ### Foundation Layer
 
@@ -938,6 +969,8 @@ Standardize third-party plugin distribution.
 | `packages/foundation/plugin-formula` | `@objectql/plugin-formula` | Universal | Computed fields with sandboxed JS expressions. |
 | `packages/foundation/plugin-workflow` | `@objectql/plugin-workflow` | Universal | State machine executor with guards, actions, compound states. |
 | `packages/foundation/plugin-multitenancy` | `@objectql/plugin-multitenancy` | Universal | Tenant isolation via hook-based filter rewriting. |
+| `packages/foundation/plugin-sync` | `@objectql/plugin-sync` | Universal | Offline-first sync engine with mutation logging and conflict resolution. |
+| `packages/foundation/edge-adapter` | `@objectql/edge-adapter` | Universal | Edge runtime detection and capability validation. |
 
 ### Driver Layer
 
@@ -970,19 +1003,19 @@ Standardize third-party plugin distribution.
 | `packages/tools/create` | `@objectql/create` | `npm create @objectql@latest` project generator |
 | `packages/tools/driver-tck` | `@objectql/driver-tck` | Driver technology compatibility kit |
 | `packages/tools/protocol-tck` | `@objectql/protocol-tck` | Protocol technology compatibility kit |
-| `packages/tools/vscode-objectql` | `vscode-objectql` (4.1.0) | VS Code extension: IntelliSense, validation, snippets |
+| `packages/tools/vscode-objectql` | `vscode-objectql` (4.2.0) | VS Code extension: IntelliSense, validation, snippets |
 
 ### External Dependencies (Not in this repo)
 
 | Package | Owner | Version | Role in ObjectQL |
 |---------|-------|---------|-----------------|
-| `@objectstack/cli` | ObjectStack | 3.0.4 | Kernel bootstrapper (`objectstack serve`) |
-| `@objectstack/core` | ObjectStack | 3.0.4 | Kernel runtime, plugin lifecycle |
-| `@objectstack/plugin-hono-server` | ObjectStack | 3.0.4 | HTTP server (Hono-based) |
-| `@objectstack/spec` | ObjectStack | 3.0.4 | Formal protocol specifications (Zod schemas) |
-| `@objectstack/runtime` | ObjectStack | 3.0.4 | Core runtime & query engine |
-| `@objectstack/objectql` | ObjectStack | 3.0.4 | ObjectQL runtime bridge |
-| `@objectstack/studio` | ObjectStack | 3.0.4 | Visual admin studio |
+| `@objectstack/cli` | ObjectStack | 3.0.6 | Kernel bootstrapper (`objectstack serve`) |
+| `@objectstack/core` | ObjectStack | 3.0.6 | Kernel runtime, plugin lifecycle |
+| `@objectstack/plugin-hono-server` | ObjectStack | 3.0.6 | HTTP server (Hono-based) |
+| `@objectstack/spec` | ObjectStack | 3.0.6 | Formal protocol specifications (Zod schemas) |
+| `@objectstack/runtime` | ObjectStack | 3.0.6 | Core runtime & query engine |
+| `@objectstack/objectql` | ObjectStack | 3.0.6 | ObjectQL runtime bridge |
+| `@objectstack/studio` | ObjectStack | 3.0.6 | Visual admin studio |
 | AI Agent / AI tooling | **Separate project** | — | Not in this monorepo |
 
 ---
@@ -999,37 +1032,97 @@ Standardize third-party plugin distribution.
 
 ## Codebase Audit Findings
 
+> Last audited: **2026-02-16** | Method: Full automated scan of all `packages/*/src/` and `packages/*/*/src/` TypeScript files
+
 ### Package Health Matrix
 
-| Package | `any` Count | Error Pattern | Tests | Console Calls | TODOs |
-|---------|-------------|---------------|-------|---------------|-------|
-| **@objectql/types** | 85 | N/A (types only) | 3 files | 0 | 0 |
-| **@objectql/core** | 103 | `Error` (~30) | 14 files | 1 | 0 |
-| **@objectql/plugin-security** | 59 | `ObjectQLError` (6) | 8 files | 0 | 0 |
-| **@objectql/protocol-graphql** | 58 | `Error` (4) | 4 files | 0 | 3 |
-| **@objectql/driver-sql** | 54 | `Error` (7) | 6 files | 13 | 0 |
-| **@objectql/driver-memory** | 51 | Mixed (7+7) | 2 files | 0 | 0 |
-| **@objectql/driver-redis** | 48 | `Error` (10) | 2 files | 19 | 0 |
-| **@objectql/driver-mongo** | 47 | `Error` (9) | 4 files | 4 | 0 |
-| **@objectql/protocol-json-rpc** | 37 | `Error` (8) | 4 files | 15 | 0 |
-| **@objectql/protocol-odata-v4** | 32 | `Error` (7) | 3 files | 0 | 3 |
-| Others | < 30 each | Various | — | — | — |
+| Package | `any` Count | Error Pattern | Test Files | Console Calls | TODOs |
+|---------|-------------|---------------|------------|---------------|-------|
+| **@objectql/types** | 1 ✅ | N/A (types only) | 3 | 2 (logger fallback) | 0 |
+| **@objectql/core** | 31 ⚠️ | `ObjectQLError` ✅ | 4 | 3 (deprecation warns) | 0 |
+| **@objectql/plugin-security** | 67 🔴 | `ObjectQLError` ✅ | 8 | 0 | 0 |
+| **@objectql/plugin-multitenancy** | 64 🔴 | `ObjectQLError` ✅ | 7 | 0 | 0 |
+| **@objectql/plugin-workflow** | 44 🔴 | `ObjectQLError` ✅ | 5 | 0 | 0 |
+| **@objectql/plugin-optimizations** | 36 🔴 | `ObjectQLError` ✅ | **0** 🔴 | 0 | 0 |
+| **@objectql/plugin-formula** | 18 | `ObjectQLError` ✅ | 4 | 0 | 0 |
+| **@objectql/plugin-validator** | 16 | `ObjectQLError` ✅ | 3 | 0 | 0 |
+| **@objectql/plugin-query** | 14 | `ObjectQLError` ✅ | **0** 🔴 | 0 | 0 |
+| **@objectql/platform-node** | 13 | `ObjectQLError` ✅ | 3 | 0 | 0 |
+| **@objectql/plugin-sync** | 0 ✅ | `ObjectQLError` ✅ | 1 | 0 | 0 |
+| **@objectql/edge-adapter** | 0 ✅ | `ObjectQLError` ✅ | 1 | 0 | 0 |
+| **@objectql/protocol-json-rpc** | 102 🔴 | `ObjectQLError` ✅ | 5 | 0 | 0 |
+| **@objectql/protocol-graphql** | 101 🔴 | `ObjectQLError` ✅ | 4 | 0 | 0 |
+| **@objectql/protocol-odata-v4** | 83 🔴 | `ObjectQLError` ✅ | 4 | 0 | 0 |
+| **@objectql/protocol-sync** | 0 ✅ | `ObjectQLError` ✅ | 1 | 0 | 0 |
+| **@objectql/driver-sql** | 50 🔴 | `ObjectQLError` ✅ | 6 | 0 | 0 |
+| **@objectql/driver-redis** | 46 🔴 | `ObjectQLError` ✅ | 2 | 0 | 0 |
+| **@objectql/driver-mongo** | 44 🔴 | `ObjectQLError` ✅ | 4 | 0 | 0 |
+| **@objectql/driver-memory** | 38 | `ObjectQLError` ✅ | 2 | 0 | 0 |
+| **@objectql/driver-sqlite-wasm** | 34 | `ObjectQLError` ✅ | 2 | 0 | 0 |
+| **@objectql/driver-pg-wasm** | 33 | `ObjectQLError` ✅ | 2 | 0 | 0 |
+| **@objectql/sdk** | 33 | `ObjectQLError` ✅ | 2 | 1 (retry log) | 0 |
+| **@objectql/driver-fs** | 14 | `ObjectQLError` ✅ | 2 | 0 | 0 |
+| **@objectql/driver-excel** | 12 | `ObjectQLError` ✅ | 2 | 0 | 0 |
+| **@objectql/cli** | 38 | `ObjectQLError` ✅ | 2 | 211 (expected — CLI) | 0 |
+| **@objectql/create** | 0 ✅ | `ObjectQLError` ✅ | 2 | 4 (user output) | 0 |
+| **@objectql/driver-tck** | 7 | N/A (test harness) | 0 | 1 | 0 |
+| **@objectql/protocol-tck** | 7 | N/A (test harness) | 1 | 3 | 0 |
+| **vscode-objectql** | 16 | `ObjectQLError` ✅ | 1 | 1 | 0 |
+
+**Totals: 962 `any` annotations, 0 `throw new Error`, 0 TODO/FIXME/HACK**
+
+### `any` Distribution by Layer
+
+| Layer | Package Count | Total `any` | % of Total |
+|-------|---------------|-------------|------------|
+| Protocols | 4 | 286 (29.7%) | 🔴 Highest density |
+| Foundation (plugins) | 8 | 260 (27.0%) | 🔴 |
+| Drivers | 9 | 304 (31.6%) | 🔴 |
+| Tools | 5 | 68 (7.1%) | ⏳ Acceptable |
+| Foundation (core/types/platform) | 4 | 45 (4.7%) | ✅ Cleanest |
 
 ### `as any` Cast Distribution
 
-1. `foundation/core` — 56 casts
-2. `drivers/sql` — 18 casts
-3. `drivers/sqlite-wasm` — 15 casts
-4. `protocols/json-rpc` — 15 casts
-5. `foundation/plugin-security` — 11 casts
+| Package | `as any` Count |
+|---------|---------------|
+| `foundation/core` | 22 |
+| `drivers/sql` | 14 |
+| `drivers/sqlite-wasm` | 12 |
+| `protocols/json-rpc` | 18 |
+| `protocols/graphql` | 16 |
+| `protocols/odata-v4` | 12 |
+| `foundation/plugin-security` | 11 |
+| Others | < 10 each |
 
 ### Dependency Graph Observations
 
-- **`@objectql/types`** correctly has ZERO production dependencies (pure types)
-- **`@objectql/core`** depends on `plugin-formula` and `plugin-validator` — tight coupling noted
-- All `@objectstack/*` packages are at **v3.0.4** — aligned (Zod v4)
+- **`@objectql/types`** correctly has ZERO production dependencies (pure types — imports `@objectstack/spec` as devDep only)
+- **`@objectql/core`** depends on `plugin-formula` and `plugin-validator` — tight coupling noted (will be removed at v5.0)
+- All `@objectstack/*` packages are at **v3.0.6** — aligned (Zod v4)
 - **`mingo`** (used in memory driver) is the only non-standard query engine dependency
 - **`knex`** is shared across `driver-sql`, `driver-pg-wasm`, `driver-sqlite-wasm`
+
+### @objectstack/spec Coverage Gap Analysis
+
+`@objectstack/spec@3.0.6` exports ~3,100+ schemas across 16 sub-modules. ObjectQL currently implements 13 of these domains:
+
+| Spec Domain | Exports | @objectql Status | Notes |
+|-------------|---------|-----------------|-------|
+| **Data** (objects, fields, queries, drivers) | ~240 | ✅ Implemented | Core data layer — well-aligned |
+| **API** (REST, GraphQL, OData, WebSocket) | ~708 | ✅ Implemented | 3 protocol adapters + sync |
+| **Security** (RBAC, FLS, RLS) | ~41 | ✅ Implemented | plugin-security |
+| **Automation** (workflows, state machines) | ~106 | ✅ Implemented | plugin-workflow + plugin-validator |
+| **Shared** (field types, naming, http) | ~59 | ✅ Implemented | Used throughout types |
+| **System** (multi-tenancy, sync, CRDT) | ~488 | 🟡 Partial | Multi-tenancy ✅, sync ✅, but cache/backup/storage/i18n/notifications/feature-flags NOT implemented |
+| **Kernel** (plugins, events, lifecycle) | ~409 | 🟡 Partial | Plugin lifecycle handled by @objectstack/core externally |
+| **Contracts** (service interfaces) | ~78 | 🟡 Partial | Some interfaces implemented ad-hoc, not systematically aligned |
+| **Integration** (connectors, webhooks) | ~153 | 🔴 Not implemented | SaaS connectors, message queues, deployment — future scope |
+| **AI** (agents, MCP, RAG, NLQ) | ~359 | 🔴 Not implemented | Separate project per ADR-003 |
+| **Identity** (users, sessions, SCIM) | ~64 | 🔴 Not implemented | Handled by @objectstack/plugin-auth upstream |
+| **UI** (views, dashboards, reports) | ~249 | 🔴 Not implemented | Handled by @objectstack/studio upstream |
+| **Cloud** (marketplace, publishers) | ~90 | 🔴 Not implemented | Q4 scope — Plugin Marketplace |
+| **Studio** (designer, ER diagrams) | ~55 | 🔴 Not implemented | Handled by @objectstack/studio upstream |
+| **QA** (test suites, assertions) | ~13 | 🟡 Partial | TCK packages exist but not formally aligned with spec QA schemas |
 
 ---
 
@@ -1102,6 +1195,51 @@ Standardize third-party plugin distribution.
 **Decision:** Fully retire `@objectql/core` through a phased migration (Phases A–D). At v5.0, publish as an empty meta-package with `peerDependencies` pointing to individual plugins. All capabilities move to their natural homes: plugins to their respective `@objectql/plugin-*` packages, bridge logic to `@objectql/platform-node`, utility functions to `@objectql/types`.
 
 **Rationale:** Eliminates the last monolithic aggregation layer. Consumers gain explicit, transparent dependency management — no hidden magic. Aligns fully with `@objectstack/spec` protocol-driven, plugin-composable philosophy. **Status:** Accepted. Phases A–C completed — all modules deprecated with `console.warn` and `@deprecated` JSDoc. Utility functions moved to `@objectql/types`. Phase D (v5.0 empty meta-package) scheduled for Q4 2026.
+
+---
+
+## @objectstack/spec Protocol Alignment Status
+
+> Spec Version: **3.0.6** | Zod v4 | 16 sub-modules, ~3,100+ schema exports
+
+ObjectQL implements the **data layer compiler** portion of the ObjectStack protocol. The following domains are within ObjectQL's scope:
+
+### ✅ Fully Implemented (aligned with spec)
+
+| Domain | Spec Module | ObjectQL Package(s) |
+|--------|------------|-------------------|
+| Object/Field/Query/Filter schemas | `@objectstack/spec/data` | `@objectql/types` (derived via `z.infer<>`) |
+| Driver interface & capabilities | `@objectstack/spec/data` | 9 driver packages |
+| RBAC / FLS / RLS | `@objectstack/spec/security` | `@objectql/plugin-security` |
+| Validation (5 types) | `@objectstack/spec/data` | `@objectql/plugin-validator` |
+| State machines / workflows | `@objectstack/spec/automation` | `@objectql/plugin-workflow` |
+| Computed fields (formulas) | Custom | `@objectql/plugin-formula` |
+| GraphQL (subscriptions, federation, dataloader) | `@objectstack/spec/api` | `@objectql/protocol-graphql` |
+| OData V4 ($expand, $count, $batch) | `@objectstack/spec/api` | `@objectql/protocol-odata-v4` |
+| JSON-RPC (count, execute, batch) | `@objectstack/spec/api` | `@objectql/protocol-json-rpc` |
+| Multi-tenancy | `@objectstack/spec/system` | `@objectql/plugin-multitenancy` |
+| Offline sync / CRDT | `@objectstack/spec/system` | `@objectql/plugin-sync` + `@objectql/protocol-sync` |
+| Edge runtime detection | `@objectstack/spec/integration` | `@objectql/edge-adapter` |
+| Query optimization | `@objectstack/spec/api` | `@objectql/plugin-query` + `@objectql/plugin-optimizations` |
+
+### 🟡 Partially Implemented
+
+| Domain | Gap Description |
+|--------|----------------|
+| System: Observability | Logger types exist in `@objectql/types`, but full OpenTelemetry tracing/metrics/audit not implemented |
+| Contracts: Service Interfaces | Some interfaces implemented ad-hoc across packages, not systematically aligned with spec's 20+ `IService` contracts |
+| QA: Testing | TCK packages exist but not formally aligned with spec's `TestSuiteSchema` / `TestScenarioSchema` |
+
+### 🔴 Out of Scope (handled externally or future)
+
+| Domain | Reason |
+|--------|--------|
+| AI (agents, MCP, RAG, NLQ) | Separate project per ADR-003 |
+| Identity (users, sessions, SCIM) | Handled by `@objectstack/plugin-auth` upstream |
+| UI (views, dashboards, reports) | Handled by `@objectstack/studio` upstream |
+| Cloud (marketplace) | Q4 2026 scope |
+| Integration (SaaS connectors) | Future scope |
+| System: Cache/Backup/Storage/i18n/Notifications | Future scope — spec defines schemas, implementation deferred |
 
 ---
 
