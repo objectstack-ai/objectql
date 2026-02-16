@@ -17,6 +17,18 @@
 import { ExcelDriver } from '@objectql/driver-excel';
 import * as path from 'path';
 
+interface UserRecord {
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+    age: number;
+    department: string;
+    created_at: string;
+    updated_at: string;
+    [key: string]: unknown;
+}
+
 async function demoFilePerObjectMode() {
     console.log('=' .repeat(60));
     console.log('📂 FILE-PER-OBJECT MODE DEMO');
@@ -89,7 +101,7 @@ async function demoSingleFileMode() {
         role: 'admin',
         age: 30,
         department: 'Engineering'
-    });
+    }) as UserRecord;
     console.log('✓ Created:', user1.name, `(ID: ${user1.id})`);
 
     const user2 = await driver.create('users', {
@@ -98,7 +110,7 @@ async function demoSingleFileMode() {
         role: 'user',
         age: 25,
         department: 'Marketing'
-    });
+    }) as UserRecord;
     console.log('✓ Created:', user2.name, `(ID: ${user2.id})`);
 
     const user3 = await driver.create('users', {
@@ -107,7 +119,7 @@ async function demoSingleFileMode() {
         role: 'user',
         age: 35,
         department: 'Engineering'
-    });
+    }) as UserRecord;
     console.log('✓ Created:', user3.name, `(ID: ${user3.id})`);
 
     // Create products
@@ -184,7 +196,7 @@ async function demoSingleFileMode() {
     // ========== Update Operations ==========
     console.log('\n✏️  Updating records...');
 
-    await driver.update('users', user1.id, {
+    await driver.update('users', user1.id as string, {
         email: 'alice.johnson@example.com',
         age: 31
     });
@@ -195,13 +207,15 @@ async function demoSingleFileMode() {
         'users',
         { department: 'Engineering' },
         { department: 'Tech' }
-    );
+    ) as { modifiedCount: number };
     console.log(`✓ Updated ${updateResult.modifiedCount} user(s) department to Tech`);
 
     // ========== Query Updated Data ==========
     console.log('\n🔄 After updates...');
-    const updatedUser1 = await driver.findOne('users', user1.id);
-    console.log(`✓ ${updatedUser1.name}: age=${updatedUser1.age}, email=${updatedUser1.email}`);
+    const updatedUser1 = await driver.findOne('users', user1.id as string) as UserRecord | null;
+    if (updatedUser1) {
+        console.log(`✓ ${updatedUser1.name}: age=${updatedUser1.age}, email=${updatedUser1.email}`);
+    }
 
     const techUsers = await driver.find('users', {
         filters: { department: 'Tech' }
@@ -219,7 +233,7 @@ async function demoSingleFileMode() {
     // ========== Delete Operations ==========
     console.log('\n🗑️  Deleting records...');
 
-    await driver.delete('users', user2.id);
+    await driver.delete('users', user2.id as string);
     console.log(`✓ Deleted ${user2.name}`);
 
     const finalCount = await driver.count('users', {});
@@ -231,7 +245,7 @@ async function demoSingleFileMode() {
     const newUsers = await driver.createMany('users', [
         { name: 'Diana Prince', email: 'diana@example.com', role: 'user', age: 28 },
         { name: 'Ethan Hunt', email: 'ethan@example.com', role: 'admin', age: 40 }
-    ]);
+    ]) as UserRecord[];
     console.log(`✓ Created ${newUsers.length} users in bulk`);
 
     // ========== Final Summary ==========
