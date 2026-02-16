@@ -59,7 +59,7 @@ ObjectQL is the **Standard Protocol for AI Software Generation** — a universal
 
 | Category | Current State | Target State |
 |----------|---------------|--------------|
-| `any` type usage | ~962 instances (753 `: any` + 210 `as any`; core: 31, types: 1 ✅) | < 50 (critical path zero) |
+| `any` type usage | ~912 instances (driver-memory: 38→10, driver-fs: 14→2, driver-excel: 12→2; core: 31, types: 1 ✅) | < 50 (critical path zero) |
 | Error handling | 100% `ObjectQLError` ✅ (zero `throw new Error` in production source) | 100% `ObjectQLError` |
 | Test coverage | 30 of 30 packages have tests ✅ | Full coverage with ≥ 80% per package |
 | Console logging | Near-zero — 3 intentional deprecation warnings in `@objectql/core`, 1 retry log in `sdk`, 2 in `types/logger` fallback | Zero in source; structured logging via hooks |
@@ -784,7 +784,7 @@ Priority tasks following the `@objectstack` v3.0.6 upgrade:
 | 3 | Align `@objectql/types` with `@objectstack/spec` v3.0.6 Zod v4 schemas | High | ✅ Done | `z.infer<>` type derivation compiles correctly against Zod v4 schema exports in `@objectstack/spec@3.0.6`. Verified via 36/36 build tasks passing. |
 | 4 | Core bridge class stabilization | Medium | ✅ Done | `app.ts` bridge class — all `registerObject`, `getObject`, `getConfigs`, `removePackage` overrides align with `@objectstack/objectql@3.0.6` API surface. Build verified. |
 | 5 | Bump `@objectql/*` packages to **4.3.0** | Low | 🟡 Next | Release patch with `@objectstack` v3.0.6 compatibility via Changesets. |
-| 6 | Reduce `any` usage in driver layer | Medium | 🔴 Open | `driver-sql` (50), `driver-redis` (46), `driver-mongo` (44), `driver-memory` (38) — tighten types for production reliability. |
+| 6 | Reduce `any` usage in driver layer | Medium | 🟡 In Progress | `driver-memory` (38→10 ✅), `driver-fs` (14→2 ✅), `driver-excel` (12→2 ✅). Remaining: `driver-sql` (50), `driver-redis` (46), `driver-mongo` (44). |
 | 7 | Structured logging framework | Low | 🔴 Open | Migrate `sdk` retry `console.log` and `types/logger.ts` fallback `console.error` to hook-based structured logging. |
 | 8 | Add tests for `plugin-optimizations` and `plugin-query` | High | ✅ Done | Both packages now have comprehensive test suites — 202 tests across 4 test files. |
 | 9 | Reduce `any` in protocol handlers | Medium | 🔴 Open | `protocol-json-rpc` (102), `protocol-graphql` (101), `protocol-odata-v4` (83) — highest `any` density in the monorepo. |
@@ -1058,19 +1058,19 @@ Standardize third-party plugin distribution.
 | **@objectql/driver-sql** | 50 🔴 | `ObjectQLError` ✅ | 6 | 0 | 0 |
 | **@objectql/driver-redis** | 46 🔴 | `ObjectQLError` ✅ | 2 | 0 | 0 |
 | **@objectql/driver-mongo** | 44 🔴 | `ObjectQLError` ✅ | 4 | 0 | 0 |
-| **@objectql/driver-memory** | 38 | `ObjectQLError` ✅ | 2 | 0 | 0 |
+| **@objectql/driver-memory** | 10 ✅ | `ObjectQLError` ✅ | 2 | 0 | 0 |
 | **@objectql/driver-sqlite-wasm** | 34 | `ObjectQLError` ✅ | 2 | 0 | 0 |
 | **@objectql/driver-pg-wasm** | 33 | `ObjectQLError` ✅ | 2 | 0 | 0 |
 | **@objectql/sdk** | 33 | `ObjectQLError` ✅ | 2 | 1 (retry log) | 0 |
-| **@objectql/driver-fs** | 14 | `ObjectQLError` ✅ | 2 | 0 | 0 |
-| **@objectql/driver-excel** | 12 | `ObjectQLError` ✅ | 2 | 0 | 0 |
+| **@objectql/driver-fs** | 2 ✅ | `ObjectQLError` ✅ | 2 | 0 | 0 |
+| **@objectql/driver-excel** | 2 ✅ | `ObjectQLError` ✅ | 2 | 0 | 0 |
 | **@objectql/cli** | 38 | `ObjectQLError` ✅ | 2 | 211 (expected — CLI) | 0 |
 | **@objectql/create** | 0 ✅ | `ObjectQLError` ✅ | 2 | 4 (user output) | 0 |
 | **@objectql/driver-tck** | 7 | N/A (test harness) | 0 | 1 | 0 |
 | **@objectql/protocol-tck** | 7 | N/A (test harness) | 1 | 3 | 0 |
 | **vscode-objectql** | 16 | `ObjectQLError` ✅ | 1 | 1 | 0 |
 
-**Totals: 962 `any` annotations, 0 `throw new Error`, 0 TODO/FIXME/HACK**
+**Totals: ~912 `any` annotations (↓50 from driver-memory/fs/excel refactoring), 0 `throw new Error`, 0 TODO/FIXME/HACK**
 
 ### `any` Distribution by Layer
 
