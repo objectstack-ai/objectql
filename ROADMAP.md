@@ -27,6 +27,12 @@
   - [Part A: Edge Runtime Support](#part-a-edge-runtime-support)
   - [Part B: Offline-First Sync Protocol](#part-b-offline-first-sync-protocol)
 - [Immediate Next Steps (Post v3.0.4 Upgrade)](#immediate-next-steps-post-v304-upgrade)
+- [`@objectql/core` Deprecation & Migration Plan](#objectqlcore-deprecation--migration-plan)
+  - [Phase A: Decompose ObjectQLPlugin Aggregator (v4.3)](#phase-a-decompose-objectqlplugin-aggregator-v43)
+  - [Phase B: Dispose Bridge Class (v4.3)](#phase-b-dispose-bridge-class-v43)
+  - [Phase C: Dispose Remaining Modules (v4.3)](#phase-c-dispose-remaining-modules-v43)
+  - [Phase D: v5.0 Breaking Release (Q4 2026)](#phase-d-v50-breaking-release-q4-2026)
+  - [Target Architecture — Pure Plugin Marketplace](#target-architecture--pure-plugin-marketplace)
 - [Q4 — Plugin Marketplace & Stabilization](#q4--plugin-marketplace--stabilization)
 - [Package Matrix](#package-matrix)
 - [Removed Packages](#removed-packages)
@@ -46,7 +52,7 @@ ObjectQL is the **Standard Protocol for AI Software Generation** — a universal
 | **Q1** ✅ | Foundation & Browser | WASM drivers, workflow engine, codebase cleanup, core refactoring |
 | **Q2** ✅ | Protocol Maturity | GraphQL subscriptions, OData `$expand`, multi-tenancy plugin |
 | **Q3** ✅ | Edge & Offline | Edge adapter, offline-first sync protocol, sync protocol handler |
-| **Q4** | Marketplace & v5.0 | Plugin marketplace, public API stabilization, v5.0 release |
+| **Q4** | Marketplace & v5.0 | Plugin marketplace, `@objectql/core` full deprecation, public API stabilization, v5.0 release |
 
 ### Code Quality Targets (Cross-Cutting)
 
@@ -753,6 +759,139 @@ Priority tasks following the `@objectstack` v3.0.4 upgrade:
 
 ---
 
+## `@objectql/core` Deprecation & Migration Plan
+
+> Status: **Planned** | Constitutional Basis: `@objectstack/spec` Protocol Specification  
+> Prerequisite: Core refactoring completed — [PR #373](https://github.com/objectstack-ai/objectql/pull/373) (~3,500 → 734 LOC thin bridge + plugin orchestrator)
+
+**Goal:** Fully retire `@objectql/core` as a standalone package. The ObjectQL ecosystem transitions to a **pure plugin architecture** — no aggregator, no bridge, no intermediate layer. All capabilities are delivered as independent, composable `RuntimePlugin` instances registered directly with the `ObjectStackKernel`.
+
+### Phase A: Decompose ObjectQLPlugin Aggregator (v4.3)
+
+> Target: v4.3 release
+
+The `plugin.ts` aggregator (323 LOC) currently bundles multiple concerns behind a single `ObjectQLPlugin` class. Consumers configure it via a monolithic options object:
+
+```typescript
+// ❌ Current — monolithic aggregator (plugin.ts, 323 LOC)
+new ObjectQLPlugin({
+  enableRepository,
+  enableQueryService,
+  enableValidator,
+  enableFormulas,
+  datasources,
+});
+```
+
+**Migration target — explicit, transparent, no magic:**
+
+```typescript
+// ✅ Target — composable, independent plugins
+import { ObjectQLPlugin } from '@objectstack/objectql';       // upstream data engine
+import { QueryPlugin } from '@objectql/plugin-query';
+import { ValidatorPlugin } from '@objectql/plugin-validator';
+import { FormulaPlugin } from '@objectql/plugin-formula';
+
+const kernel = new ObjectStackKernel([
+  new ObjectQLPlugin({ datasources }),
+  new QueryPlugin(),
+  new ValidatorPlugin(),
+  new FormulaPlugin(),
+]);
+```
+
+| Task | Description |
+|------|-------------|
+| Extract repository registration | Move `enableRepository` logic into `@objectstack/objectql` plugin lifecycle |
+| Extract query service wiring | Already in `@objectql/plugin-query` — remove re-export from aggregator |
+| Extract validator wiring | Already in `@objectql/plugin-validator` — remove re-export from aggregator |
+| Extract formula wiring | Already in `@objectql/plugin-formula` — remove re-export from aggregator |
+| Deprecate `ObjectQLPlugin` aggregator class | Mark as deprecated with `console.warn`, point to explicit imports |
+
+### Phase B: Dispose Bridge Class (v4.3)
+
+> Target: v4.3 release
+
+The `app.ts` bridge class (168 LOC) serves as a `MetadataRegistry` intermediary between `ObjectLoader` (platform-node) and the upstream `SchemaRegistry`. This intermediate layer is no longer necessary.
+
+| Task | Description |
+|------|-------------|
+| Move `MetadataRegistry` bridge logic into `@objectql/platform-node` | `ObjectLoader` registers objects directly into the upstream `SchemaRegistry` |
+| Remove `ObjectQL` bridge class | Consumers use `@objectstack/objectql` directly — no wrapping |
+| Update `platform-node` `ObjectLoader` | Direct registration to upstream schema registry, eliminating the bridge |
+
+### Phase C: Dispose Remaining Modules (v4.3)
+
+> Target: v4.3 release
+
+| Module | Action | Rationale |
+|--------|--------|-----------|
+| `kernel-factory.ts` | **Delete** | Users call `new ObjectStackKernel([...plugins])` directly — factory adds no value |
+| `repository.ts` | **Delete** | Direct import: `import { ObjectRepository } from '@objectstack/objectql'` |
+| `util.ts` | **Move to `@objectql/types`** | Pure utility functions belong with the type-only package (zero runtime deps) |
+| `index.ts` | **Reduce to deprecation re-exports** | Emit `console.warn` migration notices, re-export from upstream |
+
+### Phase D: v5.0 Breaking Release (Q4 2026)
+
+> Target: Q4 2026
+
+| Task | Description |
+|------|-------------|
+| Delete all `@objectql/core` source code | Remove `packages/foundation/core/src/*` entirely |
+| Publish `@objectql/core@5.0.0` as empty meta-package | Only `peerDependencies` pointing to individual plugins |
+| Runtime migration warning | `console.warn('@objectql/core is deprecated — see migration guide')` |
+| Update all documentation, examples, and tests | Remove all `@objectql/core` imports from guides, examples, and test fixtures |
+| Update `@objectstack/spec` | Align protocol specification with pure-plugin architecture |
+
+### Target Architecture — Pure Plugin Marketplace
+
+After Phase D, the ObjectQL ecosystem exists as a flat, composable plugin marketplace with **no intermediate aggregation layer**:
+
+```
+@objectql/types                  # 宪法 — The Constitution (immutable)
+@objectql/plugin-query           # Query enhancement (QueryService, QueryBuilder)
+@objectql/plugin-validator       # Declarative validation (5-type engine)
+@objectql/plugin-formula         # Computed fields (sandboxed expressions)
+@objectql/plugin-security        # RBAC / FLS / RLS
+@objectql/plugin-optimizations   # Connection pooling, query compilation
+@objectql/plugin-workflow        # State machine executor
+@objectql/plugin-multitenancy    # Tenant isolation
+@objectql/plugin-sync            # Offline-first sync engine
+@objectql/protocol-graphql       # GraphQL protocol adapter
+@objectql/protocol-odata-v4      # OData V4 protocol adapter
+@objectql/protocol-json-rpc      # JSON-RPC protocol adapter
+@objectql/protocol-sync          # Sync protocol handler
+@objectql/platform-node          # Node.js platform binding
+@objectql/edge-adapter           # Edge runtime binding
+@objectql/driver-*               # Database drivers (sql, mongo, memory, fs, etc.)
+```
+
+**Kernel bootstrapping (target form):**
+
+```typescript
+import { ObjectStackKernel } from '@objectstack/runtime';
+import { ObjectQLPlugin } from '@objectstack/objectql';
+import { QueryPlugin } from '@objectql/plugin-query';
+import { ValidatorPlugin } from '@objectql/plugin-validator';
+import { FormulaPlugin } from '@objectql/plugin-formula';
+import { SecurityPlugin } from '@objectql/plugin-security';
+import { SqlDriver } from '@objectql/driver-sql';
+import { HonoServerPlugin } from '@objectstack/plugin-hono-server';
+
+const kernel = new ObjectStackKernel([
+  new ObjectQLPlugin({ datasources: { default: new SqlDriver({ url }) } }),
+  new QueryPlugin(),
+  new ValidatorPlugin(),
+  new FormulaPlugin(),
+  new SecurityPlugin(),
+  new HonoServerPlugin({ port: 3004 }),
+]);
+
+await kernel.start();
+```
+
+---
+
 ## Q4 — Plugin Marketplace & Stabilization
 
 > Status: **Planned** | Target: 2026-10 — 2026-12
@@ -774,6 +913,7 @@ Standardize third-party plugin distribution.
 |------|-------------|
 | Public API audit | Lock down all `@objectql/*` public interfaces for semver stability |
 | Remove all deprecated APIs | Clean up v3 → v4 migration leftovers |
+| **`@objectql/core` Phase D** | Publish `@objectql/core@5.0.0` empty meta-package — see [`@objectql/core` Deprecation & Migration Plan](#objectqlcore-deprecation--migration-plan) |
 | Performance benchmark suite | Automated CI benchmarks |
 | Protocol compliance to 100% | Final push for all three protocols |
 | v5.0 release | Major version with stable public API guarantee |
@@ -789,7 +929,7 @@ Standardize third-party plugin distribution.
 | Package | NPM Name | Environment | Description |
 |---------|----------|-------------|-------------|
 | `packages/foundation/types` | `@objectql/types` | Universal | **The Constitution.** Protocol-derived TypeScript types. Zero runtime deps. |
-| `packages/foundation/core` | `@objectql/core` | Universal | **The Engine.** Plugin orchestrator, repository pattern, kernel factory. |
+| `packages/foundation/core` | `@objectql/core` | Universal | ⚠️ **Deprecated.** Thin bridge + plugin orchestrator — see [Migration Plan](#objectqlcore-deprecation--migration-plan). Use `@objectstack/objectql` + individual plugins. |
 | `packages/foundation/plugin-query` | `@objectql/plugin-query` | Universal | QueryService, QueryBuilder, QueryAnalyzer, FilterTranslator. |
 | `packages/foundation/plugin-optimizations` | `@objectql/plugin-optimizations` | Universal | Connection pooling, query compilation, compiled hooks, lazy metadata. |
 | `packages/foundation/platform-node` | `@objectql/platform-node` | Node.js | File system integration, YAML loading, glob-based plugin discovery. |
@@ -954,6 +1094,14 @@ Standardize third-party plugin distribution.
 **Decision:** LWW-Register (Last-Writer-Wins Register) at field level for CRDT sync strategy.
 
 **Rationale:** Simple, no special data structures, well-suited for form-based apps. **Status:** Accepted.
+
+### ADR-010: Full deprecation of `@objectql/core`
+
+**Context:** Following the core refactoring ([PR #373](https://github.com/objectstack-ai/objectql/pull/373)), `@objectql/core` was reduced from ~3,500 LOC to 734 LOC — a thin bridge + plugin orchestrator. The remaining intermediate layer violates the ObjectStack microkernel + plugin architecture mandated by `@objectstack/spec`. The `ObjectQLPlugin` aggregator (323 LOC) bundles concerns that should be independently composable, and the `ObjectQL` bridge class (168 LOC) duplicates functionality now native to `@objectstack/objectql`.
+
+**Decision:** Fully retire `@objectql/core` through a phased migration (Phases A–D). At v5.0, publish as an empty meta-package with `peerDependencies` pointing to individual plugins. All capabilities move to their natural homes: plugins to their respective `@objectql/plugin-*` packages, bridge logic to `@objectql/platform-node`, utility functions to `@objectql/types`.
+
+**Rationale:** Eliminates the last monolithic aggregation layer. Consumers gain explicit, transparent dependency management — no hidden magic. Aligns fully with `@objectstack/spec` protocol-driven, plugin-composable philosophy. **Status:** Accepted.
 
 ---
 
