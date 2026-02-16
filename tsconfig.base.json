@@ -16,6 +16,7 @@
       "@objectstack/spec/api": ["./node_modules/@objectstack/spec/dist/api/index.d.ts"],
       "@objectstack/spec/ui": ["./node_modules/@objectstack/spec/dist/ui/index.d.ts"],
       "@objectstack/spec/ai": ["./node_modules/@objectstack/spec/dist/ai/index.d.ts"],
+      "@objectstack/spec/contracts": ["./node_modules/@objectstack/spec/dist/contracts/index.d.ts"],
       "@objectql/types": ["packages/foundation/types/dist/index.d.ts"]
     },
     "composite": true,
