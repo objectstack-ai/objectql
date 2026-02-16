@@ -1,7 +1,7 @@
 # ObjectQL — 2026 Roadmap
 
 > Created: 2026-02-08 | Last Updated: 2026-02-16 | Status: **Active**  
-> Current Version: **4.2.2** (all packages aligned, root 4.2.0, vscode-objectql 4.2.0)  
+> Current Version: **4.2.2** (29 workspace packages; exceptions: root 4.2.0, vscode-objectql 4.2.0)  
 > Runtime: `@objectstack/cli` v3.0.6 (Kernel pattern) — `@objectql/server` removed, `packages/runtime/` removed.  
 > @objectstack Platform: **v3.0.6**
 
@@ -447,7 +447,7 @@ See [Q1 Phase 3 Part A](#part-a-housekeeping-1-week) above.
 | Bump version to 4.2.0 | Align with monorepo | ✅ Done |
 | Add basic test suite | Extension activation, schema validation, snippet tests | ✅ Done (1 test file) |
 | Publish to VS Code Marketplace | If not already published | ⏳ Remaining |
-| Bump version to 4.2.2 | Align with other packages | 🔴 Open |
+| Bump version to 4.2.2 | Align with other workspace packages (currently at 4.2.0) | 🔴 Open |
 
 ### Phase 7: Performance & Bundle Optimization
 
@@ -953,7 +953,7 @@ Standardize third-party plugin distribution.
 
 ## Package Matrix
 
-> All packages at **4.2.2** unless noted. Root package.json at 4.2.0.
+> 29 workspace packages at **4.2.2**. Exceptions: root package.json at 4.2.0, vscode-objectql at 4.2.0.
 
 ### Foundation Layer
 
