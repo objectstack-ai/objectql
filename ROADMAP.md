@@ -1115,7 +1115,7 @@ Standardize third-party plugin distribution.
 | **Shared** (field types, naming, http) | ~59 | ✅ Implemented | Used throughout types |
 | **System** (multi-tenancy, sync, CRDT) | ~488 | 🟡 Partial | Multi-tenancy ✅, sync ✅, but cache/backup/storage/i18n/notifications/feature-flags NOT implemented |
 | **Kernel** (plugins, events, lifecycle) | ~409 | 🟡 Partial | Plugin lifecycle handled by @objectstack/core externally |
-| **Contracts** (service interfaces) | ~78 | 🟡 Partial | Some interfaces implemented ad-hoc, not systematically aligned |
+| **Contracts** (service interfaces) | ~78 | ✅ Implemented | All 20+ IService contracts re-exported from `@objectql/types` via `contracts.ts` |
 | **Integration** (connectors, webhooks) | ~153 | 🔴 Not implemented | SaaS connectors, message queues, deployment — future scope |
 | **AI** (agents, MCP, RAG, NLQ) | ~359 | 🔴 Not implemented | Separate project per ADR-003 |
 | **Identity** (users, sessions, SCIM) | ~64 | 🔴 Not implemented | Handled by @objectstack/plugin-auth upstream |
@@ -1227,7 +1227,6 @@ ObjectQL implements the **data layer compiler** portion of the ObjectStack proto
 | Domain | Gap Description |
 |--------|----------------|
 | System: Observability | Logger types exist in `@objectql/types`, but full OpenTelemetry tracing/metrics/audit not implemented |
-| Contracts: Service Interfaces | Some interfaces implemented ad-hoc across packages, not systematically aligned with spec's 20+ `IService` contracts |
 | QA: Testing | TCK packages exist but not formally aligned with spec's `TestSuiteSchema` / `TestScenarioSchema` |
 
 ### 🔴 Out of Scope (handled externally or future)
