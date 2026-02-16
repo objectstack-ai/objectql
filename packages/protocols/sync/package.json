@@ -1,6 +1,6 @@
 {
   "name": "@objectql/protocol-sync",
-  "version": "4.2.1",
+  "version": "4.2.2",
   "description": "Server-side sync protocol for ObjectQL - delta computation, change tracking, and conflict resolution",
   "type": "module",
   "main": "./dist/index.js",

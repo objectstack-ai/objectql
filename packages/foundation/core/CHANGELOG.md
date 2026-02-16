@@ -1,5 +1,16 @@
 # @objectql/core
 
+## 4.2.2
+
+### Patch Changes
+
+- 9a30c50: Patch release for all packages
+  - @objectql/plugin-formula@4.2.2
+  - @objectql/plugin-optimizations@4.2.2
+  - @objectql/plugin-query@4.2.2
+  - @objectql/plugin-validator@4.2.2
+  - @objectql/types@4.2.2
+
 ## 4.2.1
 
 ### Patch Changes

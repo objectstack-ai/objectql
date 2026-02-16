@@ -1,6 +1,6 @@
 {
   "name": "@objectql/driver-excel",
-  "version": "4.2.1",
+  "version": "4.2.2",
   "description": "Excel file driver for ObjectQL - Read/write data from Excel files (.xlsx) with flexible storage modes",
   "keywords": [
     "objectql",

@@ -1,5 +1,11 @@
 # @objectql/driver-mongo
 
+## 4.2.2
+
+### Patch Changes
+
+- @objectql/types@4.2.2
+
 ## 4.2.1
 
 ### Patch Changes

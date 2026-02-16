@@ -1,5 +1,12 @@
 # @objectql/driver-pg-wasm
 
+## 4.2.2
+
+### Patch Changes
+
+- @objectql/driver-sql@4.2.2
+- @objectql/types@4.2.2
+
 ## 4.2.1
 
 ### Patch Changes

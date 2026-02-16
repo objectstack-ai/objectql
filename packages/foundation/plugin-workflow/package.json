@@ -1,6 +1,6 @@
 {
   "name": "@objectql/plugin-workflow",
-  "version": "4.2.1",
+  "version": "4.2.2",
   "description": "State machine workflow engine plugin for ObjectQL - Full XState-level state machine executor with guards, actions, and compound states",
   "keywords": [
     "objectql",

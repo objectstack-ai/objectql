@@ -1,6 +1,6 @@
 {
   "name": "@objectql/driver-pg-wasm",
-  "version": "4.2.1",
+  "version": "4.2.2",
   "description": "PostgreSQL WASM driver for ObjectQL - Browser-native PostgreSQL database with IndexedDB/OPFS persistence",
   "keywords": [
     "objectql",
