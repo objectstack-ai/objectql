@@ -173,12 +173,12 @@ describe('QueryCompiler', () => {
             compiler.compile('b', ast2);
             compiler.compile('c', ast3);
 
-            // Cache full (capacity=3). Adding 4th should evict ast1.
+            // Cache full (capacity=3). Adding 4th should evict ast1 (LRU).
             compiler.compile('d', ast4);
 
-            // ast1 should be evicted → re-compile produces new timestamp
+            // ast1 should be evicted → re-compile returns a new object reference
             const r1Again = compiler.compile('a', ast1);
-            expect(r1Again.timestamp).not.toBe(r1.timestamp);
+            expect(r1Again).not.toBe(r1);
         });
     });
 
