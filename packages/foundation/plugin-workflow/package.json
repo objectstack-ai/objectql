@@ -31,8 +31,8 @@
   },
   "dependencies": {
     "@objectql/types": "workspace:*",
-    "@objectstack/core": "^3.0.4",
-    "@objectstack/spec": "^3.0.4",
+    "@objectstack/core": "^3.0.6",
+    "@objectstack/spec": "^3.0.6",
     "zod": "^4.3.6"
   },
   "devDependencies": {
