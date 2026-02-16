@@ -2,6 +2,11 @@
  * ObjectQL Bridge Class
  * Copyright (c) 2026-present ObjectStack Inc.
  *
+ * @deprecated This bridge class is deprecated. Use `@objectstack/objectql` ObjectQL directly.
+ * The MetadataRegistry bridge is no longer necessary — ObjectLoader should register objects
+ * directly into the upstream SchemaRegistry via `@objectql/platform-node`.
+ * This class will be removed in v5.0.
+ *
  * Extends the upstream @objectstack/objectql.ObjectQL engine with:
  *  - Legacy constructor config (datasources map)
  *  - MetadataRegistry integration (for ObjectLoader filesystem loading)
@@ -39,6 +44,8 @@ export interface ObjectQLConfig {
 /**
  * ObjectQL — drop-in replacement that bridges the upstream engine
  * with the @objectql/types MetadataRegistry used by ObjectLoader.
+ *
+ * @deprecated Use `@objectstack/objectql` ObjectQL directly. This bridge will be removed in v5.0.
  */
 export class ObjectQL extends UpstreamObjectQL {
   /**
@@ -59,6 +66,13 @@ export class ObjectQL extends UpstreamObjectQL {
   constructor(config: ObjectQLConfig = {}) {
     // Upstream constructor only accepts hostContext
     super();
+
+    // Emit deprecation warning
+    console.warn(
+      '[@objectql/core] ObjectQL bridge class is deprecated. ' +
+      'Use ObjectQL from `@objectstack/objectql` directly. ' +
+      'See: https://github.com/objectstack-ai/spec/blob/main/content/docs/guides/objectql-migration.mdx'
+    );
 
     // Store drivers for registration during init()
     if (config.datasources) {

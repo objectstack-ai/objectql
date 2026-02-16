@@ -4,6 +4,9 @@
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
+ *
+ * @deprecated Use `new ObjectStackKernel([...plugins])` directly from `@objectstack/runtime`.
+ * This factory will be removed in v5.0.
  */
 
 import { ObjectKernel } from '@objectstack/runtime';
@@ -12,6 +15,7 @@ import type { Plugin } from '@objectstack/core';
 
 /**
  * Options for creating an ObjectQL Kernel
+ * @deprecated Use `new ObjectStackKernel([...plugins])` from `@objectstack/runtime` instead.
  */
 export interface ObjectQLKernelOptions {
   /**
@@ -23,23 +27,27 @@ export interface ObjectQLKernelOptions {
 /**
  * Convenience factory for creating an ObjectQL-ready kernel.
  *
- * Creates an ObjectStackKernel pre-configured with the upstream ObjectQLPlugin
- * (data engine, schema registry, protocol implementation) plus any additional
- * plugins provided.
+ * @deprecated Use `new ObjectStackKernel([...plugins])` from `@objectstack/runtime` instead.
+ * This factory will be removed in v5.0.
  *
  * @example
  * ```typescript
+ * // ❌ Deprecated
  * import { createObjectQLKernel } from '@objectql/core';
- * import { QueryPlugin } from '@objectql/plugin-query';
- * import { OptimizationsPlugin } from '@objectql/plugin-optimizations';
+ * const kernel = createObjectQLKernel({ plugins: [...] });
  *
- * const kernel = createObjectQLKernel({
- *   plugins: [new QueryPlugin(), new OptimizationsPlugin()],
- * });
- * await kernel.start();
+ * // ✅ Recommended
+ * import { ObjectStackKernel } from '@objectstack/runtime';
+ * import { ObjectQLPlugin } from '@objectstack/objectql';
+ * const kernel = new ObjectStackKernel([new ObjectQLPlugin(), ...plugins]);
  * ```
  */
 export function createObjectQLKernel(options: ObjectQLKernelOptions = {}): ObjectKernel {
+  console.warn(
+    '[@objectql/core] createObjectQLKernel() is deprecated. ' +
+    'Use `new ObjectStackKernel([new ObjectQLPlugin(), ...plugins])` from `@objectstack/runtime` instead. ' +
+    'See: https://github.com/objectstack-ai/spec/blob/main/content/docs/guides/objectql-migration.mdx'
+  );
   return new (ObjectKernel as any)([
     new UpstreamObjectQLPlugin(),
     ...(options.plugins || []),
