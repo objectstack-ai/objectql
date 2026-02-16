@@ -19,13 +19,13 @@
   },
   "dependencies": {
     "@objectql/types": "workspace:*",
-    "@objectstack/spec": "^3.0.4",
+    "@objectstack/spec": "^3.0.6",
     "zod": "^4.3.6"
   },
   "devDependencies": {
     "@objectql/driver-memory": "workspace:*",
     "@objectql/protocol-tck": "workspace:*",
-    "@objectstack/core": "^3.0.4",
+    "@objectstack/core": "^3.0.6",
     "typescript": "^5.3.3",
     "vitest": "^1.0.4"
   },
