@@ -300,8 +300,8 @@ export class ExcelDriver extends MemoryDriver {
     /**
      * Parse worksheet into array of records.
      */
-    private parseWorksheet(worksheet: ExcelJS.Worksheet): any[] {
-        const records: any[] = [];
+    private parseWorksheet(worksheet: ExcelJS.Worksheet): Record<string, unknown>[] {
+        const records: Record<string, unknown>[] = [];
         const headers: string[] = [];
         
         worksheet.eachRow((row, rowNumber) => {
@@ -310,7 +310,7 @@ export class ExcelDriver extends MemoryDriver {
                     headers.push(String(cell.value || ''));
                 });
             } else {
-                const record: any = {};
+                const record: Record<string, unknown> = {};
                 row.eachCell((cell, colNumber) => {
                     const header = headers[colNumber - 1];
                     if (header) {
@@ -447,8 +447,8 @@ export class ExcelDriver extends MemoryDriver {
     /**
      * Get all records for an object from memory store.
      */
-    private getObjectRecords(objectName: string): any[] {
-        const records: any[] = [];
+    private getObjectRecords(objectName: string): Record<string, unknown>[] {
+        const records: Record<string, unknown>[] = [];
         const prefix = `${objectName}:`;
         
         for (const [key, value] of this.store.entries()) {
@@ -463,7 +463,7 @@ export class ExcelDriver extends MemoryDriver {
     /**
      * Populate worksheet with records.
      */
-    private populateWorksheet(worksheet: ExcelJS.Worksheet, records: any[]): void {
+    private populateWorksheet(worksheet: ExcelJS.Worksheet, records: Record<string, unknown>[]): void {
         if (records.length === 0) {
             return;
         }
@@ -485,7 +485,7 @@ export class ExcelDriver extends MemoryDriver {
         });
         
         // Auto-fit columns
-        worksheet.columns.forEach((column: any) => {
+        worksheet.columns.forEach((column: Partial<ExcelJS.Column>) => {
             if (column.header) {
                 column.width = Math.max(10, String(column.header).length + 2);
             }
@@ -524,7 +524,7 @@ export class ExcelDriver extends MemoryDriver {
     /**
      * Override create to persist to Excel.
      */
-    async create(objectName: string, data: any, options?: any): Promise<any> {
+    async create(objectName: string, data: Record<string, unknown>, options?: Record<string, unknown>): Promise<Record<string, unknown>> {
         const result = await super.create(objectName, data, options);
         await this.syncToWorkbook(objectName);
         return result;
@@ -533,7 +533,7 @@ export class ExcelDriver extends MemoryDriver {
     /**
      * Override update to persist to Excel.
      */
-    async update(objectName: string, id: string | number, data: any, options?: any): Promise<any> {
+    async update(objectName: string, id: string | number, data: Record<string, unknown>, options?: Record<string, unknown>): Promise<Record<string, unknown>> {
         const result = await super.update(objectName, id, data, options);
         if (result) {
             await this.syncToWorkbook(objectName);
@@ -544,7 +544,7 @@ export class ExcelDriver extends MemoryDriver {
     /**
      * Override delete to persist to Excel.
      */
-    async delete(objectName: string, id: string | number, options?: any): Promise<any> {
+    async delete(objectName: string, id: string | number, options?: Record<string, unknown>): Promise<unknown> {
         const result = await super.delete(objectName, id, options);
         if (result) {
             await this.syncToWorkbook(objectName);
