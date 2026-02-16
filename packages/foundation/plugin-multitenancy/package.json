@@ -1,6 +1,6 @@
 {
   "name": "@objectql/plugin-multitenancy",
-  "version": "4.2.1",
+  "version": "4.2.2",
   "description": "Multi-tenancy plugin for ObjectQL - Automatic tenant isolation with query filtering and schema separation",
   "keywords": [
     "objectql",

@@ -1,6 +1,6 @@
 {
   "name": "@objectql/driver-fs",
-  "version": "4.2.1",
+  "version": "4.2.2",
   "description": "File system driver for ObjectQL - JSON file-based storage with one file per table",
   "keywords": [
     "objectql",

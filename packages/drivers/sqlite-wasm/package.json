@@ -1,6 +1,6 @@
 {
   "name": "@objectql/driver-sqlite-wasm",
-  "version": "4.2.1",
+  "version": "4.2.2",
   "description": "SQLite WASM driver for ObjectQL - Browser-native SQL database with OPFS persistence",
   "keywords": [
     "objectql",

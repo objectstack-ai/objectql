@@ -1,5 +1,12 @@
 # Changelog
 
+## 4.2.2
+
+### Patch Changes
+
+- @objectql/driver-memory@4.2.2
+- @objectql/types@4.2.2
+
 ## 4.2.1
 
 ### Patch Changes
