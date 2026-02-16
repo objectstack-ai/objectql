@@ -39,3 +39,4 @@ export * from './ai';
 export * from './sync';
 export * from './edge';
 export * from './kernel-service';
+export * from './util';

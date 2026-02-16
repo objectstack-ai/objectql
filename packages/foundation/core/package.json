@@ -1,8 +1,8 @@
 {
   "name": "@objectql/core",
   "version": "4.2.2",
-  "deprecated": "Use @objectstack/objectql instead. See https://github.com/objectstack-ai/spec/blob/main/content/docs/guides/objectql-migration.mdx",
-  "description": "DEPRECATED — Use @objectstack/objectql. Plugin orchestrator for ObjectQL sub-plugins (validator, formula, query).",
+  "deprecated": "Use @objectstack/objectql and individual plugins instead. See https://github.com/objectstack-ai/spec/blob/main/content/docs/guides/objectql-migration.mdx",
+  "description": "DEPRECATED — Use @objectstack/objectql + @objectql/plugin-query + @objectql/plugin-validator + @objectql/plugin-formula. All functionality has been decomposed into individual plugin packages.",
   "keywords": [
     "objectql",
     "orm",

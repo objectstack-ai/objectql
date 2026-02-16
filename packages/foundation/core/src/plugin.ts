@@ -4,6 +4,13 @@
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
+ *
+ * @deprecated This aggregator plugin is deprecated. Import and compose plugins directly:
+ *   - `@objectstack/objectql` ObjectQLPlugin (upstream data engine)
+ *   - `@objectql/plugin-query` QueryPlugin
+ *   - `@objectql/plugin-validator` ValidatorPlugin
+ *   - `@objectql/plugin-formula` FormulaPlugin
+ * This class will be removed in v5.0.
  */
 
 import type { RuntimePlugin, RuntimeContext } from '@objectql/types';
@@ -65,18 +72,37 @@ export interface ObjectQLPluginConfig {
 /**
  * ObjectQL Plugin
  * 
- * Thin orchestrator that composes ObjectQL's extension plugins
- * (QueryPlugin, ValidatorPlugin, FormulaPlugin, AI) on top of the microkernel.
+ * @deprecated This aggregator plugin is deprecated. Compose plugins directly instead:
+ * ```typescript
+ * import { ObjectQLPlugin } from '@objectstack/objectql';
+ * import { QueryPlugin } from '@objectql/plugin-query';
+ * import { ValidatorPlugin } from '@objectql/plugin-validator';
+ * import { FormulaPlugin } from '@objectql/plugin-formula';
  * 
- * Delegates query execution to @objectql/plugin-query and provides
- * repository-pattern CRUD bridging to the kernel.
+ * const kernel = new ObjectStackKernel([
+ *   new ObjectQLPlugin({ datasources }),
+ *   new QueryPlugin(),
+ *   new ValidatorPlugin(),
+ *   new FormulaPlugin(),
+ * ]);
+ * ```
+ * This class will be removed in v5.0.
  */
 export class ObjectQLPlugin implements RuntimePlugin {
   name = '@objectql/core';
-  version = '4.2.0';
+  version = '4.2.2';
   private logger: Logger;
   
   constructor(private config: ObjectQLPluginConfig = {}, _ql?: any) {
+    // Emit deprecation warning
+    console.warn(
+      '[@objectql/core] ObjectQLPlugin aggregator is deprecated. ' +
+      'Compose plugins directly: import { QueryPlugin } from \'@objectql/plugin-query\'; ' +
+      'import { ValidatorPlugin } from \'@objectql/plugin-validator\'; ' +
+      'import { FormulaPlugin } from \'@objectql/plugin-formula\'; ' +
+      'See: https://github.com/objectstack-ai/spec/blob/main/content/docs/guides/objectql-migration.mdx'
+    );
+
     // Set defaults
     this.config = {
       enableRepository: true,

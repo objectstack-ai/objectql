@@ -46,7 +46,7 @@ describe('ObjectQLPlugin Integration', () => {
         it('should have correct name and version', () => {
             plugin = new ObjectQLPlugin();
             expect(plugin.name).toBe('@objectql/core');
-            expect(plugin.version).toBe('4.2.0');
+            expect(plugin.version).toBe('4.2.2');
         });
     });
 

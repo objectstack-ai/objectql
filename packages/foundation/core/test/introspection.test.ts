@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { convertIntrospectedSchemaToObjects } from '../src/util';
+import { convertIntrospectedSchemaToObjects } from '@objectql/types';
 import { IntrospectedSchema } from '@objectql/types';
 
 describe('convertIntrospectedSchemaToObjects', () => {
