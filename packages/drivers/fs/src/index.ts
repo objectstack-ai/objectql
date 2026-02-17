@@ -46,12 +46,12 @@ import { MemoryDriver, MemoryDriverConfig } from '@objectql/driver-memory';
 export interface Command {
     type: 'create' | 'update' | 'delete' | 'bulkCreate' | 'bulkUpdate' | 'bulkDelete';
     object: string;
-    data?: any;
+    data?: Record<string, unknown>;
     id?: string | number;
     ids?: Array<string | number>;
-    records?: any[];
-    updates?: Array<{id: string | number, data: any}>;
-    options?: any;
+    records?: Record<string, unknown>[];
+    updates?: Array<{id: string | number, data: Record<string, unknown>}>;
+    options?: Record<string, unknown>;
 }
 
 /**
@@ -59,7 +59,7 @@ export interface Command {
  */
 export interface CommandResult {
     success: boolean;
-    data?: any;
+    data?: unknown;
     affected: number;
     error?: string;
 }
@@ -91,7 +91,7 @@ export class FileSystemDriver extends MemoryDriver {
     private dataDir: string;
     private prettyPrint: boolean;
     private enableBackup: boolean;
-    private cache: Map<string, any[]>;
+    private cache: Map<string, Record<string, unknown>[]>;
 
     constructor(config: FileSystemDriverConfig) {
         // Initialize parent with inherited config properties
@@ -108,7 +108,7 @@ export class FileSystemDriver extends MemoryDriver {
         this.dataDir = path.resolve(config.dataDir);
         this.prettyPrint = config.prettyPrint !== false;
         this.enableBackup = config.enableBackup !== false;
-        this.cache = new Map<string, any[]>();
+        this.cache = new Map<string, Record<string, unknown>[]>();
 
         // Ensure data directory exists
         if (!fs.existsSync(this.dataDir)) {
@@ -146,7 +146,7 @@ export class FileSystemDriver extends MemoryDriver {
     /**
      * Load records for an object type from disk
      */
-    protected loadRecordsFromDisk(objectName: string): any[] {
+    protected loadRecordsFromDisk(objectName: string): Record<string, unknown>[] {
         const filePath = this.getFilePath(objectName);
         
         if (!fs.existsSync(filePath)) {
@@ -170,7 +170,7 @@ export class FileSystemDriver extends MemoryDriver {
     /**
      * Save records for an object type to disk
      */
-    protected saveRecordsToDisk(objectName: string, records: any[]): void {
+    protected saveRecordsToDisk(objectName: string, records: Record<string, unknown>[]): void {
         const filePath = this.getFilePath(objectName);
         
         // Create backup if enabled
@@ -208,7 +208,7 @@ export class FileSystemDriver extends MemoryDriver {
     /**
      * Override create to persist to disk
      */
-    async create(objectName: string, data: any, options?: any): Promise<any> {
+    async create(objectName: string, data: Record<string, unknown>, options?: Record<string, unknown>): Promise<Record<string, unknown>> {
         if (!objectName || objectName.trim() === '') {
             throw new ObjectQLError({
                 code: 'INVALID_OBJECT_NAME',
@@ -229,7 +229,7 @@ export class FileSystemDriver extends MemoryDriver {
     /**
      * Override update to persist to disk
      */
-    async update(objectName: string, id: string | number, data: any, options?: any): Promise<any> {
+    async update(objectName: string, id: string | number, data: Record<string, unknown>, options?: Record<string, unknown>): Promise<Record<string, unknown>> {
         const result = await super.update(objectName, id, data, options);
         if (result) {
             this.syncObjectToDisk(objectName);
@@ -240,7 +240,7 @@ export class FileSystemDriver extends MemoryDriver {
     /**
      * Override delete to persist to disk
      */
-    async delete(objectName: string, id: string | number, options?: any): Promise<any> {
+    async delete(objectName: string, id: string | number, options?: Record<string, unknown>): Promise<unknown> {
         const result = await super.delete(objectName, id, options);
         if (result) {
             this.syncObjectToDisk(objectName);
@@ -251,7 +251,7 @@ export class FileSystemDriver extends MemoryDriver {
     /**
      * Override find to load from disk if not in cache
      */
-    async find(objectName: string, query: any = {}, options?: any): Promise<any[]> {
+    async find(objectName: string, query: object = {}, options?: Record<string, unknown>): Promise<Record<string, unknown>[]> {
         // Check if we need to load from disk (e.g., file created externally)
         const filePath = this.getFilePath(objectName);
         const hasRecordsInMemory = Array.from(this.store.keys()).some(key => key.startsWith(`${objectName}:`));
@@ -275,7 +275,7 @@ export class FileSystemDriver extends MemoryDriver {
      * Sync an object type's data to disk
      */
     protected syncObjectToDisk(objectName: string): void {
-        const records: any[] = [];
+        const records: Record<string, unknown>[] = [];
         const prefix = `${objectName}:`;
         
         for (const [key, value] of this.store.entries()) {

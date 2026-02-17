@@ -41,17 +41,35 @@ import { Driver, ObjectQLError } from '@objectql/types';
 import { Query, Aggregator } from 'mingo';
 
 /**
+ * Typed wrapper for Mingo query operations.
+ * Centralizes the type casts required for Mingo library interop,
+ * since Mingo expects `Record<string, any>` but we use `Record<string, unknown>`.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type MingoCompatible = Record<string, any>;
+
+function mingoFind(records: Record<string, unknown>[], mongoQuery: Record<string, unknown>): Record<string, unknown>[] {
+    const query = new Query(mongoQuery as MingoCompatible);
+    return query.find(records as MingoCompatible[]).all() as Record<string, unknown>[];
+}
+
+function mingoAggregate(records: Record<string, unknown>[], pipeline: Record<string, unknown>[]): Record<string, unknown>[] {
+    const aggregator = new Aggregator(pipeline as MingoCompatible[]);
+    return aggregator.run(records as MingoCompatible[]) as Record<string, unknown>[];
+}
+
+/**
  * Command interface for executeCommand method
  */
 export interface Command {
     type: 'create' | 'update' | 'delete' | 'bulkCreate' | 'bulkUpdate' | 'bulkDelete';
     object: string;
-    data?: any;
+    data?: Record<string, unknown>;
     id?: string | number;
     ids?: Array<string | number>;
-    records?: any[];
-    updates?: Array<{id: string | number, data: any}>;
-    options?: any;
+    records?: Record<string, unknown>[];
+    updates?: Array<{id: string | number, data: Record<string, unknown>}>;
+    options?: Record<string, unknown>;
 }
 
 /**
@@ -59,7 +77,7 @@ export interface Command {
  */
 export interface CommandResult {
     success: boolean;
-    data?: any;
+    data?: unknown;
     affected: number; // Required (changed from optional)
     error?: string;
 }
@@ -69,7 +87,7 @@ export interface CommandResult {
  */
 export interface MemoryDriverConfig {
     /** Optional: Initial data to populate the store */
-    initialData?: Record<string, any[]>;
+    initialData?: Record<string, Record<string, unknown>[]>;
     /** Optional: Enable strict mode (throw on missing objects) */
     strictMode?: boolean;
     /** Optional: Enable persistence to file system */
@@ -88,8 +106,8 @@ export interface MemoryDriverConfig {
  */
 interface MemoryTransaction {
     id: string;
-    snapshot: Map<string, any>;
-    operations: Array<{ type: 'set' | 'delete'; key: string; value?: any }>;
+    snapshot: Map<string, Record<string, unknown>>;
+    operations: Array<{ type: 'set' | 'delete'; key: string; value?: unknown }>;
 }
 
 /**
@@ -118,7 +136,7 @@ export class MemoryDriver implements Driver {
         querySubqueries: false
     };
 
-    protected store: Map<string, any>;
+    protected store: Map<string, Record<string, unknown>>;
     protected config: MemoryDriverConfig;
     protected idCounters: Map<string, number>;
     protected transactions: Map<string, MemoryTransaction>;
@@ -127,7 +145,7 @@ export class MemoryDriver implements Driver {
 
     constructor(config: MemoryDriverConfig = {}) {
         this.config = config;
-        this.store = new Map<string, any>();
+        this.store = new Map<string, Record<string, unknown>>();
         this.idCounters = new Map<string, number>();
         this.transactions = new Map();
         this.indexes = new Map();
@@ -167,7 +185,7 @@ export class MemoryDriver implements Driver {
     /**
      * Load initial data into the store.
      */
-    protected loadInitialData(data: Record<string, any[]>): void {
+    protected loadInitialData(data: Record<string, Record<string, unknown>[]>): void {
         for (const [objectName, records] of Object.entries(data)) {
             for (const record of records) {
                 const id = record.id || this.generateId(objectName);
@@ -181,10 +199,10 @@ export class MemoryDriver implements Driver {
      * Find multiple records matching the query criteria.
      * Supports filtering, sorting, pagination, and field projection using Mingo.
      */
-    async find(objectName: string, query: any = {}, _options?: any): Promise<any[]> {
+    async find(objectName: string, query: object = {}, _options?: Record<string, unknown>): Promise<Record<string, unknown>[]> {
         // Get all records for this object type
         const pattern = `${objectName}:`;
-        let records: any[] = [];
+        let records: Record<string, unknown>[] = [];
         
         for (const [key, value] of this.store.entries()) {
             if (key.startsWith(pattern)) {
@@ -193,30 +211,30 @@ export class MemoryDriver implements Driver {
         }
         
         // Convert ObjectQL filters to MongoDB query format
-        const mongoQuery = this.convertToMongoQuery(query.where);
+        const q = query as Record<string, unknown>;
+        const mongoQuery = this.convertToMongoQuery(q.where as Record<string, unknown> | unknown[] | undefined);
         
         // Apply filters using Mingo
         if (mongoQuery && Object.keys(mongoQuery).length > 0) {
-            const mingoQuery = new Query(mongoQuery);
-            records = mingoQuery.find(records).all();
+            records = mingoFind(records, mongoQuery);
         }
         
         // Apply sorting manually (Mingo's sort has issues with CJS builds)
-        if (query.orderBy && Array.isArray(query.orderBy) && query.orderBy.length > 0) {
-            records = this.applyManualSort(records, query.orderBy);
+        if (q.orderBy && Array.isArray(q.orderBy) && q.orderBy.length > 0) {
+            records = this.applyManualSort(records, q.orderBy as unknown[]);
         }
         
         // Apply pagination
-        if (query.offset) {
-            records = records.slice(query.offset);
+        if (q.offset) {
+            records = records.slice(q.offset as number);
         }
-        if (query.limit) {
-            records = records.slice(0, query.limit);
+        if (q.limit) {
+            records = records.slice(0, q.limit as number);
         }
         
         // Apply field projection
-        if (query.fields && Array.isArray(query.fields)) {
-            records = records.map(doc => this.projectFields(doc, query.fields));
+        if (q.fields && Array.isArray(q.fields)) {
+            records = records.map(doc => this.projectFields(doc, q.fields as string[]));
         }
         
         return records;
@@ -225,7 +243,7 @@ export class MemoryDriver implements Driver {
     /**
      * Find a single record by ID or query.
      */
-    async findOne(objectName: string, id: string | number, query?: any, options?: any): Promise<any> {
+    async findOne(objectName: string, id: string | number, query?: object, options?: Record<string, unknown>): Promise<Record<string, unknown> | null> {
         // If ID is provided, fetch directly
         if (id) {
             const key = `${objectName}:${id}`;
@@ -245,7 +263,7 @@ export class MemoryDriver implements Driver {
     /**
      * Create a new record.
      */
-    async create(objectName: string, data: any, _options?: any): Promise<any> {
+    async create(objectName: string, data: Record<string, unknown>, _options?: Record<string, unknown>): Promise<Record<string, unknown>> {
         // Generate ID if not provided
         const id = data.id || this.generateId(objectName);
         const key = `${objectName}:${id}`;
@@ -270,7 +288,7 @@ export class MemoryDriver implements Driver {
         this.store.set(key, doc);
         
         // Update indexes
-        this.updateIndex(objectName, id, doc);
+        this.updateIndex(objectName, String(id), doc);
         
         return { ...doc };
     }
@@ -278,7 +296,7 @@ export class MemoryDriver implements Driver {
     /**
      * Update an existing record.
      */
-    async update(objectName: string, id: string | number, data: any, _options?: any): Promise<any> {
+    async update(objectName: string, id: string | number, data: Record<string, unknown>, _options?: Record<string, unknown>): Promise<Record<string, unknown>> {
         const key = `${objectName}:${id}`;
         const existing = this.store.get(key);
         
@@ -290,7 +308,10 @@ export class MemoryDriver implements Driver {
                     details: { objectName, id }
                 });
             }
-            return null;
+            // Non-strict mode: return null to indicate record not found
+            // Note: This deviates from the Driver interface (which requires Record<string, unknown>)
+            // but preserves backward compatibility for consumers that check for null returns.
+            return null!;
         }
         
         const doc = {
@@ -312,7 +333,7 @@ export class MemoryDriver implements Driver {
     /**
      * Delete a record.
      */
-    async delete(objectName: string, id: string | number, _options?: any): Promise<any> {
+    async delete(objectName: string, id: string | number, _options?: Record<string, unknown>): Promise<unknown> {
         const key = `${objectName}:${id}`;
         const deleted = this.store.delete(key);
         
@@ -335,17 +356,17 @@ export class MemoryDriver implements Driver {
     /**
      * Count records matching filters using Mingo.
      */
-    async count(objectName: string, filters: any, _options?: any): Promise<number> {
+    async count(objectName: string, filters: object, _options?: Record<string, unknown>): Promise<number> {
         const pattern = `${objectName}:`;
         
         // Extract where condition from query object if needed
-        let whereCondition = filters;
-        if (filters && !Array.isArray(filters) && filters.where) {
-            whereCondition = filters.where;
+        let whereCondition: unknown = filters;
+        if (filters && !Array.isArray(filters) && (filters as Record<string, unknown>).where) {
+            whereCondition = (filters as Record<string, unknown>).where;
         }
         
         // Get all records for this object type
-        const records: any[] = [];
+        const records: Record<string, unknown>[] = [];
         for (const [key, value] of this.store.entries()) {
             if (key.startsWith(pattern)) {
                 records.push(value);
@@ -358,10 +379,9 @@ export class MemoryDriver implements Driver {
         }
         
         // Convert to MongoDB query and use Mingo to count
-        const mongoQuery = this.convertToMongoQuery(whereCondition);
+        const mongoQuery = this.convertToMongoQuery(whereCondition as Record<string, unknown> | unknown[] | undefined);
         if (mongoQuery && Object.keys(mongoQuery).length > 0) {
-            const mingoQuery = new Query(mongoQuery);
-            const matchedRecords = mingoQuery.find(records).all();
+            const matchedRecords = mingoFind(records, mongoQuery);
             return matchedRecords.length;
         }
         
@@ -371,11 +391,11 @@ export class MemoryDriver implements Driver {
     /**
      * Get distinct values for a field using Mingo.
      */
-    async distinct(objectName: string, field: string, filters?: any, _options?: any): Promise<any[]> {
+    async distinct(objectName: string, field: string, filters?: object, _options?: Record<string, unknown>): Promise<unknown[]> {
         const pattern = `${objectName}:`;
         
         // Get all records for this object type
-        let records: any[] = [];
+        let records: Record<string, unknown>[] = [];
         for (const [key, value] of this.store.entries()) {
             if (key.startsWith(pattern)) {
                 records.push(value);
@@ -384,15 +404,14 @@ export class MemoryDriver implements Driver {
         
         // Apply filters using Mingo if provided
         if (filters) {
-            const mongoQuery = this.convertToMongoQuery(filters);
+            const mongoQuery = this.convertToMongoQuery(filters as Record<string, unknown>);
             if (mongoQuery && Object.keys(mongoQuery).length > 0) {
-                const mingoQuery = new Query(mongoQuery);
-                records = mingoQuery.find(records).all();
+                records = mingoFind(records, mongoQuery);
             }
         }
         
         // Extract distinct values
-        const values = new Set<any>();
+        const values = new Set<unknown>();
         for (const record of records) {
             const value = record[field];
             if (value !== undefined && value !== null) {
@@ -406,7 +425,7 @@ export class MemoryDriver implements Driver {
     /**
      * Create multiple records at once.
      */
-    async createMany(objectName: string, data: any[], options?: any): Promise<any> {
+    async createMany(objectName: string, data: Record<string, unknown>[], options?: Record<string, unknown>): Promise<unknown> {
         const results = [];
         for (const item of data) {
             const result = await this.create(objectName, item, options);
@@ -418,33 +437,32 @@ export class MemoryDriver implements Driver {
     /**
      * Update multiple records matching filters using Mingo.
      */
-    async updateMany(objectName: string, filters: any, data: any, _options?: any): Promise<any> {
+    async updateMany(objectName: string, filters: object, data: Record<string, unknown>, _options?: Record<string, unknown>): Promise<unknown> {
         const pattern = `${objectName}:`;
         
         // Get all records for this object type
-        const records: any[] = [];
+        const records: Record<string, unknown>[] = [];
         const recordKeys = new Map<string, string>();
         
         for (const [key, record] of this.store.entries()) {
             if (key.startsWith(pattern)) {
                 records.push(record);
-                recordKeys.set(record.id, key);
+                recordKeys.set(record.id as string, key);
             }
         }
         
         // Apply filters using Mingo
-        const mongoQuery = this.convertToMongoQuery(filters);
+        const mongoQuery = this.convertToMongoQuery(filters as Record<string, unknown>);
         let matchedRecords = records;
         
         if (mongoQuery && Object.keys(mongoQuery).length > 0) {
-            const mingoQuery = new Query(mongoQuery);
-            matchedRecords = mingoQuery.find(records).all();
+            matchedRecords = mingoFind(records, mongoQuery);
         }
         
         // Update matched records
         let count = 0;
         for (const record of matchedRecords) {
-            const key = recordKeys.get(record.id);
+            const key = recordKeys.get(record.id as string);
             if (key) {
                 const updated = {
                     ...record,
@@ -464,32 +482,31 @@ export class MemoryDriver implements Driver {
     /**
      * Delete multiple records matching filters using Mingo.
      */
-    async deleteMany(objectName: string, filters: any, _options?: any): Promise<any> {
+    async deleteMany(objectName: string, filters: object, _options?: Record<string, unknown>): Promise<unknown> {
         const pattern = `${objectName}:`;
         
         // Get all records for this object type
-        const records: any[] = [];
+        const records: Record<string, unknown>[] = [];
         const recordKeys = new Map<string, string>();
         
         for (const [key, record] of this.store.entries()) {
             if (key.startsWith(pattern)) {
                 records.push(record);
-                recordKeys.set(record.id, key);
+                recordKeys.set(record.id as string, key);
             }
         }
         
         // Apply filters using Mingo
-        const mongoQuery = this.convertToMongoQuery(filters);
+        const mongoQuery = this.convertToMongoQuery(filters as Record<string, unknown>);
         let matchedRecords = records;
         
         if (mongoQuery && Object.keys(mongoQuery).length > 0) {
-            const mingoQuery = new Query(mongoQuery);
-            matchedRecords = mingoQuery.find(records).all();
+            matchedRecords = mingoFind(records, mongoQuery);
         }
         
         // Delete matched records
         for (const record of matchedRecords) {
-            const key = recordKeys.get(record.id);
+            const key = recordKeys.get(record.id as string);
             if (key) {
                 this.store.delete(key);
             }
@@ -550,11 +567,11 @@ export class MemoryDriver implements Driver {
      *   { $group: { _id: null, avgPrice: { $avg: '$price' } } }
      * ]);
      */
-    async aggregate(objectName: string, pipeline: any[], _options?: any): Promise<any[]> {
+    async aggregate(objectName: string, pipeline: object[], _options?: Record<string, unknown>): Promise<Record<string, unknown>[]> {
         const pattern = `${objectName}:`;
         
         // Get all records for this object type
-        const records: any[] = [];
+        const records: Record<string, unknown>[] = [];
         for (const [key, value] of this.store.entries()) {
             if (key.startsWith(pattern)) {
                 records.push({ ...value });
@@ -562,22 +579,19 @@ export class MemoryDriver implements Driver {
         }
         
         // Use Mingo to execute the aggregation pipeline
-        const aggregator = new Aggregator(pipeline);
-        const results = aggregator.run(records);
-        
-        return results;
+        return mingoAggregate(records, pipeline as Record<string, unknown>[]);
     }
 
     /**
      * Begin a new transaction
      * @returns Transaction object that can be passed to other methods
      */
-    async beginTransaction(): Promise<any> {
+    async beginTransaction(): Promise<unknown> {
         const txId = `tx_${Date.now()}_${Math.random().toString(36).substring(7)}`;
         
         // Create a deep snapshot of the current store to ensure complete transaction isolation
         // This prevents issues with nested objects and arrays being modified during the transaction
-        const snapshot = new Map<string, any>();
+        const snapshot = new Map<string, Record<string, unknown>>();
         for (const [key, value] of this.store.entries()) {
             snapshot.set(key, JSON.parse(JSON.stringify(value)));
         }
@@ -597,14 +611,8 @@ export class MemoryDriver implements Driver {
      * Commit a transaction
      * @param transaction - Transaction object returned by beginTransaction()
      */
-    async commitTransaction(transaction: any): Promise<void> {
-        const txId = transaction?.id;
-        if (!txId) {
-            throw new ObjectQLError({
-                code: 'INVALID_TRANSACTION',
-                message: 'Invalid transaction object'
-            });
-        }
+    async commitTransaction(transaction: unknown): Promise<void> {
+        const txId = this.getTransactionId(transaction);
         
         const tx = this.transactions.get(txId);
         if (!tx) {
@@ -623,14 +631,8 @@ export class MemoryDriver implements Driver {
      * Rollback a transaction
      * @param transaction - Transaction object returned by beginTransaction()
      */
-    async rollbackTransaction(transaction: any): Promise<void> {
-        const txId = transaction?.id;
-        if (!txId) {
-            throw new ObjectQLError({
-                code: 'INVALID_TRANSACTION',
-                message: 'Invalid transaction object'
-            });
-        }
+    async rollbackTransaction(transaction: unknown): Promise<void> {
+        const txId = this.getTransactionId(transaction);
         
         const tx = this.transactions.get(txId);
         if (!tx) {
@@ -665,7 +667,7 @@ export class MemoryDriver implements Driver {
                 
                 // Load data into store
                 for (const [key, value] of Object.entries(data.store || {})) {
-                    this.store.set(key, value);
+                    this.store.set(key, value as Record<string, unknown>);
                 }
                 
                 // Load ID counters
@@ -726,7 +728,7 @@ export class MemoryDriver implements Driver {
                         const fieldValue = record[field];
                         if (fieldValue !== undefined && fieldValue !== null) {
                             // Store the record ID in the index
-                            fieldIndex.add(record.id);
+                            fieldIndex.add(record.id as string);
                         }
                     }
                 }
@@ -742,7 +744,7 @@ export class MemoryDriver implements Driver {
      * Update index when a record is created or updated
      * @private
      */
-    protected updateIndex(objectName: string, recordId: string, record: any): void {
+    protected updateIndex(objectName: string, recordId: string, record: Record<string, unknown>): void {
         const objectIndexes = this.indexes.get(objectName);
         if (!objectIndexes) return;
         
@@ -770,6 +772,22 @@ export class MemoryDriver implements Driver {
     }
 
     // ========== Helper Methods ==========
+
+    /**
+     * Extract transaction ID from an opaque transaction handle.
+     */
+    private getTransactionId(transaction: unknown): string {
+        const txId = (transaction != null && typeof transaction === 'object')
+            ? (transaction as Record<string, unknown>).id as string | undefined
+            : undefined;
+        if (!txId) {
+            throw new ObjectQLError({
+                code: 'INVALID_TRANSACTION',
+                message: 'Invalid transaction object'
+            });
+        }
+        return txId;
+    }
 
     /**
      * Normalizes query format to support both legacy UnifiedQuery and QueryAST formats.
@@ -913,7 +931,7 @@ export class MemoryDriver implements Driver {
     /**
      * Convert a single ObjectQL condition to MongoDB operator format.
      */
-    protected convertConditionToMongo(field: string, operator: string, value: any): Record<string, any> | null {
+    protected convertConditionToMongo(field: string, operator: string, value: unknown): Record<string, unknown> | null {
         switch (operator) {
             case '=':
             case '==':
@@ -946,15 +964,15 @@ export class MemoryDriver implements Driver {
             case 'like':
                 // MongoDB regex for case-insensitive contains
                 // Escape special regex characters to prevent ReDoS and ensure literal matching
-                return { [field]: { $regex: new RegExp(this.escapeRegex(value), 'i') } };
+                return { [field]: { $regex: new RegExp(this.escapeRegex(value as string), 'i') } };
             
             case 'startswith':
             case 'starts_with':
-                return { [field]: { $regex: new RegExp(`^${this.escapeRegex(value)}`, 'i') } };
+                return { [field]: { $regex: new RegExp(`^${this.escapeRegex(value as string)}`, 'i') } };
             
             case 'endswith':
             case 'ends_with':
-                return { [field]: { $regex: new RegExp(`${this.escapeRegex(value)}$`, 'i') } };
+                return { [field]: { $regex: new RegExp(`${this.escapeRegex(value as string)}$`, 'i') } };
             
             case 'between':
                 if (Array.isArray(value) && value.length === 2) {
@@ -982,7 +1000,7 @@ export class MemoryDriver implements Driver {
      * Apply manual sorting to an array of records.
      * This is used instead of Mingo's sort to avoid CJS build issues.
      */
-    protected applyManualSort(records: any[], sort: any[]): any[] {
+    protected applyManualSort(records: Record<string, unknown>[], sort: unknown[]): Record<string, unknown>[] {
         const sorted = [...records];
         
         // Apply sorts in reverse order for correct multi-field precedence
@@ -994,9 +1012,10 @@ export class MemoryDriver implements Driver {
             
             if (Array.isArray(sortItem)) {
                 [field, direction] = sortItem;
-            } else if (typeof sortItem === 'object') {
-                field = sortItem.field;
-                direction = sortItem.order || sortItem.direction || sortItem.dir || 'asc';
+            } else if (typeof sortItem === 'object' && sortItem !== null) {
+                const s = sortItem as Record<string, string>;
+                field = s.field;
+                direction = s.order || s.direction || s.dir || 'asc';
             } else {
                 continue;
             }
@@ -1023,8 +1042,8 @@ export class MemoryDriver implements Driver {
     /**
      * Project specific fields from a document.
      */
-    protected projectFields(doc: any, fields: string[]): any {
-        const result: any = {};
+    protected projectFields(doc: Record<string, unknown>, fields: string[]): Record<string, unknown> {
+        const result: Record<string, unknown> = {};
         for (const field of fields) {
             if (doc[field] !== undefined) {
                 result[field] = doc[field];
@@ -1055,7 +1074,7 @@ export class MemoryDriver implements Driver {
      * @param options - Optional execution options
      * @returns Query results with value and count
      */
-    async executeQuery(ast: QueryAST, options?: any): Promise<{ value: any[]; count?: number }> {
+    async executeQuery(ast: QueryAST, options?: Record<string, unknown>): Promise<{ value: Record<string, unknown>[]; count?: number }> {
         const objectName = ast.object || '';
         
         // Use existing find method with QueryAST directly
@@ -1078,7 +1097,7 @@ export class MemoryDriver implements Driver {
      * @param options - Optional execution options
      * @returns Command execution result
      */
-    async executeCommand(command: Command, options?: any): Promise<CommandResult> {
+    async executeCommand(command: Command, options?: Record<string, unknown>): Promise<CommandResult> {
         try {
             const cmdOptions = { ...options, ...command.options };
             
@@ -1165,12 +1184,13 @@ export class MemoryDriver implements Driver {
                 }
                 
                 default:
-                    throw new ObjectQLError({ code: 'DRIVER_UNSUPPORTED_OPERATION', message: `Unknown command type: ${(command as any).type}` });
+                    throw new ObjectQLError({ code: 'DRIVER_UNSUPPORTED_OPERATION', message: `Unknown command type: ${(command as Command).type}` });
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const msg = error instanceof Error ? error.message : 'Command execution failed';
             return {
                 success: false,
-                error: error.message || 'Command execution failed',
+                error: msg,
                 affected: 0
             };
         }
@@ -1183,7 +1203,7 @@ export class MemoryDriver implements Driver {
      * @param parameters - Command parameters
      * @param options - Execution options
      */
-    async execute(_command: any, _parameters?: any[], _options?: any): Promise<any> {
+    async execute(_command: unknown, _parameters?: unknown[], _options?: Record<string, unknown>): Promise<unknown> {
         // For memory driver, this is primarily for compatibility
         // We don't support raw SQL/commands
         throw new ObjectQLError({ code: 'DRIVER_UNSUPPORTED_OPERATION', message: 'Memory driver does not support raw command execution. Use executeCommand() instead.' });
