@@ -1,0 +1,43 @@
+{
+  "name": "@objectstack/plugin-objectql",
+  "version": "4.2.2",
+  "description": "ObjectQL CLI plugin for ObjectStack — inspect, validate, migrate, seed, query, and manage ObjectQL schemas via oclif",
+  "keywords": [
+    "objectql",
+    "objectstack",
+    "cli",
+    "oclif",
+    "plugin",
+    "schema",
+    "migration",
+    "validation"
+  ],
+  "license": "MIT",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "oclif.manifest.json"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run"
+  },
+  "oclif": {
+    "commands": "./dist/commands",
+    "topicSeparator": " "
+  },
+  "dependencies": {
+    "@objectql/types": "workspace:*",
+    "@oclif/core": "^4.8.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0"
+  }
+}

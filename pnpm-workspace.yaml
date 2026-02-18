@@ -1,4 +1,5 @@
 packages:
+  - packages/cli
   - packages/foundation/*
   - packages/drivers/*
   - packages/tools/*
