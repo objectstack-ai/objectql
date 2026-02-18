@@ -44,6 +44,8 @@ export default defineConfig({
       // Tools
       '@objectql/driver-tck': path.resolve(__dirname, './packages/tools/driver-tck/src'),
       '@objectql/protocol-tck': path.resolve(__dirname, './packages/tools/protocol-tck/src'),
+      // CLI Plugin
+      '@objectstack/plugin-objectql': path.resolve(__dirname, './packages/cli/src'),
     }
   },
 });
