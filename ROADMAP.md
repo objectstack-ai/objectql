@@ -1,7 +1,7 @@
 # ObjectQL — 2026 Roadmap
 
 > Created: 2026-02-08 | Last Updated: 2026-02-16 | Status: **Active**  
-> Current Version: **4.2.2** (29 workspace packages; exceptions: root 4.2.0)  
+> Current Version: **4.2.2** (30 workspace packages; exceptions: root 4.2.0)  
 > Runtime: `@objectstack/cli` v3.0.6 (Kernel pattern) — `@objectql/server` removed, `packages/runtime/` removed.  
 > @objectstack Platform: **v3.0.6**
 
@@ -954,7 +954,7 @@ Standardize third-party plugin distribution.
 
 ## Package Matrix
 
-> 29 workspace packages at **4.2.2**. Exception: root package.json at 4.2.0.
+> 30 workspace packages at **4.2.2**. Exception: root package.json at 4.2.0.
 
 ### Foundation Layer
 
@@ -995,6 +995,12 @@ Standardize third-party plugin distribution.
 | `packages/protocols/odata-v4` | `@objectql/protocol-odata-v4` | 95%+ | ✅ Excellent |
 | `packages/protocols/json-rpc` | `@objectql/protocol-json-rpc` | 95%+ | ✅ Excellent |
 | `packages/protocols/sync` | `@objectql/protocol-sync` | — | 🆕 Q3 |
+
+### CLI Plugin (oclif)
+
+| Package | NPM Name | Description |
+|---------|----------|-------------|
+| `packages/cli` | `@objectstack/plugin-objectql` | oclif plugin for ObjectStack CLI — inspect, validate, migrate, seed, query, driver list |
 
 ### Tools Layer
 
