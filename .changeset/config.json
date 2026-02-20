@@ -15,6 +15,7 @@
       "@objectql/driver-redis",
       "@objectql/driver-sql",
       "@objectql/driver-sqlite-wasm",
+      "@objectql/driver-turso",
       "@objectql/driver-tck",
       "@objectql/edge-adapter",
       "@objectql/platform-node",
