@@ -1,7 +1,7 @@
 # ObjectQL — 2026 Roadmap
 
 > Created: 2026-02-08 | Last Updated: 2026-02-20 | Status: **Active**  
-> Current Version: **4.2.2** (30 workspace packages; exceptions: root 4.2.0)  
+> Current Version: **4.2.2** (31 workspace packages; exceptions: root 4.2.0)  
 > Runtime: `@objectstack/cli` v3.0.8 (Kernel pattern) — `@objectql/server` removed, `packages/runtime/` removed.  
 > @objectstack Platform: **v3.0.8**
 
@@ -61,7 +61,7 @@ ObjectQL is the **Standard Protocol for AI Software Generation** — a universal
 |----------|---------------|--------------|
 | `any` type usage | ~905 instances (driver-memory: 40→8, driver-fs: 14→2, driver-excel: 12→2; core: 31, types: 1 ✅) | < 50 (critical path zero) |
 | Error handling | 100% `ObjectQLError` ✅ (zero `throw new Error` in production source) | 100% `ObjectQLError` |
-| Test coverage | 30 of 30 packages have tests ✅ | Full coverage with ≥ 80% per package |
+| Test coverage | 31 of 31 packages have tests ✅ | Full coverage with ≥ 80% per package |
 | Console logging | Near-zero — 3 intentional deprecation warnings in `@objectql/core`, 1 retry log in `sdk`, 2 in `types/logger` fallback | Zero in source; structured logging via hooks |
 | ESLint rules | 13 rules configured (11 active, `no-explicit-any` off, `no-undef` off) ✅ | Progressive strictness; re-enable `no-explicit-any` as warn |
 | Protocol compliance | GraphQL 95%+, OData 95%+, JSON-RPC 95%+ ✅ | 95%+ all protocols |
@@ -84,8 +84,9 @@ ObjectQL is the **Standard Protocol for AI Software Generation** — a universal
 - ✅ `@objectql/core` deprecation Phases A–C completed — all modules deprecated with `console.warn` + `@deprecated` JSDoc
 - ✅ Utility functions (`toTitleCase`, `convertIntrospectedSchemaToObjects`) moved from core to `@objectql/types`
 - ✅ All 66/66 test tasks pass (including plugin-formula integration tests — previously failing, now fixed)
-- ✅ 30 of 30 packages have test suites (plugin-optimizations: 103 tests, plugin-query: 99 tests — previously 0)
+- ✅ 31 of 31 packages have test suites (plugin-optimizations: 103 tests, plugin-query: 99 tests — previously 0)
 - ✅ 67 documentation files (.mdx) across 12 sections
+- ✅ `@objectql/driver-turso` — Turso/libSQL driver (Phase A: Core Driver) with 125 tests, 3 connection modes (remote, local, embedded replica)
 
 ---
 

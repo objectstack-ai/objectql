@@ -1,0 +1,47 @@
+{
+  "name": "@objectql/driver-turso",
+  "version": "4.2.2",
+  "description": "Turso/libSQL driver for ObjectQL - Edge-first, globally distributed SQLite with embedded replicas and database-per-tenant multi-tenancy",
+  "keywords": [
+    "objectql",
+    "driver",
+    "turso",
+    "libsql",
+    "sqlite",
+    "edge",
+    "serverless",
+    "embedded-replica",
+    "database",
+    "adapter"
+  ],
+  "license": "MIT",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@libsql/client": "^0.17.0",
+    "@objectql/types": "workspace:*",
+    "@objectstack/spec": "^3.0.8",
+    "nanoid": "^3.3.11",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "vitest": "^1.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/objectstack-ai/objectql.git",
+    "directory": "packages/drivers/turso"
+  }
+}

@@ -37,6 +37,7 @@ export default defineConfig({
       '@objectql/driver-memory': path.resolve(__dirname, './packages/drivers/memory/src'),
       '@objectql/driver-mongo': path.resolve(__dirname, './packages/drivers/mongo/src'),
       '@objectql/driver-sql': path.resolve(__dirname, './packages/drivers/sql/src'),
+      '@objectql/driver-turso': path.resolve(__dirname, './packages/drivers/turso/src'),
       // Mocks
       '@objectstack/core': path.resolve(__dirname, './packages/foundation/core/test/__mocks__/@objectstack/core.ts'),
       '@objectstack/objectql': path.resolve(__dirname, './packages/foundation/core/test/__mocks__/@objectstack/objectql.ts'),
