@@ -20,8 +20,8 @@
   "dependencies": {
     "@objectql/types": "workspace:*",
     "@objectql/plugin-optimizations": "workspace:*",
-    "@objectstack/core": "^3.0.6",
-    "@objectstack/spec": "^3.0.6"
+    "@objectstack/core": "^3.0.8",
+    "@objectstack/spec": "^3.0.8"
   },
   "devDependencies": {
     "typescript": "^5.3.0"
