@@ -87,6 +87,7 @@ ObjectQL is the **Standard Protocol for AI Software Generation** — a universal
 - ✅ 31 of 31 packages have test suites (plugin-optimizations: 103 tests, plugin-query: 99 tests — previously 0)
 - ✅ 67 documentation files (.mdx) across 12 sections
 - ✅ `@objectql/driver-turso` — Turso/libSQL driver (Phase A: Core Driver) with 125 tests, 3 connection modes (remote, local, embedded replica)
+- ✅ `@objectql/driver-turso` — Phase B: Multi-Tenant Router, Schema Diff Engine, Platform API Client, Driver Plugin (52 new tests, 177 total)
 
 ---
 

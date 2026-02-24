@@ -34,6 +34,10 @@ export { TursoDriver, type TursoDriverConfig } from './turso-driver';
 export { compileFilter, compileSelect, parseSort, quoteIdentifier, type CompiledQuery, type SelectQueryOptions } from './query-compiler';
 export { fieldTypeToSqlite, isJsonFieldType, isBooleanFieldType } from './type-mapper';
 export { mapRow, mapRows, serializeValue, serializeRecord } from './result-mapper';
+export { createMultiTenantRouter, type MultiTenantConfig, type MultiTenantRouter } from './multi-tenant-router';
+export { TursoPlatformAPI, type TursoPlatformConfig, type CreateDatabaseResult, type CreateTokenResult, type DatabaseInfo } from './turso-platform-api';
+export { diffSchema, generateMigration, type SchemaDiff, type SchemaDiffAction, type SchemaMigration, type ColumnDef, type ObjectSchema, type FieldDef } from './schema-diff';
+export { TursoDriverPlugin, type TursoDriverPluginConfig } from './turso-driver-plugin';
 
 import { TursoDriver, type TursoDriverConfig } from './turso-driver';
 
