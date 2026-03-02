@@ -32,7 +32,7 @@ export type I18nLabel = z.infer<typeof UI.I18nLabelSchema>;
  * @returns The resolved plain string, or undefined if the input is nullish
  */
 export function resolveI18nLabel(
-    label: string | { key: string; defaultValue?: string; params?: Record<string, unknown> } | undefined | null
+    label: I18nLabel | undefined | null
 ): string | undefined {
     if (label === undefined || label === null) return undefined;
     if (typeof label === 'string') return label;
