@@ -1251,4 +1251,12 @@ ObjectQL implements the **data layer compiler** portion of the ObjectStack proto
 
 ---
 
+## Cross-Repo Notes
+
+| Target Repo | Issue | Description |
+|---|---|---|
+| `objectstack-ai/objectui` | `@object-ui/plugin-designer` build failure | Published `@object-ui/react@3.0.3` is missing `resolveI18nLabel` export (source has it, npm dist does not). Either republish `@object-ui/react` or update `plugin-designer` to import `resolveI18nLabel` from `@objectql/types` which now exports it ([PR #411](https://github.com/objectstack-ai/objectql/pull/411)). |
+
+---
+
 > **Historical Reference:** The core refactoring design document is archived at `docs/DESIGN_CORE_REFACTOR.md` (Status: ✅ Completed — [PR #373](https://github.com/objectstack-ai/objectql/pull/373)).

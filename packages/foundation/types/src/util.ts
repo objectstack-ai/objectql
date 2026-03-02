@@ -10,6 +10,34 @@
  */
 
 import { ObjectConfig, FieldConfig, FieldType, IntrospectedSchema } from './index';
+import { UI } from '@objectstack/spec';
+import { z } from 'zod';
+
+/**
+ * Re-export I18nLabel protocol type from @objectstack/spec.
+ * 
+ * I18nLabel is a union of plain string or structured i18n object { key, defaultValue?, params? }.
+ * Used across the ecosystem for internationalized labels.
+ */
+export type I18nLabel = z.infer<typeof UI.I18nLabelSchema>;
+
+/**
+ * Resolves an I18nLabel to a plain string.
+ *
+ * I18nLabel can be either a string or an object { key, defaultValue?, params? }.
+ * When it's an object, returns the defaultValue or the key as fallback.
+ * When it's undefined or null, returns undefined.
+ *
+ * @param label - The I18nLabel value to resolve
+ * @returns The resolved plain string, or undefined if the input is nullish
+ */
+export function resolveI18nLabel(
+    label: string | { key: string; defaultValue?: string; params?: Record<string, unknown> } | undefined | null
+): string | undefined {
+    if (label === undefined || label === null) return undefined;
+    if (typeof label === 'string') return label;
+    return label.defaultValue || label.key;
+}
 
 export function toTitleCase(str: string): string {
     return str
