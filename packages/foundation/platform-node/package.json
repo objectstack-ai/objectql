@@ -27,9 +27,9 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@objectstack/objectql": "^3.0.8",
+    "@objectstack/objectql": "^3.2.5",
     "@objectql/types": "workspace:*",
-    "@objectstack/spec": "^3.0.8",
+    "@objectstack/spec": "^3.2.5",
     "fast-glob": "^3.3.2",
     "js-yaml": "^4.1.1"
   },
