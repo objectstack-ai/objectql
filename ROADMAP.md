@@ -2,8 +2,8 @@
 
 > Created: 2026-02-08 | Last Updated: 2026-02-20 | Status: **Active**  
 > Current Version: **4.2.2** (31 workspace packages; exceptions: root 4.2.0)  
-> Runtime: `@objectstack/cli` v3.0.8 (Kernel pattern) — `@objectql/server` removed, `packages/runtime/` removed.  
-> @objectstack Platform: **v3.0.8**
+> Runtime: `@objectstack/cli` v3.2.5 (Kernel pattern) — `@objectql/server` removed, `packages/runtime/` removed.  
+> @objectstack Platform: **v3.2.5**
 
 ---
 
@@ -70,7 +70,7 @@ ObjectQL is the **Standard Protocol for AI Software Generation** — a universal
 
 - ✅ Phases 1A (ObjectQLError migration), 3 (logging), 4 (ESLint all waves), 5A (TODO elimination), 5B (protocol compliance 95%+), 6 (error-handling + architecture guides)
 - ✅ Core refactoring: `@objectql/core` decomposed from ~3,500 to ~800 LOC ([PR #373](https://github.com/objectstack-ai/objectql/pull/373))
-- ✅ `@objectstack/*` platform upgraded to **v3.0.8** (Zod v4 alignment)
+- ✅ `@objectstack/*` platform upgraded to **v3.2.5** (Zod v4 alignment)
 - ✅ Phase 7 partial (sideEffects in 27 packages), Phase 2 (test suites for SDK, CLI, Create, VSCode)
 - ✅ Q1 Phase 2: Browser WASM Drivers (`driver-sqlite-wasm`, `driver-pg-wasm`) implemented with docs and tests
 - ✅ Q1 Phase 3: Housekeeping complete (H-1 through H-8), `plugin-workflow` implemented with full test suite
@@ -773,19 +773,19 @@ Define wire format, `MutationLogEntry` schema, `SyncConflict` schema, checkpoint
 
 ---
 
-## Immediate Next Steps (Post v3.0.8 Upgrade)
+## Immediate Next Steps (Post v3.2.5 Upgrade)
 
 > Status: **Active** | Target: 2026-02 — 2026-03
 
-Priority tasks following the `@objectstack` v3.0.8 upgrade:
+Priority tasks following the `@objectstack` v3.2.5 upgrade:
 
 | # | Task | Priority | Status | Description |
 |---|------|----------|--------|-------------|
 | 1 | Fix `plugin-formula` integration tests | High | ✅ Fixed | Previously 6 pre-existing test failures — now all pass (66/66 test tasks, including plugin-formula). |
 | 2 | Re-enable `AuthPlugin` | Medium | 🔴 Open | Disabled due to camelCase field names (`createdAt`, `updatedAt`, `emailVerified`) violating ObjectQL snake_case spec. Coordinate with `@objectstack/plugin-auth` upstream or add field name normalization layer. |
-| 3 | Align `@objectql/types` with `@objectstack/spec` v3.0.8 Zod v4 schemas | High | ✅ Done | `z.infer<>` type derivation compiles correctly against Zod v4 schema exports in `@objectstack/spec@3.0.8`. Verified via 37/37 build tasks passing. |
-| 4 | Core bridge class stabilization | Medium | ✅ Done | `app.ts` bridge class — all `registerObject`, `getObject`, `getConfigs`, `removePackage` overrides align with `@objectstack/objectql@3.0.8` API surface. Build verified. |
-| 5 | Bump `@objectql/*` packages to **4.3.0** | Low | 🟡 Next | Release patch with `@objectstack` v3.0.8 compatibility via Changesets. |
+| 3 | Align `@objectql/types` with `@objectstack/spec` v3.2.5 Zod v4 schemas | High | ✅ Done | `z.infer<>` type derivation compiles correctly against Zod v4 schema exports in `@objectstack/spec@3.2.5`. Verified via 38/38 build tasks passing. |
+| 4 | Core bridge class stabilization | Medium | ✅ Done | `app.ts` bridge class — all `registerObject`, `getObject`, `getConfigs`, `removePackage` overrides align with `@objectstack/objectql@3.2.5` API surface. Build verified. |
+| 5 | Bump `@objectql/*` packages to **4.3.0** | Low | 🟡 Next | Release patch with `@objectstack` v3.2.5 compatibility via Changesets. |
 | 6 | Reduce `any` usage in driver layer | Medium | 🟡 In Progress | `driver-memory` (40→8 ✅), `driver-fs` (14→2 ✅), `driver-excel` (12→2 ✅). Remaining: `driver-sql` (50), `driver-redis` (46), `driver-mongo` (44). |
 | 7 | Structured logging framework | Low | 🔴 Open | Migrate `sdk` retry `console.log` and `types/logger.ts` fallback `console.error` to hook-based structured logging. |
 | 8 | Add tests for `plugin-optimizations` and `plugin-query` | High | ✅ Done | Both packages now have comprehensive test suites — 202 tests across 4 test files. |
@@ -795,7 +795,7 @@ Priority tasks following the `@objectstack` v3.0.8 upgrade:
 
 ## `@objectql/core` Deprecation & Migration Plan
 
-> Status: **Phases A–C Completed** | Constitutional Basis: `@objectstack/spec@3.0.8` Protocol Specification  
+> Status: **Phases A–C Completed** | Constitutional Basis: `@objectstack/spec@3.2.5` Protocol Specification  
 > Prerequisite: Core refactoring completed — [PR #373](https://github.com/objectstack-ai/objectql/pull/373) (~3,500 → 734 LOC thin bridge + plugin orchestrator)
 
 **Goal:** Fully retire `@objectql/core` as a standalone package. The ObjectQL ecosystem transitions to a **pure plugin architecture** — no aggregator, no bridge, no intermediate layer. All capabilities are delivered as independent, composable `RuntimePlugin` instances registered directly with the `ObjectStackKernel`.
@@ -1018,13 +1018,13 @@ Standardize third-party plugin distribution.
 
 | Package | Owner | Version | Role in ObjectQL |
 |---------|-------|---------|-----------------|
-| `@objectstack/cli` | ObjectStack | 3.0.8 | Kernel bootstrapper (`objectstack serve`) |
-| `@objectstack/core` | ObjectStack | 3.0.8 | Kernel runtime, plugin lifecycle |
-| `@objectstack/plugin-hono-server` | ObjectStack | 3.0.8 | HTTP server (Hono-based) |
-| `@objectstack/spec` | ObjectStack | 3.0.8 | Formal protocol specifications (Zod schemas) |
-| `@objectstack/runtime` | ObjectStack | 3.0.8 | Core runtime & query engine |
-| `@objectstack/objectql` | ObjectStack | 3.0.8 | ObjectQL runtime bridge |
-| `@objectstack/studio` | ObjectStack | 3.0.8 | Visual admin studio |
+| `@objectstack/cli` | ObjectStack | 3.2.5 | Kernel bootstrapper (`objectstack serve`) |
+| `@objectstack/core` | ObjectStack | 3.2.5 | Kernel runtime, plugin lifecycle |
+| `@objectstack/plugin-hono-server` | ObjectStack | 3.2.5 | HTTP server (Hono-based) |
+| `@objectstack/spec` | ObjectStack | 3.2.5 | Formal protocol specifications (Zod schemas) |
+| `@objectstack/runtime` | ObjectStack | 3.2.5 | Core runtime & query engine |
+| `@objectstack/objectql` | ObjectStack | 3.2.5 | ObjectQL runtime bridge |
+| `@objectstack/studio` | ObjectStack | 3.2.5 | Visual admin studio |
 | AI Agent / AI tooling | **Separate project** | — | Not in this monorepo |
 
 ---
@@ -1107,13 +1107,13 @@ Standardize third-party plugin distribution.
 
 - **`@objectql/types`** correctly has ZERO production dependencies (pure types — imports `@objectstack/spec` as devDep only)
 - **`@objectql/core`** depends on `plugin-formula` and `plugin-validator` — tight coupling noted (will be removed at v5.0)
-- All `@objectstack/*` packages are at **v3.0.8** — aligned (Zod v4)
+- All `@objectstack/*` packages are at **v3.2.5** — aligned (Zod v4)
 - **`mingo`** (used in memory driver) is the only non-standard query engine dependency
 - **`knex`** is shared across `driver-sql`, `driver-pg-wasm`, `driver-sqlite-wasm`
 
 ### @objectstack/spec Coverage Gap Analysis
 
-`@objectstack/spec@3.0.8` exports ~3,100+ schemas across 16 sub-modules. ObjectQL currently implements 13 of these domains:
+`@objectstack/spec@3.2.5` exports ~3,100+ schemas across 16 sub-modules. ObjectQL currently implements 13 of these domains:
 
 | Spec Domain | Exports | @objectql Status | Notes |
 |-------------|---------|-----------------|-------|
@@ -1209,7 +1209,7 @@ Standardize third-party plugin distribution.
 
 ## @objectstack/spec Protocol Alignment Status
 
-> Spec Version: **3.0.8** | Zod v4 | 16 sub-modules, ~3,100+ schema exports
+> Spec Version: **3.2.5** | Zod v4 | 16 sub-modules, ~3,100+ schema exports
 
 ObjectQL implements the **data layer compiler** portion of the ObjectStack protocol. The following domains are within ObjectQL's scope:
 
