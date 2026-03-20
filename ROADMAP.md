@@ -842,6 +842,8 @@ const kernel = new ObjectStackKernel([
 | Extract validator wiring | Already in `@objectql/plugin-validator` — remove re-export from aggregator | ✅ |
 | Extract formula wiring | Already in `@objectql/plugin-formula` — remove re-export from aggregator | ✅ |
 | Deprecate `ObjectQLPlugin` aggregator class | Mark as deprecated with `console.warn`, point to explicit imports | ✅ |
+| Migrate `objectstack.config.ts` to upstream | Import `ObjectQLPlugin` from `@objectstack/objectql`, compose sub-plugins directly, register MemoryDriver as `driver.default` service — fixes `app.*` discovery chain for AuthPlugin | ✅ |
+| Add `init`/`start` adapter to `QueryPlugin` | Consistent with ValidatorPlugin / FormulaPlugin adapter pattern for `@objectstack/core` kernel compatibility | ✅ |
 
 ### Phase B: Dispose Bridge Class ✅
 

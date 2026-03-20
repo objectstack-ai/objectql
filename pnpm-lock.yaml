@@ -42,6 +42,12 @@ importers:
       '@objectql/example-project-tracker':
         specifier: workspace:*
         version: link:examples/showcase/project-tracker
+      '@objectql/plugin-formula':
+        specifier: workspace:*
+        version: link:packages/foundation/plugin-formula
+      '@objectql/plugin-query':
+        specifier: workspace:*
+        version: link:packages/foundation/plugin-query
       '@objectql/plugin-security':
         specifier: workspace:*
         version: link:packages/foundation/plugin-security
@@ -58,6 +64,9 @@ importers:
         specifier: ^3.2.8
         version: 3.2.8(@objectstack/core@3.2.8)(esbuild@0.27.4)
       '@objectstack/core':
+        specifier: ^3.2.8
+        version: 3.2.8
+      '@objectstack/objectql':
         specifier: ^3.2.8
         version: 3.2.8
       '@objectstack/plugin-auth':
