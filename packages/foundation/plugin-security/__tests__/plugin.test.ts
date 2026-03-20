@@ -113,7 +113,7 @@ describe('ObjectQLSecurityPlugin', () => {
       expect(kernel.use).not.toHaveBeenCalled();
     });
 
-    it('should register auth service when registerService is available', async () => {
+    it('should register security service when registerService is available', async () => {
       const plugin = new ObjectQLSecurityPlugin({
         permissions: [ACCOUNTS_PERM],
       });
@@ -122,7 +122,7 @@ describe('ObjectQLSecurityPlugin', () => {
 
       await plugin.install({ engine: kernel, registerService });
 
-      expect(registerService).toHaveBeenCalledWith('auth', expect.anything());
+      expect(registerService).toHaveBeenCalledWith('security', expect.anything());
     });
 
     it('should not register hooks when RLS/FLS are disabled', async () => {
