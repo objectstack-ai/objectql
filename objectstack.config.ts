@@ -63,9 +63,7 @@ export default {
     // Runtime plugins (instances only)
     plugins: [
         createApiRegistryPlugin(),
-        new HonoServerPlugin({
-            port: 5050,
-        }),
+        new HonoServerPlugin(),
         new ObjectQLPlugin({
             enableRepository: true,
             enableQueryService: true,
