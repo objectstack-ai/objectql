@@ -12,7 +12,7 @@ Instead of a monolithic server package, ObjectQL uses a plugin architecture wher
 
 ```bash
 pnpm add @objectstack/runtime @objectstack/plugin-hono-server
-pnpm add @objectql/core @objectql/protocol-json-rpc
+pnpm add @objectstack/objectql @objectql/protocol-json-rpc
 ```
 
 ## Getting Started
@@ -22,7 +22,7 @@ pnpm add @objectql/core @objectql/protocol-json-rpc
 ```typescript
 import { ObjectStackKernel } from '@objectstack/runtime';
 import { HonoServerPlugin } from '@objectstack/plugin-hono-server';
-import { ObjectQLPlugin } from '@objectql/core';
+import { ObjectQLPlugin } from '@objectstack/objectql';
 import { MemoryDriver } from '@objectql/driver-memory';
 
 const appConfig = {
@@ -55,7 +55,7 @@ Expose your data through multiple protocols simultaneously:
 ```typescript
 import { ObjectStackKernel } from '@objectstack/runtime';
 import { HonoServerPlugin } from '@objectstack/plugin-hono-server';
-import { ObjectQLPlugin } from '@objectql/core';
+import { ObjectQLPlugin } from '@objectstack/objectql';
 import { JSONRPCPlugin } from '@objectql/protocol-json-rpc';
 import { GraphQLPlugin } from '@objectql/protocol-graphql';
 import { SqlDriver } from '@objectql/driver-sql';

@@ -31,7 +31,7 @@ Configure custom routes when creating the Kernel with protocol plugins:
 ```typescript
 import { ObjectStackKernel } from '@objectstack/runtime';
 import { HonoServerPlugin } from '@objectstack/plugin-hono-server';
-import { ObjectQLPlugin } from '@objectql/core';
+import { ObjectQLPlugin } from '@objectstack/objectql';
 import { JSONRPCPlugin } from '@objectql/protocol-json-rpc';
 import { MemoryDriver } from '@objectql/driver-memory';
 
@@ -89,7 +89,7 @@ interface ApiRouteConfig {
 ```typescript
 import { ObjectStackKernel } from '@objectstack/runtime';
 import { HonoServerPlugin } from '@objectstack/plugin-hono-server';
-import { ObjectQLPlugin } from '@objectql/core';
+import { ObjectQLPlugin } from '@objectstack/objectql';
 import { SqlDriver } from '@objectql/driver-sql';
 import { JSONRPCPlugin } from '@objectql/protocol-json-rpc';
 

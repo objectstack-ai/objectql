@@ -27,7 +27,7 @@ app.init().then(() => {
 ```typescript
 // ✅ New Pattern
 import { ObjectStackKernel } from '@objectstack/runtime';
-import { ObjectQLPlugin } from '@objectql/core';
+import { ObjectQLPlugin } from '@objectstack/objectql';
 
 const appConfig = {
   name: 'my-app',

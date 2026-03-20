@@ -88,4 +88,31 @@ export class QueryPlugin implements RuntimePlugin {
   async onStart(_ctx: RuntimeContext): Promise<void> {
     this.logger.debug('Query plugin started');
   }
+
+  // --- Adapter for @objectstack/core compatibility ---
+  init = async (pluginCtx: any): Promise<void> => {
+      const actualKernel = typeof pluginCtx.getKernel === 'function'
+          ? pluginCtx.getKernel()
+          : pluginCtx;
+      const ctx: any = {
+          engine: actualKernel,
+          getKernel: () => actualKernel,
+          registerService: typeof pluginCtx.registerService === 'function'
+              ? pluginCtx.registerService.bind(pluginCtx)
+              : undefined,
+      };
+      return this.install(ctx);
+  }
+
+  start = async (pluginCtx: any): Promise<void> => {
+      const actualKernel = typeof pluginCtx.getKernel === 'function'
+          ? pluginCtx.getKernel()
+          : pluginCtx;
+      const ctx: any = {
+          engine: actualKernel,
+          getKernel: () => actualKernel,
+      };
+      return this.onStart(ctx);
+  }
+  // ---------------------------------------------------
 }

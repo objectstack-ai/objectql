@@ -25,7 +25,10 @@ import { JSONRPCPlugin } from '@objectql/protocol-json-rpc';
 import { HonoServerPlugin } from '@objectstack/plugin-hono-server';
 import { AuthPlugin } from '@objectstack/plugin-auth';
 import { ConsolePlugin } from '@object-ui/console';
-import { ObjectQLPlugin } from '@objectql/core';
+import { ObjectQLPlugin } from '@objectstack/objectql';
+import { QueryPlugin } from '@objectql/plugin-query';
+import { ValidatorPlugin } from '@objectql/plugin-validator';
+import { FormulaPlugin } from '@objectql/plugin-formula';
 import { createApiRegistryPlugin } from '@objectstack/core';
 import { MemoryDriver } from '@objectql/driver-memory';
 import * as fs from 'fs';
@@ -55,6 +58,10 @@ function loadObjects(dir: string) {
 
 const projectTrackerDir = path.join(__dirname, 'examples/showcase/project-tracker/src');
 
+// Shared driver instance — registered as 'driver.default' service for
+// upstream ObjectQLPlugin discovery and passed to QueryPlugin for query execution.
+const defaultDriver = new MemoryDriver();
+
 export default {
     metadata: {
         name: 'objectos',
@@ -66,16 +73,23 @@ export default {
         createApiRegistryPlugin(),
         new HonoServerPlugin({}),
         new ConsolePlugin(),
-        new ObjectQLPlugin({
-            enableRepository: true,
-            enableQueryService: true,
-            // Validator and Formula plugins are included by default
-            enableValidator: true,
-            enableFormulas: true,
-            datasources: {
-                default: new MemoryDriver()
-            }
-        }),
+        // Register MemoryDriver as 'driver.default' service so upstream
+        // ObjectQLPlugin can discover it during start() phase.
+        {
+            name: 'driver-memory',
+            init: async (ctx: any) => {
+                ctx.registerService('driver.default', defaultDriver);
+            },
+            start: async () => {},
+        },
+        // Upstream ObjectQLPlugin from @objectstack/objectql:
+        // - Registers objectql, metadata, data, protocol services
+        // - Discovers driver.* and app.* services (fixes auth plugin object registration)
+        // - Registers audit hooks (created_by/updated_by) and tenant isolation middleware
+        new ObjectQLPlugin(),
+        new QueryPlugin({ datasources: { default: defaultDriver } }),
+        new ValidatorPlugin(),
+        new FormulaPlugin(),
         new ObjectQLSecurityPlugin({
             enableAudit: false
         }),
@@ -83,8 +97,6 @@ export default {
             secret: process.env.AUTH_SECRET || 'objectql-dev-secret-change-me-in-production',
             trustedOrigins: ['http://localhost:*'],
         }),
-        // ValidatorPlugin is managed by ObjectQLPlugin now
-        // new ValidatorPlugin(),
         new GraphQLPlugin({
             basePath: '/graphql',
             introspection: true,
