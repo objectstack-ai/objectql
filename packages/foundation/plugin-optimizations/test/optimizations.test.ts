@@ -700,8 +700,9 @@ describe('SQLQueryOptimizer', () => {
                 fields: { name: { type: 'text' } },
                 indexes: [{ name: 'idx_name', fields: ['name'], unique: false }],
             });
-            // No error is the assertion
-            expect(true).toBe(true);
+            // Verify the schema was registered by observing optimize behavior
+            const sql = optimizer.optimize({ object: 'accounts' });
+            expect(sql).toContain('accounts');
         });
     });
 

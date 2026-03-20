@@ -65,8 +65,8 @@ describe('GraphQLPlugin', () => {
     it('should install successfully', async () => {
       await plugin.install?.({ engine: kernel });
       
-      // Plugin should be installed without errors
-      expect(true).toBe(true);
+      // Verify the engine reference was stored after installation
+      expect((plugin as any).engine).toBeDefined();
     });
   });
 

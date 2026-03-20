@@ -385,9 +385,9 @@ describe('OData V4 Protocol Integration Tests', () => {
     describe('Error Response Format', () => {
         it('should handle invalid entity set', async () => {
             try {
-                await kernel.repository.find('NonExistent', {});
-                // If no error, that's fine - driver returns empty
-                expect(true).toBe(true);
+                const result = await kernel.repository.find('NonExistent', {});
+                // Driver returns an empty array for unknown collections
+                expect(Array.isArray(result)).toBe(true);
             } catch (error: any) {
                 // Error should have proper structure
                 expect(error).toBeDefined();
@@ -421,8 +421,9 @@ describe('OData V4 Protocol Integration Tests', () => {
         it('should handle malformed requests', async () => {
             try {
                 // Pass invalid query format
-                await kernel.repository.find('Products', null as any);
-                expect(true).toBe(true);
+                const result = await kernel.repository.find('Products', null as any);
+                // Driver handles null query gracefully — returns records or empty array
+                expect(result).toBeDefined();
             } catch (error) {
                 expect(error).toBeDefined();
             }
