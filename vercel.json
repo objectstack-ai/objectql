@@ -1,7 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "installCommand": "pnpm install --ignore-scripts",
-  "buildCommand": "bash scripts/build-vercel.sh",
+  "buildCommand": "pnpm run build",
   "framework": null,
   "functions": {
     "api/**/*.ts": {
