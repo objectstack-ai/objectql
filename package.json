@@ -28,6 +28,7 @@
     "@objectql/cli": "workspace:*",
     "@objectql/core": "workspace:*",
     "@objectql/driver-memory": "^4.2.2",
+    "@objectql/driver-turso": "workspace:*",
     "@objectql/example-enterprise-erp": "workspace:*",
     "@objectql/example-project-tracker": "workspace:*",
     "@objectql/plugin-security": "workspace:*",

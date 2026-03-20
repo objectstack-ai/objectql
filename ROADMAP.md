@@ -89,6 +89,7 @@ ObjectQL is the **Standard Protocol for AI Software Generation** — a universal
 - ✅ `@objectql/driver-turso` — Turso/libSQL driver (Phase A: Core Driver) with 125 tests, 3 connection modes (remote, local, embedded replica)
 - ✅ `@objectql/driver-turso` — Phase B: Multi-Tenant Router, Schema Diff Engine, Platform API Client, Driver Plugin (52 new tests, 177 total)
 - ✅ Fix test quality: replaced all `expect(true).toBe(true)` placeholder assertions with meaningful state checks across `plugin-optimizations`, `protocol-odata-v4`, `protocol-json-rpc`, and `protocol-graphql` (7 files, 10 assertions fixed)
+- ✅ `pnpm dev` supports Turso/libSQL driver via `TURSO_DATABASE_URL` env var (local embedded, remote cloud, or embedded replica modes)
 
 ---
 
