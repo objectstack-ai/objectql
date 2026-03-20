@@ -31,11 +31,35 @@ import { ValidatorPlugin } from '@objectql/plugin-validator';
 import { FormulaPlugin } from '@objectql/plugin-formula';
 import { createApiRegistryPlugin } from '@objectstack/core';
 import { MemoryDriver } from '@objectql/driver-memory';
+import { createTursoDriver } from '@objectql/driver-turso';
 import { createAppPlugin } from '@objectql/platform-node';
+
+// Choose driver based on environment — Turso when TURSO_DATABASE_URL is set,
+// MemoryDriver otherwise (zero-config fallback for quick starts).
+function createDefaultDriver() {
+    const tursoUrl = process.env.TURSO_DATABASE_URL;
+    if (tursoUrl) {
+        console.log(`🗄️  Driver: Turso (${tursoUrl})`);
+        const syncUrl = process.env.TURSO_SYNC_URL;
+        return createTursoDriver({
+            url: tursoUrl,
+            authToken: process.env.TURSO_AUTH_TOKEN,
+            syncUrl,
+            sync: syncUrl
+                ? {
+                    intervalSeconds: Number(process.env.TURSO_SYNC_INTERVAL) || 60,
+                    onConnect: true,
+                }
+                : undefined,
+        });
+    }
+    console.log('🗄️  Driver: Memory (in-memory, non-persistent)');
+    return new MemoryDriver();
+}
 
 // Shared driver instance — registered as 'driver.default' service for
 // upstream ObjectQLPlugin discovery and passed to QueryPlugin for query execution.
-const defaultDriver = new MemoryDriver();
+const defaultDriver = createDefaultDriver();
 
 // App plugins: each business module is loaded via createAppPlugin.
 // ObjectLoader recursively scans for *.object.yml, *.view.yml, *.permission.yml, etc.
@@ -59,14 +83,19 @@ export default {
         createApiRegistryPlugin(),
         new HonoServerPlugin({}),
         new ConsolePlugin(),
-        // Register MemoryDriver as 'driver.default' service so upstream
+        // Register the active driver as 'driver.default' service so upstream
         // ObjectQLPlugin can discover it during start() phase.
         {
-            name: 'driver-memory',
+            name: 'driver-default',
             init: async (ctx: any) => {
                 ctx.registerService('driver.default', defaultDriver);
             },
-            start: async () => {},
+            start: async () => {
+                // Connect Turso driver if applicable (MemoryDriver has no connect method)
+                if ('connect' in defaultDriver && typeof (defaultDriver as { connect: () => Promise<void> }).connect === 'function') {
+                    await (defaultDriver as { connect: () => Promise<void> }).connect();
+                }
+            },
         },
         // App plugins: register app metadata as `app.*` services.
         // Must be before ObjectQLPlugin so services are available during start().
