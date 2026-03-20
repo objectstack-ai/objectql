@@ -29,24 +29,24 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@objectql/types": "workspace:*",
-    "@objectstack/objectql": "^3.2.6",
     "@objectql/core": "workspace:*",
-    "@objectql/plugin-validator": "workspace:*",
     "@objectql/driver-sql": "workspace:*",
     "@objectql/platform-node": "workspace:*",
-    "sqlite3": "^5.1.7",
-    "commander": "^11.0.0",
+    "@objectql/plugin-validator": "workspace:*",
+    "@objectql/types": "workspace:*",
+    "@objectstack/objectql": "^3.2.8",
     "chalk": "^4.1.2",
-    "fast-glob": "^3.3.0",
-    "js-yaml": "^4.1.0",
-    "prettier": "^3.0.0",
-    "ts-node": "^10.9.1",
-    "dotenv": "^16.4.5"
+    "commander": "^11.1.0",
+    "dotenv": "^16.6.1",
+    "fast-glob": "^3.3.3",
+    "js-yaml": "^4.1.1",
+    "prettier": "^3.8.1",
+    "sqlite3": "^5.1.7",
+    "ts-node": "^10.9.2"
   },
   "devDependencies": {
-    "typescript": "^5.0.0",
-    "@types/node": "^20.0.0",
-    "@types/js-yaml": "^4.0.5"
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^20.19.37",
+    "typescript": "^5.9.3"
   }
 }

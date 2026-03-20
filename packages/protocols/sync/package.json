@@ -20,8 +20,8 @@
     "@objectql/types": "workspace:*"
   },
   "devDependencies": {
-    "typescript": "^5.3.3",
-    "vitest": "^1.0.4"
+    "typescript": "^5.9.3",
+    "vitest": "^1.6.1"
   },
   "keywords": [
     "objectql",

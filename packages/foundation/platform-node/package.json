@@ -27,13 +27,13 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@objectstack/objectql": "^3.2.6",
     "@objectql/types": "workspace:*",
-    "@objectstack/spec": "^3.2.6",
-    "fast-glob": "^3.3.2",
+    "@objectstack/objectql": "^3.2.8",
+    "@objectstack/spec": "^3.2.8",
+    "fast-glob": "^3.3.3",
     "js-yaml": "^4.1.1"
   },
   "devDependencies": {
-    "typescript": "^5.3.0"
+    "typescript": "^5.9.3"
   }
 }

@@ -27,13 +27,13 @@
   },
   "dependencies": {
     "@objectql/types": "workspace:*",
-    "@objectstack/spec": "^3.2.6",
-    "redis": "^4.6.0",
+    "@objectstack/spec": "^3.2.8",
+    "redis": "^4.7.1",
     "zod": "^4.3.6"
   },
   "devDependencies": {
     "@objectql/driver-tck": "workspace:*",
-    "typescript": "^5.0.0"
+    "typescript": "^5.9.3"
   },
   "repository": {
     "type": "git",

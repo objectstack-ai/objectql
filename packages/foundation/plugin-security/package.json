@@ -32,11 +32,11 @@
   },
   "dependencies": {
     "@objectql/types": "workspace:*",
-    "@objectstack/core": "^3.2.6",
-    "@objectstack/spec": "^3.2.6",
+    "@objectstack/core": "^3.2.8",
+    "@objectstack/spec": "^3.2.8",
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "typescript": "^5.3.0"
+    "typescript": "^5.9.3"
   }
 }
