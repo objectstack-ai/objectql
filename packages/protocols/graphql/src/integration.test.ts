@@ -298,12 +298,11 @@ describe('GraphQL Protocol Integration Tests', () => {
     describe('Error Handling', () => {
         it('should handle invalid object name', async () => {
             try {
-                await kernel.repository.find('nonexistent', {});
-                // If no error is thrown, the test should still pass
-                // as some drivers may return empty results
-                expect(true).toBe(true);
+                const result = await kernel.repository.find('nonexistent', {});
+                // Driver returns an empty array for unknown collections
+                expect(Array.isArray(result)).toBe(true);
             } catch (error) {
-                // Error is also acceptable
+                // Error is also acceptable — some drivers throw for unknown objects
                 expect(error).toBeDefined();
             }
         });

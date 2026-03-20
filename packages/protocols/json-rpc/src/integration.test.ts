@@ -290,8 +290,9 @@ describe('JSON-RPC 2.0 Protocol Integration Tests', () => {
         it('should handle method not found (-32601)', async () => {
             try {
                 // Simulate calling non-existent method
-                await kernel.repository.find('nonexistent', {});
-                expect(true).toBe(true); // Driver may return empty
+                const result = await kernel.repository.find('nonexistent', {});
+                // Driver returns empty array for unknown collections
+                expect(Array.isArray(result)).toBe(true);
             } catch (error) {
                 expect(error).toBeDefined();
             }
@@ -311,11 +312,11 @@ describe('JSON-RPC 2.0 Protocol Integration Tests', () => {
         
         it('should handle application errors', async () => {
             try {
-                await kernel.repository.update('tasks', 'non-existent', {
+                const result = await kernel.repository.update('tasks', 'non-existent', {
                     title: 'Updated'
                 });
-                // May return null or throw
-                expect(true).toBe(true);
+                // MemoryDriver returns null for non-existent records in non-strict mode
+                expect(result).toBeNull();
             } catch (error) {
                 expect(error).toBeDefined();
             }
@@ -559,8 +560,9 @@ describe('JSON-RPC 2.0 Protocol Integration Tests', () => {
     describe('Error Handling and Recovery', () => {
         it('should handle null parameters gracefully', async () => {
             try {
-                await kernel.repository.find('tasks', null as any);
-                expect(true).toBe(true);
+                const result = await kernel.repository.find('tasks', null as any);
+                // Driver handles null query gracefully — returns records or empty array
+                expect(result).toBeDefined();
             } catch (error) {
                 expect(error).toBeDefined();
             }
@@ -568,8 +570,9 @@ describe('JSON-RPC 2.0 Protocol Integration Tests', () => {
         
         it('should handle empty object name', async () => {
             try {
-                await kernel.repository.find('', {});
-                expect(true).toBe(true);
+                const result = await kernel.repository.find('', {});
+                // Driver returns empty array for unknown/empty collection names
+                expect(Array.isArray(result)).toBe(true);
             } catch (error) {
                 expect(error).toBeDefined();
             }

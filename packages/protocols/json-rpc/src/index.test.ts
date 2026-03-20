@@ -66,21 +66,21 @@ describe('JSONRPCPlugin', () => {
     it('should install successfully', async () => {
       await plugin.install?.({ engine: kernel });
       
-      // Plugin should be installed without errors
-      expect(true).toBe(true);
+      // Verify the engine reference was stored after installation
+      expect((plugin as any).engine).toBeDefined();
     });
 
     it('should start and stop successfully', async () => {
       await plugin.install?.({ engine: kernel });
       await plugin.onStart?.({ engine: kernel });
       
-      // Plugin should start without errors
-      expect(true).toBe(true);
+      // Verify the HTTP server was created and is listening
+      expect((plugin as any).server?.listening).toBe(true);
       
       await plugin.onStop?.({ engine: kernel });
       
-      // Plugin should stop without errors
-      expect(true).toBe(true);
+      // Verify the HTTP server stopped accepting connections
+      expect((plugin as any).server?.listening).toBe(false);
     });
   });
 
