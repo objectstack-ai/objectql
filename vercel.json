@@ -1,0 +1,17 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "pnpm install --ignore-scripts",
+  "buildCommand": "bash scripts/build-vercel.sh",
+  "framework": null,
+  "functions": {
+    "api/**/*.ts": {
+      "memory": 1024,
+      "maxDuration": 60,
+      "includeFiles": "{packages/*/*/dist,node_modules/@object-ui/console/dist,node_modules/@objectstack/plugin-auth/dist,node_modules/@objectstack/studio/dist}/**"
+    }
+  },
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "/api/[[...route]]" },
+    { "source": "/(.*)", "destination": "/api/[[...route]]" }
+  ]
+}
