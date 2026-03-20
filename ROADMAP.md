@@ -89,6 +89,7 @@ ObjectQL is the **Standard Protocol for AI Software Generation** — a universal
 - ✅ `@objectql/driver-turso` — Turso/libSQL driver (Phase A: Core Driver) with 125 tests, 3 connection modes (remote, local, embedded replica)
 - ✅ `@objectql/driver-turso` — Phase B: Multi-Tenant Router, Schema Diff Engine, Platform API Client, Driver Plugin (52 new tests, 177 total)
 - ✅ Fix test quality: replaced all `expect(true).toBe(true)` placeholder assertions with meaningful state checks across `plugin-optimizations`, `protocol-odata-v4`, `protocol-json-rpc`, and `protocol-graphql` (7 files, 10 assertions fixed)
+- ✅ Plugin-based metadata auto-loading: `createAppPlugin()` factory in `@objectql/platform-node` replaces manual `loadObjects()`. Metadata registered as `app.*` services for upstream ObjectQLPlugin auto-discovery. Added `MetadataRegistry.listEntries()` and 8 new tests.
 
 ---
 
@@ -843,6 +844,7 @@ const kernel = new ObjectStackKernel([
 | Extract formula wiring | Already in `@objectql/plugin-formula` — remove re-export from aggregator | ✅ |
 | Deprecate `ObjectQLPlugin` aggregator class | Mark as deprecated with `console.warn`, point to explicit imports | ✅ |
 | Migrate `objectstack.config.ts` to upstream | Import `ObjectQLPlugin` from `@objectstack/objectql`, compose sub-plugins directly, register MemoryDriver as `driver.default` service — fixes `app.*` discovery chain for AuthPlugin | ✅ |
+| Plugin-based metadata auto-loading (`createAppPlugin`) | Replace manual `loadObjects()` with `createAppPlugin()` factory in `@objectql/platform-node`. Each app registers as `app.<id>` service; upstream ObjectQLPlugin auto-discovers via `app.*` pattern. Config no longer needs `objects:` field. | ✅ |
 | Add `init`/`start` adapter to `QueryPlugin` | Consistent with ValidatorPlugin / FormulaPlugin adapter pattern for `@objectstack/core` kernel compatibility | ✅ |
 
 ### Phase B: Dispose Bridge Class ✅

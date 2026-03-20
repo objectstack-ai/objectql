@@ -31,44 +31,30 @@ import { ValidatorPlugin } from '@objectql/plugin-validator';
 import { FormulaPlugin } from '@objectql/plugin-formula';
 import { createApiRegistryPlugin } from '@objectstack/core';
 import { MemoryDriver } from '@objectql/driver-memory';
-import * as fs from 'fs';
-import * as yaml from 'js-yaml';
-
-function loadObjects(dir: string) {
-    const objects: Record<string, any> = {};
-    if (!fs.existsSync(dir)) return objects;
-    
-    const files = fs.readdirSync(dir);
-    for (const file of files) {
-        if (file.endsWith('.object.yml') || file.endsWith('.object.yaml')) {
-            const content = fs.readFileSync(path.join(dir, file), 'utf8');
-            try {
-                const doc = yaml.load(content) as any;
-                if (doc) {
-                    const name = doc.name || file.replace(/\.object\.ya?ml$/, '');
-                    objects[name] = { ...doc, name };
-                }
-            } catch (e) {
-                console.error(`Failed to load ${file}:`, e);
-            }
-        }
-    }
-    return objects;
-}
-
-const projectTrackerDir = path.join(__dirname, 'examples/showcase/project-tracker/src');
+import { createAppPlugin } from '@objectql/platform-node';
 
 // Shared driver instance — registered as 'driver.default' service for
 // upstream ObjectQLPlugin discovery and passed to QueryPlugin for query execution.
 const defaultDriver = new MemoryDriver();
+
+// App plugins: each business module is loaded via createAppPlugin.
+// ObjectLoader recursively scans for *.object.yml, *.view.yml, *.permission.yml, etc.
+// The assembled manifest is registered as an `app.<id>` service.
+// Upstream ObjectQLPlugin auto-discovers all `app.*` services during start().
+const projectTrackerPlugin = createAppPlugin({
+    id: 'project-tracker',
+    dir: path.join(__dirname, 'examples/showcase/project-tracker/src'),
+    label: 'Project Tracker',
+    description: 'A showcase of ObjectQL capabilities including all field types.',
+});
 
 export default {
     metadata: {
         name: 'objectos',
         version: '1.0.0'
     },
-    objects: loadObjects(projectTrackerDir),
     // Runtime plugins (instances only)
+    // No manual `objects:` field — metadata is auto-loaded via AppPlugin.
     plugins: [
         createApiRegistryPlugin(),
         new HonoServerPlugin({}),
@@ -82,9 +68,12 @@ export default {
             },
             start: async () => {},
         },
+        // App plugins: register app metadata as `app.*` services.
+        // Must be before ObjectQLPlugin so services are available during start().
+        projectTrackerPlugin,
         // Upstream ObjectQLPlugin from @objectstack/objectql:
         // - Registers objectql, metadata, data, protocol services
-        // - Discovers driver.* and app.* services (fixes auth plugin object registration)
+        // - Discovers driver.* and app.* services and calls ql.registerApp()
         // - Registers audit hooks (created_by/updated_by) and tenant isolation middleware
         new ObjectQLPlugin(),
         new QueryPlugin({ datasources: { default: defaultDriver } }),
