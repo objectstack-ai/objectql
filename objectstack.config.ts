@@ -24,6 +24,7 @@ import { ODataV4Plugin } from '@objectql/protocol-odata-v4';
 import { JSONRPCPlugin } from '@objectql/protocol-json-rpc';
 import { HonoServerPlugin } from '@objectstack/plugin-hono-server';
 import { AuthPlugin } from '@objectstack/plugin-auth';
+import { ConsolePlugin } from '@object-ui/console';
 import { ObjectQLPlugin } from '@objectql/core';
 import { createApiRegistryPlugin } from '@objectstack/core';
 import { MemoryDriver } from '@objectql/driver-memory';
@@ -63,7 +64,8 @@ export default {
     // Runtime plugins (instances only)
     plugins: [
         createApiRegistryPlugin(),
-        new HonoServerPlugin(),
+        new HonoServerPlugin({}),
+        new ConsolePlugin(),
         new ObjectQLPlugin({
             enableRepository: true,
             enableQueryService: true,

@@ -24,6 +24,9 @@ importers:
       '@eslint/js':
         specifier: ^9.39.4
         version: 9.39.4
+      '@object-ui/console':
+        specifier: ^3.1.3
+        version: 3.1.3
       '@objectql/cli':
         specifier: workspace:*
         version: link:packages/tools/cli
@@ -2326,6 +2329,9 @@ packages:
     resolution: {integrity: sha512-1SUf/Cg2GzGDyaf15aR9St9TWlb+XvbZXWpDx8YKs7MLzMH/BCeopv+y9vzrzgkfykCGuWOlSu3mZhj2+FQcrg==}
     engines: {node: '>=10'}
     deprecated: This functionality has been moved to @npmcli/fs
+
+  '@object-ui/console@3.1.3':
+    resolution: {integrity: sha512-QZSXLO7YNwusQyozsq2Athy+BbmGi9QojVrL0vzx/zLT7epMbpjvjehvBwei07erYEDcIV3y0gu6klTfmqW77w==}
 
   '@objectql/driver-memory@4.2.2':
     resolution: {integrity: sha512-h3rBGUqExTUdJSKDOf9CilPoElJvcc79nrLvap4vU6O1z+8K2Q5Q0IzDAugzWVcudxWmYNwy2RR9jwqbfGvL0g==}
@@ -9702,6 +9708,8 @@ snapshots:
       mkdirp: 1.0.4
       rimraf: 3.0.2
     optional: true
+
+  '@object-ui/console@3.1.3': {}
 
   '@objectql/driver-memory@4.2.2':
     dependencies:
