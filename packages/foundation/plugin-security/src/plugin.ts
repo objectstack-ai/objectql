@@ -147,11 +147,13 @@ export class ObjectQLSecurityPlugin implements RuntimePlugin {
     // Register security hooks
     this.registerSecurityHooks(kernel, ctx);
 
-    // Register 'auth' service alias if available in context
-    // This allows ApiRegistry and other components to find the security service
+    // Register 'security' service alias if available in context
+    // This allows ApiRegistry and other components to find the security service.
+    // NOTE: We register as 'security' (authorization/RBAC), NOT 'auth'.
+    // The 'auth' service is reserved for @objectstack/plugin-auth (authentication).
     if (typeof (ctx as any).registerService === 'function') {
-        (ctx as any).registerService('auth', kernel.security);
-        this.logger.info("Registered 'auth' service alias");
+        (ctx as any).registerService('security', kernel.security);
+        this.logger.info("Registered 'security' service alias");
     }
     
     this.logger.info('Security plugin installed successfully');

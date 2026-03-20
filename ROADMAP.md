@@ -968,7 +968,7 @@ Standardize third-party plugin distribution.
 | `packages/foundation/plugin-query` | `@objectql/plugin-query` | Universal | QueryService, QueryBuilder, QueryAnalyzer, FilterTranslator. |
 | `packages/foundation/plugin-optimizations` | `@objectql/plugin-optimizations` | Universal | Connection pooling, query compilation, compiled hooks, lazy metadata. |
 | `packages/foundation/platform-node` | `@objectql/platform-node` | Node.js | File system integration, YAML loading, glob-based plugin discovery. |
-| `packages/foundation/plugin-security` | `@objectql/plugin-security` | Universal | RBAC, FLS, RLS with AST-level enforcement. |
+| `packages/foundation/plugin-security` | `@objectql/plugin-security` | Universal | RBAC, FLS, RLS with AST-level enforcement. Registers as `'security'` service (not `'auth'`; `'auth'` is reserved for `@objectstack/plugin-auth`). |
 | `packages/foundation/plugin-validator` | `@objectql/plugin-validator` | Universal | 5-type validation engine. |
 | `packages/foundation/plugin-formula` | `@objectql/plugin-formula` | Universal | Computed fields with sandboxed JS expressions. |
 | `packages/foundation/plugin-workflow` | `@objectql/plugin-workflow` | Universal | State machine executor with guards, actions, compound states. |
