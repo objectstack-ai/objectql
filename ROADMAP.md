@@ -782,7 +782,7 @@ Priority tasks following the `@objectstack` v3.2.6 upgrade:
 | # | Task | Priority | Status | Description |
 |---|------|----------|--------|-------------|
 | 1 | Fix `plugin-formula` integration tests | High | ✅ Fixed | Previously 6 pre-existing test failures — now all pass (66/66 test tasks, including plugin-formula). |
-| 2 | Re-enable `AuthPlugin` | Medium | ✅ Done | Enabled `AuthPlugin` in `objectstack.config.ts` with env-based secret. Added Vercel deployment support (`vercel.json`, `api/[[...route]].ts`, `scripts/build-vercel.sh`). |
+| 2 | Re-enable `AuthPlugin` | Medium | ✅ Done | Enabled `AuthPlugin` in `objectstack.config.ts` with env-based `AUTH_SECRET` and localhost trusted origins. |
 | 3 | Align `@objectql/types` with `@objectstack/spec` v3.2.6 Zod v4 schemas | High | ✅ Done | `z.infer<>` type derivation compiles correctly against Zod v4 schema exports in `@objectstack/spec@3.2.6`. Verified via 38/38 build tasks passing. |
 | 4 | Core bridge class stabilization | Medium | ✅ Done | `app.ts` bridge class — all `registerObject`, `getObject`, `getConfigs`, `removePackage` overrides align with `@objectstack/objectql@3.2.6` API surface. Build verified. |
 | 5 | Bump `@objectql/*` packages to **4.3.0** | Low | 🟡 Next | Release patch with `@objectstack` v3.2.6 compatibility via Changesets. |
