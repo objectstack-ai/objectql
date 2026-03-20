@@ -258,6 +258,16 @@ export class ObjectQL {
 
 const mockStore = new Map<string, Map<string, any>>();
 
+/**
+ * Utility: Convert snake_case to Title Case.
+ * Mirrors the real implementation from @objectstack/objectql.
+ */
+export function toTitleCase(str: string): string {
+  return str
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
 export const SchemaRegistry = {
   register: jest.fn(),
   get: jest.fn(),

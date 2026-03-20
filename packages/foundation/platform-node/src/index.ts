@@ -10,3 +10,4 @@ export * from './loader';
 export * from './plugin';
 export * from './driver';
 export * from './module';
+export * from './app-plugin';
