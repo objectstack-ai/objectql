@@ -31,32 +31,74 @@ import { ValidatorPlugin } from '@objectql/plugin-validator';
 import { FormulaPlugin } from '@objectql/plugin-formula';
 import { createApiRegistryPlugin } from '@objectstack/core';
 import { MemoryDriver } from '@objectql/driver-memory';
-import * as fs from 'fs';
-import * as yaml from 'js-yaml';
+import { ObjectLoader } from '@objectql/platform-node';
+import { MetadataRegistry, AppConfig, ObjectConfig } from '@objectql/types';
 
-function loadObjects(dir: string) {
-    const objects: Record<string, any> = {};
-    if (!fs.existsSync(dir)) return objects;
-    
-    const files = fs.readdirSync(dir);
-    for (const file of files) {
-        if (file.endsWith('.object.yml') || file.endsWith('.object.yaml')) {
-            const content = fs.readFileSync(path.join(dir, file), 'utf8');
-            try {
-                const doc = yaml.load(content) as any;
-                if (doc) {
-                    const name = doc.name || file.replace(/\.object\.ya?ml$/, '');
-                    objects[name] = { ...doc, name };
-                }
-            } catch (e) {
-                console.error(`Failed to load ${file}:`, e);
-            }
-        }
-    }
-    return objects;
+/** Minimal shape of the PluginContext provided by @objectstack/core during init(). */
+interface PluginInitContext {
+    registerService(name: string, service: unknown): void;
 }
 
-const projectTrackerDir = path.join(__dirname, 'examples/showcase/project-tracker/src');
+/** App manifest enriched with objects and a guaranteed id field for SchemaRegistry. */
+interface AppManifest extends AppConfig {
+    id: string;
+    objects: Record<string, ObjectConfig>;
+}
+
+/**
+ * Loads all metadata from a given directory using ObjectLoader and returns a
+ * list of app manifests, each enriched with the objects found in that directory.
+ *
+ * @param dir - Absolute path to the app source directory (scanned recursively)
+ */
+function loadAppManifests(dir: string): AppManifest[] {
+    const registry = new MetadataRegistry();
+    const loader = new ObjectLoader(registry);
+    loader.load(dir);
+
+    const apps = registry.list<AppConfig>('app');
+    if (apps.length === 0) return [];
+
+    // Build an object map from all objects loaded in this directory
+    const objects: Record<string, ObjectConfig> = {};
+    for (const obj of registry.list<ObjectConfig>('object')) {
+        if (obj.name) objects[obj.name] = obj;
+    }
+
+    return apps.map(app => ({
+        ...app,
+        // Ensure manifest.id is always set so SchemaRegistry.installPackage()
+        // can index it correctly (falls back to name if id is absent in YAML).
+        id: (app as AppConfig & { id?: string }).id ?? app.name,
+        objects,
+    }));
+}
+
+/**
+ * ExampleAppsPlugin — RuntimePlugin that loads the showcase example apps.
+ *
+ * Follows the ObjectStack convention: metadata is loaded inside plugins using
+ * ObjectLoader from @objectql/platform-node, not via manual fs code in the
+ * config.  The plugin registers `app.<name>` services so that the upstream
+ * ObjectQLPlugin can discover and install them during its start() phase.
+ */
+const ExampleAppsPlugin = {
+    name: 'example-apps',
+    async init(ctx: PluginInitContext) {
+        const exampleDirs = [
+            path.join(__dirname, 'examples/showcase/project-tracker/src'),
+            path.join(__dirname, 'examples/showcase/enterprise-erp/src'),
+        ];
+
+        for (const dir of exampleDirs) {
+            const manifests = loadAppManifests(dir);
+            for (const manifest of manifests) {
+                ctx.registerService(`app.${manifest.name}`, manifest);
+            }
+        }
+    },
+    async start() {},
+};
 
 // Shared driver instance — registered as 'driver.default' service for
 // upstream ObjectQLPlugin discovery and passed to QueryPlugin for query execution.
@@ -67,12 +109,14 @@ export default {
         name: 'objectos',
         version: '1.0.0'
     },
-    objects: loadObjects(projectTrackerDir),
     // Runtime plugins (instances only)
     plugins: [
         createApiRegistryPlugin(),
         new HonoServerPlugin({}),
         new ConsolePlugin(),
+        // Load all example app metadata and register app.* services so the
+        // upstream ObjectQLPlugin can discover and install them.
+        ExampleAppsPlugin,
         // Register MemoryDriver as 'driver.default' service so upstream
         // ObjectQLPlugin can discover it during start() phase.
         {
