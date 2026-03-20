@@ -79,12 +79,10 @@ export default {
         new ObjectQLSecurityPlugin({
             enableAudit: false
         }),
-        // Temporarily disabled due to field naming validation errors (camelCase vs snake_case)
-        // The AuthPlugin uses camelCase field names (createdAt, updatedAt, emailVerified)
-        // which violate the ObjectQL spec requiring snake_case
-        // new AuthPlugin({
-        //     basePath: '/api/v1/auth'
-        // }),
+        new AuthPlugin({
+            secret: process.env.AUTH_SECRET || 'objectql-dev-secret-change-me-in-production',
+            trustedOrigins: ['http://localhost:*'],
+        }),
         // ValidatorPlugin is managed by ObjectQLPlugin now
         // new ValidatorPlugin(),
         new GraphQLPlugin({

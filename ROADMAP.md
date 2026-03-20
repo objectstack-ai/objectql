@@ -1,6 +1,6 @@
 # ObjectQL — 2026 Roadmap
 
-> Created: 2026-02-08 | Last Updated: 2026-02-20 | Status: **Active**  
+> Created: 2026-02-08 | Last Updated: 2026-03-20 | Status: **Active**  
 > Current Version: **4.2.2** (31 workspace packages; exceptions: root 4.2.0)  
 > Runtime: `@objectstack/cli` v3.2.6 (Kernel pattern) — `@objectql/server` removed, `packages/runtime/` removed.  
 > @objectstack Platform: **v3.2.6**
@@ -783,7 +783,7 @@ Priority tasks following the `@objectstack` v3.2.6 upgrade:
 | # | Task | Priority | Status | Description |
 |---|------|----------|--------|-------------|
 | 1 | Fix `plugin-formula` integration tests | High | ✅ Fixed | Previously 6 pre-existing test failures — now all pass (66/66 test tasks, including plugin-formula). |
-| 2 | Re-enable `AuthPlugin` | Medium | 🔴 Open | Disabled due to camelCase field names (`createdAt`, `updatedAt`, `emailVerified`) violating ObjectQL snake_case spec. Coordinate with `@objectstack/plugin-auth` upstream or add field name normalization layer. |
+| 2 | Re-enable `AuthPlugin` | Medium | ✅ Done | Enabled `AuthPlugin` in `objectstack.config.ts` with env-based `AUTH_SECRET` and localhost trusted origins. |
 | 3 | Align `@objectql/types` with `@objectstack/spec` v3.2.6 Zod v4 schemas | High | ✅ Done | `z.infer<>` type derivation compiles correctly against Zod v4 schema exports in `@objectstack/spec@3.2.6`. Verified via 38/38 build tasks passing. |
 | 4 | Core bridge class stabilization | Medium | ✅ Done | `app.ts` bridge class — all `registerObject`, `getObject`, `getConfigs`, `removePackage` overrides align with `@objectstack/objectql@3.2.6` API surface. Build verified. |
 | 5 | Bump `@objectql/*` packages to **4.3.0** | Low | 🟡 Next | Release patch with `@objectstack` v3.2.6 compatibility via Changesets. |
