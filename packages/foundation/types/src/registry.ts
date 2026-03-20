@@ -85,6 +85,15 @@ export class MetadataRegistry {
         return this.items[type]?.[name] as T;
     }
 
+    /**
+     * List all raw entries (without unwrapping .content) for a given type.
+     * Useful when you need access to wrapper fields like `id`, `path`, `package`.
+     */
+    listEntries(type: string): Record<string, unknown>[] {
+        if (!this.items[type]) return [];
+        return Object.values(this.items[type]);
+    }
+
     unregister(type: string, name: string) {
         const item = this.items[type]?.[name];
         if (item) {
