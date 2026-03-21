@@ -34,9 +34,11 @@ function derefSymlink(pkgPath) {
     const realPath = fs.realpathSync(abs);
     console.log(`  → Dereferencing ${pkgPath}`);
 
-    // Copy to a temp location first, then swap — avoids data loss if cpSync fails
+    // Copy to a temp location first, then swap — avoids data loss if cpSync fails.
+    // dereference:true ensures nested pnpm .pnpm-store symlinks inside the package
+    // are also resolved to real files, which is required by Vercel's function bundler.
     const tmpPath = abs + '.tmp';
-    fs.cpSync(realPath, tmpPath, { recursive: true });
+    fs.cpSync(realPath, tmpPath, { recursive: true, dereference: true });
     fs.unlinkSync(abs);
     fs.renameSync(tmpPath, abs);
     return true;
