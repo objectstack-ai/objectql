@@ -35,7 +35,9 @@ echo "▸ Building @objectql/platform-node…"
 pnpm --filter @objectql/platform-node build
 
 echo "▸ Building drivers…"
-pnpm --filter @objectql/driver-memory build
+pnpm --filter @objectql/driver-memory \
+     --filter @objectql/driver-sql \
+     build
 
 echo "▸ Building protocols…"
 pnpm --filter @objectql/protocol-graphql \
