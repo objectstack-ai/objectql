@@ -5,8 +5,8 @@
 # Vercel build step.
 #
 # Steps:
-#   1. Build foundation packages (types → core → platform-node)
-#   2. Build drivers, plugins, and protocols
+#   1. Build foundation packages (types → plugin-optimizations → plugins → core → platform-node)
+#   2. Build drivers and protocols
 #   3. Build the project-tracker showcase example
 #   4. Patch pnpm symlinks so Vercel can bundle the serverless function
 #
@@ -18,6 +18,16 @@ set -euo pipefail
 echo "▸ Building @objectql/types…"
 pnpm --filter @objectql/types build
 
+echo "▸ Building @objectql/plugin-optimizations…"
+pnpm --filter @objectql/plugin-optimizations build
+
+echo "▸ Building plugins…"
+pnpm --filter @objectql/plugin-query \
+     --filter @objectql/plugin-validator \
+     --filter @objectql/plugin-formula \
+     --filter @objectql/plugin-security \
+     build
+
 echo "▸ Building @objectql/core…"
 pnpm --filter @objectql/core build
 
@@ -26,13 +36,6 @@ pnpm --filter @objectql/platform-node build
 
 echo "▸ Building drivers…"
 pnpm --filter @objectql/driver-memory build
-
-echo "▸ Building plugins…"
-pnpm --filter @objectql/plugin-query \
-     --filter @objectql/plugin-validator \
-     --filter @objectql/plugin-formula \
-     --filter @objectql/plugin-security \
-     build
 
 echo "▸ Building protocols…"
 pnpm --filter @objectql/protocol-graphql \
