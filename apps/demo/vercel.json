@@ -7,20 +7,7 @@
     "api/**/*.ts": {
       "memory": 1024,
       "maxDuration": 60,
-      "includeFiles": [
-        "node_modules/@object-ui/console/dist/**",
-        "node_modules/@objectstack/plugin-auth/dist/**",
-        "node_modules/@objectstack/studio/dist/**",
-        "node_modules/@objectql/example-project-tracker/dist/**",
-        "node_modules/@objectql/driver-turso/dist/**",
-        "node_modules/@libsql/**",
-        "node_modules/libsql/**",
-        "node_modules/@neon-rs/**",
-        "node_modules/detect-libc/**",
-        "node_modules/js-base64/**",
-        "node_modules/promise-limit/**",
-        "node_modules/nanoid/**"
-      ]
+      "includeFiles": "node_modules/{@object-ui/*/dist,@objectstack/*/dist,@objectql/*/dist,@libsql,@neon-rs,libsql,detect-libc,js-base64,promise-limit,nanoid}/**"
     }
   },
   "rewrites": [
