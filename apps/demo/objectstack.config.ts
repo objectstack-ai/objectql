@@ -1,8 +1,9 @@
 /**
  * ObjectQL Demo — Application Configuration
  *
- * Minimal ObjectStack configuration for the demo application.
- * Uses in-memory driver with the project-tracker showcase example.
+ * ObjectStack configuration for the demo application.
+ * Uses @objectql/driver-turso when TURSO_DATABASE_URL is set,
+ * falls back to MemoryDriver for zero-config local development.
  *
  * For local development: `pnpm dev` (uses @objectstack/cli)
  * For Vercel deployment: configured via api/[[...route]].ts
@@ -29,10 +30,39 @@ import { FormulaPlugin } from '@objectql/plugin-formula';
 import { ObjectQLSecurityPlugin } from '@objectql/plugin-security';
 import { createApiRegistryPlugin } from '@objectstack/core';
 import { MemoryDriver } from '@objectql/driver-memory';
+import { createTursoDriver } from '@objectql/driver-turso';
 import { createAppPlugin } from '@objectql/platform-node';
 
-// In-memory driver — zero-config, no external DB required.
-const defaultDriver = new MemoryDriver();
+// Choose driver based on environment — Turso when TURSO_DATABASE_URL is set,
+// MemoryDriver otherwise (zero-config fallback for quick starts).
+function createDefaultDriver() {
+    const tursoUrl = process.env.TURSO_DATABASE_URL;
+    if (tursoUrl) {
+        console.log(`🗄️  Driver: Turso (${tursoUrl})`);
+        const syncUrl = process.env.TURSO_SYNC_URL;
+        const rawSyncInterval = process.env.TURSO_SYNC_INTERVAL;
+        const parsedSyncInterval =
+            rawSyncInterval !== undefined ? Number(rawSyncInterval) : NaN;
+        const syncIntervalSeconds = Number.isFinite(parsedSyncInterval)
+            ? parsedSyncInterval
+            : 60;
+        return createTursoDriver({
+            url: tursoUrl,
+            authToken: process.env.TURSO_AUTH_TOKEN,
+            syncUrl,
+            sync: syncUrl
+                ? {
+                    intervalSeconds: syncIntervalSeconds,
+                    onConnect: true,
+                }
+                : undefined,
+        });
+    }
+    console.log('🗄️  Driver: Memory (in-memory, non-persistent)');
+    return new MemoryDriver();
+}
+
+const defaultDriver = createDefaultDriver();
 
 // Load the project-tracker showcase metadata.
 const projectTrackerPlugin = createAppPlugin({
@@ -51,13 +81,17 @@ export default {
         createApiRegistryPlugin(),
         new HonoServerPlugin({}),
         new ConsolePlugin(),
-        // Register the driver as 'driver.default' service.
+        // Register the active driver as 'driver.default' service so upstream
+        // ObjectQLPlugin can discover it during start() phase.
         {
             name: 'driver-default',
             init: async (ctx: any) => {
                 ctx.registerService('driver.default', defaultDriver);
             },
-            start: async () => {},
+            start: async () => {
+                // Driver.connect() is optional in the interface; call if present
+                await defaultDriver.connect?.();
+            },
         },
         projectTrackerPlugin,
         new ObjectQLPlugin(),

@@ -144,6 +144,21 @@ importers:
       '@hono/node-server':
         specifier: ^1.19.11
         version: 1.19.11(hono@4.12.8)
+      '@libsql/client':
+        specifier: ^0.17.2
+        version: 0.17.2(encoding@0.1.13)
+      '@libsql/core':
+        specifier: ^0.17.2
+        version: 0.17.2
+      '@libsql/hrana-client':
+        specifier: ^0.9.0
+        version: 0.9.0(encoding@0.1.13)
+      '@libsql/isomorphic-ws':
+        specifier: ^0.1.5
+        version: 0.1.5
+      '@neon-rs/load':
+        specifier: ^0.0.4
+        version: 0.0.4
       '@object-ui/console':
         specifier: ^3.1.3
         version: 3.1.3
@@ -153,6 +168,9 @@ importers:
       '@objectql/driver-memory':
         specifier: workspace:*
         version: link:../../packages/drivers/memory
+      '@objectql/driver-turso':
+        specifier: workspace:*
+        version: link:../../packages/drivers/turso
       '@objectql/example-project-tracker':
         specifier: workspace:*
         version: link:../../examples/showcase/project-tracker
@@ -213,12 +231,36 @@ importers:
       '@types/node':
         specifier: ^20.19.37
         version: 20.19.37
+      cross-fetch:
+        specifier: ^4.1.0
+        version: 4.1.0(encoding@0.1.13)
+      detect-libc:
+        specifier: ^2.0.2
+        version: 2.1.2
       hono:
         specifier: ^4.12.8
         version: 4.12.8
+      js-base64:
+        specifier: ^3.7.8
+        version: 3.7.8
+      libsql:
+        specifier: ^0.5.28
+        version: 0.5.28
+      nanoid:
+        specifier: ^3.3.11
+        version: 3.3.11
+      node-fetch:
+        specifier: ^2.7.0
+        version: 2.7.0(encoding@0.1.13)
+      promise-limit:
+        specifier: ^2.7.0
+        version: 2.7.0
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
+      ws:
+        specifier: ^8.19.0
+        version: 8.19.0
       zod:
         specifier: ^4.3.6
         version: 4.3.6

@@ -35,6 +35,7 @@ pnpm --filter @objectql/platform-node build
 
 echo "▸ Building drivers…"
 pnpm --filter @objectql/driver-memory \
+     --filter @objectql/driver-turso \
      --filter @objectql/driver-sql \
      build
 
