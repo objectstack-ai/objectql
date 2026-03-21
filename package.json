@@ -67,6 +67,7 @@
   },
   "version": "4.2.0",
   "dependencies": {
+    "@libsql/client": "^0.17.2",
     "@objectql/protocol-json-rpc": "workspace:*",
     "@objectstack/studio": "^3.2.8",
     "build": "^0.1.4"

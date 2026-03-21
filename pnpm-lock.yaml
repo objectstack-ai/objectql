@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@libsql/client':
+        specifier: ^0.17.2
+        version: 0.17.2(encoding@0.1.13)
       '@objectql/protocol-json-rpc':
         specifier: workspace:*
         version: link:packages/protocols/json-rpc

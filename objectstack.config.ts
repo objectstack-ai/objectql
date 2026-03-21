@@ -8,6 +8,21 @@
 
 import { createRequire } from 'module';
 import * as path from 'path';
+import * as fs from 'fs';
+
+// Load .env file into process.env (zero-dependency, Node-native approach)
+const envPath = path.resolve(path.dirname(new URL(import.meta.url).pathname), '.env');
+if (fs.existsSync(envPath)) {
+    for (const line of fs.readFileSync(envPath, 'utf-8').split('\n')) {
+        const trimmed = line.trim();
+        if (!trimmed || trimmed.startsWith('#')) continue;
+        const eqIdx = trimmed.indexOf('=');
+        if (eqIdx === -1) continue;
+        const key = trimmed.slice(0, eqIdx).trim();
+        const val = trimmed.slice(eqIdx + 1).trim();
+        if (!process.env[key]) process.env[key] = val;
+    }
+}
 
 // Polyfill require and __dirname for ESM
 if (typeof globalThis.require === 'undefined') {
