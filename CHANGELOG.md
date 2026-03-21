@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- **`apps/demo`** — added explicit `@objectstack/spec` devDependency. The Vercel serverless function failed at runtime with `ERR_MODULE_NOT_FOUND` because `@objectstack/core` could not resolve its transitive `@objectstack/spec` dependency after pnpm symlinks were dereferenced by `patch-symlinks.cjs`. Adding the explicit dependency ensures the package is present at the top level of `node_modules/` for Vercel bundling.
+- **`apps/demo`** — added explicit `@objectstack/spec` and `zod` devDependencies. The Vercel serverless function failed at runtime with `ERR_MODULE_NOT_FOUND` because transitive dependencies could not be resolved after pnpm symlinks were dereferenced by `patch-symlinks.cjs`. Adding them as explicit dependencies ensures they are present at the top level of `node_modules/` for Vercel bundling.
 - **`@objectql/types`** — moved `@objectstack/spec` and `zod` from `devDependencies` to `dependencies`. The compiled JS output contains runtime imports of `@objectstack/spec` (via `z.infer<typeof Data.X>` patterns), so they must be declared as production dependencies.
 
 ### Added
