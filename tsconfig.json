@@ -42,6 +42,9 @@
     // Examples
     { "path": "./examples/integrations/express-server" },
     { "path": "./examples/showcase/project-tracker" },
-    { "path": "./examples/showcase/enterprise-erp" }
+    { "path": "./examples/showcase/enterprise-erp" },
+
+    // Apps
+    { "path": "./apps/demo" }
   ]
 }

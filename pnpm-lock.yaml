@@ -133,6 +133,78 @@ importers:
         specifier: ^1.6.1
         version: 1.6.1(@types/node@20.19.37)(@vitest/ui@1.6.1)(lightningcss@1.32.0)
 
+  apps/demo:
+    devDependencies:
+      '@hono/node-server':
+        specifier: ^1.19.11
+        version: 1.19.11(hono@4.12.8)
+      '@object-ui/console':
+        specifier: ^3.1.3
+        version: 3.1.3
+      '@objectql/core':
+        specifier: workspace:*
+        version: link:../../packages/foundation/core
+      '@objectql/driver-memory':
+        specifier: workspace:*
+        version: link:../../packages/drivers/memory
+      '@objectql/example-project-tracker':
+        specifier: workspace:*
+        version: link:../../examples/showcase/project-tracker
+      '@objectql/platform-node':
+        specifier: workspace:*
+        version: link:../../packages/foundation/platform-node
+      '@objectql/plugin-formula':
+        specifier: workspace:*
+        version: link:../../packages/foundation/plugin-formula
+      '@objectql/plugin-query':
+        specifier: workspace:*
+        version: link:../../packages/foundation/plugin-query
+      '@objectql/plugin-security':
+        specifier: workspace:*
+        version: link:../../packages/foundation/plugin-security
+      '@objectql/plugin-validator':
+        specifier: workspace:*
+        version: link:../../packages/foundation/plugin-validator
+      '@objectql/protocol-graphql':
+        specifier: workspace:*
+        version: link:../../packages/protocols/graphql
+      '@objectql/protocol-json-rpc':
+        specifier: workspace:*
+        version: link:../../packages/protocols/json-rpc
+      '@objectql/protocol-odata-v4':
+        specifier: workspace:*
+        version: link:../../packages/protocols/odata-v4
+      '@objectql/types':
+        specifier: workspace:*
+        version: link:../../packages/foundation/types
+      '@objectstack/cli':
+        specifier: ^3.2.8
+        version: 3.2.8(@objectstack/core@3.2.8)(esbuild@0.27.4)
+      '@objectstack/core':
+        specifier: ^3.2.8
+        version: 3.2.8
+      '@objectstack/objectql':
+        specifier: ^3.2.8
+        version: 3.2.8
+      '@objectstack/plugin-auth':
+        specifier: ^3.2.8
+        version: 3.2.8(mongodb@7.1.0(socks@2.8.7))(next@16.1.7(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(pg@8.20.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(vitest@1.6.1)(vue@3.5.30(typescript@5.9.3))
+      '@objectstack/plugin-hono-server':
+        specifier: ^3.2.8
+        version: 3.2.8
+      '@objectstack/studio':
+        specifier: ^3.2.8
+        version: 3.2.8(@types/node@20.19.37)(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(mongodb@7.1.0(socks@2.8.7))(next@16.1.7(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(pg@8.20.0)(typescript@5.9.3)(vitest@1.6.1)(vue@3.5.30(typescript@5.9.3))
+      '@types/node':
+        specifier: ^20.19.37
+        version: 20.19.37
+      hono:
+        specifier: ^4.12.8
+        version: 4.12.8
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
   apps/site:
     dependencies:
       fumadocs-core:
@@ -11008,7 +11080,7 @@ snapshots:
   '@types/fs-extra@11.0.4':
     dependencies:
       '@types/jsonfile': 6.1.4
-      '@types/node': 20.19.37
+      '@types/node': 25.5.0
 
   '@types/hast@3.0.4':
     dependencies:
@@ -11022,7 +11094,7 @@ snapshots:
 
   '@types/jsonfile@6.1.4':
     dependencies:
-      '@types/node': 20.19.37
+      '@types/node': 25.5.0
 
   '@types/linkify-it@5.0.0': {}
 
