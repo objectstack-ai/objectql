@@ -176,7 +176,11 @@ function extractBody(incoming: VercelIncomingMessage, method: string, contentTyp
     if (method === 'GET' || method === 'HEAD' || method === 'OPTIONS') return null;
     if (incoming.rawBody != null) {
         if (typeof incoming.rawBody === 'string') return incoming.rawBody;
-        return incoming.rawBody as unknown as Uint8Array;
+        // Convert Node.js Buffer to ArrayBuffer — required because the TypeScript lib
+        // used during Vercel bundling (ES2019 without DOM) only guarantees ArrayBuffer
+        // in the BodyInit union; Uint8Array is not listed in older lib.dom.d.ts.
+        const buf = incoming.rawBody;
+        return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer;
     }
     if (incoming.body != null) {
         if (typeof incoming.body === 'string') return incoming.body;
