@@ -33,9 +33,11 @@
     "generate:schemas": "node scripts/generate-schemas.js",
     "test": "vitest run"
   },
-  "devDependencies": {
+  "dependencies": {
     "@objectstack/spec": "^3.2.8",
-    "ts-json-schema-generator": "^2.9.0",
     "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "ts-json-schema-generator": "^2.9.0"
   }
 }

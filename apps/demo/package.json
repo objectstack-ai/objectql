@@ -27,6 +27,7 @@
     "@objectql/types": "workspace:*",
     "@objectstack/cli": "^3.2.8",
     "@objectstack/core": "^3.2.8",
+    "@objectstack/spec": "^3.2.8",
     "@objectstack/driver-memory": "^3.2.8",
     "@objectstack/objectql": "^3.2.8",
     "@objectstack/plugin-auth": "^3.2.8",
