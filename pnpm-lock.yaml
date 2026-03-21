@@ -45,6 +45,9 @@ importers:
       '@objectql/example-project-tracker':
         specifier: workspace:*
         version: link:examples/showcase/project-tracker
+      '@objectql/platform-node':
+        specifier: workspace:*
+        version: link:packages/foundation/platform-node
       '@objectql/plugin-formula':
         specifier: workspace:*
         version: link:packages/foundation/plugin-formula

@@ -32,7 +32,8 @@ import { FormulaPlugin } from '@objectql/plugin-formula';
 import { createApiRegistryPlugin } from '@objectstack/core';
 import { MemoryDriver } from '@objectql/driver-memory';
 import { createTursoDriver } from '@objectql/driver-turso';
-import { createAppPlugin } from '@objectql/platform-node';
+import pkg from '@objectql/platform-node';
+const { createAppPlugin } = pkg;
 
 // Choose driver based on environment — Turso when TURSO_DATABASE_URL is set,
 // MemoryDriver otherwise (zero-config fallback for quick starts).
