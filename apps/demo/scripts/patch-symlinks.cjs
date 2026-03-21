@@ -16,16 +16,12 @@
  *      symlink in `node_modules/` with a real copy so Vercel can bundle
  *      the serverless function.
  *
- * This script is invoked as a postinstall hook and is a no-op outside
- * the Vercel build environment (process.env.VERCEL is not set locally).
+ * This script is invoked explicitly from build-vercel.sh before any build
+ * steps run, ensuring all transitive dependencies are present and all pnpm
+ * symlinks are replaced with real copies before Vercel bundles the function.
+ * It can also be run manually for local testing of Vercel-like environments.
  */
 'use strict';
-
-// Only run during Vercel builds. Skip in local development to preserve
-// pnpm workspace symlinks for live-reload.
-if (!process.env.VERCEL) {
-    process.exit(0);
-}
 
 const fs = require('fs');
 const path = require('path');

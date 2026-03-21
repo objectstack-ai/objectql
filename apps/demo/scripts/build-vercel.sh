@@ -14,6 +14,14 @@
 
 set -euo pipefail
 
+# Phase 0: Patch pnpm symlinks for Vercel deployment.
+# pnpm install --ignore-scripts (set in vercel.json) skips the postinstall
+# hook that normally runs this script. We must call it explicitly here so
+# that all transitive dependencies are resolved and symlinks are replaced
+# with real copies before any build step runs.
+echo "▸ Patching pnpm symlinks for Vercel…"
+node scripts/patch-symlinks.cjs
+
 echo "▸ Building @objectql/types…"
 pnpm --filter @objectql/types build
 
