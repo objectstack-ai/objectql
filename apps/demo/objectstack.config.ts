@@ -40,13 +40,19 @@ function createDefaultDriver() {
     if (tursoUrl) {
         console.log(`🗄️  Driver: Turso (${tursoUrl})`);
         const syncUrl = process.env.TURSO_SYNC_URL;
+        const rawSyncInterval = process.env.TURSO_SYNC_INTERVAL;
+        const parsedSyncInterval =
+            rawSyncInterval !== undefined ? Number(rawSyncInterval) : NaN;
+        const syncIntervalSeconds = Number.isFinite(parsedSyncInterval)
+            ? parsedSyncInterval
+            : 60;
         return createTursoDriver({
             url: tursoUrl,
             authToken: process.env.TURSO_AUTH_TOKEN,
             syncUrl,
             sync: syncUrl
                 ? {
-                    intervalSeconds: Number(process.env.TURSO_SYNC_INTERVAL) || 60,
+                    intervalSeconds: syncIntervalSeconds,
                     onConnect: true,
                 }
                 : undefined,
@@ -83,10 +89,8 @@ export default {
                 ctx.registerService('driver.default', defaultDriver);
             },
             start: async () => {
-                // Connect Turso driver if applicable (MemoryDriver.connect() is a no-op)
-                if (typeof (defaultDriver as any).connect === 'function') {
-                    await (defaultDriver as { connect: () => Promise<void> }).connect();
-                }
+                // Both MemoryDriver and TursoDriver implement connect()
+                await defaultDriver.connect?.();
             },
         },
         projectTrackerPlugin,

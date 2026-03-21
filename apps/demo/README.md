@@ -115,5 +115,5 @@ apps/demo/
                           │
                     ObjectStack Kernel
                     (ObjectQL + Auth +
-                     TursoDriver)
+                     TursoDriver / InMemoryDriver)
 ```

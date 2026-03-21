@@ -288,20 +288,26 @@ async function bootstrap(): Promise<Hono> {
     if (tursoUrl) {
         log(`Registering TursoDriver (${tursoUrl})…`);
         const syncUrl = process.env.TURSO_SYNC_URL;
+        const rawSyncInterval = process.env.TURSO_SYNC_INTERVAL;
+        const parsedSyncInterval =
+            rawSyncInterval !== undefined ? Number(rawSyncInterval) : NaN;
+        const syncIntervalSeconds = Number.isFinite(parsedSyncInterval)
+            ? parsedSyncInterval
+            : 60;
         tursoDriver = createTursoDriver({
             url: tursoUrl,
             authToken: process.env.TURSO_AUTH_TOKEN,
             syncUrl,
             sync: syncUrl
                 ? {
-                    intervalSeconds: Number(process.env.TURSO_SYNC_INTERVAL) || 60,
+                    intervalSeconds: syncIntervalSeconds,
                     onConnect: true,
                 }
                 : undefined,
         });
-        // DriverPlugin from @objectstack/runtime expects the upstream Driver interface;
-        // TursoDriver implements @objectql/types Driver which is structurally compatible.
-        await withTimeout(kernel.use(new DriverPlugin(tursoDriver as any, 'turso')), PLUGIN_TIMEOUT_MS, 'DriverPlugin-turso');
+        // DriverPlugin from @objectstack/runtime accepts any driver; TursoDriver
+        // implements @objectql/types Driver which is structurally compatible.
+        await withTimeout(kernel.use(new DriverPlugin(tursoDriver, 'turso')), PLUGIN_TIMEOUT_MS, 'DriverPlugin-turso');
         log('TursoDriver registered.');
     } else {
         log('Registering DriverPlugin (InMemoryDriver)…');
