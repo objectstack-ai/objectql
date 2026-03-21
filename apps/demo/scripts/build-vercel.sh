@@ -51,4 +51,7 @@ pnpm --filter @objectql/example-project-tracker build
 echo "▸ Patching pnpm symlinks for Vercel…"
 node scripts/patch-symlinks.cjs
 
+# Ensure the output directory exists (Vercel requires it when framework=null)
+mkdir -p public
+
 echo "✓ Vercel build complete."
