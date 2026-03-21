@@ -6,6 +6,7 @@
     "dev": "objectstack serve --dev",
     "cli:dev": "ts-node packages/tools/cli/src/index.ts",
     "site:dev": "pnpm --filter @objectql/site run dev",
+    "demo:dev": "pnpm --filter @objectql/demo run dev",
     "build": "turbo run build",
     "test": "pnpm run check-versions && turbo run test --concurrency=1",
     "lint": "turbo run lint",

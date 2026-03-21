@@ -16,6 +16,9 @@ apps/site/.next
 apps/site/out
 apps/site/.source
 
+# Apps — Demo
+apps/demo/.vercel
+
 # Database
 *.sqlite3
 *.db
