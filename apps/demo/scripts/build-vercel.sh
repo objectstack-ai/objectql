@@ -8,7 +8,6 @@
 #   1. Build foundation packages (types → plugin-optimizations → plugins → core → platform-node)
 #   2. Build drivers and protocols
 #   3. Build the project-tracker showcase example
-#   4. Patch pnpm symlinks so Vercel can bundle the serverless function
 #
 # Usage (called automatically by Vercel via vercel.json):
 #   bash scripts/build-vercel.sh
@@ -47,9 +46,6 @@ pnpm --filter @objectql/protocol-graphql \
 
 echo "▸ Building project-tracker example…"
 pnpm --filter @objectql/example-project-tracker build
-
-echo "▸ Patching pnpm symlinks for Vercel…"
-node scripts/patch-symlinks.cjs
 
 # Ensure the output directory exists (Vercel requires it when framework=null)
 mkdir -p public
