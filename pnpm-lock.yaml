@@ -231,6 +231,9 @@ importers:
       '@types/node':
         specifier: ^20.19.37
         version: 20.19.37
+      cross-fetch:
+        specifier: ^4.1.0
+        version: 4.1.0(encoding@0.1.13)
       detect-libc:
         specifier: ^2.0.2
         version: 2.1.2
@@ -246,12 +249,18 @@ importers:
       nanoid:
         specifier: ^3.3.11
         version: 3.3.11
+      node-fetch:
+        specifier: ^2.7.0
+        version: 2.7.0(encoding@0.1.13)
       promise-limit:
         specifier: ^2.7.0
         version: 2.7.0
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
+      ws:
+        specifier: ^8.19.0
+        version: 8.19.0
       zod:
         specifier: ^4.3.6
         version: 4.3.6

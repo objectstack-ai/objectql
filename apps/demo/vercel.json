@@ -7,7 +7,7 @@
     "api/**/*.ts": {
       "memory": 1024,
       "maxDuration": 60,
-      "includeFiles": "node_modules/{@object-ui/*/dist,@objectstack/*/dist,@objectql/*/dist,@libsql,@neon-rs,libsql,detect-libc,js-base64,promise-limit,nanoid}/**"
+      "includeFiles": "node_modules/{@object-ui/*/dist,@objectstack/*/dist,@objectql/*/dist,@libsql,@neon-rs,libsql,detect-libc,js-base64,promise-limit,nanoid,ws,cross-fetch,node-fetch}/**"
     }
   },
   "rewrites": [
