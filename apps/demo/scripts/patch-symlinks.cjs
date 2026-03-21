@@ -8,8 +8,17 @@
  * "invalid deployment package … symlinked directories". This script
  * replaces ALL top-level symlinks with real copies of the target
  * directories so that Vercel can bundle the serverless function.
+ *
+ * This script is invoked as a postinstall hook and is a no-op outside
+ * the Vercel build environment (process.env.VERCEL is not set locally).
  */
 'use strict';
+
+// Only run during Vercel builds. Skip in local development to preserve
+// pnpm workspace symlinks for live-reload.
+if (!process.env.VERCEL) {
+    process.exit(0);
+}
 
 const fs = require('fs');
 const path = require('path');
