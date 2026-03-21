@@ -7,7 +7,8 @@
   "scripts": {
     "dev": "objectstack serve --dev",
     "build": "tsc --noEmit",
-    "start": "objectstack serve"
+    "start": "objectstack serve",
+    "postinstall": "node scripts/patch-symlinks.cjs"
   },
   "devDependencies": {
     "@hono/node-server": "^1.19.11",
@@ -26,9 +27,11 @@
     "@objectql/types": "workspace:*",
     "@objectstack/cli": "^3.2.8",
     "@objectstack/core": "^3.2.8",
+    "@objectstack/driver-memory": "^3.2.8",
     "@objectstack/objectql": "^3.2.8",
     "@objectstack/plugin-auth": "^3.2.8",
     "@objectstack/plugin-hono-server": "^3.2.8",
+    "@objectstack/runtime": "^3.2.8",
     "@objectstack/studio": "^3.2.8",
     "@types/node": "^20.19.37",
     "hono": "^4.12.8",

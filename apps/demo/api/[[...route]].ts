@@ -176,7 +176,11 @@ function extractBody(incoming: VercelIncomingMessage, method: string, contentTyp
     if (method === 'GET' || method === 'HEAD' || method === 'OPTIONS') return null;
     if (incoming.rawBody != null) {
         if (typeof incoming.rawBody === 'string') return incoming.rawBody;
-        return incoming.rawBody;
+        // Convert Node.js Buffer to ArrayBuffer — required because the TypeScript lib
+        // used during Vercel bundling (ES2019 without DOM) only guarantees ArrayBuffer
+        // in the BodyInit union; Uint8Array is not listed in older lib.dom.d.ts.
+        const buf = incoming.rawBody;
+        return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer;
     }
     if (incoming.body != null) {
         if (typeof incoming.body === 'string') return incoming.body;
@@ -355,7 +359,8 @@ async function bootstrap(): Promise<Hono> {
             ...(process.env.VERCEL_PROJECT_PRODUCTION_URL ? [`https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`] : []),
             ...(process.env.AUTH_TRUSTED_ORIGINS ? process.env.AUTH_TRUSTED_ORIGINS.split(',').map(s => s.trim()) : []),
         ],
-    })), PLUGIN_TIMEOUT_MS, 'AuthPlugin');
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any)), PLUGIN_TIMEOUT_MS, 'AuthPlugin');
     log('AuthPlugin registered.');
 
     // 6. Application config — empty manifest; demo metadata is loaded via

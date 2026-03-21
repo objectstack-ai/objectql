@@ -189,6 +189,9 @@ importers:
       '@objectstack/core':
         specifier: ^3.2.8
         version: 3.2.8
+      '@objectstack/driver-memory':
+        specifier: ^3.2.8
+        version: 3.2.8
       '@objectstack/objectql':
         specifier: ^3.2.8
         version: 3.2.8
@@ -196,6 +199,9 @@ importers:
         specifier: ^3.2.8
         version: 3.2.8(mongodb@7.1.0(socks@2.8.7))(next@16.1.7(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(pg@8.20.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(vitest@1.6.1)(vue@3.5.30(typescript@5.9.3))
       '@objectstack/plugin-hono-server':
+        specifier: ^3.2.8
+        version: 3.2.8
+      '@objectstack/runtime':
         specifier: ^3.2.8
         version: 3.2.8
       '@objectstack/studio':
