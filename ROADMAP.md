@@ -793,6 +793,7 @@ Priority tasks following the `@objectstack` v3.2.6 upgrade:
 | 7 | Structured logging framework | Low | 🔴 Open | Migrate `sdk` retry `console.log` and `types/logger.ts` fallback `console.error` to hook-based structured logging. |
 | 8 | Add tests for `plugin-optimizations` and `plugin-query` | High | ✅ Done | Both packages now have comprehensive test suites — 202 tests across 4 test files. |
 | 9 | Reduce `any` in protocol handlers | Medium | 🔴 Open | `protocol-json-rpc` (102), `protocol-graphql` (101), `protocol-odata-v4` (83) — highest `any` density in the monorepo. |
+| 10 | Deploy `apps/demo` to Vercel | Medium | ✅ Done | Standalone `apps/demo` sub-project with serverless entry point (`api/[[...route]].ts`), Vercel config, build script, and pnpm symlink patching. Independent from `apps/site`. |
 
 ---
 
