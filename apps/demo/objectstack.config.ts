@@ -89,7 +89,7 @@ export default {
                 ctx.registerService('driver.default', defaultDriver);
             },
             start: async () => {
-                // Both MemoryDriver and TursoDriver implement connect()
+                // Driver.connect() is optional in the interface; call if present
                 await defaultDriver.connect?.();
             },
         },
