@@ -153,6 +153,9 @@ importers:
       '@objectql/driver-memory':
         specifier: workspace:*
         version: link:../../packages/drivers/memory
+      '@objectql/driver-turso':
+        specifier: workspace:*
+        version: link:../../packages/drivers/turso
       '@objectql/example-project-tracker':
         specifier: workspace:*
         version: link:../../examples/showcase/project-tracker

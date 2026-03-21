@@ -2,8 +2,9 @@
  * Vercel Serverless Function — ObjectQL Demo Handler
  *
  * Bootstraps the ObjectStack kernel with ObjectQL plugins and the
- * project-tracker demo metadata, using @objectstack/driver-memory
- * for zero-config in-memory data.
+ * project-tracker demo metadata, using @objectql/driver-turso when
+ * TURSO_DATABASE_URL is set, or @objectstack/driver-memory as a
+ * zero-config fallback.
  *
  * Uses `getRequestListener()` from `@hono/node-server` together with
  * an `extractBody()` helper to handle Vercel's pre-buffered request
@@ -14,8 +15,10 @@
  * a fresh `Request` object prevents POST/PUT/PATCH requests (e.g.
  * login) from hanging indefinitely.
  *
- * Data lives in the function instance's memory and persists across
- * warm invocations (Vercel Fluid Compute) but resets on cold start.
+ * When using Turso, data is persisted in the Turso cloud database.
+ * When using InMemoryDriver, data lives in the function instance's
+ * memory and persists across warm invocations (Vercel Fluid Compute)
+ * but resets on cold start.
  *
  * Both Console (/) and Studio (/_studio/) UIs are served as static SPAs.
  *
@@ -30,6 +33,7 @@ import { ObjectKernel, DriverPlugin, AppPlugin, createDispatcherPlugin, createRe
 import { HonoHttpServer } from '@objectstack/plugin-hono-server';
 import { AuthPlugin } from '@objectstack/plugin-auth';
 import { InMemoryDriver } from '@objectstack/driver-memory';
+import { createTursoDriver, type TursoDriver } from '@objectql/driver-turso';
 import { ObjectQLPlugin } from '@objectstack/objectql';
 import { getRequestListener } from '@hono/node-server';
 import type { Hono } from 'hono';
@@ -278,10 +282,32 @@ async function bootstrap(): Promise<Hono> {
     await withTimeout(kernel.use(new ObjectQLPlugin()), PLUGIN_TIMEOUT_MS, 'ObjectQLPlugin');
     log('ObjectQLPlugin registered.');
 
-    // 2. In-memory data driver (no external DB required)
-    log('Registering DriverPlugin (InMemoryDriver)…');
-    await withTimeout(kernel.use(new DriverPlugin(new InMemoryDriver(), 'memory')), PLUGIN_TIMEOUT_MS, 'DriverPlugin');
-    log('DriverPlugin registered.');
+    // 2. Data driver — Turso when TURSO_DATABASE_URL is set, InMemoryDriver otherwise
+    const tursoUrl = process.env.TURSO_DATABASE_URL;
+    let tursoDriver: TursoDriver | null = null;
+    if (tursoUrl) {
+        log(`Registering TursoDriver (${tursoUrl})…`);
+        const syncUrl = process.env.TURSO_SYNC_URL;
+        tursoDriver = createTursoDriver({
+            url: tursoUrl,
+            authToken: process.env.TURSO_AUTH_TOKEN,
+            syncUrl,
+            sync: syncUrl
+                ? {
+                    intervalSeconds: Number(process.env.TURSO_SYNC_INTERVAL) || 60,
+                    onConnect: true,
+                }
+                : undefined,
+        });
+        // DriverPlugin from @objectstack/runtime expects the upstream Driver interface;
+        // TursoDriver implements @objectql/types Driver which is structurally compatible.
+        await withTimeout(kernel.use(new DriverPlugin(tursoDriver as any, 'turso')), PLUGIN_TIMEOUT_MS, 'DriverPlugin-turso');
+        log('TursoDriver registered.');
+    } else {
+        log('Registering DriverPlugin (InMemoryDriver)…');
+        await withTimeout(kernel.use(new DriverPlugin(new InMemoryDriver(), 'memory')), PLUGIN_TIMEOUT_MS, 'DriverPlugin-memory');
+        log('InMemoryDriver registered.');
+    }
 
     // 3. HTTP server adapter — register the Hono app without TCP listener
     const httpServer = new HonoHttpServer();
@@ -445,7 +471,14 @@ async function bootstrap(): Promise<Hono> {
         log('Studio SPA registered.');
     }
 
-    // 12. Bootstrap kernel (init + start all plugins, fire kernel:ready)
+    // 12. Connect Turso driver (if applicable) before kernel bootstrap
+    if (tursoDriver) {
+        log('Connecting TursoDriver…');
+        await withTimeout(tursoDriver.connect(), PLUGIN_TIMEOUT_MS, 'TursoDriver.connect()');
+        log('TursoDriver connected.');
+    }
+
+    // 13. Bootstrap kernel (init + start all plugins, fire kernel:ready)
     log('Running kernel.bootstrap()…');
     await withTimeout(kernel.bootstrap(), KERNEL_BOOTSTRAP_TIMEOUT_MS, 'kernel.bootstrap()');
     log(`Bootstrap complete in ${elapsed()}.`);

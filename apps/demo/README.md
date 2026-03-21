@@ -5,7 +5,8 @@ Runs locally with `@objectstack/cli` and deploys to **Vercel** as a serverless f
 
 ## Features
 
-- **In-memory driver** — zero external database required; data persists across warm Vercel invocations.
+- **Turso/libSQL driver** — persistent, edge-first SQLite via `@objectql/driver-turso` when `TURSO_DATABASE_URL` is set.
+- **In-memory fallback** — zero external database required for quick local development.
 - **Console UI** — full ObjectStack Console available at `/console/`.
 - **Studio UI** — ObjectStack Studio available at `/_studio/`.
 - **Project-Tracker showcase** — ships with the `examples/showcase/project-tracker` metadata (objects, views, permissions) so the demo has real data structures out of the box.
@@ -44,6 +45,10 @@ The development server starts on `http://localhost:3000`.
 |---|---|---|
 | `AUTH_SECRET` | **Yes** (production) | Secret key for signing auth tokens. Generate with `openssl rand -base64 32`. |
 | `AUTH_TRUSTED_ORIGINS` | No | Comma-separated list of additional trusted origins (e.g. `https://myapp.example.com`). |
+| `TURSO_DATABASE_URL` | No | Turso/libSQL database URL (e.g. `libsql://my-db-org.turso.io`). When set, uses Turso instead of in-memory driver. |
+| `TURSO_AUTH_TOKEN` | When using Turso | JWT auth token for the Turso database. |
+| `TURSO_SYNC_URL` | No | Remote sync URL for embedded replica mode. |
+| `TURSO_SYNC_INTERVAL` | No | Periodic sync interval in seconds (default: 60). |
 
 4. Deploy:
 
@@ -58,7 +63,7 @@ vercel --cwd apps/demo --prod
 ### How It Works
 
 - **`vercel.json`** — Configures Vercel to use a custom build command, allocate 1 GiB memory to the serverless function, and rewrite all requests to the catch-all `api/[[...route]].ts` handler.
-- **`api/[[...route]].ts`** — Bootstraps the full ObjectStack kernel with ObjectQL plugins, the in-memory driver, auth, Console, and Studio. Uses `@hono/node-server`'s `getRequestListener()` to bridge the Vercel serverless runtime with the Hono HTTP framework.
+- **`api/[[...route]].ts`** — Bootstraps the full ObjectStack kernel with ObjectQL plugins, the Turso driver (or in-memory fallback), auth, Console, and Studio. Uses `@hono/node-server`'s `getRequestListener()` to bridge the Vercel serverless runtime with the Hono HTTP framework.
 - **`scripts/build-vercel.sh`** — Builds all required workspace packages (foundation, drivers, plugins, protocols, examples) in the correct dependency order.
 - **`scripts/patch-symlinks.cjs`** — Replaces pnpm workspace symlinks with real copies so Vercel can bundle the function without symlink errors.
 
@@ -110,5 +115,5 @@ apps/demo/
                           │
                     ObjectStack Kernel
                     (ObjectQL + Auth +
-                     InMemoryDriver)
+                     TursoDriver)
 ```

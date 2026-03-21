@@ -13,6 +13,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`apps/demo`** — added explicit `@objectstack/spec` and `zod` devDependencies as defense-in-depth for Vercel deployment.
 - **`@objectql/types`** — moved `@objectstack/spec` and `zod` from `devDependencies` to `dependencies`. The compiled JS output contains runtime imports of `@objectstack/spec` (via `z.infer<typeof Data.X>` patterns), so they must be declared as production dependencies.
 
+### Changed
+
+- **`apps/demo`** — switched default data driver from `@objectstack/driver-memory` (InMemoryDriver) to `@objectql/driver-turso` (TursoDriver). When `TURSO_DATABASE_URL` is set, the demo uses a persistent Turso/libSQL database; otherwise falls back to InMemoryDriver for zero-config local development.
+  - `objectstack.config.ts` — environment-aware `createDefaultDriver()` selects Turso or MemoryDriver.
+  - `api/[[...route]].ts` — Vercel serverless handler uses TursoDriver with `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`, `TURSO_SYNC_URL`, and `TURSO_SYNC_INTERVAL` env vars.
+  - `scripts/build-vercel.sh` — now builds `@objectql/driver-turso` alongside other drivers.
+  - `README.md` — documents new Turso environment variables and architecture.
+
 ### Added
 
 - **`apps/demo`** — standalone Vercel-deployable demo application ([#issue](https://github.com/objectstack-ai/objectql/issues)):
