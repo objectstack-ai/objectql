@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **`apps/demo`** — added `whatwg-url`, `tr46`, and `webidl-conversions` as explicit devDependencies and to `vercel.json` `includeFiles`. These are transitive dependencies of `node-fetch@2.7.0` (used by `cross-fetch@4.1.0`) that must be bundled into Vercel's serverless function. Without them, the deployment fails with `Cannot find module 'whatwg-url/index.js'`.
 - **`apps/demo/scripts/patch-symlinks.cjs`** — enhanced to automatically resolve and copy ALL transitive dependencies before dereferencing symlinks. Previously, only direct dependencies listed in `apps/demo/package.json` were available after symlink dereferencing, causing `ERR_MODULE_NOT_FOUND` for transitive deps like `@objectstack/rest`, `zod`, `pino`, `better-auth`, etc. The script now walks each package's pnpm virtual store context (`.pnpm/<name>@<ver>/node_modules/`) and copies any missing sibling dependency into the top-level `node_modules/`, repeating until the full transitive closure is present.
 - **`apps/demo`** — added explicit `@objectstack/spec` and `zod` devDependencies as defense-in-depth for Vercel deployment.
 - **`@objectql/types`** — moved `@objectstack/spec` and `zod` from `devDependencies` to `dependencies`. The compiled JS output contains runtime imports of `@objectstack/spec` (via `z.infer<typeof Data.X>` patterns), so they must be declared as production dependencies.
