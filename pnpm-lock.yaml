@@ -255,9 +255,18 @@ importers:
       promise-limit:
         specifier: ^2.7.0
         version: 2.7.0
+      tr46:
+        specifier: ^0.0.3
+        version: 0.0.3
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
+      webidl-conversions:
+        specifier: ^3.0.1
+        version: 3.0.1
+      whatwg-url:
+        specifier: ^5.0.0
+        version: 5.0.0
       ws:
         specifier: ^8.19.0
         version: 8.19.0
