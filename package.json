@@ -41,11 +41,11 @@
     "@objectql/protocol-graphql": "workspace:*",
     "@objectql/protocol-json-rpc": "workspace:*",
     "@objectql/protocol-odata-v4": "workspace:*",
-    "@objectstack/cli": "^3.2.8",
-    "@objectstack/core": "^3.2.8",
-    "@objectstack/objectql": "^3.2.8",
-    "@objectstack/plugin-auth": "^3.2.8",
-    "@objectstack/plugin-hono-server": "^3.2.8",
+    "@objectstack/cli": "^3.2.9",
+    "@objectstack/core": "^3.2.9",
+    "@objectstack/objectql": "^3.2.9",
+    "@objectstack/plugin-auth": "^3.2.9",
+    "@objectstack/plugin-hono-server": "^3.2.9",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^20.19.37",
     "@types/supertest": "^6.0.3",
@@ -69,7 +69,7 @@
   "dependencies": {
     "@libsql/client": "^0.17.2",
     "@objectql/protocol-json-rpc": "workspace:*",
-    "@objectstack/studio": "^3.2.8",
+    "@objectstack/studio": "^3.2.9",
     "build": "^0.1.4"
   }
 }

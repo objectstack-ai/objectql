@@ -34,7 +34,7 @@
     "@objectql/platform-node": "workspace:*",
     "@objectql/plugin-validator": "workspace:*",
     "@objectql/types": "workspace:*",
-    "@objectstack/objectql": "^3.2.8",
+    "@objectstack/objectql": "^3.2.9",
     "chalk": "^4.1.2",
     "commander": "^11.1.0",
     "dotenv": "^16.6.1",

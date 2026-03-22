@@ -19,8 +19,8 @@
   },
   "dependencies": {
     "@objectql/types": "workspace:*",
-    "@objectstack/core": "^3.2.8",
-    "@objectstack/spec": "^3.2.8"
+    "@objectstack/core": "^3.2.9",
+    "@objectstack/spec": "^3.2.9"
   },
   "devDependencies": {
     "typescript": "^5.9.3"
