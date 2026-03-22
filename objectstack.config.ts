@@ -116,6 +116,10 @@ export default {
         // App plugins: register app metadata as `app.*` services.
         // Must be before ObjectQLPlugin so services are available during start().
         projectTrackerPlugin,
+        new AuthPlugin({
+            secret: process.env.AUTH_SECRET || 'objectql-dev-secret-change-me-in-production',
+            trustedOrigins: ['http://localhost:*'],
+        }),
         // Upstream ObjectQLPlugin from @objectstack/objectql:
         // - Registers objectql, metadata, data, protocol services
         // - Discovers driver.* and app.* services and calls ql.registerApp()
@@ -126,10 +130,6 @@ export default {
         new FormulaPlugin(),
         new ObjectQLSecurityPlugin({
             enableAudit: false
-        }),
-        new AuthPlugin({
-            secret: process.env.AUTH_SECRET || 'objectql-dev-secret-change-me-in-production',
-            trustedOrigins: ['http://localhost:*'],
         }),
         new GraphQLPlugin({
             basePath: '/graphql',
