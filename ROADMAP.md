@@ -980,6 +980,7 @@ Standardize third-party plugin distribution.
 | `packages/foundation/plugin-workflow` | `@objectql/plugin-workflow` | Universal | State machine executor with guards, actions, compound states. |
 | `packages/foundation/plugin-multitenancy` | `@objectql/plugin-multitenancy` | Universal | Tenant isolation via hook-based filter rewriting. |
 | `packages/foundation/plugin-sync` | `@objectql/plugin-sync` | Universal | Offline-first sync engine with mutation logging and conflict resolution. |
+| `packages/foundation/plugin-analytics` | `@objectql/plugin-analytics` | Universal | Analytics/BI plugin with multi-database strategy dispatch (SQL, Mongo, Memory). |
 | `packages/foundation/edge-adapter` | `@objectql/edge-adapter` | Universal | Edge runtime detection and capability validation. |
 
 ### Driver Layer

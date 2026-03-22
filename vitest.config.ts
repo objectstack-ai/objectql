@@ -28,6 +28,7 @@ export default defineConfig({
       '@objectql/plugin-sync': path.resolve(__dirname, './packages/foundation/plugin-sync/src'),
       '@objectql/plugin-query': path.resolve(__dirname, './packages/foundation/plugin-query/src'),
       '@objectql/plugin-optimizations': path.resolve(__dirname, './packages/foundation/plugin-optimizations/src'),
+      '@objectql/plugin-analytics': path.resolve(__dirname, './packages/foundation/plugin-analytics/src'),
       '@objectql/edge-adapter': path.resolve(__dirname, './packages/foundation/edge-adapter/src'),
       '@objectql/protocol-graphql': path.resolve(__dirname, './packages/protocols/graphql/src'),
       '@objectql/protocol-odata-v4': path.resolve(__dirname, './packages/protocols/odata-v4/src'),

@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`@objectql/plugin-analytics`** — new analytics/BI plugin providing multi-database analytical query support. Implements the `IAnalyticsService` contract from `@objectstack/spec` with strategy-based driver dispatch:
+  - `NativeSQLStrategy` — pushes analytics to SQL databases via Knex (Postgres, SQLite, MySQL).
+  - `ObjectQLStrategy` — delegates to driver's native `aggregate()` method (MongoDB, etc.).
+  - `MemoryFallbackStrategy` — in-memory aggregation for dev/test environments.
+  - `CubeRegistry` — supports manifest-based and automatic model/metadata-inferred cube definitions.
+  - `SemanticCompiler` — compiles `AnalyticsQuery` + `CubeDefinition` into driver-agnostic `LogicalPlan`.
+  - `generateSql()` — SQL dry-run/explanation support for query debugging.
+  - `AnalyticsPlugin` — kernel plugin registering `'analytics'` service for REST API discovery.
+
 ### Fixed
 
 - **`apps/demo/scripts/patch-symlinks.cjs`** — enhanced to automatically resolve and copy ALL transitive dependencies before dereferencing symlinks. Previously, only direct dependencies listed in `apps/demo/package.json` were available after symlink dereferencing, causing `ERR_MODULE_NOT_FOUND` for transitive deps like `@objectstack/rest`, `zod`, `pino`, `better-auth`, etc. The script now walks each package's pnpm virtual store context (`.pnpm/<name>@<ver>/node_modules/`) and copies any missing sibling dependency into the top-level `node_modules/`, repeating until the full transitive closure is present.

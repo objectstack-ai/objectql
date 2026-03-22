@@ -1,0 +1,27 @@
+{
+  "name": "@objectql/plugin-analytics",
+  "version": "4.2.2",
+  "description": "Analytics and BI plugin for ObjectQL — multi-database analytical queries with strategy-based driver dispatch",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@objectql/types": "workspace:*",
+    "@objectstack/spec": "^3.2.8"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}
