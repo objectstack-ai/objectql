@@ -43,7 +43,7 @@
     "@types/node": "^20.19.37",
     "cross-fetch": "^4.1.0",
     "detect-libc": "^2.1.2",
-    "hono": "^4.12.8",
+    "hono": "^4.12.12",
     "js-base64": "^3.7.8",
     "libsql": "^0.5.28",
     "nanoid": "^3.3.11",
